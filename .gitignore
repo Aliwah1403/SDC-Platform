@@ -51,6 +51,11 @@ Thumbs.db
 # Claude Code local settings
 .claude/
 
+# Project planning & review docs (local only)
+CLAUDE.md
+CODE_REVIEW.md
+FEATURES.md
+
 # TypeScript
 *.tsbuildinfo
 
