@@ -1,10 +1,17 @@
-import React, { useRef } from "react";
-import { View, ScrollView } from "react-native";
+import React, { useRef, useState, useEffect } from "react";
+import { View } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedScrollHandler,
+  interpolate,
+} from "react-native-reanimated";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import StreaksBottomSheet from "@/components/StreaksBottomSheet";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
+import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
 import { HealthStats } from "@/components/HealthStats/HealthStats";
 import { TrendsInsights } from "@/components/TrendsInsights/TrendsInsights";
@@ -48,28 +55,98 @@ export default function HomeScreen() {
   const gradientColors = getGradientColors(hasLoggedData);
   const insightCards = getInsightCards(healthStreak, selectedDate);
 
+  // Compact bar height = safe area + content row
+  const compactBarHeight = insets.top + 56;
+
+  // Measured full header height (defaults to 350 to avoid flash before onLayout fires)
+  const [headerHeight, setHeaderHeight] = useState(350);
+
+  // Shared values for animation
+  const scrollY = useSharedValue(0);
+  const collapsibleHeightSV = useSharedValue(350 - compactBarHeight);
+
+  // Keep collapsibleHeightSV in sync when headerHeight is measured
+  useEffect(() => {
+    collapsibleHeightSV.value = Math.max(0, headerHeight - compactBarHeight);
+  }, [headerHeight, compactBarHeight]);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
+  // Full header slides up as user scrolls
+  const headerAnimStyle = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      scrollY.value,
+      [0, collapsibleHeightSV.value],
+      [0, -collapsibleHeightSV.value],
+      'clamp'
+    );
+    return { transform: [{ translateY }] };
+  });
+
+  // Compact navbar fades + slides down into view
+  const compactNavAnimStyle = useAnimatedStyle(() => {
+    const start = collapsibleHeightSV.value * 0.5;
+    const end = collapsibleHeightSV.value;
+    const opacity = interpolate(scrollY.value, [start, end], [0, 1], 'clamp');
+    const translateY = interpolate(scrollY.value, [start, end], [-8, 0], 'clamp');
+    return { opacity, transform: [{ translateY }] };
+  });
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
       <StatusBar style="light" />
 
-      <HomeHeader
-        insets={insets}
-        gradientColors={gradientColors}
-        hasLoggedData={hasLoggedData}
-        formatNavDate={formatNavDate}
-        selectedDate={selectedDate}
-        healthStreak={healthStreak}
-        bottomSheetRef={bottomSheetRef}
-        setSelectedDate={setSelectedDate}
-        isToday={isToday}
-        isFuture={isFuture}
-        isSelected={isSelected}
-        message={message}
-      />
+      {/* Full header — absolutely positioned, slides up on scroll */}
+      <Animated.View
+        style={[
+          { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
+          headerAnimStyle,
+        ]}
+        onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+      >
+        <HomeHeader
+          insets={insets}
+          gradientColors={gradientColors}
+          hasLoggedData={hasLoggedData}
+          formatNavDate={formatNavDate}
+          selectedDate={selectedDate}
+          healthStreak={healthStreak}
+          bottomSheetRef={bottomSheetRef}
+          setSelectedDate={setSelectedDate}
+          isToday={isToday}
+          isFuture={isFuture}
+          isSelected={isSelected}
+          message={message}
+        />
+      </Animated.View>
 
-      <ScrollView
+      {/* Compact glassmorphism navbar — fades in as header collapses */}
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20 },
+          compactNavAnimStyle,
+        ]}
+      >
+        <CompactNavbar
+          date={formatNavDate(selectedDate)}
+          healthStreak={healthStreak}
+          insets={insets}
+          bottomSheetRef={bottomSheetRef}
+        />
+      </Animated.View>
+
+      {/* Scrollable content — paddingTop reserves space for the full header */}
+      <Animated.ScrollView
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{
+          paddingTop: headerHeight,
+          paddingBottom: insets.bottom + 100,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <DailyInsights insightCards={insightCards} />
@@ -88,7 +165,7 @@ export default function HomeScreen() {
           avgHydration={avgHydration}
           crisisPeriods={crisisPeriods}
         />
-      </ScrollView>
+      </Animated.ScrollView>
 
       <StreaksBottomSheet bottomSheetRef={bottomSheetRef} />
 

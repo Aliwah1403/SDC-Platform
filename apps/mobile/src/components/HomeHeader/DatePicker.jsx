@@ -73,7 +73,7 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
           width: 38,
           height: 38,
           borderRadius: 19,
-          backgroundColor: selected ? "#FFFFFF" : "transparent",
+          backgroundColor: selected ? "#F0531C" : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -82,7 +82,7 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
           style={{
             fontSize: 17,
             fontWeight: "700",
-            color: selected ? "#09332C" : "#FFFFFF",
+            color: "#FFFFFF",
           }}
         >
           {date.getDate()}
