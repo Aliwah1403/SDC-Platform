@@ -1,7 +1,10 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { Flame } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { fonts } from "@/utils/fonts";
 
-export function CompactNavbar({ date, healthStreak, insets, bottomSheetRef }) {
+export function CompactNavbar({ date, healthStreak, insets }) {
+  const router = useRouter();
   return (
     <View
       style={{
@@ -18,8 +21,8 @@ export function CompactNavbar({ date, healthStreak, insets, bottomSheetRef }) {
     >
       <Text
         style={{
+          fontFamily: fonts.bold,
           fontSize: 16,
-          fontWeight: "700",
           color: "#FFFFFF",
         }}
       >
@@ -27,7 +30,7 @@ export function CompactNavbar({ date, healthStreak, insets, bottomSheetRef }) {
       </Text>
 
       <TouchableOpacity
-        onPress={() => bottomSheetRef.current?.snapToIndex(0)}
+        onPress={() => router.push('/streak-modal')}
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -40,8 +43,8 @@ export function CompactNavbar({ date, healthStreak, insets, bottomSheetRef }) {
         <Flame size={16} color="#FFFFFF" />
         <Text
           style={{
+            fontFamily: fonts.bold,
             fontSize: 14,
-            fontWeight: "700",
             color: "#FFFFFF",
             marginLeft: 4,
           }}

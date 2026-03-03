@@ -2,7 +2,9 @@ import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
+import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
+import { fonts } from "@/utils/fonts";
 
 const { width } = Dimensions.get("window");
 
@@ -26,13 +28,13 @@ export function HomeHeader({
   formatNavDate,
   selectedDate,
   healthStreak,
-  bottomSheetRef,
   setSelectedDate,
   isToday,
   isFuture,
   isSelected,
   message,
 }) {
+  const router = useRouter();
   return (
     <View style={{ position: "relative" }}>
       <LinearGradient
@@ -77,8 +79,8 @@ export function HomeHeader({
         >
           <Text
             style={{
+              fontFamily: fonts.bold,
               fontSize: 18,
-              fontWeight: "700",
               color: "#FFFFFF",
             }}
           >
@@ -86,7 +88,7 @@ export function HomeHeader({
           </Text>
 
           <TouchableOpacity
-            onPress={() => bottomSheetRef.current?.snapToIndex(0)}
+            onPress={() => router.push('/streak-modal')}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -99,8 +101,8 @@ export function HomeHeader({
             <Flame size={18} color="#FFFFFF" />
             <Text
               style={{
+                fontFamily: fonts.bold,
                 fontSize: 14,
-                fontWeight: "700",
                 color: "#FFFFFF",
                 marginLeft: 4,
               }}
@@ -130,8 +132,8 @@ export function HomeHeader({
         >
           <Text
             style={{
+              fontFamily: fonts.medium,
               fontSize: 16,
-              fontWeight: "500",
               color: "#FFFFFF",
               opacity: 0.9,
               marginBottom: 8,
@@ -141,8 +143,8 @@ export function HomeHeader({
           </Text>
           <Text
             style={{
+              fontFamily: fonts.bold,
               fontSize: 40,
-              fontWeight: "700",
               color: "#FFFFFF",
               marginBottom: 16,
             }}
@@ -163,15 +165,15 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 14,
-                  fontWeight: "600",
                   color: "#FFFFFF",
                   marginRight: 4,
                 }}
               >
                 Your health data is important
               </Text>
-              <Text style={{ fontSize: 16, color: "#FFFFFF" }}>→</Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "#FFFFFF" }}>→</Text>
             </TouchableOpacity>
           )}
 
@@ -188,15 +190,15 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 14,
-                  fontWeight: "600",
                   color: "#FFFFFF",
                   marginRight: 4,
                 }}
               >
                 Keep up the good work!
               </Text>
-              <Text style={{ fontSize: 16, color: "#FFFFFF" }}>→</Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "#FFFFFF" }}>→</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -219,8 +221,8 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 16,
-                  fontWeight: "600",
                   color: hasLoggedData ? "#4ECDC4" : "#888",
                 }}
               >
@@ -231,7 +233,7 @@ export function HomeHeader({
         )}
       </LinearGradient>
 
-      {/* Curved bottom edge — body background cuts a convex arc into the gradient */}
+      {/* Curved bottom edge */}
       <Svg
         height="50"
         width={width}

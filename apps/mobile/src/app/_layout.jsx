@@ -4,13 +4,22 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {
+  useFonts,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+  Geist_800ExtraBold,
+} from '@expo-google-fonts/geist';
+
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
+      staleTime: 1000 * 60 * 5,
+      cacheTime: 1000 * 60 * 30,
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -19,18 +28,25 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
+  const [fontsLoaded, fontError] = useFonts({
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    Geist_800ExtraBold,
+  });
 
   useEffect(() => {
     initiate();
   }, [initiate]);
 
   useEffect(() => {
-    if (isReady) {
+    if (isReady && (fontsLoaded || fontError)) {
       SplashScreen.hideAsync();
     }
-  }, [isReady]);
+  }, [isReady, fontsLoaded, fontError]);
 
-  if (!isReady) {
+  if (!isReady || (!fontsLoaded && !fontError)) {
     return null;
   }
 
@@ -40,6 +56,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }} initialRouteName="(tabs)">
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="index" />
+          <Stack.Screen name="streak-modal" options={{ presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>

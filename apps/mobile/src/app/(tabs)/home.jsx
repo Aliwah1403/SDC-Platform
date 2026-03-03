@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -8,7 +8,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import StreaksBottomSheet from "@/components/StreaksBottomSheet";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
@@ -26,7 +25,6 @@ import {
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const bottomSheetRef = useRef(null);
 
   const {
     healthStreak,
@@ -113,7 +111,6 @@ export default function HomeScreen() {
           formatNavDate={formatNavDate}
           selectedDate={selectedDate}
           healthStreak={healthStreak}
-          bottomSheetRef={bottomSheetRef}
           setSelectedDate={setSelectedDate}
           isToday={isToday}
           isFuture={isFuture}
@@ -134,7 +131,6 @@ export default function HomeScreen() {
           date={formatNavDate(selectedDate)}
           healthStreak={healthStreak}
           insets={insets}
-          bottomSheetRef={bottomSheetRef}
         />
       </Animated.View>
 
@@ -166,8 +162,6 @@ export default function HomeScreen() {
           crisisPeriods={crisisPeriods}
         />
       </Animated.ScrollView>
-
-      <StreaksBottomSheet bottomSheetRef={bottomSheetRef} />
 
       <RepairStreakBottomSheet
         isVisible={repairVisible}

@@ -1,5 +1,6 @@
 import { useRef, useMemo } from "react";
 import { View, Text, TouchableOpacity, FlatList, Dimensions } from "react-native";
+import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -57,8 +58,8 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
       {/* Day label: TODAY or single letter */}
       <Text
         style={{
+          fontFamily: fonts.bold,
           fontSize: todayDate ? 9 : 11,
-          fontWeight: "700",
           color: "rgba(255, 255, 255, 0.72)",
           marginBottom: 6,
           letterSpacing: todayDate ? 0.8 : 0,
@@ -80,8 +81,8 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
       >
         <Text
           style={{
+            fontFamily: fonts.bold,
             fontSize: 17,
-            fontWeight: "700",
             color: "#FFFFFF",
           }}
         >
