@@ -1,8 +1,17 @@
-import React from "react";
-import { View, Text } from "react-native";
-// LineGraph (react-native-graph/Skia) disabled for Expo Go — requires dev build
+import { View, Text, Dimensions } from "react-native";
+import { LineChart } from "react-native-gifted-charts";
 
-export function MoodChart({ moodData, graphWidth, chartData }) {
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const GRAPH_WIDTH = SCREEN_WIDTH - 32;
+const CHART_WIDTH = GRAPH_WIDTH - 40;
+
+export function MoodChart({ moodData, chartData }) {
+  const giftedData = moodData.map((d, i) => ({
+    value: d.value,
+    label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
+    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+  }));
+
   return (
     <View
       style={{
@@ -17,6 +26,7 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         elevation: 2,
       }}
     >
+      {/* Title row */}
       <View
         style={{
           flexDirection: "row",
@@ -45,10 +55,35 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         Your emotional well-being over time
       </Text>
 
-      <View style={{ height: 200, backgroundColor: "#FFFBEB", borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FDE68A", borderStyle: "dashed" }}>
-        <Text style={{ fontSize: 13, color: "#D97706", opacity: 0.5 }}>Chart placeholder</Text>
+      {/* Chart */}
+      <View style={{ marginLeft: -8 }}>
+        <LineChart
+          data={giftedData}
+          width={CHART_WIDTH}
+          height={160}
+          color="#10B981"
+          thickness={2}
+          curved
+          dataPointsColor="#10B981"
+          dataPointsRadius={3}
+          hideDataPoints={false}
+          noOfSections={5}
+          maxValue={5}
+          yAxisColor="transparent"
+          xAxisColor="#E5E7EB"
+          rulesColor="#F3F4F6"
+          rulesType="solid"
+          initialSpacing={8}
+          spacing={Math.max(4, Math.floor(CHART_WIDTH / 32))}
+          yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+          xAxisLabelTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+          backgroundColor="transparent"
+          hideYAxisText={false}
+          yAxisLabelWidth={24}
+        />
       </View>
 
+      {/* Stats row */}
       <View
         style={{
           flexDirection: "row",

@@ -31,48 +31,74 @@ export function getGradientColors(hasLoggedData) {
     : ["#E0E0E0", "#D0D0D0", "#C0C0C0"];
 }
 
-export function getInsightCards(healthStreak, selectedDate) {
-  const formatNavDate = (date) => {
-    const options = { month: "long", day: "numeric" };
-    return date.toLocaleDateString("en-US", options);
-  };
+export function getInsightCards(
+  healthStreak,
+  selectedDate,
+  selectedDateData,
+  avgPainLevel,
+  avgHydration,
+) {
+  const today = new Date();
+  const isToday = selectedDate.toDateString() === today.toDateString();
+  const hasLoggedToday = isToday && selectedDateData != null;
+
+  const hydrationToday = selectedDateData?.hydration ?? 0;
 
   return [
     {
       id: 1,
-      type: "log-symptoms",
-      title: "Log your symptoms",
-      subtitle: "Track how you feel today",
-      emoji: "➕",
-      bgColor: "#FFE5F1",
-      iconBgColor: "#FF69B4",
+      type: "log-health",
+      title: hasLoggedToday ? "Logged today" : "Log your health",
+      subtitle: hasLoggedToday
+        ? "Great job keeping track!"
+        : "Track how you feel today",
+      value: hasLoggedToday ? "✓" : "+",
+      unit: "",
+      emoji: hasLoggedToday ? "✅" : "➕",
+      bgColor: hasLoggedToday ? "#DCFCE7" : "#F0FDF4",
+      accentColor: "#059669",
+      cta: hasLoggedToday ? null : "Tap to log →",
     },
     {
       id: 2,
-      type: "daily-tip",
-      title: `${formatNavDate(selectedDate)}: Symptoms to expect`,
-      subtitle: "Based on your tracking patterns",
-      emoji: "📊",
-      bgColor: "#E8F5E9",
-      iconBgColor: "#4CAF50",
+      type: "pain-status",
+      title: "Avg pain level",
+      subtitle: "Last 30 days",
+      value: avgPainLevel && parseFloat(avgPainLevel) > 0 ? avgPainLevel : "—",
+      unit: avgPainLevel && parseFloat(avgPainLevel) > 0 ? "/ 10" : "",
+      emoji: "📈",
+      bgColor: "#FEF2F2",
+      accentColor: "#DC2626",
+      cta: null,
     },
     {
       id: 3,
-      type: "health-insight",
-      title: "Today's wellness tip",
-      subtitle: "Stay hydrated and rest well",
-      emoji: "💡",
-      bgColor: "#E3F2FD",
-      iconBgColor: "#2196F3",
+      type: "hydration",
+      title: "Hydration today",
+      subtitle: "Goal: 8 glasses",
+      value: hydrationToday > 0 ? String(hydrationToday) : "—",
+      unit: hydrationToday > 0 ? "/ 8" : "",
+      emoji: "💧",
+      bgColor: "#EFF6FF",
+      accentColor: "#3B82F6",
+      cta: null,
     },
     {
       id: 4,
-      type: "milestone",
-      title: `${healthStreak} day streak!`,
-      subtitle: "Keep up the great work",
+      type: "streak",
+      title: "Day streak",
+      subtitle:
+        healthStreak >= 7
+          ? "You're on fire! 🔥"
+          : healthStreak > 0
+            ? "Keep it going!"
+            : "Start your streak today",
+      value: String(healthStreak),
+      unit: healthStreak === 1 ? "day" : "days",
       emoji: "🔥",
-      bgColor: "#FFF3E0",
-      iconBgColor: "#FF9800",
+      bgColor: "#FFF7ED",
+      accentColor: "#F0531C",
+      cta: null,
     },
   ];
 }

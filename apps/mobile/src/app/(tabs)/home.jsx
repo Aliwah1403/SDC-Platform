@@ -13,6 +13,7 @@ import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
 import { HealthStats } from "@/components/HealthStats/HealthStats";
+import { TodayHealthCard } from "@/components/HealthStats/TodayHealthCard";
 import { TrendsInsights } from "@/components/TrendsInsights/TrendsInsights";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
@@ -51,7 +52,13 @@ export default function HomeScreen() {
 
   const message = getDynamicMessage(hasLoggedData, healthStreak, selectedDate);
   const gradientColors = getGradientColors(hasLoggedData);
-  const insightCards = getInsightCards(healthStreak, selectedDate);
+  const insightCards = getInsightCards(
+    healthStreak,
+    selectedDate,
+    selectedDateData,
+    avgPainLevel,
+    avgHydration,
+  );
 
   // Compact bar height = safe area + content row
   const compactBarHeight = insets.top + 56;
@@ -146,6 +153,8 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DailyInsights insightCards={insightCards} />
+
+        <TodayHealthCard />
 
         <HealthStats
           hasLoggedData={hasLoggedData}
