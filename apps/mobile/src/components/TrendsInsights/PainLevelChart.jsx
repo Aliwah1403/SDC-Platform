@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { LineGraph } from "react-native-graph";
+// LineGraph (react-native-graph/Skia) disabled for Expo Go — requires dev build
 
 export function PainLevelChart({
   painLevelData,
@@ -50,20 +50,9 @@ export function PainLevelChart({
         Track your pain levels over time
       </Text>
 
-      <LineGraph
-        points={painLevelData}
-        color="#DC2626"
-        animated={true}
-        enablePanGesture={true}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-        xLength={painLevelData.length}
-        height={200}
-        width={graphWidth}
-        gradientFillColors={["rgba(220, 38, 38, 0.1)", "rgba(220, 38, 38, 0)"]}
-      />
+      <View style={{ height: 200, backgroundColor: "#FEF2F2", borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FECACA", borderStyle: "dashed" }}>
+        <Text style={{ fontSize: 13, color: "#DC2626", opacity: 0.5 }}>Chart placeholder</Text>
+      </View>
 
       <View
         style={{

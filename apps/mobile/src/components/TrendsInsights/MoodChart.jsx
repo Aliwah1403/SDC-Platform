@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { LineGraph } from "react-native-graph";
+// LineGraph (react-native-graph/Skia) disabled for Expo Go — requires dev build
 
 export function MoodChart({ moodData, graphWidth, chartData }) {
   return (
@@ -45,20 +45,9 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         Your emotional well-being over time
       </Text>
 
-      <LineGraph
-        points={moodData}
-        color="#D97706"
-        animated={true}
-        enablePanGesture={true}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-        xLength={moodData.length}
-        height={200}
-        width={graphWidth}
-        gradientFillColors={["rgba(217, 119, 6, 0.1)", "rgba(217, 119, 6, 0)"]}
-      />
+      <View style={{ height: 200, backgroundColor: "#FFFBEB", borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#FDE68A", borderStyle: "dashed" }}>
+        <Text style={{ fontSize: 13, color: "#D97706", opacity: 0.5 }}>Chart placeholder</Text>
+      </View>
 
       <View
         style={{

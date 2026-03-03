@@ -32,6 +32,9 @@ build/
 .next/
 out/
 
+# Metro cache
+apps/mobile/caches/
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

@@ -1,5 +1,5 @@
-import * as SecureStore from 'expo-secure-store';
-import { create } from 'zustand';
+import * as SecureStore from "expo-secure-store";
+import { create } from "zustand";
 
 export const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
 
@@ -7,8 +7,8 @@ export const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
  * This store manages the authentication state of the application.
  */
 export const useAuthStore = create((set) => ({
-  isReady: false,
-  auth: null,
+  isReady: true,
+  auth: { token: "dev-mock" }, // TODO: remove before wiring up real auth
   setAuth: (auth) => {
     if (auth) {
       SecureStore.setItemAsync(authKey, JSON.stringify(auth));
@@ -24,7 +24,7 @@ export const useAuthStore = create((set) => ({
  */
 export const useAuthModal = create((set) => ({
   isOpen: false,
-  mode: 'signup',
-  open: (options) => set({ isOpen: true, mode: options?.mode || 'signup' }),
+  mode: "signup",
+  open: (options) => set({ isOpen: true, mode: options?.mode || "signup" }),
   close: () => set({ isOpen: false }),
 }));

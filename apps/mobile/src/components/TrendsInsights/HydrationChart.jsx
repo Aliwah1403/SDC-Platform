@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text } from "react-native";
-import { LineGraph } from "react-native-graph";
+// LineGraph (react-native-graph/Skia) disabled for Expo Go — requires dev build
 
 export function HydrationChart({ hydrationData, graphWidth, avgHydration }) {
   return (
@@ -45,20 +45,9 @@ export function HydrationChart({ hydrationData, graphWidth, avgHydration }) {
         Monitor your daily water intake (glasses)
       </Text>
 
-      <LineGraph
-        points={hydrationData}
-        color="#2563EB"
-        animated={true}
-        enablePanGesture={true}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-        xLength={hydrationData.length}
-        height={200}
-        width={graphWidth}
-        gradientFillColors={["rgba(37, 99, 235, 0.1)", "rgba(37, 99, 235, 0)"]}
-      />
+      <View style={{ height: 200, backgroundColor: "#EFF6FF", borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#BFDBFE", borderStyle: "dashed" }}>
+        <Text style={{ fontSize: 13, color: "#2563EB", opacity: 0.5 }}>Chart placeholder</Text>
+      </View>
 
       <View
         style={{
