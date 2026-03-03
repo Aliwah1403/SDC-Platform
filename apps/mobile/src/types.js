@@ -1,0 +1,233 @@
+// Core Types and Interfaces for SickleCell Compass App
+
+// Mock data and constants will be imported from here
+export const PAIN_LEVELS = [
+  { value: 0, label: "No Pain", color: "#10B981" },
+  { value: 1, label: "Very Mild", color: "#34D399" },
+  { value: 2, label: "Mild", color: "#6EE7B7" },
+  { value: 3, label: "Moderate", color: "#FDE047" },
+  { value: 4, label: "Moderate+", color: "#FACC15" },
+  { value: 5, label: "Strong", color: "#F59E0B" },
+  { value: 6, label: "Strong+", color: "#F97316" },
+  { value: 7, label: "Severe", color: "#EF4444" },
+  { value: 8, label: "Very Severe", color: "#DC2626" },
+  { value: 9, label: "Extreme", color: "#B91C1C" },
+  { value: 10, label: "Worst Possible", color: "#7F1D1D" },
+];
+
+export const MOODS = [
+  { value: "excellent", label: "Excellent", emoji: "😄", color: "#10B981" },
+  { value: "good", label: "Good", emoji: "🙂", color: "#34D399" },
+  { value: "fair", label: "Fair", emoji: "😐", color: "#FCD34D" },
+  { value: "poor", label: "Poor", emoji: "😞", color: "#F87171" },
+  { value: "terrible", label: "Terrible", emoji: "😢", color: "#EF4444" },
+];
+
+export const BODY_LOCATIONS = [
+  "Head",
+  "Neck",
+  "Chest",
+  "Back",
+  "Arms",
+  "Hands",
+  "Abdomen",
+  "Legs",
+  "Feet",
+  "Joints",
+  "Muscles",
+];
+
+export const SCD_TYPES = [
+  { value: "SS", label: "Sickle Cell Anemia (SS)" },
+  { value: "SC", label: "Sickle-Hemoglobin C (SC)" },
+  { value: "SB+", label: "Sickle Beta Plus Thalassemia (SB+)" },
+  { value: "SB0", label: "Sickle Beta Zero Thalassemia (SB0)" },
+  { value: "Other", label: "Other" },
+];
+
+// Mock user data
+export const mockUser = {
+  id: "1",
+  name: "Alex Johnson",
+  email: "alex@example.com",
+  age: 28,
+  scdType: "SS",
+  avatar: null,
+  createdAt: new Date("2024-01-15"),
+  healthStreak: 12,
+  totalLogs: 89,
+  joinedDays: 45,
+};
+
+// Mock health data for charts
+export const mockHealthData = [
+  { date: "2024-11-20", painLevel: 3, hydration: 8, mood: 4 },
+  { date: "2024-11-21", painLevel: 2, hydration: 9, mood: 4 },
+  { date: "2024-11-22", painLevel: 4, hydration: 7, mood: 3 },
+  { date: "2024-11-23", painLevel: 1, hydration: 9, mood: 5 },
+  { date: "2024-11-24", painLevel: 2, hydration: 8, mood: 4 },
+  { date: "2024-11-25", painLevel: 3, hydration: 7, mood: 3 },
+  { date: "2024-11-26", painLevel: 2, hydration: 9, mood: 4 },
+];
+
+// Mock articles
+export const mockArticles = [
+  {
+    id: "1",
+    title: "Managing Pain During Crisis",
+    summary:
+      "Effective strategies for pain management during sickle cell crisis episodes.",
+    category: "treatment",
+    readTime: 5,
+    publishedAt: new Date("2024-11-20"),
+    imageUrl: null,
+    source: "SCD Foundation",
+  },
+  {
+    id: "2",
+    title: "Hydration Tips for SCD",
+    summary:
+      "Stay properly hydrated to prevent complications and reduce pain episodes.",
+    category: "nutrition",
+    readTime: 3,
+    publishedAt: new Date("2024-11-18"),
+    imageUrl: null,
+    source: "Medical Journal",
+  },
+  {
+    id: "3",
+    title: "Exercise Guidelines",
+    summary:
+      "Safe exercise recommendations for people living with sickle cell disease.",
+    category: "exercise",
+    readTime: 7,
+    publishedAt: new Date("2024-11-15"),
+    imageUrl: null,
+    source: "Health & Wellness",
+  },
+];
+
+// Mock badges
+export const mockBadges = [
+  {
+    id: "1",
+    name: "First Log",
+    description: "Completed your first symptom log",
+    icon: "🎯",
+    category: "milestone",
+    unlockedAt: new Date("2024-10-15"),
+  },
+  {
+    id: "2",
+    name: "Week Warrior",
+    description: "Logged symptoms for 7 consecutive days",
+    icon: "🔥",
+    category: "streak",
+    unlockedAt: new Date("2024-10-22"),
+  },
+  {
+    id: "3",
+    name: "Hydration Hero",
+    description: "Met hydration goals for 30 days",
+    icon: "💧",
+    category: "achievement",
+    unlockedAt: null,
+  },
+];
+
+// Mock challenges
+export const mockChallenges = [
+  {
+    id: "1",
+    title: "Daily Logger",
+    description: "Log your symptoms every day this week",
+    type: "weekly",
+    points: 50,
+    progress: 4,
+    target: 7,
+    isCompleted: false,
+    expiresAt: new Date("2024-12-01"),
+  },
+  {
+    id: "2",
+    title: "Hydration Goal",
+    description: "Drink 8 glasses of water today",
+    type: "daily",
+    points: 10,
+    progress: 6,
+    target: 8,
+    isCompleted: false,
+    expiresAt: new Date("2024-11-27"),
+  },
+];
+
+// Mock medications
+export const mockMedications = [
+  {
+    id: "1",
+    name: "Hydroxyurea",
+    dosage: "500mg",
+    frequency: "Daily",
+    prescribedBy: "Dr. Smith",
+    startDate: new Date("2024-01-15"),
+    isActive: true,
+    nextDose: "08:00 AM",
+  },
+  {
+    id: "2",
+    name: "Folic Acid",
+    dosage: "5mg",
+    frequency: "Daily",
+    prescribedBy: "Dr. Smith",
+    startDate: new Date("2024-01-15"),
+    isActive: true,
+    nextDose: "08:00 AM",
+  },
+];
+
+// Mock appointments
+export const mockAppointments = [
+  {
+    id: "1",
+    title: "Routine Check-up",
+    doctor: "Dr. Sarah Smith",
+    facility: "City Medical Center",
+    date: new Date("2024-12-05"),
+    time: "10:00 AM",
+    type: "routine",
+  },
+  {
+    id: "2",
+    title: "Blood Work",
+    doctor: "Lab Technician",
+    facility: "Medical Lab Services",
+    date: new Date("2024-12-10"),
+    time: "09:00 AM",
+    type: "follow-up",
+  },
+];
+
+// Mock emergency contacts
+export const mockEmergencyContacts = [
+  {
+    id: "1",
+    name: "Mom - Sarah Johnson",
+    relationship: "Mother",
+    phone: "+1 (555) 123-4567",
+    isPrimary: true,
+  },
+  {
+    id: "2",
+    name: "Dr. Smith",
+    relationship: "Primary Doctor",
+    phone: "+1 (555) 987-6543",
+    isPrimary: false,
+  },
+  {
+    id: "3",
+    name: "Emergency Services",
+    relationship: "Emergency",
+    phone: "911",
+    isPrimary: false,
+  },
+];
