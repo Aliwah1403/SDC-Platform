@@ -1,4 +1,3 @@
-import React from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Flame } from "lucide-react-native";
@@ -28,10 +27,7 @@ export function HomeHeader({
   selectedDate,
   healthStreak,
   bottomSheetRef,
-  dates,
   setSelectedDate,
-  formatDatePickerDay,
-  formatDatePickerDate,
   isToday,
   isFuture,
   isSelected,
@@ -45,7 +41,7 @@ export function HomeHeader({
         end={{ x: 1, y: 1 }}
         style={{
           paddingTop: insets.top,
-          paddingBottom: 40,
+          paddingBottom: 60,
         }}
       >
         {/* Abstract shapes */}
@@ -89,7 +85,6 @@ export function HomeHeader({
             {formatNavDate(selectedDate)}
           </Text>
 
-          {/* Streak Icon - Now Touchable */}
           <TouchableOpacity
             onPress={() => bottomSheetRef.current?.snapToIndex(0)}
             style={{
@@ -115,13 +110,10 @@ export function HomeHeader({
           </TouchableOpacity>
         </View>
 
-        {/* Horizontal Date Picker */}
+        {/* Weekly Date Picker */}
         <DatePicker
-          dates={dates}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
-          formatDatePickerDay={formatDatePickerDay}
-          formatDatePickerDate={formatDatePickerDate}
           isToday={isToday}
           isFuture={isFuture}
           isSelected={isSelected}
@@ -158,7 +150,6 @@ export function HomeHeader({
             {message.subtitle}
           </Text>
 
-          {/* Action message or button */}
           {!hasLoggedData && isToday(selectedDate) && (
             <TouchableOpacity
               style={{
@@ -240,18 +231,15 @@ export function HomeHeader({
         )}
       </LinearGradient>
 
-      {/* Curved Bottom Edge */}
+      {/* Curved bottom edge — body background cuts a convex arc into the gradient */}
       <Svg
-        height="40"
+        height="50"
         width={width}
-        style={{
-          position: "absolute",
-          bottom: 0,
-        }}
+        style={{ position: "absolute", bottom: 0 }}
       >
         <Path
-          d={`M0,0 Q${width / 2},40 ${width},0 L${width},40 L0,40 Z`}
-          fill={hasLoggedData ? "#3A9A92" : "#C0C0C0"}
+          d={`M0,0 Q${width / 2},50 ${width},0 L${width},50 L0,50 Z`}
+          fill="#F5F5F5"
         />
       </Svg>
     </View>

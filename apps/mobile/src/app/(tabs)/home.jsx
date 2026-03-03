@@ -32,15 +32,7 @@ export default function HomeScreen() {
     setRepairVisible,
   } = useHomeData();
 
-  const {
-    dates,
-    formatNavDate,
-    formatDatePickerDay,
-    formatDatePickerDate,
-    isToday,
-    isFuture,
-    isSelected,
-  } = useDateNavigation();
+  const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 
   const {
     painLevelData,
@@ -68,10 +60,7 @@ export default function HomeScreen() {
         selectedDate={selectedDate}
         healthStreak={healthStreak}
         bottomSheetRef={bottomSheetRef}
-        dates={dates}
         setSelectedDate={setSelectedDate}
-        formatDatePickerDay={formatDatePickerDay}
-        formatDatePickerDate={formatDatePickerDate}
         isToday={isToday}
         isFuture={isFuture}
         isSelected={isSelected}
