@@ -1,5 +1,7 @@
 import { create } from "zustand";
-import { mockUser, mockHealthData, mockEmergencyContacts } from "../types";
+import { mockUser, generateMockHealthData, mockEmergencyContacts } from "../types";
+
+const mockHealthData = generateMockHealthData();
 
 export const useAppStore = create((set, get) => ({
   // User & Profile State
@@ -7,16 +9,16 @@ export const useAppStore = create((set, get) => ({
   isOnboardingComplete: true, // Set to true to skip onboarding for now
 
   // Health Tracking State
-  healthStreak: 12,
-  lastLogDate: new Date("2024-11-26"),
+  healthStreak: 23,
+  lastLogDate: new Date(),
   todaysLog: null,
   healthData: mockHealthData,
 
   // Streak Repairs State
-  repairsAvailable: 3,
-  repairsUsed: 0,
+  repairsAvailable: 2,
+  repairsUsed: 1,
   repairsEarned: 3,
-  daysUntilNextRepair: 30,
+  daysUntilNextRepair: 14,
   missedDay: null, // Store info about the missed day that can be repaired
 
   // Emergency State

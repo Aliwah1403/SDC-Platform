@@ -455,7 +455,7 @@ export default function StreakModal() {
             style={{
               fontSize: 24,
               fontWeight: "700",
-              color: "#5D1DD4",
+              // color: "#5D1DD4",
               marginBottom: 12,
             }}
           >
@@ -485,7 +485,7 @@ export default function StreakModal() {
               marginBottom: 16,
             }}
           >
-            <Text style={{ fontSize: 17, fontWeight: "700", color: "#5D1DD4" }}>
+            <Text style={{ fontSize: 17, fontWeight: "700",  }}>
               This Week
             </Text>
             <Text style={{ fontSize: 14, fontWeight: "600", color: "#666" }}>
@@ -630,6 +630,7 @@ export default function StreakModal() {
           </View>
 
           <TouchableOpacity
+            onPress={() => router.push("/health-insights")}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -657,7 +658,7 @@ export default function StreakModal() {
         <TouchableOpacity
           onPress={() => repairsBottomSheetRef.current?.snapToIndex(0)}
           style={{
-            backgroundColor: "#FEF3C7",
+            // backgroundColor: "#FEF3C7",
             borderRadius: 16,
             padding: 20,
             marginBottom: 24,
@@ -677,7 +678,7 @@ export default function StreakModal() {
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: "#FCD34D",
+                // backgroundColor: "#FCD34D",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,

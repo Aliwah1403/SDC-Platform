@@ -57,6 +57,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="index" />
           <Stack.Screen name="streak-modal" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="health-insights" />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>

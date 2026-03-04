@@ -53,22 +53,72 @@ export const mockUser = {
   age: 28,
   scdType: "SS",
   avatar: null,
-  createdAt: new Date("2024-01-15"),
-  healthStreak: 12,
-  totalLogs: 89,
-  joinedDays: 45,
+  createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+  healthStreak: 23,
+  totalLogs: 81,
+  joinedDays: 90,
 };
 
-// Mock health data for charts
-export const mockHealthData = [
-  { date: "2024-11-20", painLevel: 3, hydration: 8, mood: 4 },
-  { date: "2024-11-21", painLevel: 2, hydration: 9, mood: 4 },
-  { date: "2024-11-22", painLevel: 4, hydration: 7, mood: 3 },
-  { date: "2024-11-23", painLevel: 1, hydration: 9, mood: 5 },
-  { date: "2024-11-24", painLevel: 2, hydration: 8, mood: 4 },
-  { date: "2024-11-25", painLevel: 3, hydration: 7, mood: 3 },
-  { date: "2024-11-26", painLevel: 2, hydration: 9, mood: 4 },
-];
+/**
+ * Generates 90 days of realistic SCD health data ending today.
+ * Uses a seeded LCG so output is always deterministic — safe to call at module load.
+ *
+ * Skipped days (simulates missed logs — none in last 23 to preserve streak):
+ *   88, 87, 79, 70, 55, 49, 43, 36, 23
+ *
+ * Pain flare episodes (days ago ranges):
+ *   82-85 → moderate-severe crisis
+ *   61-64 → moderate flare
+ *   40-45 → severe crisis
+ *   18-20 → mild flare (within streak period)
+ *    8-9  → mild spike (within streak period)
+ */
+export function generateMockHealthData() {
+  let seed = 42;
+  function rand(min, max) {
+    seed = (seed * 1664525 + 1013904223) & 0x7fffffff;
+    return min + (seed % (max - min + 1));
+  }
+
+  const today = new Date();
+  const data = [];
+
+  const skipped = new Set([88, 87, 79, 70, 55, 49, 43, 36, 23]);
+
+  const flareFor = (daysAgo) => {
+    if (daysAgo >= 82 && daysAgo <= 85) return { pain: [5, 7], hyd: [5, 6], mood: [1, 2] };
+    if (daysAgo >= 61 && daysAgo <= 64) return { pain: [4, 6], hyd: [6, 7], mood: [2, 3] };
+    if (daysAgo >= 40 && daysAgo <= 45) return { pain: [6, 9], hyd: [4, 6], mood: [1, 2] };
+    if (daysAgo >= 18 && daysAgo <= 20) return { pain: [3, 5], hyd: [6, 8], mood: [2, 3] };
+    if (daysAgo >= 8 && daysAgo <= 9)   return { pain: [3, 4], hyd: [7, 8], mood: [3, 3] };
+    return null;
+  };
+
+  for (let daysAgo = 89; daysAgo >= 0; daysAgo--) {
+    if (skipped.has(daysAgo)) continue;
+
+    const date = new Date(today);
+    date.setDate(today.getDate() - daysAgo);
+    const dateStr = date.toISOString().split("T")[0];
+
+    const flare = flareFor(daysAgo);
+    let painLevel, hydration, mood;
+
+    if (flare) {
+      painLevel = rand(flare.pain[0], flare.pain[1]);
+      hydration = rand(flare.hyd[0], flare.hyd[1]);
+      mood     = rand(flare.mood[0], flare.mood[1]);
+    } else {
+      painLevel = rand(0, 2);
+      hydration = rand(7, 10);
+      mood      = rand(3, 5);
+    }
+
+    data.push({ date: dateStr, painLevel, hydration, mood });
+  }
+
+  return data;
+}
 
 // Mock articles
 export const mockArticles = [
