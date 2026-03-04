@@ -233,7 +233,7 @@ export default function EmergencyScreen() {
           subtitle="24/7 Mental Health Support"
           phone="988"
           icon={Phone}
-          color="#7C3AED"
+          color="#7B3CF1"
           bgColor="#F3E8FF"
         />
 

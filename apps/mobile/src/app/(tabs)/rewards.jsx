@@ -96,7 +96,7 @@ export default function RewardsScreen() {
         case "daily":
           return "#059669";
         case "weekly":
-          return "#7C3AED";
+          return "#7B3CF1";
         case "monthly":
           return "#F59E0B";
         default:
@@ -894,7 +894,7 @@ export default function RewardsScreen() {
                     style={{
                       fontSize: 20,
                       fontWeight: "bold",
-                      color: "#7C3AED",
+                      color: "#7B3CF1",
                     }}
                   >
                     15,823

@@ -206,7 +206,7 @@ export default function CareMenuScreen() {
             title="Medications"
             subtitle="Track your prescriptions and doses"
             icon={Pill}
-            iconColor="#7C3AED"
+            iconColor="#7B3CF1"
             iconBg="#F3E8FF"
             onPress={() => router.push("/(tabs)/care/medications")}
           />

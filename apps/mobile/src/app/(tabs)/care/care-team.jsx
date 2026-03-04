@@ -269,7 +269,7 @@ export default function CareTeamScreen() {
           facility="Heart Health Clinic"
           phone="(555) 234-5678"
           email="m.chen@hearthealthclinic.com"
-          color="#7C3AED"
+          color="#7B3CF1"
           bgColor="#F3E8FF"
         />
 

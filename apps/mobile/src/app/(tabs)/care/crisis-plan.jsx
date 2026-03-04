@@ -209,7 +209,7 @@ export default function CrisisPlanScreen() {
         <SectionCard
           title="Coping Strategies"
           icon={Heart}
-          iconColor="#7C3AED"
+          iconColor="#7B3CF1"
           iconBg="#F3E8FF"
         >
           <Text
@@ -247,7 +247,7 @@ export default function CrisisPlanScreen() {
                     height: 20,
                     borderRadius: 10,
                     borderWidth: 2,
-                    borderColor: "#7C3AED",
+                    borderColor: "#7B3CF1",
                     marginRight: 12,
                   }}
                 />

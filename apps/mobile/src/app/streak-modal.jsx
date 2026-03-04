@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
+import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
 import StreakRepairsBottomSheet from "@/components/StreakRepairsBottomSheet";
@@ -382,7 +383,7 @@ export default function StreakModal() {
           }}
         >
           <LinearGradient
-            colors={["#FB923C", "#FBBF24"]}
+            colors={["#9B7FF4", "#7B3CF1"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ width: `${progress}%`, height: "100%" }}
@@ -430,20 +431,20 @@ export default function StreakModal() {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#FFF5F0",
+              backgroundColor: "#F3E8FF",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
             }}
           >
-            <Flame size={60} color="#F0531C" fill="#F0531C" />
+            <Flame size={60} color="#7B3CF1" fill="#7B3CF1" />
           </View>
 
           <Text
             style={{
               fontSize: 56,
               fontWeight: "800",
-              color: "#09332C",
+              color: "#5D1DD4",
               marginBottom: 8,
             }}
           >
@@ -454,7 +455,7 @@ export default function StreakModal() {
             style={{
               fontSize: 24,
               fontWeight: "700",
-              color: "#09332C",
+              color: "#5D1DD4",
               marginBottom: 12,
             }}
           >
@@ -484,7 +485,7 @@ export default function StreakModal() {
               marginBottom: 16,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#09332C" }}>
+            <Text style={{ fontSize: 17, fontWeight: "700", color: "#5D1DD4" }}>
               This Week
             </Text>
             <Text style={{ fontSize: 14, fontWeight: "600", color: "#666" }}>
@@ -505,7 +506,7 @@ export default function StreakModal() {
                   style={{
                     fontSize: 14,
                     fontWeight: day.isToday ? "700" : "500",
-                    color: day.isToday ? "#09332C" : "#999",
+                    color: day.isToday ? "#5D1DD4" : "#999",
                     marginBottom: 12,
                   }}
                 >
@@ -514,7 +515,7 @@ export default function StreakModal() {
 
                 {day.hasData ? (
                   <LinearGradient
-                    colors={["#FB923C", "#F97316"]}
+                    colors={["#9B7FF4", "#7B3CF1"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{
@@ -523,7 +524,7 @@ export default function StreakModal() {
                       borderRadius: 20,
                       alignItems: "center",
                       justifyContent: "center",
-                      shadowColor: "#F97316",
+                      shadowColor: "#7B3CF1",
                       shadowOffset: { width: 0, height: 4 },
                       shadowOpacity: 0.3,
                       shadowRadius: 8,
@@ -545,7 +546,7 @@ export default function StreakModal() {
                       style={{
                         fontSize: 20,
                         fontWeight: day.isToday ? "700" : "400",
-                        color: day.isToday ? "#09332C" : "#D1D5DB",
+                        color: day.isToday ? "#5D1DD4" : "#D1D5DB",
                       }}
                     >
                       {day.dayNumber}
@@ -562,8 +563,9 @@ export default function StreakModal() {
           style={{
             backgroundColor: "#F9FAFB",
             borderRadius: 20,
-            padding: 24,
+            // padding: 14,
             marginBottom: 24,
+            marginTop: 20,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.05,
@@ -573,8 +575,8 @@ export default function StreakModal() {
         >
           <Text
             style={{
+              fontFamily: fonts.medium,
               fontSize: 16,
-              fontWeight: "500",
               color: "#9CA3AF",
               textAlign: "center",
               marginBottom: 24,
@@ -591,42 +593,62 @@ export default function StreakModal() {
             }}
           >
             {stats.map((stat, index) => (
-              <View key={index} style={{ alignItems: "center", flex: 1 }}>
-                <Text
-                  style={{
-                    fontSize: 13,
-                    fontWeight: "500",
-                    color: "#9CA3AF",
-                    marginBottom: 8,
-                  }}
-                >
-                  {stat.label}
-                </Text>
-                <Text
-                  style={{ fontSize: 20, fontWeight: "700", color: "#1F2937" }}
-                >
-                  {stat.value}
-                </Text>
-              </View>
+              <React.Fragment key={index}>
+                {index > 0 && (
+                  <View
+                    style={{
+                      width: 1,
+                      height: 36,
+                      backgroundColor: "#E5E7EB",
+                      alignSelf: "center",
+                    }}
+                  />
+                )}
+                <View style={{ alignItems: "center", flex: 1 }}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      fontSize: 13,
+                      color: "#9CA3AF",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {stat.label}
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 20,
+                      color: "#1F2937",
+                    }}
+                  >
+                    {stat.value}
+                  </Text>
+                </View>
+              </React.Fragment>
             ))}
           </View>
 
           <TouchableOpacity
             style={{
+              flexDirection: "row",
+              alignItems: "center",
               backgroundColor: "#FFFFFF",
               borderRadius: 100,
               paddingVertical: 8,
               paddingHorizontal: 14,
-              alignSelf: "center",
+              alignSelf: "flex-start",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 1 },
               shadowOpacity: 0.06,
               shadowRadius: 3,
               elevation: 2,
+              gap: 6,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: "600", color: "#A855F7" }}>
-              ✨ 2 Insights Available
+            <Sparkles size={14} color="#F0531C" />
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#A855F7" }}>
+              2 Insights Available
             </Text>
           </TouchableOpacity>
         </View>
@@ -700,7 +722,7 @@ export default function StreakModal() {
               marginBottom: 20,
             }}
           >
-            <Text style={{ fontSize: 22, fontWeight: "700", color: "#09332C" }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: "#5D1DD4" }}>
               Your Milestones
             </Text>
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#9CA3AF" }}>
@@ -722,7 +744,7 @@ export default function StreakModal() {
         {/* Footer */}
         <View
           style={{
-            backgroundColor: "#FFF5F0",
+            backgroundColor: "#F3E8FF",
             borderRadius: 12,
             padding: 16,
             alignItems: "center",
@@ -732,7 +754,7 @@ export default function StreakModal() {
             style={{
               fontSize: 14,
               fontWeight: "600",
-              color: "#F0531C",
+              color: "#7B3CF1",
               textAlign: "center",
               lineHeight: 20,
             }}

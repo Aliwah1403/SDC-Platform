@@ -27,7 +27,7 @@ export function getDynamicMessage(hasLoggedData, healthStreak, selectedDate) {
 
 export function getGradientColors(hasLoggedData) {
   return hasLoggedData
-    ? ["#4ECDC4", "#44B3AA", "#3A9A92"]
+    ? ["#9B7FF4", "#7B3CF1", "#5D1DD4"]
     : ["#E0E0E0", "#D0D0D0", "#C0C0C0"];
 }
 
@@ -96,8 +96,8 @@ export function getInsightCards(
       value: String(healthStreak),
       unit: healthStreak === 1 ? "day" : "days",
       emoji: "🔥",
-      bgColor: "#FFF7ED",
-      accentColor: "#F0531C",
+      bgColor: "#F3E8FF",
+      accentColor: "#7B3CF1",
       cta: null,
     },
   ];

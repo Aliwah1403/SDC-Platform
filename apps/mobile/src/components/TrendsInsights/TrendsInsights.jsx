@@ -24,7 +24,7 @@ export function TrendsInsights({
         style={{
           fontSize: 20,
           fontWeight: "700",
-          color: "#09332C",
+          color: "#5D1DD4",
           marginBottom: 16,
         }}
       >

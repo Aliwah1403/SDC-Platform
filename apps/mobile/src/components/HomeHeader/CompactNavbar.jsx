@@ -8,9 +8,9 @@ export function CompactNavbar({ date, healthStreak, insets }) {
   return (
     <View
       style={{
-        backgroundColor: "rgba(9, 51, 44, 0.88)",
+        backgroundColor: "rgba(93, 29, 212, 0.88)",
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(247, 223, 186, 0.25)",
+        borderBottomColor: "rgba(204, 194, 233, 0.25)",
         paddingTop: insets.top,
         paddingBottom: 12,
         paddingHorizontal: 20,

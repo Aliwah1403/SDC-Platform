@@ -10,7 +10,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: "#09332C",
+            color: "#5D1DD4",
             marginBottom: 16,
           }}
         >
@@ -49,7 +49,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
         style={{
           fontSize: 20,
           fontWeight: "700",
-          color: "#09332C",
+          color: "#5D1DD4",
           marginBottom: 16,
         }}
       >
@@ -79,7 +79,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
           >
             <View
               style={{
-                backgroundColor: "#F0531C",
+                backgroundColor: "#7B3CF1",
                 borderRadius: 8,
                 padding: 8,
                 marginRight: 12,
@@ -101,7 +101,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#09332C",
+                  color: "#5D1DD4",
                 }}
               >
                 {selectedDateData.painLevel}/10
@@ -121,7 +121,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
           >
             <View
               style={{
-                backgroundColor: "#4ECDC4",
+                backgroundColor: "#9B7FF4",
                 borderRadius: 8,
                 padding: 8,
                 marginRight: 12,
@@ -143,7 +143,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#09332C",
+                  color: "#5D1DD4",
                 }}
               >
                 {selectedDateData.mood}/5
@@ -162,7 +162,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
           >
             <View
               style={{
-                backgroundColor: "#4ECDC4",
+                backgroundColor: "#9B7FF4",
                 borderRadius: 8,
                 padding: 8,
                 marginRight: 12,
@@ -184,7 +184,7 @@ export function HealthStats({ hasLoggedData, selectedDateData }) {
                 style={{
                   fontSize: 20,
                   fontWeight: "700",
-                  color: "#09332C",
+                  color: "#5D1DD4",
                 }}
               >
                 {selectedDateData.hydration} glasses

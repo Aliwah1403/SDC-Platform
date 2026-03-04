@@ -310,7 +310,7 @@ export default function FacilitiesScreen() {
           phone="(555) 345-6789"
           distance="5.0"
           hours="Daily 7am-9pm"
-          color="#7C3AED"
+          color="#7B3CF1"
           bgColor="#F3E8FF"
         />
       </ScrollView>
