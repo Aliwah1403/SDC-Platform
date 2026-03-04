@@ -1,9 +1,23 @@
 import { View, Text, Dimensions } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
+import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
 const CHART_WIDTH = GRAPH_WIDTH - 40;
+
+function getHydrationInsight(avg, daysAtGoal, total) {
+  const a = parseFloat(avg);
+  if (a >= 8) {
+    return `Outstanding hydration this month! Consistently hitting your 8-glass goal is one of the most effective ways to prevent SCD pain crises and keep your blood cells flowing well.`;
+  }
+  if (a >= 6) {
+    if (daysAtGoal >= total / 2)
+      return `You're meeting your hydration goal on more than half your logged days — solid progress. Try keeping a water bottle nearby so it's always within reach, especially in the mornings.`;
+    return `You're close to your daily goal but not quite consistent yet. Spreading water intake evenly across the day tends to work better than trying to catch up in the evening.`;
+  }
+  return `Your hydration has been below the 8-glass target most days. In SCD, low hydration significantly increases the risk of pain crises. Consider setting a reminder every couple of hours as a prompt to drink.`;
+}
 
 export function HydrationChart({ hydrationData, avgHydration }) {
   const giftedData = hydrationData.map((d, i) => ({
@@ -15,6 +29,8 @@ export function HydrationChart({ hydrationData, avgHydration }) {
 
   const barWidth = Math.max(3, Math.floor(CHART_WIDTH / 35));
   const spacing = Math.max(1, Math.floor(CHART_WIDTH / 50));
+  const daysAtGoal = hydrationData.filter((d) => d.value >= 8).length;
+  const insightText = getHydrationInsight(avgHydration, daysAtGoal, hydrationData.length);
 
   return (
     <View
@@ -142,9 +158,30 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             Days at goal
           </Text>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#10B981" }}>
-            {hydrationData.filter((d) => d.value >= 8).length}
+            {daysAtGoal}
           </Text>
         </View>
+      </View>
+
+      {/* AI Insight */}
+      <View
+        style={{
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: "#F3F4F6",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 13,
+            color: "#4B5563",
+            lineHeight: 20,
+          }}
+        >
+          {insightText}
+        </Text>
       </View>
     </View>
   );

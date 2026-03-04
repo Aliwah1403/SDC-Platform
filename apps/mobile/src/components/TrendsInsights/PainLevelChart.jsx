@@ -1,10 +1,27 @@
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
+import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Card has 16px margin each side + 20px padding each side inside
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
 const CHART_WIDTH = GRAPH_WIDTH - 40;
+
+function getPainInsight(avg, highest, highPainDays, painFreeDays) {
+  const a = parseFloat(avg);
+  if (a <= 2) {
+    return `Great news — your pain has been very well-controlled this month${painFreeDays > 0 ? ` with ${painFreeDays} pain-free day${painFreeDays !== 1 ? "s" : ""}` : ""}. Keep up the consistency with hydration and medication adherence.`;
+  }
+  if (a <= 4) {
+    if (highPainDays > 0)
+      return `Your average pain is manageable, though you've had ${highPainDays} high-pain day${highPainDays !== 1 ? "s" : ""} this month. Try logging potential triggers — stress, cold, and dehydration are common culprits for SCD.`;
+    return `Your pain levels are fairly well-managed. Small daily habits like staying warm, hydrated, and well-rested can help keep them consistent.`;
+  }
+  if (a <= 6) {
+    return `Your pain has been at a moderate level this month. If you notice patterns — like pain spiking after certain activities or weather changes — log them so your care team can help identify what's driving it.`;
+  }
+  return `You've been dealing with significant pain this month. Please make sure you're following your medication plan, and don't hesitate to contact your care team if the pain intensifies or becomes a crisis.`;
+}
 
 export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
   const giftedData = painLevelData.map((d, i) => ({
@@ -17,6 +34,9 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
   const lowestLogged = Math.min(
     ...chartData.filter((d) => d.painLevel > 0).map((d) => d.painLevel),
   );
+  const highPainDays = chartData.filter((d) => d.painLevel >= 7).length;
+  const painFreeDays = chartData.filter((d) => d.painLevel === 0).length;
+  const insightText = getPainInsight(avgPainLevel, highest, highPainDays, painFreeDays);
 
   return (
     <View
@@ -124,6 +144,27 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
             {isFinite(lowestLogged) ? lowestLogged : 0}
           </Text>
         </View>
+      </View>
+
+      {/* AI Insight */}
+      <View
+        style={{
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: "#F3F4F6",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 13,
+            color: "#4B5563",
+            lineHeight: 20,
+          }}
+        >
+          {insightText}
+        </Text>
       </View>
     </View>
   );

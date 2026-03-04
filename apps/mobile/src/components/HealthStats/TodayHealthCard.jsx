@@ -180,7 +180,7 @@ export function TodayHealthCard() {
           <View
             style={{
               position: "absolute",
-              top: 52,
+              top: 120,
               left: 0,
               right: 0,
               alignItems: "center",
@@ -215,7 +215,7 @@ export function TodayHealthCard() {
               justifyContent: "center",
               gap: 10,
               paddingHorizontal: 20,
-              marginTop: 4,
+              marginTop: 30,
               marginBottom: 16,
             }}
           >

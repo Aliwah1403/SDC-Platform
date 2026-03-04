@@ -15,6 +15,7 @@ import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
 import { HealthStats } from "@/components/HealthStats/HealthStats";
 import { TodayHealthCard } from "@/components/HealthStats/TodayHealthCard";
 import { TrendsInsights } from "@/components/TrendsInsights/TrendsInsights";
+import { LearnSection } from "@/components/LearnSection/LearnSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { useChartData } from "@/hooks/useChartData";
@@ -85,7 +86,7 @@ export default function HomeScreen() {
       scrollY.value,
       [0, collapsibleHeightSV.value],
       [0, -collapsibleHeightSV.value],
-      'clamp'
+      "clamp",
     );
     return { transform: [{ translateY }] };
   });
@@ -94,8 +95,13 @@ export default function HomeScreen() {
   const compactNavAnimStyle = useAnimatedStyle(() => {
     const start = collapsibleHeightSV.value * 0.5;
     const end = collapsibleHeightSV.value;
-    const opacity = interpolate(scrollY.value, [start, end], [0, 1], 'clamp');
-    const translateY = interpolate(scrollY.value, [start, end], [-8, 0], 'clamp');
+    const opacity = interpolate(scrollY.value, [start, end], [0, 1], "clamp");
+    const translateY = interpolate(
+      scrollY.value,
+      [start, end],
+      [-8, 0],
+      "clamp",
+    );
     return { opacity, transform: [{ translateY }] };
   });
 
@@ -160,6 +166,8 @@ export default function HomeScreen() {
           hasLoggedData={hasLoggedData}
           selectedDateData={selectedDateData}
         />
+
+        <LearnSection />
 
         <TrendsInsights
           painLevelData={painLevelData}

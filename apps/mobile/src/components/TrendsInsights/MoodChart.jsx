@@ -1,9 +1,24 @@
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
+import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
 const CHART_WIDTH = GRAPH_WIDTH - 40;
+
+function getMoodInsight(chartData) {
+  const total = chartData.length;
+  if (total === 0) return "Log more days to start seeing mood insights.";
+  const goodDays = chartData.filter((d) => d.mood >= 4).length;
+  const poorDays = chartData.filter((d) => d.mood <= 2 && d.mood > 0).length;
+  const goodRatio = goodDays / total;
+  const poorRatio = poorDays / total;
+  if (goodRatio >= 0.7)
+    return `Your mood has been mostly positive this month — a real strength. Emotional well-being directly supports physical resilience with SCD, so this is just as important as your other health metrics.`;
+  if (poorRatio >= 0.3)
+    return `You've had a number of difficult mood days this month. Living with SCD is genuinely challenging, and it's okay to ask for support. Consider sharing how you're feeling with your care team or a trusted person.`;
+  return `Your mood has been variable this month, which is very common with SCD. On harder days, gentle movement, connection with others, and adequate rest can make a meaningful difference to how you feel.`;
+}
 
 export function MoodChart({ moodData, chartData }) {
   const giftedData = moodData.map((d, i) => ({
@@ -118,6 +133,27 @@ export function MoodChart({ moodData, chartData }) {
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
           </Text>
         </View>
+      </View>
+
+      {/* AI Insight */}
+      <View
+        style={{
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: "#F3F4F6",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 13,
+            color: "#4B5563",
+            lineHeight: 20,
+          }}
+        >
+          {getMoodInsight(chartData)}
+        </Text>
       </View>
     </View>
   );
