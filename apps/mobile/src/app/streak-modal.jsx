@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, Dimensions, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -18,7 +18,6 @@ import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
-import StreakRepairsBottomSheet from "@/components/StreakRepairsBottomSheet";
 
 const { width } = Dimensions.get("window");
 
@@ -27,7 +26,6 @@ export default function StreakModal() {
   const { currentUser, healthStreak, healthData, getWeeklyAverage } = useAppStore();
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
-  const repairsBottomSheetRef = useRef(null);
 
   const getCurrentWeekData = () => {
     const days = [];
@@ -656,7 +654,7 @@ export default function StreakModal() {
 
         {/* Streak Repairs */}
         <TouchableOpacity
-          onPress={() => repairsBottomSheetRef.current?.snapToIndex(0)}
+          onPress={() => router.push("/streak-repairs")}
           style={{
             // backgroundColor: "#FEF3C7",
             borderRadius: 16,
@@ -769,11 +767,6 @@ export default function StreakModal() {
         visible={milestoneModalVisible}
         milestone={selectedMilestone}
         onClose={() => setMilestoneModalVisible(false)}
-      />
-
-      <StreakRepairsBottomSheet
-        ref={repairsBottomSheetRef}
-        onClose={() => repairsBottomSheetRef.current?.close()}
       />
     </SafeAreaView>
   );
