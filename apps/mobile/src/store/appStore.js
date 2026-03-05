@@ -10,7 +10,7 @@ export const useAppStore = create((set, get) => ({
 
   // Health Tracking State
   healthStreak: 23,
-  lastLogDate: new Date(),
+  lastLogDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday — no log today
   todaysLog: null,
   healthData: mockHealthData,
 
@@ -32,7 +32,9 @@ export const useAppStore = create((set, get) => ({
   currentSymptomLog: {
     painLevel: 0,
     bodyLocations: [],
+    symptoms: [],
     mood: "fair",
+    hydration: 0,
     notes: "",
     triggers: [],
     activities: [],
@@ -84,7 +86,7 @@ export const useAppStore = create((set, get) => ({
     const newHealthData = {
       date: todayStr,
       painLevel: state.currentSymptomLog.painLevel,
-      hydration: 8, // Default value
+      hydration: state.currentSymptomLog.hydration || 8,
       mood: moodValue,
     };
 
@@ -109,7 +111,9 @@ export const useAppStore = create((set, get) => ({
       currentSymptomLog: {
         painLevel: 0,
         bodyLocations: [],
+        symptoms: [],
         mood: "fair",
+        hydration: 0,
         notes: "",
         triggers: [],
         activities: [],
@@ -122,7 +126,9 @@ export const useAppStore = create((set, get) => ({
       currentSymptomLog: {
         painLevel: 0,
         bodyLocations: [],
+        symptoms: [],
         mood: "fair",
+        hydration: 0,
         notes: "",
         triggers: [],
         activities: [],

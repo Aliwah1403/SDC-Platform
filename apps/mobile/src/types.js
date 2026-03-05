@@ -83,7 +83,7 @@ export function generateMockHealthData() {
   const today = new Date();
   const data = [];
 
-  const skipped = new Set([88, 87, 79, 70, 55, 49, 43, 36, 23]);
+  const skipped = new Set([88, 87, 79, 70, 55, 49, 43, 36, 23, 0]);
 
   const flareFor = (daysAgo) => {
     if (daysAgo >= 82 && daysAgo <= 85) return { pain: [5, 7], hyd: [5, 6], mood: [1, 2] };

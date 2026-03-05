@@ -367,7 +367,7 @@ export function TodayHealthCard() {
 
       {/* CTA */}
       <TouchableOpacity
-        onPress={() => router.push("/(tabs)/symptoms")}
+        onPress={() => router.push("/log-symptoms")}
         style={{
           marginHorizontal: 20,
           backgroundColor: hasLogged

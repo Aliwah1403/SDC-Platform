@@ -154,6 +154,7 @@ export function HomeHeader({
 
           {!hasLoggedData && isToday(selectedDate) && (
             <TouchableOpacity
+              onPress={() => router.push('/log-symptoms')}
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.3)",
                 paddingHorizontal: 14,
@@ -207,6 +208,7 @@ export function HomeHeader({
         {!hasLoggedData && isToday(selectedDate) && (
           <View style={{ alignItems: "center", paddingBottom: 20 }}>
             <TouchableOpacity
+              onPress={() => router.push('/log-symptoms')}
               style={{
                 backgroundColor: "#FFFFFF",
                 paddingHorizontal: 32,

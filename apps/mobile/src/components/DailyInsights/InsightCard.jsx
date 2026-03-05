@@ -1,10 +1,20 @@
 import { View, Text, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 
 export function InsightCard({ card }) {
+  const router = useRouter();
+
+  function handlePress() {
+    if (card.type === "log-health" && card.cta) {
+      router.push("/log-symptoms");
+    }
+  }
+
   return (
     <TouchableOpacity
       activeOpacity={0.85}
+      onPress={handlePress}
       style={{
         width: 160,
         minHeight: 190,

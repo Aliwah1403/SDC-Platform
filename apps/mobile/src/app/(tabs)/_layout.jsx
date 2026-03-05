@@ -37,9 +37,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="symptoms"
+        name="track"
         options={{
-          title: "Symptoms",
+          title: "Track",
           tabBarIcon: ({ color, size }) => <Activity color={color} size={22} />,
         }}
       />
