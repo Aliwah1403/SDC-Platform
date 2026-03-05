@@ -277,7 +277,7 @@ export default function FacilitiesScreen() {
           phone="(555) 987-6543"
           distance="1.7"
           hours="Mon-Sat 8am-8pm"
-          color="#EA580C"
+          color="#A9334D"
           bgColor="#FFEDD5"
         />
 
@@ -310,8 +310,8 @@ export default function FacilitiesScreen() {
           phone="(555) 345-6789"
           distance="5.0"
           hours="Daily 7am-9pm"
-          color="#7B3CF1"
-          bgColor="#F3E8FF"
+          color="#A9334D"
+          bgColor="#F8E9E7"
         />
       </ScrollView>
     </View>

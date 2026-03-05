@@ -115,7 +115,7 @@ function ArticleCard({ article, onPress }) {
           {content}
         </ImageBackground>
       ) : (
-        <View style={[cardStyle, { backgroundColor: article.fallbackColor ?? "#09332C" }]}>
+        <View style={[cardStyle, { backgroundColor: article.fallbackColor ?? "#781D11" }]}>
           {content}
         </View>
       )}
@@ -139,14 +139,14 @@ export function LearnSection() {
           marginBottom: 14,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#09332C" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#781D11" }}>
           Learn About Sickle Cell
         </Text>
         <TouchableOpacity
           onPress={goToLearn}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#F0531C" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#A9334D" }}>
             See all
           </Text>
         </TouchableOpacity>

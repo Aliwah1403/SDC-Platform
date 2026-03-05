@@ -51,7 +51,7 @@ export function HomeHeader({
           style={{
             width: 200,
             height: 200,
-            backgroundColor: hasLoggedData ? "#9B7FF4" : "#D8D8D8",
+            backgroundColor: hasLoggedData ? "#D09F9A" : "#D8D8D8",
             top: -60,
             right: -40,
           }}
@@ -60,7 +60,7 @@ export function HomeHeader({
           style={{
             width: 150,
             height: 150,
-            backgroundColor: hasLoggedData ? "#5D1DD4" : "#B8B8B8",
+            backgroundColor: hasLoggedData ? "#781D11" : "#B8B8B8",
             bottom: 20,
             left: -30,
           }}
@@ -223,7 +223,7 @@ export function HomeHeader({
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: hasLoggedData ? "#7B3CF1" : "#888",
+                  color: hasLoggedData ? "#A9334D" : "#888",
                 }}
               >
                 Log health
@@ -241,7 +241,7 @@ export function HomeHeader({
       >
         <Path
           d={`M0,0 Q${width / 2},50 ${width},0 L${width},50 L0,50 Z`}
-          fill="#F3F3FA"
+          fill="#FFF9F9"
         />
       </Svg>
     </View>

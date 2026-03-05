@@ -21,21 +21,21 @@ const MILESTONE_ICONS = {
 };
 
 const MILESTONE_COLORS = {
-  days: { primary: "#FF6B6B", secondary: "#FF8E8E", bg: "#FFF5F5" },
-  streak: { primary: "#FF6B35", secondary: "#FF8F5C", bg: "#FFF6F0" },
-  symptoms: { primary: "#9B59B6", secondary: "#B77DD4", bg: "#F8F3FF" },
-  hydration: { primary: "#3498DB", secondary: "#5DADE2", bg: "#F0F8FF" },
-  care: { primary: "#E91E63", secondary: "#F06292", bg: "#FFF0F5" },
-  learning: { primary: "#2ECC71", secondary: "#58D68D", bg: "#F0FFF4" },
+  days:      { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  streak:    { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
+  symptoms:  { primary: "#D09F9A", secondary: "#B8827C", bg: "#F8E9E7" },
+  hydration: { primary: "#2563EB", secondary: "#3B82F6", bg: "#EFF6FF" },
+  care:      { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  learning:  { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
 };
 
 const RARITY_CONFIG = {
-  Common: { color: "#9E9E9E", emoji: "⚪" },
-  Uncommon: { color: "#4CAF50", emoji: "🟢" },
-  Rare: { color: "#2196F3", emoji: "🔵" },
-  Epic: { color: "#9C27B0", emoji: "🟣" },
-  Legendary: { color: "#FF9800", emoji: "🟠" },
-  Mythic: { color: "#F44336", emoji: "🔴" },
+  Common:    { color: "#9CA3AF", emoji: "⚪" },
+  Uncommon:  { color: "#059669", emoji: "🟢" },
+  Rare:      { color: "#2563EB", emoji: "🔵" },
+  Epic:      { color: "#A9334D", emoji: "🔴" },
+  Legendary: { color: "#781D11", emoji: "🟤" },
+  Mythic:    { color: "#D09F9A", emoji: "🌸" },
 };
 
 export default function MilestoneModal({ visible, milestone, onClose }) {
@@ -63,7 +63,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
 
         <View
           style={{
-            backgroundColor: "#F5F5F0",
+            backgroundColor: "#FFF9F9",
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             paddingTop: Math.max(insets.top, 24),
@@ -119,7 +119,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                 justifyContent: "center",
                 marginBottom: 32,
                 borderWidth: 4,
-                borderColor: milestone.unlocked ? colors.primary : "#D0D0CC",
+                borderColor: milestone.unlocked ? colors.primary : "#D09F9A",
                 opacity: milestone.unlocked ? 1 : 0.5,
               }}
             >
@@ -143,7 +143,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                   borderRadius: 80,
                   backgroundColor: milestone.unlocked
                     ? colors.primary
-                    : "#D0D0CC",
+                    : "#D09F9A",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -292,7 +292,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                   <View
                     style={{
                       height: 8,
-                      backgroundColor: "#F0F0ED",
+                      backgroundColor: "#FFF9F9",
                       borderRadius: 4,
                       overflow: "hidden",
                     }}

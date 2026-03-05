@@ -96,7 +96,7 @@ export default function RewardsScreen() {
         case "daily":
           return "#059669";
         case "weekly":
-          return "#7B3CF1";
+          return "#A9334D";
         case "monthly":
           return "#F59E0B";
         default:
@@ -806,7 +806,7 @@ export default function RewardsScreen() {
                 lineHeight: 20,
               }}
             >
-              Compete with others in the SickleCell Compass community! Rankings
+              Compete with others in the Hemo community! Rankings
               based on health tracking consistency and points earned.
             </Text>
 
@@ -894,7 +894,7 @@ export default function RewardsScreen() {
                     style={{
                       fontSize: 20,
                       fontWeight: "bold",
-                      color: "#7B3CF1",
+                      color: "#A9334D",
                     }}
                   >
                     15,823

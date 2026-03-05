@@ -136,14 +136,14 @@ export default function CareMenuScreen() {
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/care/emergency")}
           style={{
-            backgroundColor: "#FF6B6B",
+            backgroundColor: "#A9334D",
             borderRadius: 16,
             padding: 20,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
             marginBottom: 32,
-            shadowColor: "#FF6B6B",
+            shadowColor: "#A9334D",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 12,
@@ -206,8 +206,8 @@ export default function CareMenuScreen() {
             title="Medications"
             subtitle="Track your prescriptions and doses"
             icon={Pill}
-            iconColor="#7B3CF1"
-            iconBg="#F3E8FF"
+            iconColor="#A9334D"
+            iconBg="#F8E9E7"
             onPress={() => router.push("/(tabs)/care/medications")}
           />
 
@@ -242,7 +242,7 @@ export default function CareMenuScreen() {
             title="Clinics & Hospitals"
             subtitle="Find nearby healthcare facilities"
             icon={MapPin}
-            iconColor="#EA580C"
+            iconColor="#A9334D"
             iconBg="#FFEDD5"
             onPress={() => router.push("/(tabs)/care/facilities")}
           />

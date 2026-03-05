@@ -1,4 +1,4 @@
-// Core Types and Interfaces for SickleCell Compass App
+// Core Types and Interfaces for Hemo App
 
 // Mock data and constants will be imported from here
 export const PAIN_LEVELS = [
@@ -131,7 +131,7 @@ export const mockArticles = [
     readTime: 5,
     publishedAt: new Date("2024-11-20"),
     imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80",
-    fallbackColor: "#09332C",
+    fallbackColor: "#781D11",
     source: "SCD Foundation",
   },
   {
@@ -167,7 +167,7 @@ export const mockArticles = [
     readTime: 6,
     publishedAt: new Date("2024-11-10"),
     imageUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
-    fallbackColor: "#7C3AED",
+    fallbackColor: "#A9334D",
     source: "SCD Foundation",
   },
   {
@@ -179,7 +179,7 @@ export const mockArticles = [
     readTime: 8,
     publishedAt: new Date("2024-11-05"),
     imageUrl: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80",
-    fallbackColor: "#F0531C",
+    fallbackColor: "#A9334D",
     source: "Genetics in Medicine",
   },
   {

@@ -233,8 +233,8 @@ export default function EmergencyScreen() {
           subtitle="24/7 Mental Health Support"
           phone="988"
           icon={Phone}
-          color="#7B3CF1"
-          bgColor="#F3E8FF"
+          color="#A9334D"
+          bgColor="#F8E9E7"
         />
 
         <EmergencyCard
@@ -242,7 +242,7 @@ export default function EmergencyScreen() {
           subtitle="24/7 Poison Emergency Hotline"
           phone="1-800-222-1222"
           icon={Phone}
-          color="#EA580C"
+          color="#A9334D"
           bgColor="#FFEDD5"
         />
 

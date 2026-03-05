@@ -423,7 +423,7 @@ export default function LearnScreen() {
           textAlign: "center",
         }}
       >
-        SickleCell AI Assistant
+        Hemo AI Assistant
       </Text>
 
       <Text

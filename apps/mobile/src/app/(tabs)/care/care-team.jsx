@@ -269,8 +269,8 @@ export default function CareTeamScreen() {
           facility="Heart Health Clinic"
           phone="(555) 234-5678"
           email="m.chen@hearthealthclinic.com"
-          color="#7B3CF1"
-          bgColor="#F3E8FF"
+          color="#A9334D"
+          bgColor="#F8E9E7"
         />
 
         <ProviderCard
@@ -289,7 +289,7 @@ export default function CareTeamScreen() {
           facility="Metro Diabetes Center"
           phone="(555) 456-7890"
           email="d.park@metrodiabetes.com"
-          color="#EA580C"
+          color="#A9334D"
           bgColor="#FFEDD5"
         />
       </ScrollView>

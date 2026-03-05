@@ -137,7 +137,7 @@ function buildInsights(healthData, firstName) {
     {
       id: "wellbeing-score",
       title: wellPositive ? "Wellbeing Rising" : "Wellbeing Snapshot",
-      color: "#7C3AED",
+      color: "#A9334D",
       metricLabel: "WELLBEING SCORE",
       thisValue: wellThis !== null ? String(wellThis) : "—",
       lastValue: wellLast !== null ? String(wellLast) : "—",
@@ -336,7 +336,7 @@ export default function HealthInsightsScreen() {
   const insights = buildInsights(healthData, firstName);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FAF7F5" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
       {/* Header */}
       <View
         style={{

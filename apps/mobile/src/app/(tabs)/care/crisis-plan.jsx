@@ -209,8 +209,8 @@ export default function CrisisPlanScreen() {
         <SectionCard
           title="Coping Strategies"
           icon={Heart}
-          iconColor="#7B3CF1"
-          iconBg="#F3E8FF"
+          iconColor="#A9334D"
+          iconBg="#F8E9E7"
         >
           <Text
             style={{
@@ -247,7 +247,7 @@ export default function CrisisPlanScreen() {
                     height: 20,
                     borderRadius: 10,
                     borderWidth: 2,
-                    borderColor: "#7B3CF1",
+                    borderColor: "#A9334D",
                     marginRight: 12,
                   }}
                 />
@@ -428,7 +428,7 @@ export default function CrisisPlanScreen() {
         <SectionCard
           title="Safe People & Places"
           icon={Users}
-          iconColor="#EA580C"
+          iconColor="#A9334D"
           iconBg="#FFEDD5"
         >
           <Text
@@ -453,7 +453,7 @@ export default function CrisisPlanScreen() {
                 style={{ flexDirection: "row", alignItems: "flex-start" }}
               >
                 <Text
-                  style={{ fontSize: 14, color: "#EA580C", marginRight: 8 }}
+                  style={{ fontSize: 14, color: "#A9334D", marginRight: 8 }}
                 >
                   •
                 </Text>

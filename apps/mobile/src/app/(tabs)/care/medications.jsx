@@ -168,14 +168,14 @@ export default function MedicationsScreen() {
         {/* Add Button */}
         <TouchableOpacity
           style={{
-            backgroundColor: "#7B3CF1",
+            backgroundColor: "#A9334D",
             borderRadius: 16,
             padding: 18,
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             marginBottom: 24,
-            shadowColor: "#7B3CF1",
+            shadowColor: "#A9334D",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 8,

@@ -74,7 +74,7 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
           width: 38,
           height: 38,
           borderRadius: 19,
-          backgroundColor: selected ? "#7B3CF1" : "transparent",
+          backgroundColor: selected ? "#A9334D" : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}

@@ -286,11 +286,11 @@ export default function StreakModal() {
     const progress = Math.min((milestone.current / milestone.target) * 100, 100);
 
     const MILESTONE_COLORS = {
-      days: { primary: "#FF6B6B" },
-      streak: { primary: "#FF6B35" },
-      symptoms: { primary: "#9B59B6" },
-      hydration: { primary: "#3498DB" },
-      care: { primary: "#E91E63" },
+      days: { primary: "#A9334D" },
+      streak: { primary: "#781D11" },
+      symptoms: { primary: "#D09F9A" },
+      hydration: { primary: "#2563EB" },
+      care: { primary: "#A9334D" },
       learning: { primary: "#2ECC71" },
     };
 
@@ -332,7 +332,7 @@ export default function StreakModal() {
           style={{
             width: "100%",
             aspectRatio: 1,
-            backgroundColor: isUnlocked ? colors.primary + "15" : "#F5F5F0",
+            backgroundColor: isUnlocked ? colors.primary + "15" : "#FFF9F9",
             borderRadius: 16,
             alignItems: "center",
             justifyContent: "center",
@@ -342,7 +342,7 @@ export default function StreakModal() {
           {isUnlocked ? (
             <MilestoneIcon size={56} color={colors.primary} strokeWidth={2} />
           ) : (
-            <Lock size={56} color="#D0D0CC" strokeWidth={2} />
+            <Lock size={56} color="#D09F9A" strokeWidth={2} />
           )}
         </View>
 
@@ -375,13 +375,13 @@ export default function StreakModal() {
           style={{
             width: "100%",
             height: 8,
-            backgroundColor: "#F0F0ED",
+            backgroundColor: "#FFF9F9",
             borderRadius: 4,
             overflow: "hidden",
           }}
         >
           <LinearGradient
-            colors={["#9B7FF4", "#7B3CF1"]}
+            colors={["#D09F9A", "#A9334D"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={{ width: `${progress}%`, height: "100%" }}
@@ -429,20 +429,20 @@ export default function StreakModal() {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#F3E8FF",
+              backgroundColor: "#F8E9E7",
               alignItems: "center",
               justifyContent: "center",
               marginBottom: 20,
             }}
           >
-            <Flame size={60} color="#7B3CF1" fill="#7B3CF1" />
+            <Flame size={60} color="#A9334D" fill="#A9334D" />
           </View>
 
           <Text
             style={{
               fontSize: 56,
               fontWeight: "800",
-              color: "#5D1DD4",
+              color: "#781D11",
               marginBottom: 8,
             }}
           >
@@ -453,7 +453,7 @@ export default function StreakModal() {
             style={{
               fontSize: 24,
               fontWeight: "700",
-              // color: "#5D1DD4",
+              // color: "#781D11",
               marginBottom: 12,
             }}
           >
@@ -504,7 +504,7 @@ export default function StreakModal() {
                   style={{
                     fontSize: 14,
                     fontWeight: day.isToday ? "700" : "500",
-                    color: day.isToday ? "#5D1DD4" : "#999",
+                    color: day.isToday ? "#781D11" : "#999",
                     marginBottom: 12,
                   }}
                 >
@@ -513,7 +513,7 @@ export default function StreakModal() {
 
                 {day.hasData ? (
                   <LinearGradient
-                    colors={["#9B7FF4", "#7B3CF1"]}
+                    colors={["#D09F9A", "#A9334D"]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{
@@ -522,7 +522,7 @@ export default function StreakModal() {
                       borderRadius: 20,
                       alignItems: "center",
                       justifyContent: "center",
-                      shadowColor: "#7B3CF1",
+                      shadowColor: "#A9334D",
                       shadowOffset: { width: 0, height: 4 },
                       shadowOpacity: 0.3,
                       shadowRadius: 8,
@@ -544,7 +544,7 @@ export default function StreakModal() {
                       style={{
                         fontSize: 20,
                         fontWeight: day.isToday ? "700" : "400",
-                        color: day.isToday ? "#5D1DD4" : "#D1D5DB",
+                        color: day.isToday ? "#781D11" : "#D1D5DB",
                       }}
                     >
                       {day.dayNumber}
@@ -645,8 +645,8 @@ export default function StreakModal() {
               gap: 6,
             }}
           >
-            <Sparkles size={14} color="#F0531C" />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#A855F7" }}>
+            <Sparkles size={14} color="#A9334D" />
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#A9334D" }}>
               2 Insights Available
             </Text>
           </TouchableOpacity>
@@ -721,7 +721,7 @@ export default function StreakModal() {
               marginBottom: 20,
             }}
           >
-            <Text style={{ fontSize: 22, fontWeight: "700", color: "#5D1DD4" }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: "#781D11" }}>
               Your Milestones
             </Text>
             <Text style={{ fontSize: 13, fontWeight: "700", color: "#9CA3AF" }}>
@@ -743,7 +743,7 @@ export default function StreakModal() {
         {/* Footer */}
         <View
           style={{
-            backgroundColor: "#F3E8FF",
+            backgroundColor: "#F8E9E7",
             borderRadius: 12,
             padding: 16,
             alignItems: "center",
@@ -753,7 +753,7 @@ export default function StreakModal() {
             style={{
               fontSize: 14,
               fontWeight: "600",
-              color: "#7B3CF1",
+              color: "#A9334D",
               textAlign: "center",
               lineHeight: 20,
             }}

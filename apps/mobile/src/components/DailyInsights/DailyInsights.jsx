@@ -14,7 +14,7 @@ export function DailyInsights({ insightCards }) {
         style={{
           fontSize: 20,
           fontWeight: "700",
-          color: "#5D1DD4",
+          color: "#781D11",
           marginBottom: 16,
           paddingHorizontal: 20,
         }}

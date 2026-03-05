@@ -85,7 +85,7 @@ export default function AppointmentsScreen() {
         case "routine":
           return "#059669";
         case "follow-up":
-          return "#7C3AED";
+          return "#A9334D";
         default:
           return "#6B7280";
       }

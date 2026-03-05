@@ -106,7 +106,7 @@ export default function HomeScreen() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F3F3FA" }}>
+    <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
       <StatusBar style="light" />
 
       {/* Full header — absolutely positioned, slides up on scroll */}

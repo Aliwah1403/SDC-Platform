@@ -60,7 +60,7 @@ export function TodayHealthCard() {
   return (
     <View
       style={{
-        backgroundColor: "#5D1DD4",
+        backgroundColor: "#781D11",
         borderRadius: 24,
         marginHorizontal: 16,
         marginBottom: 16,
@@ -75,7 +75,7 @@ export function TodayHealthCard() {
           width: 200,
           height: 200,
           borderRadius: 100,
-          backgroundColor: "rgba(78, 205, 196, 0.07)",
+          backgroundColor: "rgba(208, 159, 154, 0.07)",
           top: -60,
           right: -40,
         }}
@@ -86,7 +86,7 @@ export function TodayHealthCard() {
           width: 120,
           height: 120,
           borderRadius: 60,
-          backgroundColor: "rgba(123, 60, 241, 0.06)",
+          backgroundColor: "rgba(169, 51, 77, 0.06)",
           bottom: 20,
           left: -20,
         }}
@@ -372,7 +372,7 @@ export function TodayHealthCard() {
           marginHorizontal: 20,
           backgroundColor: hasLogged
             ? "rgba(255,255,255,0.12)"
-            : "#7B3CF1",
+            : "#A9334D",
           borderRadius: 14,
           paddingVertical: 14,
           alignItems: "center",

@@ -36,10 +36,10 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
       enablePanDownToClose
       onClose={onClose}
       backgroundStyle={{
-        backgroundColor: "#F5F1E8",
+        backgroundColor: "#FFF9F9",
       }}
       handleIndicatorStyle={{
-        backgroundColor: "#D1C4B0",
+        backgroundColor: "#F8E9E7",
         width: 40,
       }}
     >
@@ -75,7 +75,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: "#E5DED0",
+              backgroundColor: "#F8E9E7",
               alignItems: "center",
               justifyContent: "center",
             }}
