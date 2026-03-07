@@ -61,6 +61,7 @@ export default function RootLayout() {
           <Stack.Screen name="streak-repairs" options={{ presentation: 'modal' }} />
           <Stack.Screen name="log-symptoms" options={{ presentation: 'modal', gestureEnabled: false }} />
           <Stack.Screen name="metric-detail" options={{ presentation: 'card' }} />
+          <Stack.Screen name="metric-goal" options={{ presentation: 'modal' }} />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>

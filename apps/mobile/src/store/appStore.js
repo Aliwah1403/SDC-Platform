@@ -44,8 +44,14 @@ export const useAppStore = create((set, get) => ({
   chatMessages: [],
   isTyping: false,
 
+  // Metric Goals
+  metricGoals: { hydration: 8, sleep: 8, steps: 10000 },
+
   // Actions
   setUser: (user) => set({ currentUser: user }),
+
+  setMetricGoal: (metric, value) =>
+    set((state) => ({ metricGoals: { ...state.metricGoals, [metric]: value } })),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
 
