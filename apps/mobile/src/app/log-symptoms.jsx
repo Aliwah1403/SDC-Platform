@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -15,8 +15,59 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
+import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
 import { useAppStore } from "@/store/appStore";
 import { ChevronLeft, X, Check } from "lucide-react-native";
+
+const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
+
+const BOTTLE_PATH =
+  "M 36 0 L 64 0 Q 68 0 68 4 L 68 14 Q 68 18 64 18 L 60 18 L 60 30 " +
+  "C 60 42 84 46 84 52 L 84 186 Q 84 198 72 198 L 28 198 Q 16 198 16 186 " +
+  "L 16 52 C 16 46 40 42 40 30 L 40 18 L 36 18 Q 32 18 32 14 L 32 4 " +
+  "Q 32 0 36 0 Z";
+const BOTTLE_BODY_TOP = 52;
+const BOTTLE_BODY_H = 146; // 198 - 52
+
+function WaterBottle({ value, fillColor }) {
+  const fillHeightAnim = useRef(
+    new Animated.Value(BOTTLE_BODY_H * Math.min(value / 10, 1))
+  ).current;
+
+  useEffect(() => {
+    Animated.spring(fillHeightAnim, {
+      toValue: BOTTLE_BODY_H * Math.min(value / 10, 1),
+      useNativeDriver: false,
+      damping: 20,
+      stiffness: 100,
+    }).start();
+  }, [value]);
+
+  const fillY = fillHeightAnim.interpolate({
+    inputRange: [0, BOTTLE_BODY_H],
+    outputRange: [BOTTLE_BODY_TOP + BOTTLE_BODY_H, BOTTLE_BODY_TOP],
+  });
+
+  return (
+    <Svg width={110} height={220} viewBox="0 0 100 210">
+      <Defs>
+        <ClipPath id="bottleClip">
+          <Path d={BOTTLE_PATH} />
+        </ClipPath>
+      </Defs>
+      <AnimatedSvgRect
+        x={0}
+        y={fillY}
+        width={100}
+        height={fillHeightAnim}
+        fill={fillColor}
+        opacity={0.75}
+        clipPath="url(#bottleClip)"
+      />
+      <Path d={BOTTLE_PATH} fill="none" stroke={fillColor} strokeWidth={3.5} />
+    </Svg>
+  );
+}
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -310,8 +361,9 @@ function SymptomsStep({ selected, onToggle }) {
 }
 
 // Step 4 — Hydration
+const HYDRATION_PRESETS = [4, 8, 12];
+
 function HydrationStep({ value, onChange }) {
-  const pct = Math.min(value / 10, 1);
   const fillColor = value >= 8 ? "#10B981" : value >= 5 ? "#3B82F6" : "#F59E0B";
 
   return (
@@ -321,31 +373,47 @@ function HydrationStep({ value, onChange }) {
         <Text style={styles.stepSubtitle}>How many glasses of water today?</Text>
       </View>
 
-      {/* Water glass visual */}
+      {/* Water bottle visual */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-        <View
-          style={{
-            width: 110,
-            height: 180,
-            borderRadius: 16,
-            borderWidth: 3,
-            borderColor: fillColor,
-            overflow: "hidden",
-            justifyContent: "flex-end",
-          }}
-        >
-          <MotiView
-            animate={{ height: 180 * pct }}
-            transition={{ type: "spring", damping: 20, stiffness: 60 }}
-            style={{ width: "100%", backgroundColor: fillColor, opacity: 0.75 }}
-          />
-        </View>
-        <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 52, color: fillColor, marginTop: 16 }}>
+        <WaterBottle value={value} fillColor={fillColor} />
+        <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 52, color: fillColor, marginTop: 8 }}>
           {value}
         </Text>
         <Text style={{ fontFamily: "Geist_500Medium", fontSize: 16, color: "#9CA3AF", marginTop: 2 }}>
           glasses
         </Text>
+      </View>
+
+      {/* Quick presets */}
+      <View style={{ alignItems: "center", marginBottom: 16 }}>
+        <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>QUICK SELECT</Text>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          {HYDRATION_PRESETS.map((preset) => {
+            const active = value === preset;
+            return (
+              <TouchableOpacity
+                key={preset}
+                onPress={() => onChange(preset)}
+                style={{
+                  paddingHorizontal: 22,
+                  paddingVertical: 10,
+                  borderRadius: 24,
+                  borderWidth: 2,
+                  borderColor: active ? fillColor : "#E8D5D2",
+                  backgroundColor: active ? fillColor : "transparent",
+                }}
+              >
+                <Text style={{
+                  fontFamily: "Geist_600SemiBold",
+                  fontSize: 15,
+                  color: active ? "#fff" : fillColor,
+                }}>
+                  {preset}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* +/- controls */}
