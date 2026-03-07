@@ -15,6 +15,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
+import * as Haptics from "expo-haptics";
 import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
 import { useAppStore } from "@/store/appStore";
 import { ChevronLeft, X, Check } from "lucide-react-native";
@@ -213,7 +214,10 @@ function PainStep({ value, onChange }) {
           maximumValue={10}
           step={1}
           value={value}
-          onValueChange={onChange}
+          onValueChange={(v) => {
+            if (v !== value) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onChange(v);
+          }}
           minimumTrackTintColor={color}
           maximumTrackTintColor="#F8E9E7"
           thumbTintColor={color}
