@@ -86,11 +86,11 @@ export function generateMockHealthData() {
   const skipped = new Set([88, 87, 79, 70, 55, 49, 43, 36, 23, 0]);
 
   const flareFor = (daysAgo) => {
-    if (daysAgo >= 82 && daysAgo <= 85) return { pain: [5, 7], hyd: [5, 6], mood: [1, 2] };
-    if (daysAgo >= 61 && daysAgo <= 64) return { pain: [4, 6], hyd: [6, 7], mood: [2, 3] };
-    if (daysAgo >= 40 && daysAgo <= 45) return { pain: [6, 9], hyd: [4, 6], mood: [1, 2] };
-    if (daysAgo >= 18 && daysAgo <= 20) return { pain: [3, 5], hyd: [6, 8], mood: [2, 3] };
-    if (daysAgo >= 8 && daysAgo <= 9)   return { pain: [3, 4], hyd: [7, 8], mood: [3, 3] };
+    if (daysAgo >= 82 && daysAgo <= 85) return { pain: [5, 7], hyd: [5, 6], mood: [1, 2], steps: [500, 2500], sleep: [35, 55], hr: [78, 98] };
+    if (daysAgo >= 61 && daysAgo <= 64) return { pain: [4, 6], hyd: [6, 7], mood: [2, 3], steps: [800, 3000], sleep: [40, 58], hr: [76, 95] };
+    if (daysAgo >= 40 && daysAgo <= 45) return { pain: [6, 9], hyd: [4, 6], mood: [1, 2], steps: [200, 1800], sleep: [30, 52], hr: [80, 100] };
+    if (daysAgo >= 18 && daysAgo <= 20) return { pain: [3, 5], hyd: [6, 8], mood: [2, 3], steps: [1500, 4000], sleep: [50, 65], hr: [72, 90] };
+    if (daysAgo >= 8 && daysAgo <= 9)   return { pain: [3, 4], hyd: [7, 8], mood: [3, 3], steps: [2000, 5000], sleep: [55, 70], hr: [68, 85] };
     return null;
   };
 
@@ -102,19 +102,25 @@ export function generateMockHealthData() {
     const dateStr = date.toISOString().split("T")[0];
 
     const flare = flareFor(daysAgo);
-    let painLevel, hydration, mood;
+    let painLevel, hydration, mood, steps, sleepHours, heartRate;
 
     if (flare) {
-      painLevel = rand(flare.pain[0], flare.pain[1]);
-      hydration = rand(flare.hyd[0], flare.hyd[1]);
-      mood     = rand(flare.mood[0], flare.mood[1]);
+      painLevel  = rand(flare.pain[0], flare.pain[1]);
+      hydration  = rand(flare.hyd[0], flare.hyd[1]);
+      mood       = rand(flare.mood[0], flare.mood[1]);
+      steps      = rand(flare.steps[0], flare.steps[1]);
+      sleepHours = rand(flare.sleep[0], flare.sleep[1]) / 10;
+      heartRate  = rand(flare.hr[0], flare.hr[1]);
     } else {
-      painLevel = rand(0, 2);
-      hydration = rand(7, 10);
-      mood      = rand(3, 5);
+      painLevel  = rand(0, 2);
+      hydration  = rand(7, 10);
+      mood       = rand(3, 5);
+      steps      = rand(3000, 10500);
+      sleepHours = rand(60, 85) / 10;
+      heartRate  = rand(60, 82);
     }
 
-    data.push({ date: dateStr, painLevel, hydration, mood });
+    data.push({ date: dateStr, painLevel, hydration, mood, steps, sleepHours, heartRate });
   }
 
   return data;
@@ -261,6 +267,8 @@ export const mockMedications = [
     startDate: new Date("2024-01-15"),
     isActive: true,
     nextDose: "08:00 AM",
+    time: "8:00 AM",
+    taken: true,
   },
   {
     id: "2",
@@ -271,6 +279,32 @@ export const mockMedications = [
     startDate: new Date("2024-01-15"),
     isActive: true,
     nextDose: "08:00 AM",
+    time: "8:00 AM",
+    taken: true,
+  },
+  {
+    id: "3",
+    name: "Vitamin D3",
+    dosage: "2000 IU",
+    frequency: "Daily",
+    prescribedBy: "Dr. Smith",
+    startDate: new Date("2024-03-01"),
+    isActive: true,
+    nextDose: "12:00 PM",
+    time: "12:00 PM",
+    taken: false,
+  },
+  {
+    id: "4",
+    name: "Penicillin V",
+    dosage: "250mg",
+    frequency: "Twice daily",
+    prescribedBy: "Dr. Smith",
+    startDate: new Date("2024-01-15"),
+    isActive: true,
+    nextDose: "06:00 PM",
+    time: "6:00 PM",
+    taken: false,
   },
 ];
 
