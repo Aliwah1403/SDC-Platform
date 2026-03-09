@@ -257,7 +257,7 @@ export function HomeHeader({
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: hasLoggedData ? "#A9334D" : "#888",
+                  color: "#A9334D",
                 }}
               >
                 Log health

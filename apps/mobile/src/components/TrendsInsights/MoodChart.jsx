@@ -1,5 +1,6 @@
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
+import { Smile, Meh, Frown } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -110,25 +111,28 @@ export function MoodChart({ moodData, chartData }) {
         }}
       >
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😊 Excellent
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Smile size={13} color="#10B981" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Excellent</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#10B981" }}>
             {chartData.filter((d) => d.mood === 5).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😐 Fair
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Meh size={13} color="#F59E0B" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Fair</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#F59E0B" }}>
             {chartData.filter((d) => d.mood === 3).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😔 Poor
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Frown size={13} color="#DC2626" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Poor</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#DC2626" }}>
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
           </Text>

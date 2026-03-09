@@ -20,6 +20,8 @@ import {
   Zap,
   Droplets,
   Smile,
+  Meh,
+  Frown,
   Activity,
   Moon,
   Heart,
@@ -44,7 +46,13 @@ const ORANGE = "#F0531C";
 const WINE = "#A9334D";
 const GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
-const MOOD_EMOJIS = ["😢", "😞", "😐", "🙂", "😄"];
+const MOOD_ICONS = [
+  { Icon: Frown, color: "#DC2626" },
+  { Icon: Frown, color: "#F59E0B" },
+  { Icon: Meh,   color: "#9CA3AF" },
+  { Icon: Smile, color: "#059669" },
+  { Icon: Smile, color: "#16A34A" },
+];
 const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -407,11 +415,12 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   const hasValue = rawValue !== null && rawValue !== undefined;
 
   let displayValue = "—";
+  let moodDisplay = null;
   if (hasValue) {
     if (metricKey === "steps" && rawValue >= 1000) {
       displayValue = `${(rawValue / 1000).toFixed(1)}k`;
     } else if (metricKey === "mood") {
-      displayValue = MOOD_EMOJIS[(rawValue ?? 3) - 1];
+      moodDisplay = MOOD_ICONS[(rawValue ?? 3) - 1];
     } else {
       displayValue = String(rawValue);
     }
@@ -456,14 +465,18 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
         {/* Value row + sparkline */}
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
           <View>
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 3 }}>
-              <Text style={{
-                fontFamily: fonts.bold,
-                fontSize: hasValue ? (displayValue.length > 4 ? 28 : 34) : 28,
-                color: hasValue ? "#1F2937" : "#D1D5DB",
-              }}>
-                {displayValue}
-              </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+              {metricKey === "mood" && moodDisplay ? (
+                <moodDisplay.Icon size={34} color={moodDisplay.color} strokeWidth={2} />
+              ) : (
+                <Text style={{
+                  fontFamily: fonts.bold,
+                  fontSize: hasValue ? ((displayValue?.length ?? 0) > 4 ? 28 : 34) : 28,
+                  color: hasValue ? "#1F2937" : "#D1D5DB",
+                }}>
+                  {displayValue}
+                </Text>
+              )}
               {hasValue && config.unit && metricKey !== "mood" && (
                 <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#9CA3AF", marginBottom: 3 }}>
                   {config.unit}

@@ -1,10 +1,27 @@
-export function getDynamicMessage(hasLoggedData, healthStreak, selectedDate) {
+import {
+  CheckCircle2,
+  Plus,
+  TrendingUp,
+  Droplets,
+  Flame,
+} from "lucide-react-native";
+
+export function getDynamicMessage(
+  hasLoggedData,
+  healthStreak,
+  selectedDate,
+  currentUser,
+) {
   const today = new Date();
   const isToday = selectedDate.toDateString() === today.toDateString();
+  const firstName = currentUser?.name?.split(" ")[0] || "Curtis";
+  const hour = today.getHours();
+  const timeGreeting =
+    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   if (hasLoggedData && healthStreak > 1) {
     return {
-      title: "Health logged",
+      title: `Well done, ${firstName}!`,
       subtitle: `${healthStreak} day streak`,
     };
   } else if (hasLoggedData && healthStreak === 1) {
@@ -14,8 +31,8 @@ export function getDynamicMessage(hasLoggedData, healthStreak, selectedDate) {
     };
   } else if (isToday) {
     return {
-      title: "Log your health",
-      subtitle: "Track symptoms today",
+      title: `${timeGreeting}, ${firstName}`,
+      subtitle: "How are you feeling?",
     };
   } else {
     return {
@@ -28,7 +45,7 @@ export function getDynamicMessage(hasLoggedData, healthStreak, selectedDate) {
 export function getGradientColors(hasLoggedData) {
   return hasLoggedData
     ? ["#D09F9A", "#A9334D", "#781D11"]
-    : ["#E0E0E0", "#D0D0D0", "#C0C0C0"];
+    : ["#C4A09C", "#A9334D", "#781D11"];
 }
 
 export function getInsightCards(
@@ -54,7 +71,7 @@ export function getInsightCards(
         : "Track how you feel today",
       value: hasLoggedToday ? "✓" : "+",
       unit: "",
-      emoji: hasLoggedToday ? "✅" : "➕",
+      icon: hasLoggedToday ? CheckCircle2 : Plus,
       bgColor: hasLoggedToday ? "#DCFCE7" : "#F0FDF4",
       accentColor: "#059669",
       cta: hasLoggedToday ? null : "Tap to log →",
@@ -66,7 +83,7 @@ export function getInsightCards(
       subtitle: "Last 30 days",
       value: avgPainLevel && parseFloat(avgPainLevel) > 0 ? avgPainLevel : "—",
       unit: avgPainLevel && parseFloat(avgPainLevel) > 0 ? "/ 10" : "",
-      emoji: "📈",
+      icon: TrendingUp,
       bgColor: "#FEF2F2",
       accentColor: "#DC2626",
       cta: null,
@@ -78,7 +95,7 @@ export function getInsightCards(
       subtitle: "Goal: 8 glasses",
       value: hydrationToday > 0 ? String(hydrationToday) : "—",
       unit: hydrationToday > 0 ? "/ 8" : "",
-      emoji: "💧",
+      icon: Droplets,
       bgColor: "#EFF6FF",
       accentColor: "#3B82F6",
       cta: null,
@@ -89,13 +106,13 @@ export function getInsightCards(
       title: "Day streak",
       subtitle:
         healthStreak >= 7
-          ? "You're on fire! 🔥"
+          ? "You're on fire!"
           : healthStreak > 0
             ? "Keep it going!"
             : "Start your streak today",
       value: String(healthStreak),
       unit: healthStreak === 1 ? "day" : "days",
-      emoji: "🔥",
+      icon: Flame,
       bgColor: "#F8E9E7",
       accentColor: "#A9334D",
       cta: null,

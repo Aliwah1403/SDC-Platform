@@ -308,7 +308,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                   marginBottom: 24,
                 }}
               >
-                <Text style={{ fontSize: 64 }}>✓</Text>
+                <Check size={64} color="#FFFFFF" strokeWidth={3} />
               </View>
             </Animated.View>
 
@@ -328,7 +328,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               <Text
                 style={{ fontSize: 16, color: "#6B7280", textAlign: "center" }}
               >
-                Your {healthStreak} day streak is safe 🔥
+                Your {healthStreak} day streak is safe
               </Text>
             </Animated.View>
           </View>

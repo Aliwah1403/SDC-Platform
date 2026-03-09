@@ -1,4 +1,5 @@
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { BarChart3 } from "lucide-react-native";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useAppStore } from "@/store/appStore";
@@ -339,7 +340,9 @@ export function TodayHealthCard() {
             paddingHorizontal: 24,
           }}
         >
-          <Text style={{ fontSize: 48, marginBottom: 12 }}>📊</Text>
+          <View style={{ marginBottom: 12 }}>
+            <BarChart3 size={48} color="rgba(255,255,255,0.5)" strokeWidth={1.5} />
+          </View>
           <Text
             style={{
               fontFamily: fonts.bold,

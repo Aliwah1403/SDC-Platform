@@ -1,5 +1,11 @@
 import { useRef, useMemo } from "react";
-import { View, Text, TouchableOpacity, FlatList, Dimensions } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Dimensions,
+} from "react-native";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -39,7 +45,15 @@ function generateWeeks() {
   return weeks;
 }
 
-function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSelected, dayIndex }) {
+function DayItem({
+  date,
+  selectedDate,
+  setSelectedDate,
+  isToday,
+  isFuture,
+  isSelected,
+  dayIndex,
+}) {
   const future = isFuture(date);
   const selected = isSelected(date, selectedDate);
   const todayDate = isToday(date);
@@ -53,6 +67,8 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
         alignItems: "center",
         paddingVertical: 8,
         opacity: future ? 0.35 : 1,
+        paddingLeft: dayIndex === 0 ? 20 : 0,
+        paddingRight: dayIndex === 6 ? 20 : 0,
       }}
     >
       {/* Day label: TODAY or single letter */}
@@ -93,7 +109,13 @@ function DayItem({ date, selectedDate, setSelectedDate, isToday, isFuture, isSel
   );
 }
 
-export function DatePicker({ selectedDate, setSelectedDate, isToday, isFuture, isSelected }) {
+export function DatePicker({
+  selectedDate,
+  setSelectedDate,
+  isToday,
+  isFuture,
+  isSelected,
+}) {
   const flatListRef = useRef(null);
   const weeks = useMemo(() => generateWeeks(), []);
 

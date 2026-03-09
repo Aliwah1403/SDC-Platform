@@ -16,9 +16,9 @@ export function InsightCard({ card }) {
       activeOpacity={0.85}
       onPress={handlePress}
       style={{
-        width: 160,
-        minHeight: 190,
-        backgroundColor: card.bgColor,
+        width: 200,
+        minHeight: 170,
+        backgroundColor: "#FFFFFF",
         borderRadius: 20,
         padding: 16,
         shadowColor: "#000",
@@ -39,16 +39,16 @@ export function InsightCard({ card }) {
       >
         <View
           style={{
-            width: 36,
-            height: 36,
+            width: 30,
+            height: 30,
             borderRadius: 10,
-            backgroundColor: card.accentColor + "20",
+            // backgroundColor: card.accentColor + "20",
             alignItems: "center",
             justifyContent: "center",
-            marginRight: 8,
+            marginRight: 5,
           }}
         >
-          <Text style={{ fontSize: 18 }}>{card.emoji}</Text>
+          <card.icon size={18} color={card.accentColor} strokeWidth={2} />
         </View>
         <Text
           style={{

@@ -28,7 +28,7 @@ export function DailyInsights({ insightCards }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          gap: 12,
+          gap: 15,
         }}
         style={{ flexGrow: 0 }}
       >

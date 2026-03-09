@@ -18,6 +18,7 @@ import {
   Star,
   Clock,
   Zap,
+  Wrench,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
@@ -101,7 +102,6 @@ export default function StreakModal() {
       requirement: "Log your first day",
       description: "Welcome to your health journey! Every great journey begins with a single step.",
       rarity: "Common",
-      emoji: "🎯",
       unlocked: daysLogged >= 1,
       current: daysLogged,
     },
@@ -114,7 +114,6 @@ export default function StreakModal() {
       requirement: "Log 5 days",
       description: "You're building a habit! Consistency is the key to understanding your health patterns.",
       rarity: "Common",
-      emoji: "📝",
       unlocked: daysLogged >= 5,
       current: daysLogged,
     },
@@ -127,7 +126,6 @@ export default function StreakModal() {
       requirement: "Log 10 days",
       description: "Double digits! You're developing a strong tracking habit that will serve you well.",
       rarity: "Uncommon",
-      emoji: "💪",
       unlocked: daysLogged >= 10,
       current: daysLogged,
     },
@@ -140,7 +138,6 @@ export default function StreakModal() {
       requirement: "Log 25 days",
       description: "Your commitment is impressive! You're gathering valuable insights about your health.",
       rarity: "Rare",
-      emoji: "⭐",
       unlocked: daysLogged >= 25,
       current: daysLogged,
     },
@@ -153,7 +150,6 @@ export default function StreakModal() {
       requirement: "Log 50 days",
       description: "Incredible dedication! You're a true health champion with a wealth of data to guide you.",
       rarity: "Epic",
-      emoji: "👑",
       unlocked: daysLogged >= 50,
       current: daysLogged,
     },
@@ -166,7 +162,6 @@ export default function StreakModal() {
       requirement: "Log 100 days",
       description: "A hundred days of commitment! You've built an unshakeable health tracking foundation.",
       rarity: "Legendary",
-      emoji: "💯",
       unlocked: daysLogged >= 100,
       current: daysLogged,
     },
@@ -179,7 +174,6 @@ export default function StreakModal() {
       requirement: "Maintain a 3-day streak",
       description: "Three days in a row! You're building momentum.",
       rarity: "Common",
-      emoji: "🔥",
       unlocked: currentStreak >= 3,
       current: currentStreak,
     },
@@ -192,7 +186,6 @@ export default function StreakModal() {
       requirement: "Maintain a 7-day streak",
       description: "A full week of consistency! Your dedication is showing.",
       rarity: "Uncommon",
-      emoji: "🔥",
       unlocked: currentStreak >= 7,
       current: currentStreak,
     },
@@ -205,7 +198,6 @@ export default function StreakModal() {
       requirement: "Maintain a 14-day streak",
       description: "Two weeks strong! You're proving that consistency pays off.",
       rarity: "Rare",
-      emoji: "🔥",
       unlocked: currentStreak >= 14,
       current: currentStreak,
     },
@@ -218,7 +210,6 @@ export default function StreakModal() {
       requirement: "Maintain a 30-day streak",
       description: "A full month! Your habit is now deeply ingrained.",
       rarity: "Epic",
-      emoji: "🔥",
       unlocked: currentStreak >= 30,
       current: currentStreak,
     },
@@ -231,7 +222,6 @@ export default function StreakModal() {
       requirement: "Log 10 symptoms",
       description: "You're starting to identify patterns in your symptoms.",
       rarity: "Common",
-      emoji: "🎯",
       unlocked: symptomsLogged >= 10,
       current: symptomsLogged,
     },
@@ -244,7 +234,6 @@ export default function StreakModal() {
       requirement: "Log 25 symptoms",
       description: "Your symptom data is becoming more valuable with each entry.",
       rarity: "Uncommon",
-      emoji: "📊",
       unlocked: symptomsLogged >= 25,
       current: symptomsLogged,
     },
@@ -257,7 +246,6 @@ export default function StreakModal() {
       requirement: "Meet hydration goals for 7 days",
       description: "A week of staying hydrated! Your body thanks you.",
       rarity: "Uncommon",
-      emoji: "💧",
       unlocked: hydrationDays >= 7,
       current: hydrationDays,
     },
@@ -270,7 +258,6 @@ export default function StreakModal() {
       requirement: "Complete 10 care tasks",
       description: "You're prioritizing self-care and it shows!",
       rarity: "Common",
-      emoji: "💝",
       unlocked: careTasksCompleted >= 10,
       current: careTasksCompleted,
     },
@@ -283,7 +270,6 @@ export default function StreakModal() {
       requirement: "Complete 5 learning modules",
       description: "You're expanding your health knowledge with every module.",
       rarity: "Uncommon",
-      emoji: "📚",
       unlocked: learningModulesCompleted >= 5,
       current: learningModulesCompleted,
     },
@@ -546,9 +532,9 @@ export default function StreakModal() {
           elevation: isUnlocked ? 2 : 1,
         }}
       >
-        <Text style={{ fontSize: size === "large" ? 40 : 32, marginBottom: size === "large" ? 12 : 8 }}>
-          {badge.icon}
-        </Text>
+        <View style={{ marginBottom: size === "large" ? 12 : 8 }}>
+          <badge.icon size={size === "large" ? 40 : 32} color={isUnlocked ? HEMO.wine : "#9CA3AF"} strokeWidth={1.5} />
+        </View>
         <Text style={{ fontFamily: fonts.semibold, fontSize: size === "large" ? 14 : 12, color: "#111827", textAlign: "center", marginBottom: 4 }}>
           {badge.name}
         </Text>
@@ -895,7 +881,7 @@ export default function StreakModal() {
                   marginRight: 16,
                 }}
               >
-                <Text style={{ fontSize: 24 }}>🛠️</Text>
+                <Wrench size={24} color="#92400E" strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1a1a1a", marginBottom: 2 }}>
@@ -938,9 +924,12 @@ export default function StreakModal() {
 
           {/* Footer */}
           <View style={{ backgroundColor: HEMO.blush, borderRadius: 12, padding: 16, alignItems: "center" }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: HEMO.wine, textAlign: "center", lineHeight: 20 }}>
-              💪 Keep logging daily to maintain your streak!
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Zap size={16} color={HEMO.wine} strokeWidth={2} />
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: HEMO.wine, textAlign: "center", lineHeight: 20 }}>
+                Keep logging daily to maintain your streak!
+              </Text>
+            </View>
           </View>
         </ScrollView>
       ) : (

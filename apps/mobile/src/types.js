@@ -1,4 +1,5 @@
 // Core Types and Interfaces for Hemo App
+import { Target, Flame, Droplets } from "lucide-react-native";
 
 // Mock data and constants will be imported from here
 export const PAIN_LEVELS = [
@@ -208,7 +209,7 @@ export const mockBadges = [
     id: "1",
     name: "First Log",
     description: "Completed your first symptom log",
-    icon: "🎯",
+    icon: Target,
     category: "milestone",
     unlockedAt: new Date("2024-10-15"),
   },
@@ -216,7 +217,7 @@ export const mockBadges = [
     id: "2",
     name: "Week Warrior",
     description: "Logged symptoms for 7 consecutive days",
-    icon: "🔥",
+    icon: Flame,
     category: "streak",
     unlockedAt: new Date("2024-10-22"),
   },
@@ -224,7 +225,7 @@ export const mockBadges = [
     id: "3",
     name: "Hydration Hero",
     description: "Met hydration goals for 30 days",
-    icon: "💧",
+    icon: Droplets,
     category: "achievement",
     unlockedAt: null,
   },

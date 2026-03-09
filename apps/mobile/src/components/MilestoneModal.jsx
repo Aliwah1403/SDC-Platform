@@ -8,6 +8,7 @@ import {
   Heart,
   BookOpen,
   Target,
+  Star,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -30,12 +31,12 @@ const MILESTONE_COLORS = {
 };
 
 const RARITY_CONFIG = {
-  Common:    { color: "#9CA3AF", emoji: "⚪" },
-  Uncommon:  { color: "#059669", emoji: "🟢" },
-  Rare:      { color: "#2563EB", emoji: "🔵" },
-  Epic:      { color: "#A9334D", emoji: "🔴" },
-  Legendary: { color: "#781D11", emoji: "🟤" },
-  Mythic:    { color: "#D09F9A", emoji: "🌸" },
+  Common:    { color: "#9CA3AF" },
+  Uncommon:  { color: "#059669" },
+  Rare:      { color: "#2563EB" },
+  Epic:      { color: "#A9334D" },
+  Legendary: { color: "#781D11" },
+  Mythic:    { color: "#D09F9A" },
 };
 
 export default function MilestoneModal({ visible, milestone, onClose }) {
@@ -132,7 +133,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                     marginLeft: -20,
                   }}
                 >
-                  <Text style={{ fontSize: 40 }}>⭐</Text>
+                  <Star size={40} color="#F59E0B" />
                 </View>
               )}
 
@@ -219,7 +220,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                 <View
                   style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                 >
-                  <Text style={{ fontSize: 20 }}>{rarityInfo.emoji}</Text>
+                  <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: rarityInfo.color }} />
                   <Text
                     style={{
                       fontSize: 16,
@@ -255,7 +256,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                 <View
                   style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                 >
-                  <Text style={{ fontSize: 20 }}>{milestone.emoji}</Text>
+                  <Icon size={20} color={colors.primary} strokeWidth={2} />
                   <Text
                     style={{
                       fontSize: 16,

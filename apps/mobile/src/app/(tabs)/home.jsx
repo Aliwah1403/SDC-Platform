@@ -51,7 +51,8 @@ export default function HomeScreen() {
     avgHydration,
   } = useChartData(healthData);
 
-  const message = getDynamicMessage(hasLoggedData, healthStreak, selectedDate);
+  const message = getDynamicMessage(hasLoggedData, healthStreak, selectedDate, 'currentUser');
+  // const message = getDynamicMessage(hasLoggedData, healthStreak, selectedDate, currentUser);
   const gradientColors = getGradientColors(hasLoggedData);
   const insightCards = getInsightCards(
     healthStreak,
