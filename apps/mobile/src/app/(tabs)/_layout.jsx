@@ -4,9 +4,9 @@ import {
   Activity,
   Calendar,
   MessageCircle,
-  User,
-  Award,
+  Users,
 } from "lucide-react-native";
+import { fonts } from "@/utils/fonts";
 
 export default function TabLayout() {
   return (
@@ -23,8 +23,8 @@ export default function TabLayout() {
         tabBarActiveTintColor: "#DC2626",
         tabBarInactiveTintColor: "#6B6B6B",
         tabBarLabelStyle: {
+          fontFamily: fonts.semibold,
           fontSize: 11,
-          fontWeight: "600",
           marginTop: 2,
         },
       }}
@@ -33,46 +33,39 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => <Home color={color} size={22} />,
+          tabBarIcon: ({ color }) => <Home color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="track"
         options={{
           title: "Track",
-          tabBarIcon: ({ color, size }) => <Activity color={color} size={22} />,
-        }}
-      />
-      <Tabs.Screen
-        name="care/index"
-        options={{
-          title: "Care",
-          tabBarIcon: ({ color, size }) => <Calendar color={color} size={22} />,
+          tabBarIcon: ({ color }) => <Activity color={color} size={22} />,
         }}
       />
       <Tabs.Screen
         name="learn"
         options={{
           title: "Learn",
-          tabBarIcon: ({ color, size }) => (
-            <MessageCircle color={color} size={22} />
-          ),
+          tabBarIcon: ({ color }) => <MessageCircle color={color} size={22} />,
         }}
       />
       <Tabs.Screen
-        name="profile"
+        name="care/index"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, size }) => <User color={color} size={22} />,
+          title: "Care",
+          tabBarIcon: ({ color }) => <Calendar color={color} size={22} />,
         }}
       />
       <Tabs.Screen
-        name="rewards"
+        name="community"
         options={{
-          title: "Rewards",
-          tabBarIcon: ({ color, size }) => <Award color={color} size={22} />,
+          title: "Community",
+          tabBarIcon: ({ color }) => <Users color={color} size={22} />,
         }}
       />
+      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="rewards" options={{ href: null }} />
     </Tabs>
   );
 }
