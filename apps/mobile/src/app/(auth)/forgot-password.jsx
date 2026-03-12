@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
-import { ArrowLeft, Mail, CheckCircle } from 'lucide-react-native';
+import { ArrowLeft, Mail } from 'lucide-react-native';
 import { resetPassword } from '@/utils/auth/supabase';
 
 export default function ForgotPasswordScreen() {
@@ -20,7 +20,6 @@ export default function ForgotPasswordScreen() {
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
 
@@ -30,7 +29,7 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       await resetPassword(email.trim().toLowerCase());
-      setSent(true);
+      router.push({ pathname: '/(auth)/verify-code', params: { email: email.trim().toLowerCase() } });
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -51,89 +50,57 @@ export default function ForgotPasswordScreen() {
             </Pressable>
           </View>
 
-          {!sent ? (
-            <>
-              <MotiView
-                from={{ opacity: 0, translateY: 16 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 80 }}
-              >
-                <Text style={styles.title}>Reset password</Text>
-                <Text style={styles.subtitle}>
-                  Enter your email and we'll send you a link to reset your password.
-                </Text>
-              </MotiView>
-
-              <MotiView
-                from={{ opacity: 0, translateY: 20 }}
-                animate={{ opacity: 1, translateY: 0 }}
-                transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 180 }}
-                style={styles.form}
-              >
-                <View style={[styles.inputWrapper, focused && styles.inputFocused]}>
-                  <Mail size={18} color={focused ? '#F0531C' : 'rgba(248,233,231,0.4)'} strokeWidth={1.8} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Email address"
-                    placeholderTextColor="rgba(248,233,231,0.35)"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoFocus
-                    onFocus={() => setFocused(true)}
-                    onBlur={() => setFocused(false)}
-                  />
-                </View>
-
-                {!!error && (
-                  <Text style={styles.errorText}>{error}</Text>
-                )}
-
-                <Pressable
-                  style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && { opacity: 0.7 }]}
-                  onPress={handleReset}
-                  disabled={loading}
-                >
-                  {loading
-                    ? <ActivityIndicator color="#FFFFFF" size="small" />
-                    : <Text style={styles.primaryBtnText}>Send Reset Link</Text>
-                  }
-                </Pressable>
-              </MotiView>
-            </>
-          ) : (
+          <>
             <MotiView
-              from={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', damping: 16, stiffness: 80 }}
-              style={styles.successContainer}
+              from={{ opacity: 0, translateY: 16 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 80 }}
             >
-              <View style={styles.successIcon}>
-                <CheckCircle size={40} color="#059669" strokeWidth={1.5} />
+              <Text style={styles.title}>Reset password</Text>
+              <Text style={styles.subtitle}>
+                Enter your email and we'll send you a verification code.
+              </Text>
+            </MotiView>
+
+            <MotiView
+              from={{ opacity: 0, translateY: 20 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 180 }}
+              style={styles.form}
+            >
+              <View style={[styles.inputWrapper, focused && styles.inputFocused]}>
+                <Mail size={18} color={focused ? '#F0531C' : 'rgba(248,233,231,0.4)'} strokeWidth={1.8} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email address"
+                  placeholderTextColor="rgba(248,233,231,0.35)"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoFocus
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                />
               </View>
-              <Text style={styles.successTitle}>Check your email</Text>
-              <Text style={styles.successText}>
-                We've sent a password reset link to{'\n'}
-                <Text style={styles.successEmail}>{email}</Text>
-              </Text>
-              <Text style={styles.successHint}>
-                Didn't receive it? Check your spam folder or{' '}
-                <Text style={styles.retryLink} onPress={() => setSent(false)}>
-                  try again
-                </Text>
-                .
-              </Text>
+
+              {!!error && (
+                <Text style={styles.errorText}>{error}</Text>
+              )}
 
               <Pressable
-                style={({ pressed }) => [styles.primaryBtn, { marginTop: 32 }, pressed && { opacity: 0.85 }]}
-                onPress={() => router.replace('/(auth)/signin')}
+                style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && { opacity: 0.7 }]}
+                onPress={handleReset}
+                disabled={loading}
               >
-                <Text style={styles.primaryBtnText}>Back to Sign In</Text>
+                {loading
+                  ? <ActivityIndicator color="#FFFFFF" size="small" />
+                  : <Text style={styles.primaryBtnText}>Send Code</Text>
+                }
               </Pressable>
             </MotiView>
-          )}
+          </>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -176,26 +143,4 @@ const styles = StyleSheet.create({
     paddingVertical: 16, alignItems: 'center',
   },
   primaryBtnText: { fontFamily: 'Geist_700Bold', fontSize: 16, color: '#FFFFFF', letterSpacing: 0.2 },
-  successContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 60 },
-  successIcon: {
-    width: 80, height: 80, borderRadius: 40,
-    backgroundColor: 'rgba(5,150,105,0.12)',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 24,
-  },
-  successTitle: {
-    fontFamily: 'Geist_700Bold', fontSize: 26,
-    color: '#F8E9E7', letterSpacing: -0.8, marginBottom: 12,
-  },
-  successText: {
-    fontFamily: 'Geist_400Regular', fontSize: 15,
-    color: 'rgba(248,233,231,0.6)', textAlign: 'center', lineHeight: 22,
-  },
-  successEmail: { color: '#F8E9E7', fontFamily: 'Geist_500Medium' },
-  successHint: {
-    fontFamily: 'Geist_400Regular', fontSize: 13,
-    color: 'rgba(248,233,231,0.4)', textAlign: 'center',
-    lineHeight: 20, marginTop: 16,
-  },
-  retryLink: { color: '#F0531C' },
 });

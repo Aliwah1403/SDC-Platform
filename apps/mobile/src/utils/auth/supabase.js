@@ -59,3 +59,9 @@ export async function resetPassword(email) {
   console.log('[AUTH STUB] resetPassword', email);
   return { data: {}, error: null };
 }
+
+export async function verifyOtp(email, token) {
+  // TODO: return supabase.auth.verifyOtp({ email, token, type: 'recovery' });
+  console.log('[AUTH STUB] verifyOtp', email, token);
+  return { data: {}, error: null };
+}
