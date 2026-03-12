@@ -67,14 +67,20 @@ export default function WelcomeScreen() {
         >
           {[
             {
-              icon: <ChartColumnIncreasing />,
+              icon: <ChartColumnIncreasing size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
               text: "Track symptoms & health metrics daily",
             },
-            { icon: <Pill />, text: "Manage medications & care team" },
-            { icon: <ShieldAlert />, text: "Emergency SOS at your fingertips" },
+            {
+              icon: <Pill size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
+              text: "Manage medications & care team",
+            },
+            {
+              icon: <ShieldAlert size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
+              text: "Emergency SOS at your fingertips",
+            },
           ].map(({ icon, text }) => (
             <View key={text} style={styles.highlightRow}>
-              <Text style={styles.highlightIcon}>{icon}</Text>
+              <View style={styles.highlightIcon}>{icon}</View>
               <Text style={styles.highlightText}>{text}</Text>
             </View>
           ))}
@@ -177,12 +183,8 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   highlightIcon: {
-    fontSize: 20,
     width: 25,
-    color: "rgba(248, 233, 231, 0.75)",
-    textAlign: "center",
-
-    // backgroundColor: "rgba(248, 233, 231, 0.1)",
+    alignItems: "center",
   },
   highlightText: {
     fontFamily: "Geist_400Regular",
