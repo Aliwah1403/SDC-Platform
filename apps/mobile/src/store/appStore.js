@@ -6,7 +6,23 @@ const mockHealthData = generateMockHealthData();
 export const useAppStore = create((set, get) => ({
   // User & Profile State
   currentUser: mockUser,
-  isOnboardingComplete: true, // Set to true to skip onboarding for now
+  isOnboardingComplete: false,
+
+  // Onboarding Data
+  onboardingComplete: false,
+  onboardingData: {
+    dob: null,           // ISO date string e.g. "1995-04-15"
+    scdType: null,       // e.g. "HbSS", "HbSC", "unsure"
+    emergencyContacts: [],
+    checkInTime: null,   // e.g. "20:00"
+    notificationsEnabled: false,
+    biometricsEnabled: false,
+    height: null,        // in cm
+    weight: null,        // in kg
+    preferredHospital: null,
+    medications: [],
+    healthDataConnected: [],
+  },
 
   // Health Tracking State
   healthStreak: 23,
@@ -49,6 +65,31 @@ export const useAppStore = create((set, get) => ({
 
   // Actions
   setUser: (user) => set({ currentUser: user }),
+
+  setOnboardingField: (field, value) =>
+    set((state) => ({
+      onboardingData: { ...state.onboardingData, [field]: value },
+    })),
+
+  completeOnboarding: () => set({ onboardingComplete: true, isOnboardingComplete: true }),
+
+  resetOnboarding: () =>
+    set({
+      onboardingComplete: false,
+      onboardingData: {
+        dob: null,
+        scdType: null,
+        emergencyContacts: [],
+        checkInTime: null,
+        notificationsEnabled: false,
+        biometricsEnabled: false,
+        height: null,
+        weight: null,
+        preferredHospital: null,
+        medications: [],
+        healthDataConnected: [],
+      },
+    }),
 
   setMetricGoal: (metric, value) =>
     set((state) => ({ metricGoals: { ...state.metricGoals, [metric]: value } })),

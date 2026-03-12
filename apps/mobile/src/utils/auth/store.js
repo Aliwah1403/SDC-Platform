@@ -7,8 +7,9 @@ export const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
  * This store manages the authentication state of the application.
  */
 export const useAuthStore = create((set) => ({
-  isReady: true,
-  auth: { token: "dev-mock" }, // TODO: remove before wiring up real auth
+  isReady: false,
+  auth: null,
+  isNewUser: false,
   setAuth: (auth) => {
     if (auth) {
       SecureStore.setItemAsync(authKey, JSON.stringify(auth));
@@ -17,6 +18,7 @@ export const useAuthStore = create((set) => ({
     }
     set({ auth });
   },
+  setIsNewUser: (isNewUser) => set({ isNewUser }),
 }));
 
 /**

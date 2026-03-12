@@ -1,0 +1,268 @@
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { MotiView } from 'moti';
+import { Ruler, Weight } from 'lucide-react-native';
+import OnboardingStep from '@/components/OnboardingStep';
+import { useAppStore } from '@/store/appStore';
+
+function UnitToggle({ options, selected, onSelect }) {
+  return (
+    <View style={styles.unitToggle}>
+      {options.map((opt) => (
+        <Pressable
+          key={opt}
+          style={[styles.unitBtn, selected === opt && styles.unitBtnActive]}
+          onPress={() => onSelect(opt)}
+        >
+          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>
+            {opt}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+export default function Step5() {
+  const { setOnboardingField } = useAppStore();
+
+  const [heightUnit, setHeightUnit] = useState('cm');
+  const [weightUnit, setWeightUnit] = useState('kg');
+  const [heightCm, setHeightCm] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightIn, setHeightIn] = useState('');
+  const [weight, setWeight] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
+
+  const handleSkip = () => {
+    router.push('/(onboarding)/step-6');
+  };
+
+  const handleContinue = () => {
+    let heightInCm = null;
+    let weightInKg = null;
+
+    if (heightUnit === 'cm' && heightCm) {
+      heightInCm = parseFloat(heightCm);
+    } else if (heightUnit === 'ft' && (heightFt || heightIn)) {
+      const ft = parseFloat(heightFt) || 0;
+      const inches = parseFloat(heightIn) || 0;
+      heightInCm = Math.round((ft * 30.48) + (inches * 2.54));
+    }
+
+    if (weight) {
+      const w = parseFloat(weight);
+      weightInKg = weightUnit === 'lb' ? Math.round(w * 0.453592 * 10) / 10 : w;
+    }
+
+    if (heightInCm !== null) setOnboardingField('height', heightInCm);
+    if (weightInKg !== null) setOnboardingField('weight', weightInKg);
+    router.push('/(onboarding)/step-6');
+  };
+
+  return (
+    <OnboardingStep
+      step={5}
+      title="Body measurements"
+      subtitle="Used for health tracking and personalised insights. Completely optional."
+      onBack={() => router.back()}
+      skippable
+      onSkip={handleSkip}
+      onCta={handleContinue}
+      ctaLabel="Save & Continue"
+    >
+      {/* Height */}
+      <MotiView
+        from={{ opacity: 0, translateY: 8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', damping: 16, stiffness: 80 }}
+        style={styles.card}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.cardIconRow}>
+            <Ruler size={18} color="#09332C" strokeWidth={1.8} />
+            <Text style={styles.cardTitle}>Height</Text>
+          </View>
+          <UnitToggle
+            options={['cm', 'ft']}
+            selected={heightUnit}
+            onSelect={setHeightUnit}
+          />
+        </View>
+
+        {heightUnit === 'cm' ? (
+          <View style={[styles.inputWrapper, focusedField === 'height-cm' && styles.inputFocused]}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 170"
+              placeholderTextColor="rgba(9,51,44,0.35)"
+              value={heightCm}
+              onChangeText={setHeightCm}
+              keyboardType="numeric"
+              onFocus={() => setFocusedField('height-cm')}
+              onBlur={() => setFocusedField(null)}
+            />
+            <Text style={styles.unitLabel}>cm</Text>
+          </View>
+        ) : (
+          <View style={styles.ftRow}>
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-ft' && styles.inputFocused]}>
+              <TextInput
+                style={styles.input}
+                placeholder="5"
+                placeholderTextColor="rgba(9,51,44,0.35)"
+                value={heightFt}
+                onChangeText={setHeightFt}
+                keyboardType="numeric"
+                onFocus={() => setFocusedField('height-ft')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <Text style={styles.unitLabel}>ft</Text>
+            </View>
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-in' && styles.inputFocused]}>
+              <TextInput
+                style={styles.input}
+                placeholder="8"
+                placeholderTextColor="rgba(9,51,44,0.35)"
+                value={heightIn}
+                onChangeText={setHeightIn}
+                keyboardType="numeric"
+                onFocus={() => setFocusedField('height-in')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <Text style={styles.unitLabel}>in</Text>
+            </View>
+          </View>
+        )}
+      </MotiView>
+
+      {/* Weight */}
+      <MotiView
+        from={{ opacity: 0, translateY: 8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 80 }}
+        style={styles.card}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.cardIconRow}>
+            <Weight size={18} color="#09332C" strokeWidth={1.8} />
+            <Text style={styles.cardTitle}>Weight</Text>
+          </View>
+          <UnitToggle
+            options={['kg', 'lb']}
+            selected={weightUnit}
+            onSelect={setWeightUnit}
+          />
+        </View>
+
+        <View style={[styles.inputWrapper, focusedField === 'weight' && styles.inputFocused]}>
+          <TextInput
+            style={styles.input}
+            placeholder={weightUnit === 'kg' ? 'e.g. 65' : 'e.g. 143'}
+            placeholderTextColor="rgba(9,51,44,0.35)"
+            value={weight}
+            onChangeText={setWeight}
+            keyboardType="numeric"
+            onFocus={() => setFocusedField('weight')}
+            onBlur={() => setFocusedField(null)}
+          />
+          <Text style={styles.unitLabel}>{weightUnit}</Text>
+        </View>
+      </MotiView>
+
+      <Text style={styles.privacyNote}>
+        Your measurements are stored locally and never shared without your permission.
+      </Text>
+    </OnboardingStep>
+  );
+}
+
+const styles = StyleSheet.create({
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
+    gap: 12,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cardTitle: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 15,
+    color: '#09332C',
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F4F0',
+    borderRadius: 8,
+    padding: 2,
+  },
+  unitBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  unitBtnActive: {
+    backgroundColor: '#09332C',
+  },
+  unitBtnText: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 13,
+    color: 'rgba(9,51,44,0.55)',
+  },
+  unitBtnTextActive: {
+    color: '#FFFFFF',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F4F0',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  inputFocused: {
+    borderColor: '#F0531C',
+    backgroundColor: 'rgba(240,83,28,0.04)',
+  },
+  input: {
+    flex: 1,
+    fontFamily: 'Geist_400Regular',
+    fontSize: 16,
+    color: '#09332C',
+    padding: 0,
+    margin: 0,
+  },
+  unitLabel: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 14,
+    color: 'rgba(9,51,44,0.4)',
+  },
+  ftRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  privacyNote: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 12,
+    color: 'rgba(9,51,44,0.4)',
+    textAlign: 'center',
+    lineHeight: 17,
+    paddingHorizontal: 8,
+  },
+});
