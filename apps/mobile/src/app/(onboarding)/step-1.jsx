@@ -53,21 +53,19 @@ export default function Step1() {
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Progress dots */}
+      {/* Progress dots — centered */}
       <View style={styles.topBar}>
-        <View style={styles.dots}>
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === 0
-                  ? [styles.dotCurrent, { backgroundColor: '#F0531C' }]
-                  : styles.dotFuture,
-              ]}
-            />
-          ))}
-        </View>
+        {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.dot,
+              i === 0
+                ? [styles.dotCurrent, { backgroundColor: '#F0531C' }]
+                : styles.dotFuture,
+            ]}
+          />
+        ))}
       </View>
 
       {/* Main content — vertically centered */}
@@ -109,7 +107,6 @@ export default function Step1() {
       {/* Bottom nav */}
       <View style={[styles.bottomNav, { paddingBottom: insets.bottom + 14 }]}>
         <View style={styles.navPlaceholder} />
-        <Text style={styles.stepCounter}>1 / {TOTAL_STEPS}</Text>
         <View style={styles.navRight}>
           <Pressable
             style={({ pressed }) => [
@@ -137,15 +134,12 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
     paddingHorizontal: 24,
     paddingTop: 10,
     paddingBottom: 6,
     minHeight: 44,
-  },
-  dots: {
-    flexDirection: 'row',
-    gap: 5,
-    alignItems: 'center',
   },
   dot: {
     height: 6,
@@ -204,14 +198,6 @@ const styles = StyleSheet.create({
   },
   navPlaceholder: {
     width: 44,
-  },
-  stepCounter: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 13,
-    color: 'rgba(9,51,44,0.35)',
-    letterSpacing: 0.2,
-    flex: 1,
-    textAlign: 'center',
   },
   navRight: {
     flex: 1,
