@@ -1,264 +1,244 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  Alert,
+} from 'react-native';
 import { MotiView } from 'moti';
-import { Fingerprint, ShieldCheck, AlertCircle } from 'lucide-react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
+import { Phone, User, Plus, Trash2, Shield } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-// expo-local-authentication is not yet installed.
-// TODO: npx expo install expo-local-authentication
-// Then replace the stub below with real calls.
-async function authenticateAsync() {
-  console.log('[BIOMETRICS STUB] authenticateAsync');
-  return { success: true };
-}
+const RELATIONSHIPS = ['Parent', 'Sibling', 'Partner', 'Friend', 'Carer', 'Doctor', 'Other'];
 
-function FaceIdGraphic() {
-  return (
-    <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-      <Circle cx="40" cy="40" r="38" stroke="#09332C" strokeWidth="2" strokeOpacity={0.15} />
-      <Circle cx="40" cy="40" r="30" stroke="#09332C" strokeWidth="1.5" strokeOpacity={0.1} />
-      {/* Face outline */}
-      <Path
-        d="M24 36 C24 26 56 26 56 36 L56 46 C56 56 24 56 24 46 Z"
-        stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7}
-      />
-      {/* Eyes */}
-      <Circle cx="33" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
-      <Circle cx="47" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
-      {/* Smile */}
-      <Path
-        d="M33 48 Q40 53 47 48"
-        stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7}
-      />
-      {/* Scan lines */}
-      <Path d="M24 28 L24 24 L28 24" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M52 28 L52 24 L56 24" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M24 52 L24 56 L28 56" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M52 52 L52 56 L56 56" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-    </Svg>
-  );
-}
+const emptyContact = () => ({ name: '', phone: '', relationship: '' });
 
 export default function Step4() {
   const { setOnboardingField } = useAppStore();
-  const [status, setStatus] = useState('idle'); // idle | success | failed | unavailable
-  const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
+  const [contacts, setContacts] = useState([emptyContact()]);
+  const [focusedField, setFocusedField] = useState(null);
 
-  const handleEnable = async () => {
-    try {
-      // TODO: Check if hardware available:
-      // const hasHardware = await LocalAuthentication.hasHardwareAsync();
-      // const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-      const result = await authenticateAsync();
-      if (result.success) {
-        setStatus('success');
-        setOnboardingField('biometricsEnabled', true);
-      } else {
-        setStatus('failed');
-      }
-    } catch {
-      setStatus('unavailable');
-    }
+  const updateContact = (index, field, value) => {
+    setContacts((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
   };
 
-  const handleSkip = () => {
-    setOnboardingField('biometricsEnabled', false);
-    router.push('/(onboarding)/step-5');
+  const addContact = () => {
+    if (contacts.length < 3) setContacts((prev) => [...prev, emptyContact()]);
   };
+
+  const removeContact = (index) => {
+    if (contacts.length === 1) return;
+    setContacts((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const isValid = contacts[0].name.trim() && contacts[0].phone.trim();
 
   const handleContinue = () => {
+    const validContacts = contacts.filter((c) => c.name.trim() && c.phone.trim());
+    if (!validContacts.length) {
+      Alert.alert('Required', 'Please add at least one emergency contact.');
+      return;
+    }
+    setOnboardingField('emergencyContacts', validContacts);
     router.push('/(onboarding)/step-5');
   };
 
   return (
     <OnboardingStep
       step={4}
-      title="Secure your account"
-      subtitle={`Use ${biometricType} for quick and secure access to your health data.`}
+      title="Emergency contact"
+      subtitle="In a crisis, who should we call? At least one contact is required."
+      illustrationIcon={Shield}
+      illustrationColor="#781D11"
       onBack={() => router.back()}
-      onCta={status === 'success' ? handleContinue : handleEnable}
-      ctaLabel={status === 'success' ? 'Continue' : `Enable ${biometricType}`}
+      onCta={handleContinue}
+      ctaDisabled={!isValid}
+      ctaLabel="Save & Next"
     >
-      {/* Graphic */}
-      <View style={styles.graphicContainer}>
+      {contacts.map((contact, index) => (
         <MotiView
-          from={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 15, stiffness: 80, delay: 100 }}
-          style={styles.graphicWrapper}
+          key={index}
+          from={{ opacity: 0, translateY: 12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: 'spring', damping: 16, stiffness: 80, delay: index * 80 }}
+          style={styles.contactCard}
         >
-          {/* Pulsing rings */}
-          {status === 'success' && (
-            <>
-              <MotiView
-                from={{ scale: 1, opacity: 0.4 }}
-                animate={{ scale: 1.5, opacity: 0 }}
-                transition={{ type: 'timing', duration: 1500, loop: true }}
-                style={[StyleSheet.absoluteFill, styles.pulseRing]}
-              />
-              <MotiView
-                from={{ scale: 1, opacity: 0.3 }}
-                animate={{ scale: 1.3, opacity: 0 }}
-                transition={{ type: 'timing', duration: 1500, loop: true, delay: 300 }}
-                style={[StyleSheet.absoluteFill, styles.pulseRing]}
-              />
-            </>
-          )}
-          <View style={[styles.graphicCircle, status === 'success' && styles.graphicCircleSuccess]}>
-            {status === 'success'
-              ? <ShieldCheck size={44} color="#059669" strokeWidth={1.5} />
-              : <FaceIdGraphic />
-            }
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>
+              {index === 0 ? 'Primary contact' : `Contact ${index + 1}`}
+            </Text>
+            {index > 0 && (
+              <Pressable onPress={() => removeContact(index)} hitSlop={8}>
+                <Trash2 size={16} color="#DC2626" strokeWidth={1.8} />
+              </Pressable>
+            )}
+          </View>
+
+          <View style={[styles.inputWrapper, focusedField === `name-${index}` && styles.inputFocused]}>
+            <User size={16} color={focusedField === `name-${index}` ? '#F0531C' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
+            <TextInput
+              style={styles.input}
+              placeholder="Full name"
+              placeholderTextColor="rgba(9,51,44,0.35)"
+              value={contact.name}
+              onChangeText={(v) => updateContact(index, 'name', v)}
+              autoCapitalize="words"
+              onFocus={() => setFocusedField(`name-${index}`)}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          <View style={[styles.inputWrapper, focusedField === `phone-${index}` && styles.inputFocused]}>
+            <Phone size={16} color={focusedField === `phone-${index}` ? '#F0531C' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone number"
+              placeholderTextColor="rgba(9,51,44,0.35)"
+              value={contact.phone}
+              onChangeText={(v) => updateContact(index, 'phone', v)}
+              keyboardType="phone-pad"
+              onFocus={() => setFocusedField(`phone-${index}`)}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          <Text style={styles.relLabel}>Relationship</Text>
+          <View style={styles.relChips}>
+            {RELATIONSHIPS.map((rel) => {
+              const selected = contact.relationship === rel;
+              return (
+                <Pressable
+                  key={rel}
+                  style={({ pressed }) => [
+                    styles.relChip,
+                    selected && styles.relChipSelected,
+                    pressed && !selected && { opacity: 0.7 },
+                  ]}
+                  onPress={() => updateContact(index, 'relationship', rel)}
+                >
+                  <Text style={[styles.relChipText, selected && styles.relChipTextSelected]}>
+                    {rel}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </MotiView>
+      ))}
 
-        {status === 'success' && (
-          <MotiView
-            from={{ opacity: 0, translateY: 8 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: 'spring', damping: 16, stiffness: 80 }}
-          >
-            <Text style={styles.successText}>{biometricType} enabled!</Text>
-          </MotiView>
-        )}
-
-        {status === 'failed' && (
-          <MotiView
-            from={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={styles.warningRow}
-          >
-            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
-            <Text style={styles.warningText}>Authentication failed. Try again or skip for now.</Text>
-          </MotiView>
-        )}
-
-        {status === 'unavailable' && (
-          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.warningRow}>
-            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
-            <Text style={styles.warningText}>
-              {biometricType} is not available on this device. You can enable it later in Settings.
-            </Text>
-          </MotiView>
-        )}
-      </View>
-
-      {/* Feature bullets */}
-      {status !== 'success' && (
-        <View style={styles.bullets}>
-          {[
-            'Quick access without typing your password',
-            'Your health data stays private and secure',
-            'Works even in an emergency when time matters',
-          ].map((text) => (
-            <View key={text} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{text}</Text>
-            </View>
-          ))}
-        </View>
+      {contacts.length < 3 && (
+        <Pressable
+          style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
+          onPress={addContact}
+        >
+          <Plus size={16} color="#09332C" strokeWidth={2} />
+          <Text style={styles.addBtnText}>Add another contact</Text>
+        </Pressable>
       )}
-
-      {/* Skip link */}
-      <Pressable
-        style={({ pressed }) => [styles.skipLink, pressed && { opacity: 0.6 }]}
-        onPress={handleSkip}
-      >
-        <Text style={styles.skipLinkText}>
-          {status === 'success' ? null : 'Skip for now'}
-        </Text>
-      </Pressable>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  graphicContainer: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    gap: 16,
-  },
-  graphicWrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 120,
-    height: 120,
-  },
-  pulseRing: {
-    borderRadius: 60,
-    borderWidth: 2,
-    borderColor: '#059669',
-  },
-  graphicCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(9,51,44,0.06)',
-    borderWidth: 2,
-    borderColor: 'rgba(9,51,44,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  graphicCircleSuccess: {
-    backgroundColor: 'rgba(5,150,105,0.1)',
-    borderColor: 'rgba(5,150,105,0.3)',
-  },
-  successText: {
-    fontFamily: 'Geist_600SemiBold',
-    fontSize: 16,
-    color: '#059669',
-    textAlign: 'center',
-  },
-  warningRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    backgroundColor: 'rgba(245,158,11,0.08)',
-    borderRadius: 10,
-    padding: 12,
-    marginHorizontal: 16,
-  },
-  warningText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 13,
-    color: '#B45309',
-    flex: 1,
-    lineHeight: 18,
-  },
-  bullets: {
+  contactCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
     gap: 12,
-    paddingHorizontal: 4,
   },
-  bulletRow: {
+  cardHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardLabel: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 13,
+    color: '#09332C',
+    letterSpacing: 0.2,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F4F0',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     gap: 10,
   },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#F0531C',
-    marginTop: 6,
+  inputFocused: {
+    borderColor: '#F0531C',
+    backgroundColor: 'rgba(240,83,28,0.04)',
   },
-  bulletText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: 'rgba(9,51,44,0.65)',
+  input: {
     flex: 1,
-    lineHeight: 20,
+    fontFamily: 'Geist_400Regular',
+    fontSize: 15,
+    color: '#09332C',
+    padding: 0,
+    margin: 0,
   },
-  skipLink: {
+  relLabel: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 13,
+    color: 'rgba(9,51,44,0.55)',
+    marginBottom: -4,
+  },
+  relChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  relChip: {
+    backgroundColor: '#F8F4F0',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.1)',
+  },
+  relChipSelected: {
+    backgroundColor: '#09332C',
+    borderColor: '#09332C',
+  },
+  relChipText: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 13,
+    color: '#09332C',
+  },
+  relChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  addBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(9,51,44,0.05)',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.1)',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
     marginTop: 4,
   },
-  skipLinkText: {
+  addBtnText: {
     fontFamily: 'Geist_500Medium',
     fontSize: 14,
-    color: '#A9334D',
+    color: '#09332C',
   },
 });

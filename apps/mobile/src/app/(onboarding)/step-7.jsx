@@ -2,275 +2,116 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Pill, Plus, Trash2, ChevronDown } from 'lucide-react-native';
+import { Ruler, Weight } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-const FREQUENCIES = ['Once daily', 'Twice daily', 'Three times daily', 'Every other day', 'Weekly', 'As needed'];
-
-const emptyMedication = () => ({ name: '', dosage: '', frequency: '' });
+function UnitToggle({ options, selected, onSelect }) {
+  return (
+    <View style={styles.unitToggle}>
+      {options.map((opt) => (
+        <Pressable key={opt} style={[styles.unitBtn, selected === opt && styles.unitBtnActive]} onPress={() => onSelect(opt)}>
+          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>{opt}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 export default function Step7() {
   const { setOnboardingField } = useAppStore();
-  const [medications, setMedications] = useState([emptyMedication()]);
+  const [heightUnit, setHeightUnit] = useState('cm');
+  const [weightUnit, setWeightUnit] = useState('kg');
+  const [heightCm, setHeightCm] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightIn, setHeightIn] = useState('');
+  const [weight, setWeight] = useState('');
   const [focusedField, setFocusedField] = useState(null);
-  const [openFreqIndex, setOpenFreqIndex] = useState(null);
-
-  const updateMed = (index, field, value) => {
-    setMedications((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
-  };
-
-  const addMed = () => {
-    if (medications.length < 3) setMedications((prev) => [...prev, emptyMedication()]);
-  };
-
-  const removeMed = (index) => {
-    if (medications.length === 1) return;
-    setMedications((prev) => prev.filter((_, i) => i !== index));
-  };
 
   const handleSkip = () => router.push('/(onboarding)/step-8');
 
   const handleContinue = () => {
-    const validMeds = medications.filter((m) => m.name.trim());
-    if (validMeds.length) setOnboardingField('medications', validMeds);
+    let heightInCm = null, weightInKg = null;
+    if (heightUnit === 'cm' && heightCm) heightInCm = parseFloat(heightCm);
+    else if (heightUnit === 'ft' && (heightFt || heightIn)) {
+      heightInCm = Math.round((parseFloat(heightFt) || 0) * 30.48 + (parseFloat(heightIn) || 0) * 2.54);
+    }
+    if (weight) {
+      const w = parseFloat(weight);
+      weightInKg = weightUnit === 'lb' ? Math.round(w * 0.453592 * 10) / 10 : w;
+    }
+    if (heightInCm !== null) setOnboardingField('height', heightInCm);
+    if (weightInKg !== null) setOnboardingField('weight', weightInKg);
     router.push('/(onboarding)/step-8');
   };
 
   return (
     <OnboardingStep
       step={7}
-      title="Current medications"
-      subtitle="Add the medications you take for sickle cell. You can manage these in full detail from the Care Hub."
+      title="Body measurements"
+      subtitle="Used for health tracking and personalised insights. Completely optional."
+      illustrationIcon={Ruler}
+      illustrationColor="#059669"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
       onCta={handleContinue}
-      ctaLabel={medications.some((m) => m.name.trim()) ? 'Save & Continue' : 'Skip'}
+      ctaLabel="Save & Next"
     >
-      {medications.map((med, index) => (
-        <MotiView
-          key={index}
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 16, stiffness: 80, delay: index * 60 }}
-          style={styles.medCard}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardHeaderLeft}>
-              <Pill size={16} color="#09332C" strokeWidth={1.8} />
-              <Text style={styles.cardLabel}>
-                {index === 0 ? 'Medication' : `Medication ${index + 1}`}
-              </Text>
+      <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80 }} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardIconRow}><Ruler size={18} color="#09332C" strokeWidth={1.8} /><Text style={styles.cardTitle}>Height</Text></View>
+          <UnitToggle options={['cm', 'ft']} selected={heightUnit} onSelect={setHeightUnit} />
+        </View>
+        {heightUnit === 'cm' ? (
+          <View style={[styles.inputWrapper, focusedField === 'height-cm' && styles.inputFocused]}>
+            <TextInput style={styles.input} placeholder="e.g. 170" placeholderTextColor="rgba(9,51,44,0.35)" value={heightCm} onChangeText={setHeightCm} keyboardType="numeric" onFocus={() => setFocusedField('height-cm')} onBlur={() => setFocusedField(null)} />
+            <Text style={styles.unitLabel}>cm</Text>
+          </View>
+        ) : (
+          <View style={styles.ftRow}>
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-ft' && styles.inputFocused]}>
+              <TextInput style={styles.input} placeholder="5" placeholderTextColor="rgba(9,51,44,0.35)" value={heightFt} onChangeText={setHeightFt} keyboardType="numeric" onFocus={() => setFocusedField('height-ft')} onBlur={() => setFocusedField(null)} />
+              <Text style={styles.unitLabel}>ft</Text>
             </View>
-            {index > 0 && (
-              <Pressable onPress={() => removeMed(index)} hitSlop={8}>
-                <Trash2 size={15} color="#DC2626" strokeWidth={1.8} />
-              </Pressable>
-            )}
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-in' && styles.inputFocused]}>
+              <TextInput style={styles.input} placeholder="8" placeholderTextColor="rgba(9,51,44,0.35)" value={heightIn} onChangeText={setHeightIn} keyboardType="numeric" onFocus={() => setFocusedField('height-in')} onBlur={() => setFocusedField(null)} />
+              <Text style={styles.unitLabel}>in</Text>
+            </View>
           </View>
+        )}
+      </MotiView>
 
-          {/* Drug name */}
-          <View style={[styles.inputWrapper, focusedField === `name-${index}` && styles.inputFocused]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Drug name (e.g. Hydroxyurea)"
-              placeholderTextColor="rgba(9,51,44,0.35)"
-              value={med.name}
-              onChangeText={(v) => updateMed(index, 'name', v)}
-              onFocus={() => setFocusedField(`name-${index}`)}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
+      <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 80 }} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardIconRow}><Weight size={18} color="#09332C" strokeWidth={1.8} /><Text style={styles.cardTitle}>Weight</Text></View>
+          <UnitToggle options={['kg', 'lb']} selected={weightUnit} onSelect={setWeightUnit} />
+        </View>
+        <View style={[styles.inputWrapper, focusedField === 'weight' && styles.inputFocused]}>
+          <TextInput style={styles.input} placeholder={weightUnit === 'kg' ? 'e.g. 65' : 'e.g. 143'} placeholderTextColor="rgba(9,51,44,0.35)" value={weight} onChangeText={setWeight} keyboardType="numeric" onFocus={() => setFocusedField('weight')} onBlur={() => setFocusedField(null)} />
+          <Text style={styles.unitLabel}>{weightUnit}</Text>
+        </View>
+      </MotiView>
 
-          {/* Dosage */}
-          <View style={[styles.inputWrapper, focusedField === `dosage-${index}` && styles.inputFocused]}>
-            <TextInput
-              style={styles.input}
-              placeholder="Dosage (e.g. 500mg)"
-              placeholderTextColor="rgba(9,51,44,0.35)"
-              value={med.dosage}
-              onChangeText={(v) => updateMed(index, 'dosage', v)}
-              onFocus={() => setFocusedField(`dosage-${index}`)}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
-
-          {/* Frequency */}
-          <Pressable
-            style={styles.freqSelector}
-            onPress={() => setOpenFreqIndex(openFreqIndex === index ? null : index)}
-          >
-            <Text style={[styles.freqText, !med.frequency && styles.freqPlaceholder]}>
-              {med.frequency || 'Frequency'}
-            </Text>
-            <ChevronDown
-              size={16}
-              color="rgba(9,51,44,0.4)"
-              strokeWidth={2}
-              style={{ transform: [{ rotate: openFreqIndex === index ? '180deg' : '0deg' }] }}
-            />
-          </Pressable>
-
-          {openFreqIndex === index && (
-            <MotiView
-              from={{ opacity: 0, translateY: -4 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              style={styles.freqDropdown}
-            >
-              {FREQUENCIES.map((freq) => (
-                <Pressable
-                  key={freq}
-                  style={({ pressed }) => [
-                    styles.freqOption,
-                    med.frequency === freq && styles.freqOptionSelected,
-                    pressed && { backgroundColor: 'rgba(9,51,44,0.05)' },
-                  ]}
-                  onPress={() => { updateMed(index, 'frequency', freq); setOpenFreqIndex(null); }}
-                >
-                  <Text style={[styles.freqOptionText, med.frequency === freq && styles.freqOptionTextSelected]}>
-                    {freq}
-                  </Text>
-                </Pressable>
-              ))}
-            </MotiView>
-          )}
-        </MotiView>
-      ))}
-
-      {medications.length < 3 && (
-        <Pressable
-          style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
-          onPress={addMed}
-        >
-          <Plus size={16} color="#09332C" strokeWidth={2} />
-          <Text style={styles.addBtnText}>Add another medication</Text>
-        </Pressable>
-      )}
-
-      <Text style={styles.hint}>
-        Up to 3 medications in onboarding. Add more from the Care Hub after setup.
-      </Text>
+      <Text style={styles.privacyNote}>Your measurements are stored locally and never shared without your permission.</Text>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  medCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
-    gap: 10,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  cardLabel: {
-    fontFamily: 'Geist_600SemiBold',
-    fontSize: 13,
-    color: '#09332C',
-  },
-  inputWrapper: {
-    backgroundColor: '#F8F4F0',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  inputFocused: {
-    borderColor: '#F0531C',
-    backgroundColor: 'rgba(240,83,28,0.04)',
-  },
-  input: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: '#09332C',
-    padding: 0,
-    margin: 0,
-  },
-  freqSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F8F4F0',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  freqText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: '#09332C',
-  },
-  freqPlaceholder: {
-    color: 'rgba(9,51,44,0.35)',
-  },
-  freqDropdown: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
-    overflow: 'hidden',
-    marginTop: -6,
-  },
-  freqOption: {
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(9,51,44,0.06)',
-  },
-  freqOptionSelected: {
-    backgroundColor: 'rgba(9,51,44,0.06)',
-  },
-  freqOptionText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: '#09332C',
-  },
-  freqOptionTextSelected: {
-    fontFamily: 'Geist_600SemiBold',
-    color: '#09332C',
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: 'rgba(9,51,44,0.04)',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  addBtnText: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 14,
-    color: '#09332C',
-  },
-  hint: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
-    textAlign: 'center',
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 12 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { fontFamily: 'Geist_600SemiBold', fontSize: 15, color: '#09332C' },
+  unitToggle: { flexDirection: 'row', backgroundColor: '#F8F4F0', borderRadius: 8, padding: 2 },
+  unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6 },
+  unitBtnActive: { backgroundColor: '#09332C' },
+  unitBtnText: { fontFamily: 'Geist_500Medium', fontSize: 13, color: 'rgba(9,51,44,0.55)' },
+  unitBtnTextActive: { color: '#FFFFFF' },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
+  inputFocused: { borderColor: '#F0531C', backgroundColor: 'rgba(240,83,28,0.04)' },
+  input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 16, color: '#09332C', padding: 0, margin: 0 },
+  unitLabel: { fontFamily: 'Geist_500Medium', fontSize: 14, color: 'rgba(9,51,44,0.4)' },
+  ftRow: { flexDirection: 'row', gap: 8 },
+  privacyNote: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center', lineHeight: 17 },
 });

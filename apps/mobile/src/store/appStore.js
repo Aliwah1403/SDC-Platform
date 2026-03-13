@@ -11,6 +11,7 @@ export const useAppStore = create((set, get) => ({
   // Onboarding Data
   onboardingComplete: false,
   onboardingData: {
+    nickname: null,      // preferred name e.g. "Cuto"
     dob: null,           // ISO date string e.g. "1995-04-15"
     scdType: null,       // e.g. "HbSS", "HbSC", "unsure"
     emergencyContacts: [],
@@ -77,6 +78,7 @@ export const useAppStore = create((set, get) => ({
     set({
       onboardingComplete: false,
       onboardingData: {
+        nickname: null,
         dob: null,
         scdType: null,
         emergencyContacts: [],

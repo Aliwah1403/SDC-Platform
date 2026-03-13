@@ -1,232 +1,236 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { Info } from 'lucide-react-native';
-import OnboardingStep from '@/components/OnboardingStep';
+import { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MotiView } from 'moti';
+import { ArrowRight } from 'lucide-react-native';
 import { useAppStore } from '@/store/appStore';
+import { TOTAL_STEPS } from '@/components/OnboardingStep';
 
-const SCD_TYPES = [
-  { key: 'HbSS', label: 'HbSS (Sickle Cell Anaemia)', desc: 'The most common and typically most severe form. Two copies of the sickle gene.' },
-  { key: 'HbSC', label: 'HbSC', desc: 'One sickle gene and one haemoglobin C gene. Usually milder than HbSS.' },
-  { key: 'HbSB0', label: 'HbS-β⁰ Thalassaemia', desc: 'One sickle gene and one beta-zero thalassaemia gene. Severity similar to HbSS.' },
-  { key: 'HbSB+', label: 'HbS-β⁺ Thalassaemia', desc: 'One sickle gene and one beta-plus thalassaemia gene. Usually milder.' },
-  { key: 'HbSD', label: 'HbSD', desc: 'One sickle gene and one haemoglobin D gene.' },
-  { key: 'HbSE', label: 'HbSE', desc: 'One sickle gene and one haemoglobin E gene. Generally mild.' },
-  { key: 'unsure', label: "I'm not sure", desc: 'You can update this later once you have more information from your doctor.' },
-];
-
-const CURRENT_YEAR = new Date().getFullYear();
-const YEARS = Array.from({ length: 100 }, (_, i) => CURRENT_YEAR - i);
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+const FULL_QUESTION = 'What would you\nlike us to call you?';
+const CHAR_DELAY = 42;
+const INPUT_APPEAR_DELAY = 550;
 
 export default function Step1() {
   const { setOnboardingField } = useAppStore();
+  const insets = useSafeAreaInsets();
+  const inputRef = useRef(null);
 
-  const [day, setDay] = useState(1);
-  const [month, setMonth] = useState(0);
-  const [year, setYear] = useState(1990);
-  const [scdType, setScdType] = useState(null);
-  const [expandedType, setExpandedType] = useState(null);
+  const [displayed, setDisplayed] = useState('');
+  const [typingDone, setTypingDone] = useState(false);
+  const [showInput, setShowInput] = useState(false);
+  const [nickname, setNickname] = useState('');
+  const [focused, setFocused] = useState(false);
 
-  const handleContinue = () => {
-    const dob = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    setOnboardingField('dob', dob);
-    setOnboardingField('scdType', scdType);
-    router.push('/(onboarding)/step-2');
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDisplayed(FULL_QUESTION.slice(0, i));
+      if (i >= FULL_QUESTION.length) {
+        clearInterval(interval);
+        setTypingDone(true);
+        setTimeout(() => setShowInput(true), INPUT_APPEAR_DELAY);
+      }
+    }, CHAR_DELAY);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (showInput) setTimeout(() => inputRef.current?.focus(), 300);
+  }, [showInput]);
+
+  const canProceed = showInput && nickname.trim().length > 0;
+
+  const handleNext = () => {
+    const name = nickname.trim();
+    if (name) setOnboardingField('nickname', name);
+    router.push('/(onboarding)/meet');
   };
 
   return (
-    <OnboardingStep
-      step={1}
-      title="About you"
-      subtitle="Your date of birth and SCD type help us personalise your experience."
-      onCta={handleContinue}
-      ctaDisabled={!scdType}
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Date of Birth */}
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Date of birth</Text>
-        <View style={styles.pickerRow}>
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>Day</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={day}
-                onValueChange={setDay}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                {DAYS.map((d) => (
-                  <Picker.Item key={d} label={String(d)} value={d} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={[styles.pickerWrapper, { flex: 2 }]}>
-            <Text style={styles.pickerLabel}>Month</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={month}
-                onValueChange={setMonth}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                {MONTHS.map((m, i) => (
-                  <Picker.Item key={m} label={m} value={i} />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.pickerWrapper}>
-            <Text style={styles.pickerLabel}>Year</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={year}
-                onValueChange={setYear}
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                {YEARS.map((y) => (
-                  <Picker.Item key={y} label={String(y)} value={y} />
-                ))}
-              </Picker>
-            </View>
-          </View>
+      {/* Progress dots */}
+      <View style={styles.topBar}>
+        <View style={styles.dots}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === 0
+                  ? [styles.dotCurrent, { backgroundColor: '#F0531C' }]
+                  : styles.dotFuture,
+              ]}
+            />
+          ))}
         </View>
       </View>
 
-      {/* SCD Type */}
-      <View style={[styles.section, { marginTop: 24 }]}>
-        <Text style={styles.sectionLabel}>SCD type</Text>
-        <View style={styles.typeGrid}>
-          {SCD_TYPES.map((type) => {
-            const isSelected = scdType === type.key;
-            const isExpanded = expandedType === type.key;
-            return (
-              <Pressable
-                key={type.key}
-                style={({ pressed }) => [
-                  styles.typeChip,
-                  isSelected && styles.typeChipSelected,
-                  pressed && !isSelected && { opacity: 0.7 },
-                ]}
-                onPress={() => setScdType(type.key)}
-                onLongPress={() => setExpandedType(isExpanded ? null : type.key)}
-              >
-                <View style={styles.typeChipRow}>
-                  <Text style={[styles.typeChipText, isSelected && styles.typeChipTextSelected]}>
-                    {type.label}
-                  </Text>
-                  <Pressable onPress={() => setExpandedType(isExpanded ? null : type.key)} hitSlop={6}>
-                    <Info size={14} color={isSelected ? '#FFFFFF' : 'rgba(9,51,44,0.35)'} strokeWidth={2} />
-                  </Pressable>
-                </View>
-                {isExpanded && (
-                  <Text style={[styles.typeChipDesc, isSelected && styles.typeChipDescSelected]}>
-                    {type.desc}
-                  </Text>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-        <Text style={styles.hintText}>Tap the ⓘ icon on any type to learn more.</Text>
+      {/* Main content — vertically centered */}
+      <View style={styles.content}>
+        <Text style={styles.question}>
+          {displayed}
+          {!typingDone ? <Text style={styles.cursor}>|</Text> : null}
+        </Text>
+
+        {showInput && (
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', damping: 18, stiffness: 75 }}
+            style={styles.inputArea}
+          >
+            <TextInput
+              ref={inputRef}
+              style={styles.input}
+              value={nickname}
+              onChangeText={setNickname}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              autoCapitalize="words"
+              autoCorrect={false}
+              maxLength={20}
+              returnKeyType="done"
+              onSubmitEditing={canProceed ? handleNext : undefined}
+            />
+            <MotiView
+              animate={{ backgroundColor: focused ? '#F0531C' : 'rgba(9,51,44,0.2)' }}
+              transition={{ type: 'timing', duration: 200 }}
+              style={styles.underline}
+            />
+          </MotiView>
+        )}
       </View>
-    </OnboardingStep>
+
+      {/* Bottom nav */}
+      <View style={[styles.bottomNav, { paddingBottom: insets.bottom + 14 }]}>
+        <View style={styles.navPlaceholder} />
+        <Text style={styles.stepCounter}>1 / {TOTAL_STEPS}</Text>
+        <View style={styles.navRight}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.nextPill,
+              { backgroundColor: canProceed ? '#09332C' : 'rgba(9,51,44,0.2)' },
+              pressed && canProceed && { opacity: 0.85 },
+            ]}
+            onPress={handleNext}
+            disabled={!canProceed}
+          >
+            <Text style={styles.nextPillText}>Next</Text>
+            <ArrowRight size={15} color="#FFFFFF" strokeWidth={2.5} />
+          </Pressable>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {},
-  sectionLabel: {
-    fontFamily: 'Geist_600SemiBold',
-    fontSize: 14,
-    color: 'rgba(9,51,44,0.65)',
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    marginBottom: 12,
-  },
-  pickerRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  pickerWrapper: {
+  container: {
     flex: 1,
+    backgroundColor: '#F8F4F0',
   },
-  pickerLabel: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 12,
-    color: 'rgba(9,51,44,0.5)',
-    marginBottom: 4,
-    textAlign: 'center',
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    minHeight: 44,
   },
-  pickerContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
-    overflow: 'hidden',
-    height: 120,
+  dots: {
+    flexDirection: 'row',
+    gap: 5,
+    alignItems: 'center',
   },
-  picker: {
+  dot: {
+    height: 6,
+    borderRadius: 3,
+  },
+  dotCurrent: {
+    width: 22,
+  },
+  dotFuture: {
+    width: 6,
+    backgroundColor: 'rgba(9,51,44,0.14)',
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 32,
+    justifyContent: 'center',
+    paddingBottom: 40,
+  },
+  question: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 36,
     color: '#09332C',
-    height: 120,
+    letterSpacing: -1.2,
+    lineHeight: 44,
+    marginBottom: 36,
   },
-  pickerItem: {
+  cursor: {
+    color: '#F0531C',
     fontFamily: 'Geist_400Regular',
-    fontSize: 15,
+  },
+  inputArea: {
+    gap: 0,
+  },
+  input: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 28,
     color: '#09332C',
-    height: 120,
+    padding: 0,
+    margin: 0,
+    letterSpacing: -0.5,
+    paddingBottom: 10,
   },
-  typeGrid: {
-    gap: 8,
+  underline: {
+    height: 2,
+    borderRadius: 1,
   },
-  typeChip: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
-    padding: 14,
-  },
-  typeChipSelected: {
-    backgroundColor: '#09332C',
-    borderColor: '#09332C',
-  },
-  typeChipRow: {
+  bottomNav: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(9,51,44,0.07)',
+    backgroundColor: '#F8F4F0',
   },
-  typeChipText: {
+  navPlaceholder: {
+    width: 44,
+  },
+  stepCounter: {
     fontFamily: 'Geist_500Medium',
-    fontSize: 15,
-    color: '#09332C',
-    flex: 1,
-  },
-  typeChipTextSelected: {
-    color: '#FFFFFF',
-  },
-  typeChipDesc: {
-    fontFamily: 'Geist_400Regular',
     fontSize: 13,
-    color: 'rgba(9,51,44,0.6)',
-    lineHeight: 18,
-    marginTop: 8,
+    color: 'rgba(9,51,44,0.35)',
+    letterSpacing: 0.2,
+    flex: 1,
+    textAlign: 'center',
   },
-  typeChipDescSelected: {
-    color: 'rgba(248,233,231,0.75)',
+  navRight: {
+    flex: 1,
+    alignItems: 'flex-end',
   },
-  hintText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
-    marginTop: 8,
+  nextPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: 24,
+    minWidth: 100,
+    justifyContent: 'center',
+  },
+  nextPillText: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 15,
+    color: '#FFFFFF',
+    letterSpacing: 0.1,
   },
 });

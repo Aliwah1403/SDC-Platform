@@ -1,179 +1,167 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Ruler, Weight } from 'lucide-react-native';
+import { Bell, BellOff, Clock } from 'lucide-react-native';
+import * as Notifications from 'expo-notifications';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-function UnitToggle({ options, selected, onSelect }) {
-  return (
-    <View style={styles.unitToggle}>
-      {options.map((opt) => (
-        <Pressable
-          key={opt}
-          style={[styles.unitBtn, selected === opt && styles.unitBtnActive]}
-          onPress={() => onSelect(opt)}
-        >
-          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>
-            {opt}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
+const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
+const MINUTES = ['00', '15', '30', '45'];
+const PERIODS = ['AM', 'PM'];
 
 export default function Step5() {
   const { setOnboardingField } = useAppStore();
 
-  const [heightUnit, setHeightUnit] = useState('cm');
-  const [weightUnit, setWeightUnit] = useState('kg');
-  const [heightCm, setHeightCm] = useState('');
-  const [heightFt, setHeightFt] = useState('');
-  const [heightIn, setHeightIn] = useState('');
-  const [weight, setWeight] = useState('');
-  const [focusedField, setFocusedField] = useState(null);
+  const [hour, setHour] = useState(8);
+  const [minute, setMinute] = useState('00');
+  const [period, setPeriod] = useState('PM');
+  const [notifEnabled, setNotifEnabled] = useState(false);
+  const [notifStatus, setNotifStatus] = useState('idle');
 
-  const handleSkip = () => {
-    router.push('/(onboarding)/step-6');
+  const toggleNotifications = async () => {
+    if (notifEnabled) {
+      setNotifEnabled(false);
+      setNotifStatus('idle');
+      return;
+    }
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status === 'granted') {
+        setNotifEnabled(true);
+        setNotifStatus('granted');
+      } else {
+        setNotifStatus('denied');
+      }
+    } catch {
+      setNotifStatus('denied');
+    }
   };
 
   const handleContinue = () => {
-    let heightInCm = null;
-    let weightInKg = null;
-
-    if (heightUnit === 'cm' && heightCm) {
-      heightInCm = parseFloat(heightCm);
-    } else if (heightUnit === 'ft' && (heightFt || heightIn)) {
-      const ft = parseFloat(heightFt) || 0;
-      const inches = parseFloat(heightIn) || 0;
-      heightInCm = Math.round((ft * 30.48) + (inches * 2.54));
-    }
-
-    if (weight) {
-      const w = parseFloat(weight);
-      weightInKg = weightUnit === 'lb' ? Math.round(w * 0.453592 * 10) / 10 : w;
-    }
-
-    if (heightInCm !== null) setOnboardingField('height', heightInCm);
-    if (weightInKg !== null) setOnboardingField('weight', weightInKg);
+    const checkInTime = `${String(hour).padStart(2, '0')}:${minute} ${period}`;
+    setOnboardingField('checkInTime', checkInTime);
+    setOnboardingField('notificationsEnabled', notifEnabled);
     router.push('/(onboarding)/step-6');
   };
 
   return (
     <OnboardingStep
       step={5}
-      title="Body measurements"
-      subtitle="Used for health tracking and personalised insights. Completely optional."
+      title="Daily check-in"
+      subtitle="Set a reminder so you never miss logging your health."
+      illustrationIcon={Clock}
+      illustrationColor="#F0531C"
       onBack={() => router.back()}
-      skippable
-      onSkip={handleSkip}
       onCta={handleContinue}
-      ctaLabel="Save & Continue"
     >
-      {/* Height */}
+      <View style={styles.card}>
+        <View style={styles.cardTitleRow}>
+          <Clock size={18} color="#09332C" strokeWidth={1.8} />
+          <Text style={styles.cardTitle}>Reminder time</Text>
+        </View>
+        <Text style={styles.cardSubtitle}>When should we remind you to log your health today?</Text>
+
+        <View style={styles.timeRow}>
+          <View style={styles.timeGroup}>
+            <Text style={styles.timeLabel}>Hour</Text>
+            <View style={styles.timeChips}>
+              {HOURS.map((h) => (
+                <Pressable
+                  key={h}
+                  style={[styles.timeChip, hour === h && styles.timeChipActive]}
+                  onPress={() => setHour(h)}
+                >
+                  <Text style={[styles.timeChipText, hour === h && styles.timeChipTextActive]}>
+                    {String(h).padStart(2, '0')}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.timeGroup}>
+            <Text style={styles.timeLabel}>Minute</Text>
+            <View style={styles.timeChips}>
+              {MINUTES.map((m) => (
+                <Pressable
+                  key={m}
+                  style={[styles.timeChip, minute === m && styles.timeChipActive]}
+                  onPress={() => setMinute(m)}
+                >
+                  <Text style={[styles.timeChipText, minute === m && styles.timeChipTextActive]}>
+                    :{m}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.timeGroup}>
+            <Text style={styles.timeLabel}>Period</Text>
+            <View style={styles.timeChips}>
+              {PERIODS.map((p) => (
+                <Pressable
+                  key={p}
+                  style={[styles.timeChip, period === p && styles.timeChipActive]}
+                  onPress={() => setPeriod(p)}
+                >
+                  <Text style={[styles.timeChipText, period === p && styles.timeChipTextActive]}>
+                    {p}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.previewBadge}>
+          <Text style={styles.previewText}>
+            Reminder set for <Text style={styles.previewTime}>{String(hour).padStart(2, '0')}:{minute} {period}</Text>
+          </Text>
+        </View>
+      </View>
+
       <MotiView
         from={{ opacity: 0, translateY: 8 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 16, stiffness: 80 }}
+        transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 100 }}
         style={styles.card}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIconRow}>
-            <Ruler size={18} color="#09332C" strokeWidth={1.8} />
-            <Text style={styles.cardTitle}>Height</Text>
+        <View style={styles.notifRow}>
+          <View style={[styles.notifIcon, notifEnabled && styles.notifIconEnabled]}>
+            {notifEnabled
+              ? <Bell size={20} color="#09332C" strokeWidth={1.8} />
+              : <BellOff size={20} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
+            }
           </View>
-          <UnitToggle
-            options={['cm', 'ft']}
-            selected={heightUnit}
-            onSelect={setHeightUnit}
-          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.cardTitle}>Enable notifications</Text>
+            <Text style={styles.cardSubtitle} numberOfLines={2}>
+              Get daily reminders, streak alerts, and medication prompts.
+            </Text>
+          </View>
+          <Pressable
+            style={[styles.toggle, notifEnabled && styles.toggleEnabled]}
+            onPress={toggleNotifications}
+          >
+            <MotiView
+              animate={{ translateX: notifEnabled ? 20 : 2 }}
+              transition={{ type: 'spring', damping: 18, stiffness: 120 }}
+              style={styles.toggleThumb}
+            />
+          </Pressable>
         </View>
 
-        {heightUnit === 'cm' ? (
-          <View style={[styles.inputWrapper, focusedField === 'height-cm' && styles.inputFocused]}>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 170"
-              placeholderTextColor="rgba(9,51,44,0.35)"
-              value={heightCm}
-              onChangeText={setHeightCm}
-              keyboardType="numeric"
-              onFocus={() => setFocusedField('height-cm')}
-              onBlur={() => setFocusedField(null)}
-            />
-            <Text style={styles.unitLabel}>cm</Text>
-          </View>
-        ) : (
-          <View style={styles.ftRow}>
-            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-ft' && styles.inputFocused]}>
-              <TextInput
-                style={styles.input}
-                placeholder="5"
-                placeholderTextColor="rgba(9,51,44,0.35)"
-                value={heightFt}
-                onChangeText={setHeightFt}
-                keyboardType="numeric"
-                onFocus={() => setFocusedField('height-ft')}
-                onBlur={() => setFocusedField(null)}
-              />
-              <Text style={styles.unitLabel}>ft</Text>
-            </View>
-            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-in' && styles.inputFocused]}>
-              <TextInput
-                style={styles.input}
-                placeholder="8"
-                placeholderTextColor="rgba(9,51,44,0.35)"
-                value={heightIn}
-                onChangeText={setHeightIn}
-                keyboardType="numeric"
-                onFocus={() => setFocusedField('height-in')}
-                onBlur={() => setFocusedField(null)}
-              />
-              <Text style={styles.unitLabel}>in</Text>
-            </View>
-          </View>
+        {notifStatus === 'denied' && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <Text style={styles.deniedText}>
+              Notifications were denied. You can enable them later in Settings.
+            </Text>
+          </MotiView>
         )}
       </MotiView>
-
-      {/* Weight */}
-      <MotiView
-        from={{ opacity: 0, translateY: 8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 80 }}
-        style={styles.card}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIconRow}>
-            <Weight size={18} color="#09332C" strokeWidth={1.8} />
-            <Text style={styles.cardTitle}>Weight</Text>
-          </View>
-          <UnitToggle
-            options={['kg', 'lb']}
-            selected={weightUnit}
-            onSelect={setWeightUnit}
-          />
-        </View>
-
-        <View style={[styles.inputWrapper, focusedField === 'weight' && styles.inputFocused]}>
-          <TextInput
-            style={styles.input}
-            placeholder={weightUnit === 'kg' ? 'e.g. 65' : 'e.g. 143'}
-            placeholderTextColor="rgba(9,51,44,0.35)"
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="numeric"
-            onFocus={() => setFocusedField('weight')}
-            onBlur={() => setFocusedField(null)}
-          />
-          <Text style={styles.unitLabel}>{weightUnit}</Text>
-        </View>
-      </MotiView>
-
-      <Text style={styles.privacyNote}>
-        Your measurements are stored locally and never shared without your permission.
-      </Text>
     </OnboardingStep>
   );
 }
@@ -188,12 +176,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(9,51,44,0.08)',
     gap: 12,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardIconRow: {
+  cardTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -203,66 +186,98 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#09332C',
   },
-  unitToggle: {
-    flexDirection: 'row',
-    backgroundColor: '#F8F4F0',
-    borderRadius: 8,
-    padding: 2,
-  },
-  unitBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  unitBtnActive: {
-    backgroundColor: '#09332C',
-  },
-  unitBtnText: {
-    fontFamily: 'Geist_500Medium',
+  cardSubtitle: {
+    fontFamily: 'Geist_400Regular',
     fontSize: 13,
-    color: 'rgba(9,51,44,0.55)',
+    color: 'rgba(9,51,44,0.5)',
+    lineHeight: 18,
   },
-  unitBtnTextActive: {
-    color: '#FFFFFF',
+  timeRow: { gap: 12 },
+  timeGroup: { gap: 6 },
+  timeLabel: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 12,
+    color: 'rgba(9,51,44,0.5)',
+    letterSpacing: 0.3,
   },
-  inputWrapper: {
+  timeChips: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  timeChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
     backgroundColor: '#F8F4F0',
-    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: 'rgba(9,51,44,0.08)',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 8,
   },
-  inputFocused: {
-    borderColor: '#F0531C',
-    backgroundColor: 'rgba(240,83,28,0.04)',
+  timeChipActive: {
+    backgroundColor: '#09332C',
+    borderColor: '#09332C',
   },
-  input: {
-    flex: 1,
-    fontFamily: 'Geist_400Regular',
-    fontSize: 16,
-    color: '#09332C',
-    padding: 0,
-    margin: 0,
-  },
-  unitLabel: {
+  timeChipText: {
     fontFamily: 'Geist_500Medium',
     fontSize: 14,
-    color: 'rgba(9,51,44,0.4)',
+    color: '#09332C',
   },
-  ftRow: {
+  timeChipTextActive: { color: '#FFFFFF' },
+  previewBadge: {
+    backgroundColor: 'rgba(9,51,44,0.06)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignSelf: 'flex-start',
+  },
+  previewText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13,
+    color: 'rgba(9,51,44,0.6)',
+  },
+  previewTime: {
+    fontFamily: 'Geist_600SemiBold',
+    color: '#09332C',
+  },
+  notifRow: {
     flexDirection: 'row',
-    gap: 8,
+    alignItems: 'center',
+    gap: 12,
   },
-  privacyNote: {
+  notifIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(9,51,44,0.06)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notifIconEnabled: {
+    backgroundColor: 'rgba(9,51,44,0.1)',
+  },
+  toggle: {
+    width: 46,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(9,51,44,0.15)',
+    justifyContent: 'center',
+  },
+  toggleEnabled: { backgroundColor: '#09332C' },
+  toggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  deniedText: {
     fontFamily: 'Geist_400Regular',
     fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
-    textAlign: 'center',
+    color: '#F59E0B',
     lineHeight: 17,
-    paddingHorizontal: 8,
   },
 });
