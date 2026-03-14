@@ -38,6 +38,7 @@ export default function OnboardingStep({
   title,
   subtitle,
   illustrationIcon: IllustIcon,
+  illustrationNode = null,
   illustrationColor = "#A9334D",
   skippable = false,
   onSkip,
@@ -94,7 +95,9 @@ export default function OnboardingStep({
           showsVerticalScrollIndicator={false}
         >
           {/* Illustration */}
-          {IllustIcon && (
+          {illustrationNode ? (
+            illustrationNode
+          ) : IllustIcon ? (
             <MotiView
               from={{ opacity: 0, scale: 0.88 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -165,7 +168,7 @@ export default function OnboardingStep({
                 </View>
               </View>
             </MotiView>
-          )}
+          ) : null}
 
           {/* Heading */}
           <MotiView
