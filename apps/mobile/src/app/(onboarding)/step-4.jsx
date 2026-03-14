@@ -70,9 +70,13 @@ export default function Step4() {
   const searchRef = useRef(null);
 
   const addPickedContact = (contact, targetIndex) => {
+    const resolvedName =
+      contact.name ||
+      [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
+      "";
     const phone = contact.phoneNumbers?.[0]?.number || "";
     const slot = {
-      name: contact.name || "",
+      name: resolvedName,
       phone,
       relationship: "",
       source: "picker",
@@ -91,7 +95,7 @@ export default function Step4() {
     if (Platform.OS === "ios") {
       try {
         const contact = await Contacts.presentContactPickerAsync();
-        if (contact?.name) addPickedContact(contact, targetIndex);
+        if (contact) addPickedContact(contact, targetIndex);
       } catch {
         // cancelled
       }
