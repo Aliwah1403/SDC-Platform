@@ -15,8 +15,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import * as Contacts from "expo-contacts";
+import PhoneInput from "react-native-phone-number-input";
 import {
-  Phone,
   Plus,
   Trash2,
   Shield,
@@ -40,7 +40,7 @@ const RELATIONSHIPS = [
 
 const emptyManual = () => ({
   name: "",
-  phone: "",
+  phone: "", // formatted international number (+441234567890)
   relationship: "",
   source: "manual",
 });
@@ -62,13 +62,14 @@ export default function Step4() {
   const [isLoading, setIsLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
 
-  // Android-only search modal state
+  // Android contacts modal
   const [allContacts, setAllContacts] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [pickerTargetIndex, setPickerTargetIndex] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const searchRef = useRef(null);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactPickerTarget, setContactPickerTarget] = useState(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const contactSearchRef = useRef(null);
 
+  // ── Contact picker (from phone) ─────────────────────────────
   const addPickedContact = (contact, targetIndex) => {
     const resolvedName =
       contact.name ||
@@ -89,15 +90,13 @@ export default function Step4() {
     });
   };
 
-  // iOS: uses native OS picker (no permission needed)
-  // Android: requests permission then shows search modal
   const handlePickContact = async (targetIndex) => {
     if (Platform.OS === "ios") {
       try {
         const contact = await Contacts.presentContactPickerAsync();
         if (contact) addPickedContact(contact, targetIndex);
       } catch {
-        // cancelled
+        /* cancelled */
       }
     } else {
       setIsLoading(true);
@@ -110,10 +109,10 @@ export default function Step4() {
           setAllContacts(
             data.filter((c) => c.name && c.phoneNumbers?.length > 0),
           );
-          setPickerTargetIndex(targetIndex);
-          setSearchQuery("");
-          setShowModal(true);
-          setTimeout(() => searchRef.current?.focus(), 300);
+          setContactPickerTarget(targetIndex);
+          setContactSearch("");
+          setShowContactModal(true);
+          setTimeout(() => contactSearchRef.current?.focus(), 300);
         } else {
           setIsManual(true);
           if (contacts.length === 0) setContacts([emptyManual()]);
@@ -127,12 +126,13 @@ export default function Step4() {
     }
   };
 
-  const selectFromModal = (contact) => {
-    addPickedContact(contact, pickerTargetIndex ?? contacts.length);
-    setShowModal(false);
-    setPickerTargetIndex(null);
+  const selectFromContactModal = (contact) => {
+    addPickedContact(contact, contactPickerTarget ?? contacts.length);
+    setShowContactModal(false);
+    setContactPickerTarget(null);
   };
 
+  // ── Contact list helpers ────────────────────────────────────
   const removeContact = (index) =>
     setContacts((prev) => prev.filter((_, i) => i !== index));
 
@@ -144,13 +144,11 @@ export default function Step4() {
     });
 
   const handleAddAnother = () => {
-    if (isManual) {
-      setContacts((prev) => [...prev, emptyManual()]);
-    } else {
-      handlePickContact(contacts.length);
-    }
+    if (isManual) setContacts((prev) => [...prev, emptyManual()]);
+    else handlePickContact(contacts.length);
   };
 
+  // ── Save ───────────────────────────────────────────────────
   const isValid =
     contacts.length > 0 &&
     !!contacts[0]?.name?.trim() &&
@@ -165,7 +163,7 @@ export default function Step4() {
   };
 
   const filteredContacts = allContacts
-    .filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    .filter((c) => c.name.toLowerCase().includes(contactSearch.toLowerCase()))
     .slice(0, 60);
 
   const showingCards = contacts.length > 0 || isManual;
@@ -182,6 +180,7 @@ export default function Step4() {
       ctaDisabled={!isValid}
       ctaLabel="Save & Next"
     >
+      {/* ── Gate ─────────────────────────────────────────────── */}
       {!showingCards && (
         <MotiView
           from={{ opacity: 0, translateY: 12 }}
@@ -225,6 +224,7 @@ export default function Step4() {
         </MotiView>
       )}
 
+      {/* ── Contact cards ─────────────────────────────────────── */}
       {contacts.map((contact, index) => (
         <MotiView
           key={index}
@@ -273,6 +273,7 @@ export default function Step4() {
             </View>
           ) : (
             <>
+              {/* Name input */}
               <View
                 style={[
                   styles.inputWrapper,
@@ -290,35 +291,37 @@ export default function Step4() {
                   onBlur={() => setFocusedField(null)}
                 />
               </View>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  focusedField === `phone-${index}` && styles.inputFocused,
-                ]}
-              >
-                <Phone
-                  size={16}
-                  color={
-                    focusedField === `phone-${index}`
-                      ? "#A9334D"
-                      : "rgba(9,51,44,0.35)"
-                  }
-                  strokeWidth={1.8}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Phone number"
-                  placeholderTextColor="rgba(9,51,44,0.35)"
-                  value={contact.phone}
-                  onChangeText={(v) => updateContact(index, "phone", v)}
-                  keyboardType="phone-pad"
-                  onFocus={() => setFocusedField(`phone-${index}`)}
-                  onBlur={() => setFocusedField(null)}
-                />
-              </View>
+
+              {/* Phone input — library handles flag + country code + number */}
+              <PhoneInput
+                defaultCode="GB"
+                layout="first"
+                placeholder="Phone number"
+                onChangeFormattedText={(text) =>
+                  updateContact(index, "phone", text)
+                }
+                containerStyle={styles.phoneContainer}
+                textContainerStyle={styles.phoneTextContainer}
+                textInputStyle={styles.phoneTextInput}
+                codeTextStyle={styles.phoneCodeText}
+                flagButtonStyle={styles.phoneFlagBtn}
+                textInputProps={{
+                  placeholderTextColor: "rgba(9,51,44,0.35)",
+                  keyboardType: "phone-pad",
+                  onFocus: () => setFocusedField(`phone-${index}`),
+                  onBlur: () => setFocusedField(null),
+                }}
+                countryPickerProps={{
+                  withFilter: true,
+                  withFlag: true,
+                  withCallingCodeButton: true,
+                  withAlphaFilter: true,
+                }}
+              />
             </>
           )}
 
+          {/* Relationship chips */}
           <Text style={styles.relLabel}>Relationship</Text>
           <View style={styles.relChips}>
             {RELATIONSHIPS.map((rel) => {
@@ -348,6 +351,7 @@ export default function Step4() {
         </MotiView>
       ))}
 
+      {/* ── Add another ───────────────────────────────────────── */}
       {showingCards && contacts.length < 3 && (
         <Pressable
           style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
@@ -358,12 +362,12 @@ export default function Step4() {
         </Pressable>
       )}
 
-      {/* Android-only search modal */}
+      {/* ── Android contacts modal ────────────────────────────── */}
       <Modal
-        visible={showModal}
+        visible={showContactModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => setShowContactModal(false)}
       >
         <SafeAreaView style={styles.modalContainer}>
           <KeyboardAvoidingView
@@ -372,7 +376,7 @@ export default function Step4() {
           >
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select a contact</Text>
-              <Pressable onPress={() => setShowModal(false)} hitSlop={8}>
+              <Pressable onPress={() => setShowContactModal(false)} hitSlop={8}>
                 <X size={22} color="#09332C" strokeWidth={2} />
               </Pressable>
             </View>
@@ -380,12 +384,12 @@ export default function Step4() {
             <View style={styles.searchWrapper}>
               <Search size={17} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
               <TextInput
-                ref={searchRef}
+                ref={contactSearchRef}
                 style={styles.searchInput}
                 placeholder="Search contacts"
                 placeholderTextColor="rgba(9,51,44,0.35)"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
+                value={contactSearch}
+                onChangeText={setContactSearch}
                 autoCorrect={false}
               />
             </View>
@@ -402,7 +406,7 @@ export default function Step4() {
                     styles.contactRow,
                     pressed && { backgroundColor: "rgba(169,51,77,0.04)" },
                   ]}
-                  onPress={() => selectFromModal(item)}
+                  onPress={() => selectFromContactModal(item)}
                 >
                   <View style={styles.rowInitials}>
                     <Text style={styles.rowInitialsText}>
@@ -420,7 +424,7 @@ export default function Step4() {
               ListEmptyComponent={
                 <View style={styles.emptyState}>
                   <Text style={styles.emptyText}>
-                    {searchQuery
+                    {contactSearch
                       ? "No contacts match your search."
                       : "No contacts with phone numbers found."}
                   </Text>
@@ -577,6 +581,34 @@ const styles = StyleSheet.create({
     color: "#09332C",
     padding: 0,
     margin: 0,
+  },
+  // PhoneInput library styling
+  phoneContainer: {
+    width: "100%",
+    backgroundColor: "#F8F4F0",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.08)",
+    height: 50,
+  },
+  phoneTextContainer: {
+    backgroundColor: "#F8F4F0",
+    borderRadius: 10,
+    paddingVertical: 0,
+  },
+  phoneTextInput: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+    color: "#09332C",
+    height: 50,
+  },
+  phoneCodeText: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 14,
+    color: "#09332C",
+  },
+  phoneFlagBtn: {
+    backgroundColor: "transparent",
   },
   relLabel: {
     fontFamily: "Geist_500Medium",

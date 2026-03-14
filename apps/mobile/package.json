@@ -76,6 +76,7 @@
     "react-native-gifted-charts": "^1.4.75",
     "react-native-graph": "1.1.0",
     "react-native-maps": "1.20.1",
+    "react-native-phone-number-input": "^2.1.0",
     "react-native-purchases": "^9.6.0",
     "react-native-purchases-ui": "^9.6.0",
     "react-native-reanimated": "4.1.1",
