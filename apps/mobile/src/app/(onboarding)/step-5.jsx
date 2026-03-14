@@ -1,23 +1,23 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MotiView } from 'moti';
-import { ArrowLeft, Bell, Clock } from 'lucide-react-native';
-import * as Notifications from 'expo-notifications';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import OnboardingStep, { TOTAL_STEPS } from '@/components/OnboardingStep';
-import { useAppStore } from '@/store/appStore';
+import { router } from "expo-router";
+import { useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { MotiView } from "moti";
+import { ArrowLeft, Bell, Clock } from "lucide-react-native";
+import * as Notifications from "expo-notifications";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import OnboardingStep, { TOTAL_STEPS } from "@/components/OnboardingStep";
+import { useAppStore } from "@/store/appStore";
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
-const MINUTES = ['00', '15', '30', '45'];
-const PERIODS = ['AM', 'PM'];
+const MINUTES = ["00", "15", "30", "45"];
+const PERIODS = ["AM", "PM"];
 
 function PhoneMockup({ name }) {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.94, translateY: 12 }}
       animate={{ opacity: 1, scale: 1, translateY: 0 }}
-      transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 80 }}
+      transition={{ type: "spring", damping: 16, stiffness: 80, delay: 80 }}
       style={styles.phoneMockup}
     >
       {/* Status bar */}
@@ -37,7 +37,7 @@ function PhoneMockup({ name }) {
       <MotiView
         from={{ opacity: 0, translateY: -8 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 220 }}
+        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 220 }}
         style={styles.mockNotifCard}
       >
         <View style={styles.mockNotifAppIcon}>
@@ -50,7 +50,7 @@ function PhoneMockup({ name }) {
           </View>
           <Text style={styles.mockNotifTitle}>Daily check-in</Text>
           <Text style={styles.mockNotifBody} numberOfLines={1}>
-            {`How are you feeling today${name !== 'you' ? `, ${name}` : ''}?`}
+            {`How are you feeling today${name !== "you" ? `, ${name}` : ""}?`}
           </Text>
         </View>
       </MotiView>
@@ -69,7 +69,10 @@ function PhoneMockup({ name }) {
         ))}
         <View style={styles.appRow}>
           {[0, 1, 2, 3].map((col) => (
-            <View key={col} style={[styles.appIcon, { opacity: 0.22, borderRadius: 22 }]} />
+            <View
+              key={col}
+              style={[styles.appIcon, { opacity: 0.22, borderRadius: 22 }]}
+            />
           ))}
         </View>
       </View>
@@ -80,41 +83,41 @@ function PhoneMockup({ name }) {
 export default function Step5() {
   const { setOnboardingField, onboardingData } = useAppStore();
   const insets = useSafeAreaInsets();
-  const name = onboardingData.nickname || 'you';
+  const name = onboardingData.nickname || "you";
 
-  const [phase, setPhase] = useState('gate');
+  const [phase, setPhase] = useState("gate");
   const [hour, setHour] = useState(8);
-  const [minute, setMinute] = useState('00');
-  const [period, setPeriod] = useState('AM');
+  const [minute, setMinute] = useState("00");
+  const [period, setPeriod] = useState("AM");
 
   const handleRequestPermission = async () => {
     try {
       const { status } = await Notifications.requestPermissionsAsync();
-      if (status === 'granted') {
-        setPhase('timepicker');
+      if (status === "granted") {
+        setPhase("timepicker");
       } else {
-        setOnboardingField('notificationsEnabled', false);
-        router.push('/(onboarding)/step-6');
+        setOnboardingField("notificationsEnabled", false);
+        router.push("/(onboarding)/step-6");
       }
     } catch {
-      setOnboardingField('notificationsEnabled', false);
-      router.push('/(onboarding)/step-6');
+      setOnboardingField("notificationsEnabled", false);
+      router.push("/(onboarding)/step-6");
     }
   };
 
   const handleSkip = () => {
-    setOnboardingField('notificationsEnabled', false);
-    router.push('/(onboarding)/step-6');
+    setOnboardingField("notificationsEnabled", false);
+    router.push("/(onboarding)/step-6");
   };
 
   const handleSaveTime = () => {
-    const checkInTime = `${String(hour).padStart(2, '0')}:${minute} ${period}`;
-    setOnboardingField('checkInTime', checkInTime);
-    setOnboardingField('notificationsEnabled', true);
-    router.push('/(onboarding)/step-6');
+    const checkInTime = `${String(hour).padStart(2, "0")}:${minute} ${period}`;
+    setOnboardingField("checkInTime", checkInTime);
+    setOnboardingField("notificationsEnabled", true);
+    router.push("/(onboarding)/step-6");
   };
 
-  if (phase === 'timepicker') {
+  if (phase === "timepicker") {
     return (
       <OnboardingStep
         step={5}
@@ -122,7 +125,7 @@ export default function Step5() {
         subtitle="When should Hemo check in with you?"
         illustrationIcon={Clock}
         illustrationColor="#A9334D"
-        onBack={() => setPhase('gate')}
+        onBack={() => setPhase("gate")}
         onCta={handleSaveTime}
         ctaLabel="Save & Next"
       >
@@ -139,11 +142,19 @@ export default function Step5() {
                 {HOURS.map((h) => (
                   <Pressable
                     key={h}
-                    style={[styles.timeChip, hour === h && styles.timeChipActive]}
+                    style={[
+                      styles.timeChip,
+                      hour === h && styles.timeChipActive,
+                    ]}
                     onPress={() => setHour(h)}
                   >
-                    <Text style={[styles.timeChipText, hour === h && styles.timeChipTextActive]}>
-                      {String(h).padStart(2, '0')}
+                    <Text
+                      style={[
+                        styles.timeChipText,
+                        hour === h && styles.timeChipTextActive,
+                      ]}
+                    >
+                      {String(h).padStart(2, "0")}
                     </Text>
                   </Pressable>
                 ))}
@@ -156,10 +167,18 @@ export default function Step5() {
                 {MINUTES.map((m) => (
                   <Pressable
                     key={m}
-                    style={[styles.timeChip, minute === m && styles.timeChipActive]}
+                    style={[
+                      styles.timeChip,
+                      minute === m && styles.timeChipActive,
+                    ]}
                     onPress={() => setMinute(m)}
                   >
-                    <Text style={[styles.timeChipText, minute === m && styles.timeChipTextActive]}>
+                    <Text
+                      style={[
+                        styles.timeChipText,
+                        minute === m && styles.timeChipTextActive,
+                      ]}
+                    >
                       :{m}
                     </Text>
                   </Pressable>
@@ -173,10 +192,18 @@ export default function Step5() {
                 {PERIODS.map((p) => (
                   <Pressable
                     key={p}
-                    style={[styles.timeChip, period === p && styles.timeChipActive]}
+                    style={[
+                      styles.timeChip,
+                      period === p && styles.timeChipActive,
+                    ]}
                     onPress={() => setPeriod(p)}
                   >
-                    <Text style={[styles.timeChipText, period === p && styles.timeChipTextActive]}>
+                    <Text
+                      style={[
+                        styles.timeChipText,
+                        period === p && styles.timeChipTextActive,
+                      ]}
+                    >
                       {p}
                     </Text>
                   </Pressable>
@@ -187,9 +214,9 @@ export default function Step5() {
 
           <View style={styles.previewBadge}>
             <Text style={styles.previewText}>
-              Reminder set for{' '}
+              Reminder set for{" "}
               <Text style={styles.previewTime}>
-                {String(hour).padStart(2, '0')}:{minute} {period}
+                {String(hour).padStart(2, "0")}:{minute} {period}
               </Text>
             </Text>
           </View>
@@ -204,7 +231,10 @@ export default function Step5() {
       {/* Top bar */}
       <View style={styles.topBar}>
         <Pressable
-          style={({ pressed }) => [styles.backCircle, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            styles.backCircle,
+            pressed && { opacity: 0.6 },
+          ]}
           onPress={() => router.back()}
         >
           <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
@@ -215,7 +245,11 @@ export default function Step5() {
               key={i}
               style={[
                 styles.dot,
-                i === 4 ? styles.dotCurrent : i < 4 ? styles.dotPast : styles.dotFuture,
+                i === 4
+                  ? styles.dotCurrent
+                  : i < 4
+                    ? styles.dotPast
+                    : styles.dotFuture,
               ]}
             />
           ))}
@@ -232,12 +266,18 @@ export default function Step5() {
         <MotiView
           from={{ opacity: 0, translateY: 16 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 320 }}
+          transition={{
+            type: "spring",
+            damping: 16,
+            stiffness: 80,
+            delay: 320,
+          }}
           style={styles.headingBlock}
         >
           <Text style={styles.title}>Never miss a moment</Text>
           <Text style={styles.subtitle}>
-            Daily reminders, streak alerts, and health nudges — all in one place.
+            Daily reminders, streak alerts, and health nudges — all in one
+            place.
           </Text>
         </MotiView>
       </View>
@@ -246,7 +286,7 @@ export default function Step5() {
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 420 }}
+        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 420 }}
         style={[styles.bottomArea, { paddingBottom: insets.bottom + 28 }]}
       >
         <Pressable
@@ -267,11 +307,11 @@ const styles = StyleSheet.create({
   // ── Gate phase layout ──────────────────────────────────────────
   screen: {
     flex: 1,
-    backgroundColor: '#F8F4F0',
+    backgroundColor: "#F8F4F0",
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 24,
     paddingTop: 10,
     paddingBottom: 6,
@@ -281,112 +321,112 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(9,51,44,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(9,51,44,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   dotsRow: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     gap: 5,
   },
   dot: { height: 6, borderRadius: 3 },
-  dotCurrent: { width: 22, backgroundColor: '#A9334D' },
-  dotPast: { width: 6, backgroundColor: '#A9334D', opacity: 0.4 },
-  dotFuture: { width: 6, backgroundColor: 'rgba(9,51,44,0.14)' },
-  skipBtn: { width: 44, alignItems: 'flex-end' },
+  dotCurrent: { width: 22, backgroundColor: "#A9334D" },
+  dotPast: { width: 6, backgroundColor: "#A9334D", opacity: 0.4 },
+  dotFuture: { width: 6, backgroundColor: "rgba(9,51,44,0.14)" },
+  skipBtn: { width: 44, alignItems: "flex-end" },
   skipText: {
-    fontFamily: 'Geist_500Medium',
+    fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: 'rgba(9,51,44,0.4)',
+    color: "rgba(9,51,44,0.4)",
   },
   middle: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
+    justifyContent: "center",
     gap: 36,
   },
   headingBlock: {
     gap: 10,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
-    fontFamily: 'Geist_700Bold',
+    fontFamily: "Geist_700Bold",
     fontSize: 30,
-    color: '#09332C',
+    color: "#09332C",
     letterSpacing: -0.9,
     lineHeight: 36,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
-    fontFamily: 'Geist_400Regular',
+    fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: 'rgba(9,51,44,0.55)',
+    color: "rgba(9,51,44,0.55)",
     lineHeight: 22,
-    textAlign: 'center',
+    textAlign: "center",
   },
   bottomArea: {
     paddingHorizontal: 24,
     paddingTop: 12,
     gap: 14,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ctaBtn: {
-    width: '100%',
-    backgroundColor: '#A9334D',
+    width: "100%",
+    backgroundColor: "#A9334D",
     borderRadius: 16,
     paddingVertical: 18,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ctaBtnText: {
-    fontFamily: 'Geist_700Bold',
+    fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     letterSpacing: 0.2,
   },
   notNowText: {
-    fontFamily: 'Geist_500Medium',
+    fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: 'rgba(9,51,44,0.4)',
+    color: "rgba(9,51,44,0.4)",
   },
 
   // ── Phone mockup ───────────────────────────────────────────────
   phoneMockup: {
-    alignSelf: 'center',
-    width: '100%',
-    backgroundColor: 'rgba(9,51,44,0.035)',
+    alignSelf: "center",
+    width: "100%",
+    backgroundColor: "rgba(9,51,44,0.035)",
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.07)',
+    borderColor: "rgba(9,51,44,0.07)",
     padding: 16,
     gap: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.07,
     shadowRadius: 20,
     elevation: 5,
   },
   statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 4,
   },
   statusTime: {
-    fontFamily: 'Geist_600SemiBold',
+    fontFamily: "Geist_600SemiBold",
     fontSize: 13,
-    color: 'rgba(9,51,44,0.55)',
+    color: "rgba(9,51,44,0.55)",
   },
   statusIcons: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    alignItems: "flex-end",
     gap: 3,
   },
   signalBar: {
     width: 3,
-    backgroundColor: 'rgba(9,51,44,0.45)',
+    backgroundColor: "rgba(9,51,44,0.45)",
     borderRadius: 1,
   },
   battery: {
@@ -394,63 +434,63 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 2.5,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.4)',
-    justifyContent: 'center',
+    borderColor: "rgba(9,51,44,0.4)",
+    justifyContent: "center",
     paddingHorizontal: 2,
     marginLeft: 4,
   },
   batteryFill: {
     height: 5,
-    width: '75%',
-    backgroundColor: 'rgba(9,51,44,0.4)',
+    width: "75%",
+    backgroundColor: "rgba(9,51,44,0.4)",
     borderRadius: 1,
   },
   mockNotifCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: "rgba(255,255,255,0.96)",
     borderRadius: 14,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 3,
   },
   mockNotifAppIcon: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
     borderRadius: 8,
-    backgroundColor: '#A9334D',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "#A9334D",
+    alignItems: "center",
+    justifyContent: "center",
   },
   mockNotifTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginBottom: 2,
   },
   mockNotifApp: {
-    fontFamily: 'Geist_600SemiBold',
+    fontFamily: "Geist_600SemiBold",
     fontSize: 11,
-    color: 'rgba(9,51,44,0.45)',
+    color: "rgba(9,51,44,0.45)",
   },
   mockNotifTime: {
-    fontFamily: 'Geist_400Regular',
+    fontFamily: "Geist_400Regular",
     fontSize: 11,
-    color: 'rgba(9,51,44,0.3)',
+    color: "rgba(9,51,44,0.3)",
   },
   mockNotifTitle: {
-    fontFamily: 'Geist_600SemiBold',
+    fontFamily: "Geist_600SemiBold",
     fontSize: 13,
-    color: '#09332C',
+    color: "#09332C",
   },
   mockNotifBody: {
-    fontFamily: 'Geist_400Regular',
+    fontFamily: "Geist_400Regular",
     fontSize: 12,
-    color: 'rgba(9,51,44,0.5)',
+    color: "rgba(9,51,44,0.5)",
     marginTop: 1,
   },
   appGrid: {
@@ -458,82 +498,83 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   appRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
   },
   appIcon: {
     flex: 1,
-    height: 52,
+    height: 70,
+    width: 70,
     borderRadius: 12,
-    backgroundColor: 'rgba(9,51,44,0.07)',
+    backgroundColor: "rgba(9,51,44,0.07)",
   },
 
   // ── Time picker phase ──────────────────────────────────────────
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
+    borderColor: "rgba(9,51,44,0.08)",
     gap: 12,
   },
   cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   cardTitle: {
-    fontFamily: 'Geist_600SemiBold',
+    fontFamily: "Geist_600SemiBold",
     fontSize: 15,
-    color: '#09332C',
+    color: "#09332C",
   },
   timeRow: { gap: 12 },
   timeGroup: { gap: 6 },
   timeLabel: {
-    fontFamily: 'Geist_500Medium',
+    fontFamily: "Geist_500Medium",
     fontSize: 12,
-    color: 'rgba(9,51,44,0.5)',
+    color: "rgba(9,51,44,0.5)",
     letterSpacing: 0.3,
   },
   timeChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 6,
   },
   timeChip: {
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 8,
-    backgroundColor: '#F8F4F0',
+    backgroundColor: "#F8F4F0",
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
+    borderColor: "rgba(9,51,44,0.08)",
   },
   timeChipActive: {
-    backgroundColor: '#A9334D',
-    borderColor: '#A9334D',
+    backgroundColor: "#A9334D",
+    borderColor: "#A9334D",
   },
   timeChipText: {
-    fontFamily: 'Geist_500Medium',
+    fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: '#09332C',
+    color: "#09332C",
   },
-  timeChipTextActive: { color: '#FFFFFF' },
+  timeChipTextActive: { color: "#FFFFFF" },
   previewBadge: {
-    backgroundColor: 'rgba(9,51,44,0.06)',
+    backgroundColor: "rgba(9,51,44,0.06)",
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   previewText: {
-    fontFamily: 'Geist_400Regular',
+    fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: 'rgba(9,51,44,0.6)',
+    color: "rgba(9,51,44,0.6)",
   },
   previewTime: {
-    fontFamily: 'Geist_600SemiBold',
-    color: '#09332C',
+    fontFamily: "Geist_600SemiBold",
+    color: "#09332C",
   },
 });
