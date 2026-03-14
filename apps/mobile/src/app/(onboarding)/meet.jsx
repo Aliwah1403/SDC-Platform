@@ -79,6 +79,6 @@ const styles = StyleSheet.create({
     height: 3,
     width: 52,
     borderRadius: 2,
-    backgroundColor: '#F0531C',
+    backgroundColor: '#A9334D',
   },
 });

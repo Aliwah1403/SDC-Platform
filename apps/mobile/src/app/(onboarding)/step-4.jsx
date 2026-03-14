@@ -83,7 +83,7 @@ export default function Step4() {
           </View>
 
           <View style={[styles.inputWrapper, focusedField === `name-${index}` && styles.inputFocused]}>
-            <User size={16} color={focusedField === `name-${index}` ? '#F0531C' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
+            <User size={16} color={focusedField === `name-${index}` ? '#A9334D' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
             <TextInput
               style={styles.input}
               placeholder="Full name"
@@ -97,7 +97,7 @@ export default function Step4() {
           </View>
 
           <View style={[styles.inputWrapper, focusedField === `phone-${index}` && styles.inputFocused]}>
-            <Phone size={16} color={focusedField === `phone-${index}` ? '#F0531C' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
+            <Phone size={16} color={focusedField === `phone-${index}` ? '#A9334D' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
             <TextInput
               style={styles.input}
               placeholder="Phone number"
@@ -180,8 +180,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   inputFocused: {
-    borderColor: '#F0531C',
-    backgroundColor: 'rgba(240,83,28,0.04)',
+    borderColor: '#A9334D',
+    backgroundColor: 'rgba(169,51,77,0.04)',
   },
   input: {
     flex: 1,
@@ -211,8 +211,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(9,51,44,0.1)',
   },
   relChipSelected: {
-    backgroundColor: '#09332C',
-    borderColor: '#09332C',
+    backgroundColor: '#A9334D',
+    borderColor: '#A9334D',
   },
   relChipText: {
     fontFamily: 'Geist_500Medium',

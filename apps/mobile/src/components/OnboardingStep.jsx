@@ -222,7 +222,7 @@ export default function OnboardingStep({
             style={({ pressed }) => [
               styles.nextPill,
               {
-                backgroundColor: ctaDisabled ? "rgba(9,51,44,0.2)" : "#09332C",
+                backgroundColor: ctaDisabled ? "rgba(9,51,44,0.2)" : "#A9334D",
               },
               pressed && !ctaDisabled && { opacity: 0.85 },
             ]}

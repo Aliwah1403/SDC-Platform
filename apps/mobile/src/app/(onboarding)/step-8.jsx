@@ -53,7 +53,7 @@ export default function Step8() {
       ctaLabel={selected || query.trim() ? 'Save & Next' : 'Skip'}
     >
       <View style={[styles.inputWrapper, focused && styles.inputFocused]}>
-        <Search size={18} color={focused ? '#F0531C' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
+        <Search size={18} color={focused ? '#A9334D' : 'rgba(9,51,44,0.35)'} strokeWidth={1.8} />
         <TextInput
           style={styles.input}
           placeholder="Search hospital or clinic name"
@@ -79,7 +79,7 @@ export default function Step8() {
 
       {selected ? (
         <View style={styles.selectedCard}>
-          <Building2 size={20} color="#059669" strokeWidth={1.8} />
+          <Building2 size={20} color="#A9334D" strokeWidth={1.8} />
           <View style={{ flex: 1 }}>
             <Text style={styles.selectedLabel}>Preferred hospital set</Text>
             <Text style={styles.selectedName}>{selected}</Text>
@@ -96,13 +96,13 @@ export default function Step8() {
 
 const styles = StyleSheet.create({
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 14, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.1)', paddingHorizontal: 16, paddingVertical: 14, gap: 12, marginBottom: 12 },
-  inputFocused: { borderColor: '#F0531C', backgroundColor: 'rgba(240,83,28,0.04)' },
+  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
   input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 15, color: '#09332C', padding: 0, margin: 0 },
   suggestions: { backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.1)', overflow: 'hidden', marginBottom: 12 },
   suggestion: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(9,51,44,0.06)' },
   suggestionText: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C', flex: 1 },
-  selectedCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(5,150,105,0.08)', borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(5,150,105,0.2)', padding: 14, marginBottom: 12 },
-  selectedLabel: { fontFamily: 'Geist_500Medium', fontSize: 12, color: '#059669', marginBottom: 2 },
+  selectedCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: 'rgba(169,51,77,0.06)', borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(169,51,77,0.18)', padding: 14, marginBottom: 12 },
+  selectedLabel: { fontFamily: 'Geist_500Medium', fontSize: 12, color: '#A9334D', marginBottom: 2 },
   selectedName: { fontFamily: 'Geist_600SemiBold', fontSize: 14, color: '#09332C', lineHeight: 18 },
   infoCard: { backgroundColor: 'rgba(9,51,44,0.04)', borderRadius: 10, padding: 14 },
   infoText: { fontFamily: 'Geist_400Regular', fontSize: 13, color: 'rgba(9,51,44,0.55)', lineHeight: 18 },

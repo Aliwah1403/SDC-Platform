@@ -10,9 +10,9 @@ import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/utils/auth/store';
 
 const STATS = [
-  { icon: Flame, label: 'Streak', value: '1 day', color: '#F0531C' },
+  { icon: Flame, label: 'Streak', value: '1 day', color: '#781D11' },
   { icon: Heart, label: 'Health score', value: 'Ready', color: '#A9334D' },
-  { icon: Activity, label: 'Tracking', value: 'Active', color: '#059669' },
+  { icon: Activity, label: 'Tracking', value: 'Active', color: '#09332C' },
 ];
 
 export default function OnboardingComplete() {
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#F0531C',
+    backgroundColor: '#A9334D',
   },
   summaryText: {
     fontFamily: 'Geist_500Medium',
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     color: 'rgba(9,51,44,0.7)',
   },
   ctaBtn: {
-    backgroundColor: '#09332C',
+    backgroundColor: '#A9334D',
     borderRadius: 16,
     paddingVertical: 17,
     alignItems: 'center',

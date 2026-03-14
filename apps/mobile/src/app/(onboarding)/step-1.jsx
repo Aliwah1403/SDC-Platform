@@ -61,7 +61,7 @@ export default function Step1() {
             style={[
               styles.dot,
               i === 0
-                ? [styles.dotCurrent, { backgroundColor: '#F0531C' }]
+                ? [styles.dotCurrent, { backgroundColor: '#A9334D' }]
                 : styles.dotFuture,
             ]}
           />
@@ -96,7 +96,7 @@ export default function Step1() {
               onSubmitEditing={canProceed ? handleNext : undefined}
             />
             <MotiView
-              animate={{ backgroundColor: focused ? '#F0531C' : 'rgba(9,51,44,0.2)' }}
+              animate={{ backgroundColor: focused ? '#A9334D' : 'rgba(9,51,44,0.2)' }}
               transition={{ type: 'timing', duration: 200 }}
               style={styles.underline}
             />
@@ -111,7 +111,7 @@ export default function Step1() {
           <Pressable
             style={({ pressed }) => [
               styles.nextPill,
-              { backgroundColor: canProceed ? '#09332C' : 'rgba(9,51,44,0.2)' },
+              { backgroundColor: canProceed ? '#A9334D' : 'rgba(9,51,44,0.2)' },
               pressed && canProceed && { opacity: 0.85 },
             ]}
             onPress={handleNext}
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     marginBottom: 36,
   },
   cursor: {
-    color: '#F0531C',
+    color: '#A9334D',
     fontFamily: 'Geist_400Regular',
   },
   inputArea: {

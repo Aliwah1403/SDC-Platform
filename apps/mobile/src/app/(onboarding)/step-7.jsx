@@ -51,7 +51,7 @@ export default function Step7() {
       title="Body measurements"
       subtitle="Used for health tracking and personalised insights. Completely optional."
       illustrationIcon={Ruler}
-      illustrationColor="#059669"
+      illustrationColor="#781D11"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
@@ -105,11 +105,11 @@ const styles = StyleSheet.create({
   cardTitle: { fontFamily: 'Geist_600SemiBold', fontSize: 15, color: '#09332C' },
   unitToggle: { flexDirection: 'row', backgroundColor: '#F8F4F0', borderRadius: 8, padding: 2 },
   unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6 },
-  unitBtnActive: { backgroundColor: '#09332C' },
+  unitBtnActive: { backgroundColor: '#A9334D' },
   unitBtnText: { fontFamily: 'Geist_500Medium', fontSize: 13, color: 'rgba(9,51,44,0.55)' },
   unitBtnTextActive: { color: '#FFFFFF' },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  inputFocused: { borderColor: '#F0531C', backgroundColor: 'rgba(240,83,28,0.04)' },
+  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
   input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 16, color: '#09332C', padding: 0, margin: 0 },
   unitLabel: { fontFamily: 'Geist_500Medium', fontSize: 14, color: 'rgba(9,51,44,0.4)' },
   ftRow: { flexDirection: 'row', gap: 8 },

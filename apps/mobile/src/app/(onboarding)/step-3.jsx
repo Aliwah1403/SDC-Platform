@@ -65,7 +65,7 @@ export default function Step3() {
       step={3}
       title="What type of sickle cell do you have?"
       subtitle="Tap a type to learn more. Choose the one that matches your diagnosis."
-      illustrationColor="#F0531C"
+      illustrationColor="#A9334D"
       onBack={() => router.back()}
       onCta={handleNext}
       ctaDisabled={!scdType}
@@ -98,7 +98,7 @@ export default function Step3() {
         onPress={() => setScdType(isUnsure ? null : 'unsure')}
       >
         {isUnsure
-          ? <CheckCircle2 size={16} color="#F0531C" strokeWidth={2} />
+          ? <CheckCircle2 size={16} color="#A9334D" strokeWidth={2} />
           : <HelpCircle size={16} color="rgba(9,51,44,0.35)" strokeWidth={1.8} />
         }
         <Text style={[styles.unsureText, isUnsure && styles.unsureTextSelected]}>
@@ -152,8 +152,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cardSelected: {
-    backgroundColor: '#09332C',
-    borderColor: '#09332C',
+    backgroundColor: '#A9334D',
+    borderColor: '#A9334D',
   },
   cardLabel: {
     fontFamily: 'Geist_700Bold',
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     color: 'rgba(9,51,44,0.4)',
   },
   unsureTextSelected: {
-    color: '#F0531C',
+    color: '#A9334D',
     fontFamily: 'Geist_600SemiBold',
   },
   descSection: {

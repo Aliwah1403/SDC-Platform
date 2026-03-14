@@ -21,10 +21,10 @@ function FaceIdGraphic() {
       <Circle cx="33" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
       <Circle cx="47" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
       <Path d="M33 48 Q40 53 47 48" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
-      <Path d="M24 28 L24 24 L28 24" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M52 28 L52 24 L56 24" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M24 52 L24 56 L28 56" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
-      <Path d="M52 52 L52 56 L56 56" stroke="#F0531C" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M24 28 L24 24 L28 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 28 L52 24 L56 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M24 52 L24 56 L28 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 52 L52 56 L56 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
     </Svg>
   );
 }
@@ -59,7 +59,7 @@ export default function Step6() {
       title="Secure your account"
       subtitle={`Use ${biometricType} for quick and secure access to your health data.`}
       illustrationIcon={Fingerprint}
-      illustrationColor="#09332C"
+      illustrationColor="#A9334D"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
@@ -81,7 +81,7 @@ export default function Step6() {
           )}
           <View style={[styles.graphicCircle, status === 'success' && styles.graphicCircleSuccess]}>
             {status === 'success'
-              ? <ShieldCheck size={44} color="#059669" strokeWidth={1.5} />
+              ? <ShieldCheck size={44} color="#A9334D" strokeWidth={1.5} />
               : <FaceIdGraphic />
             }
           </View>
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   pulseRing: {
     borderRadius: 60,
     borderWidth: 2,
-    borderColor: '#059669',
+    borderColor: '#A9334D',
   },
   graphicCircle: {
     width: 100,
@@ -152,13 +152,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   graphicCircleSuccess: {
-    backgroundColor: 'rgba(5,150,105,0.1)',
-    borderColor: 'rgba(5,150,105,0.3)',
+    backgroundColor: 'rgba(169,51,77,0.08)',
+    borderColor: 'rgba(169,51,77,0.25)',
   },
   successText: {
     fontFamily: 'Geist_600SemiBold',
     fontSize: 16,
-    color: '#059669',
+    color: '#A9334D',
     textAlign: 'center',
   },
   warningRow: {
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#F0531C',
+    backgroundColor: '#A9334D',
     marginTop: 6,
   },
   bulletText: {

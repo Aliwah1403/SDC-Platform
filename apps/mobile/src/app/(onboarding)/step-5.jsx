@@ -52,7 +52,7 @@ export default function Step5() {
       title="Daily check-in"
       subtitle="Set a reminder so you never miss logging your health."
       illustrationIcon={Clock}
-      illustrationColor="#F0531C"
+      illustrationColor="#A9334D"
       onBack={() => router.back()}
       onCta={handleContinue}
     >
@@ -214,8 +214,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(9,51,44,0.08)',
   },
   timeChipActive: {
-    backgroundColor: '#09332C',
-    borderColor: '#09332C',
+    backgroundColor: '#A9334D',
+    borderColor: '#A9334D',
   },
   timeChipText: {
     fontFamily: 'Geist_500Medium',
@@ -262,7 +262,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(9,51,44,0.15)',
     justifyContent: 'center',
   },
-  toggleEnabled: { backgroundColor: '#09332C' },
+  toggleEnabled: { backgroundColor: '#A9334D' },
   toggleThumb: {
     width: 22,
     height: 22,
