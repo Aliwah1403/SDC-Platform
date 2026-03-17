@@ -92,7 +92,16 @@ export default function Step5() {
 
   const handleRequestPermission = async () => {
     try {
-      const { status } = await Notifications.requestPermissionsAsync();
+      // Check current status first — iOS won't show dialog if already determined
+      const { status: current } = await Notifications.getPermissionsAsync();
+      if (current === "granted") {
+        setPhase("timepicker");
+        return;
+      }
+      // Request the permission (shows OS dialog if status is 'undetermined')
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: { allowAlert: true, allowBadge: true, allowSound: true },
+      });
       if (status === "granted") {
         setPhase("timepicker");
       } else {
