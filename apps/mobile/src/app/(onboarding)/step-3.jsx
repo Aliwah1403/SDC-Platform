@@ -17,12 +17,15 @@ const cmItems = Array.from({ length: CM_MAX - CM_MIN + 1 }, (_, i) => {
   return { label: `${val} cm`, value: val };
 });
 
-const inchItems = Array.from({ length: IN_MAX - IN_MIN + 1 }, (_, i) => {
-  const totalIn = i + IN_MIN;
-  const ft = Math.floor(totalIn / 12);
-  const inches = totalIn % 12;
-  return { label: `${ft}' ${inches}"`, value: totalIn };
+const ftItems = Array.from({ length: 6 }, (_, i) => {
+  const val = i + 3; // 3–8 ft
+  return { label: `${val}'`, value: val };
 });
+
+const inItems = Array.from({ length: 12 }, (_, i) => ({
+  label: `${i}"`,
+  value: i,
+}));
 
 function SegmentedControl({ options, selected, onSelect }) {
   return (
@@ -114,18 +117,41 @@ export default function Step3() {
             transition={{ type: 'spring', damping: 16, stiffness: 100 }}
             style={styles.pickerWrapper}
           >
-            <Picker
-              selectedValue={unit === 'Metric' ? cmValue : totalInches}
-              onValueChange={(val) =>
-                unit === 'Metric' ? setCmValue(val) : setTotalInches(val)
-              }
-              style={{ height: 216 }}
-              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
-            >
-              {(unit === 'Metric' ? cmItems : inchItems).map((item) => (
-                <Picker.Item key={item.value} label={item.label} value={item.value} />
-              ))}
-            </Picker>
+            {unit === 'Metric' ? (
+              <Picker
+                selectedValue={cmValue}
+                onValueChange={setCmValue}
+                style={{ height: 216 }}
+                itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+              >
+                {cmItems.map((item) => (
+                  <Picker.Item key={item.value} label={item.label} value={item.value} />
+                ))}
+              </Picker>
+            ) : (
+              <View style={styles.imperialRow}>
+                <Picker
+                  selectedValue={Math.floor(totalInches / 12)}
+                  onValueChange={(ft) => setTotalInches(ft * 12 + (totalInches % 12))}
+                  style={styles.imperialPicker}
+                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+                >
+                  {ftItems.map((item) => (
+                    <Picker.Item key={item.value} label={item.label} value={item.value} />
+                  ))}
+                </Picker>
+                <Picker
+                  selectedValue={totalInches % 12}
+                  onValueChange={(inches) => setTotalInches(Math.floor(totalInches / 12) * 12 + inches)}
+                  style={styles.imperialPicker}
+                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+                >
+                  {inItems.map((item) => (
+                    <Picker.Item key={item.value} label={item.label} value={item.value} />
+                  ))}
+                </Picker>
+              </View>
+            )}
           </MotiView>
         )}
 
@@ -194,6 +220,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist_400Regular',
     fontSize: 14,
     color: 'rgba(9,51,44,0.35)',
+  },
+  imperialRow: {
+    flexDirection: 'row',
+  },
+  imperialPicker: {
+    flex: 1,
+    height: 216,
   },
   pickerWrapper: {
     backgroundColor: '#FFFFFF',

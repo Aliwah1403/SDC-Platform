@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, Dimensions, ScrollView } from "react-native";
+import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -33,6 +34,20 @@ const HEMO = {
   wine: "#A9334D",
   rose: "#D09F9A",
   blush: "#F8E9E7",
+};
+
+const BADGE_IMAGES = {
+  a: require("../../assets/images/badge-a.png"),
+  b: require("../../assets/images/badge-b.png"),
+  c: require("../../assets/images/badge-c.png"),
+};
+
+const RARITY_TO_BADGE = {
+  Common: "a",
+  Uncommon: "a",
+  Rare: "b",
+  Epic: "c",
+  Legendary: "c",
 };
 
 export default function StreakModal() {
@@ -285,17 +300,8 @@ export default function StreakModal() {
   const renderMilestoneCard = (milestone) => {
     const isUnlocked = milestone.unlocked;
     const progress = Math.min((milestone.current / milestone.target) * 100, 100);
+    const badgeSource = BADGE_IMAGES[RARITY_TO_BADGE[milestone.rarity] ?? "a"];
 
-    const MILESTONE_COLORS = {
-      days: { primary: HEMO.wine },
-      streak: { primary: HEMO.dark },
-      symptoms: { primary: HEMO.rose },
-      hydration: { primary: "#2563EB" },
-      care: { primary: HEMO.wine },
-      learning: { primary: "#2ECC71" },
-    };
-
-    const colors = MILESTONE_COLORS[milestone.type];
     const MilestoneIcon = {
       days: Trophy,
       streak: Flame,
@@ -329,21 +335,48 @@ export default function StreakModal() {
           elevation: 3,
         }}
       >
-        <View
-          style={{
-            width: "100%",
-            aspectRatio: 1,
-            backgroundColor: isUnlocked ? colors.primary + "15" : "#FFF9F9",
-            borderRadius: 16,
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 16,
-          }}
-        >
+        {/* Badge image with overlay */}
+        <View style={{ width: "100%", aspectRatio: 1, marginBottom: 16 }}>
+          <Image
+            source={badgeSource}
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: 12,
+              opacity: isUnlocked ? 1 : 0.4,
+            }}
+            contentFit="cover"
+          />
           {isUnlocked ? (
-            <MilestoneIcon size={56} color={colors.primary} strokeWidth={2} />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 6,
+                right: 6,
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: "rgba(255,255,255,0.9)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <MilestoneIcon size={16} color={HEMO.wine} strokeWidth={2} />
+            </View>
           ) : (
-            <Lock size={56} color={HEMO.rose} strokeWidth={2} />
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Lock size={32} color="#FFFFFF" strokeWidth={2} />
+            </View>
           )}
         </View>
 
