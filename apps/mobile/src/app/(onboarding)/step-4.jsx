@@ -1,17 +1,39 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Weight } from 'lucide-react-native';
+import { Picker } from '@react-native-picker/picker';
+import { PenLine, Weight } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-function UnitToggle({ options, selected, onSelect }) {
+const KG_MIN = 20;
+const KG_MAX = 250;
+const LB_MIN = 44;
+const LB_MAX = 551;
+
+const kgItems = Array.from({ length: KG_MAX - KG_MIN + 1 }, (_, i) => {
+  const val = i + KG_MIN;
+  return { label: `${val} kg`, value: val };
+});
+
+const lbItems = Array.from({ length: LB_MAX - LB_MIN + 1 }, (_, i) => {
+  const val = i + LB_MIN;
+  return { label: `${val} lb`, value: val };
+});
+
+function SegmentedControl({ options, selected, onSelect }) {
   return (
-    <View style={styles.unitToggle}>
+    <View style={styles.segmented}>
       {options.map((opt) => (
-        <Pressable key={opt} style={[styles.unitBtn, selected === opt && styles.unitBtnActive]} onPress={() => onSelect(opt)}>
-          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>{opt}</Text>
+        <Pressable
+          key={opt}
+          style={[styles.segmentBtn, selected === opt && styles.segmentBtnActive]}
+          onPress={() => onSelect(opt)}
+        >
+          <Text style={[styles.segmentText, selected === opt && styles.segmentTextActive]}>
+            {opt}
+          </Text>
         </Pressable>
       ))}
     </View>
@@ -20,18 +42,28 @@ function UnitToggle({ options, selected, onSelect }) {
 
 export default function Step4() {
   const { setOnboardingField } = useAppStore();
-  const [weightUnit, setWeightUnit] = useState('kg');
-  const [weight, setWeight] = useState('');
-  const [focusedField, setFocusedField] = useState(null);
+  const [unit, setUnit] = useState('Metric');
+  const [editing, setEditing] = useState(false);
+  const [kgValue, setKgValue] = useState(70);
+  const [lbValue, setLbValue] = useState(154);
+
+  const displayValue = unit === 'Metric' ? `${kgValue} kg` : `${lbValue} lb`;
+
+  const handleUnitSwitch = (newUnit) => {
+    if (newUnit === 'Imperial') {
+      setLbValue(Math.min(LB_MAX, Math.max(LB_MIN, Math.round(kgValue * 2.20462))));
+    } else {
+      setKgValue(Math.min(KG_MAX, Math.max(KG_MIN, Math.round(lbValue / 2.20462))));
+    }
+    setUnit(newUnit);
+  };
 
   const handleSkip = () => router.push('/(onboarding)/step-5');
 
   const handleContinue = () => {
-    if (weight) {
-      const w = parseFloat(weight);
-      const weightInKg = weightUnit === 'lb' ? Math.round(w * 0.453592 * 10) / 10 : w;
-      setOnboardingField('weight', weightInKg);
-    }
+    const weightInKg =
+      unit === 'Metric' ? kgValue : Math.round((lbValue / 2.20462) * 10) / 10;
+    setOnboardingField('weight', weightInKg);
     router.push('/(onboarding)/step-5');
   };
 
@@ -52,47 +84,125 @@ export default function Step4() {
         from={{ opacity: 0, translateY: 8 }}
         animate={{ opacity: 1, translateY: 0 }}
         transition={{ type: 'spring', damping: 16, stiffness: 80 }}
-        style={styles.card}
+        style={styles.content}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIconRow}>
-            <Weight size={18} color="#09332C" strokeWidth={1.8} />
-            <Text style={styles.cardTitle}>Weight</Text>
-          </View>
-          <UnitToggle options={['kg', 'lb']} selected={weightUnit} onSelect={setWeightUnit} />
-        </View>
-        <View style={[styles.inputWrapper, focusedField === 'weight' && styles.inputFocused]}>
-          <TextInput
-            style={styles.input}
-            placeholder={weightUnit === 'kg' ? 'e.g. 65' : 'e.g. 143'}
-            placeholderTextColor="rgba(9,51,44,0.35)"
-            value={weight}
-            onChangeText={setWeight}
-            keyboardType="numeric"
-            onFocus={() => setFocusedField('weight')}
-            onBlur={() => setFocusedField(null)}
-          />
-          <Text style={styles.unitLabel}>{weightUnit}</Text>
-        </View>
+        <SegmentedControl
+          options={['Metric', 'Imperial']}
+          selected={unit}
+          onSelect={handleUnitSwitch}
+        />
+
+        <Pressable style={styles.valueCard} onPress={() => setEditing((e) => !e)}>
+          <Text style={styles.valueText}>{displayValue}</Text>
+          {!editing && (
+            <View style={styles.tapHintRow}>
+              <Text style={styles.tapHintText}>Tap to change</Text>
+              <PenLine size={14} color="rgba(9,51,44,0.35)" strokeWidth={1.8} />
+            </View>
+          )}
+        </Pressable>
+
+        {editing && (
+          <MotiView
+            from={{ opacity: 0, translateY: -6 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', damping: 16, stiffness: 100 }}
+            style={styles.pickerWrapper}
+          >
+            <Picker
+              selectedValue={unit === 'Metric' ? kgValue : lbValue}
+              onValueChange={(val) =>
+                unit === 'Metric' ? setKgValue(val) : setLbValue(val)
+              }
+              style={{ height: 216 }}
+              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+            >
+              {(unit === 'Metric' ? kgItems : lbItems).map((item) => (
+                <Picker.Item key={item.value} label={item.label} value={item.value} />
+              ))}
+            </Picker>
+          </MotiView>
+        )}
+
+        <Text style={styles.privacyNote}>
+          Your measurements are stored locally and never shared without your permission.
+        </Text>
       </MotiView>
-      <Text style={styles.privacyNote}>Your measurements are stored locally and never shared without your permission.</Text>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardTitle: { fontFamily: 'Geist_600SemiBold', fontSize: 15, color: '#09332C' },
-  unitToggle: { flexDirection: 'row', backgroundColor: '#F8F4F0', borderRadius: 8, padding: 2 },
-  unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6 },
-  unitBtnActive: { backgroundColor: '#A9334D' },
-  unitBtnText: { fontFamily: 'Geist_500Medium', fontSize: 13, color: 'rgba(9,51,44,0.55)' },
-  unitBtnTextActive: { color: '#FFFFFF' },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
-  input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 16, color: '#09332C', padding: 0, margin: 0 },
-  unitLabel: { fontFamily: 'Geist_500Medium', fontSize: 14, color: 'rgba(9,51,44,0.4)' },
-  privacyNote: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center', lineHeight: 17 },
+  content: {
+    gap: 12,
+  },
+  segmented: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(9,51,44,0.07)',
+    borderRadius: 12,
+    padding: 3,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  segmentBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  segmentText: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 15,
+    color: 'rgba(9,51,44,0.5)',
+  },
+  segmentTextActive: {
+    color: '#09332C',
+    fontFamily: 'Geist_600SemiBold',
+  },
+  valueCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    paddingVertical: 36,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
+    gap: 10,
+  },
+  valueText: {
+    fontFamily: 'Geist_800ExtraBold',
+    fontSize: 60,
+    color: '#09332C',
+    letterSpacing: -2,
+  },
+  tapHintRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  tapHintText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    color: 'rgba(9,51,44,0.35)',
+  },
+  pickerWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.08)',
+    overflow: 'hidden',
+  },
+  privacyNote: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 12,
+    color: 'rgba(9,51,44,0.4)',
+    textAlign: 'center',
+    lineHeight: 17,
+    marginTop: 4,
+  },
 });
