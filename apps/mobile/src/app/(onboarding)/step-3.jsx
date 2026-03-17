@@ -1,212 +1,134 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { MotiView } from 'moti';
-import { CheckCircle2, HelpCircle } from 'lucide-react-native';
+import { Ruler } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_SIZE = (SCREEN_WIDTH - 48 - 20) / 3;
-
-const SCD_TYPES = [
-  {
-    key: 'HbSS',
-    label: 'HbSS',
-    subtitle: 'Sickle Cell Anaemia',
-    desc: 'The most common and often most severe kind. People inherit two sickle cell genes ("S"), one from each parent. They typically experience more frequent and severe pain crises.',
-  },
-  {
-    key: 'HbSC',
-    label: 'HbSC',
-    subtitle: 'Sickle-Haemoglobin C',
-    desc: 'One sickle gene and one haemoglobin C gene. Usually milder than HbSS, but can still cause complications like eye problems and avascular necrosis.',
-  },
-  {
-    key: 'HbSB0',
-    label: 'HbS-β⁰',
-    subtitle: 'Sickle-Beta Zero Thalassaemia',
-    desc: 'One sickle gene and a beta-zero thalassaemia gene. Severity is similar to HbSS with frequent pain crises and anaemia.',
-  },
-  {
-    key: 'HbSB+',
-    label: 'HbS-β⁺',
-    subtitle: 'Sickle-Beta Plus Thalassaemia',
-    desc: 'One sickle gene and a beta-plus thalassaemia gene. Generally milder than HbSS with less frequent complications.',
-  },
-  {
-    key: 'HbSD',
-    label: 'HbSD',
-    subtitle: 'Sickle-Haemoglobin D',
-    desc: 'One sickle gene and one haemoglobin D gene. Severity varies — moderate episodes are common but often less intense than HbSS.',
-  },
-  {
-    key: 'HbSE',
-    label: 'HbSE',
-    subtitle: 'Sickle-Haemoglobin E',
-    desc: 'One sickle gene and one haemoglobin E gene. Generally the mildest form, often with minimal day-to-day symptoms.',
-  },
-];
+function UnitToggle({ options, selected, onSelect }) {
+  return (
+    <View style={styles.unitToggle}>
+      {options.map((opt) => (
+        <Pressable key={opt} style={[styles.unitBtn, selected === opt && styles.unitBtnActive]} onPress={() => onSelect(opt)}>
+          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>{opt}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
 
 export default function Step3() {
   const { setOnboardingField } = useAppStore();
-  const [scdType, setScdType] = useState(null);
+  const [heightUnit, setHeightUnit] = useState('cm');
+  const [heightCm, setHeightCm] = useState('');
+  const [heightFt, setHeightFt] = useState('');
+  const [heightIn, setHeightIn] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
-  const selected = SCD_TYPES.find((t) => t.key === scdType) ?? null;
-  const isUnsure = scdType === 'unsure';
+  const handleSkip = () => router.push('/(onboarding)/step-4');
 
-  const handleNext = () => {
-    setOnboardingField('scdType', scdType);
+  const handleContinue = () => {
+    let heightInCm = null;
+    if (heightUnit === 'cm' && heightCm) {
+      heightInCm = parseFloat(heightCm);
+    } else if (heightUnit === 'ft' && (heightFt || heightIn)) {
+      heightInCm = Math.round((parseFloat(heightFt) || 0) * 30.48 + (parseFloat(heightIn) || 0) * 2.54);
+    }
+    if (heightInCm !== null) setOnboardingField('height', heightInCm);
     router.push('/(onboarding)/step-4');
   };
 
   return (
     <OnboardingStep
       step={3}
-      title="What type of sickle cell do you have?"
-      subtitle="Tap a type to learn more. Choose the one that matches your diagnosis."
-      illustrationColor="#A9334D"
+      title="How tall are you?"
+      subtitle="Optional — helps personalise your health insights."
+      illustrationIcon={Ruler}
+      illustrationColor="#781D11"
       onBack={() => router.back()}
-      onCta={handleNext}
-      ctaDisabled={!scdType}
+      skippable
+      onSkip={handleSkip}
+      onCta={handleContinue}
+      ctaLabel="Save & Next"
     >
-      {/* 3×2 type grid */}
-      <View style={styles.grid}>
-        {SCD_TYPES.map((type) => {
-          const isSelected = scdType === type.key;
-          return (
-            <Pressable
-              key={type.key}
-              style={({ pressed }) => [
-                styles.card,
-                isSelected && styles.cardSelected,
-                pressed && !isSelected && { opacity: 0.7 },
-              ]}
-              onPress={() => setScdType(isSelected ? null : type.key)}
-            >
-              <Text style={[styles.cardLabel, isSelected && styles.cardLabelSelected]}>
-                {type.label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* "I'm not sure" option */}
-      <Pressable
-        style={({ pressed }) => [styles.unsureRow, pressed && { opacity: 0.7 }]}
-        onPress={() => setScdType(isUnsure ? null : 'unsure')}
+      <MotiView
+        from={{ opacity: 0, translateY: 8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', damping: 16, stiffness: 80 }}
+        style={styles.card}
       >
-        {isUnsure
-          ? <CheckCircle2 size={16} color="#A9334D" strokeWidth={2} />
-          : <HelpCircle size={16} color="rgba(9,51,44,0.35)" strokeWidth={1.8} />
-        }
-        <Text style={[styles.unsureText, isUnsure && styles.unsureTextSelected]}>
-          I'm not sure
-        </Text>
-      </Pressable>
-
-      {/* Inline description — blends with background */}
-      {(selected || isUnsure) && (
-        <MotiView
-          key={scdType}
-          from={{ opacity: 0, translateY: 8 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 20, stiffness: 90 }}
-          style={styles.descSection}
-        >
-          <View style={styles.descDivider} />
-          <Text style={styles.descType}>
-            {isUnsure ? 'No problem' : selected.label}
-          </Text>
-          <Text style={styles.descSubtitle}>
-            {isUnsure ? 'You can update this later' : selected.subtitle}
-          </Text>
-          <Text style={styles.descBody}>
-            {isUnsure
-              ? 'Your type is usually on your diagnosis letter or medical records. Ask your haematologist or GP, or update it later in your profile.'
-              : selected.desc
-            }
-          </Text>
-        </MotiView>
-      )}
+        <View style={styles.cardHeader}>
+          <View style={styles.cardIconRow}>
+            <Ruler size={18} color="#09332C" strokeWidth={1.8} />
+            <Text style={styles.cardTitle}>Height</Text>
+          </View>
+          <UnitToggle options={['cm', 'ft']} selected={heightUnit} onSelect={setHeightUnit} />
+        </View>
+        {heightUnit === 'cm' ? (
+          <View style={[styles.inputWrapper, focusedField === 'height-cm' && styles.inputFocused]}>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. 170"
+              placeholderTextColor="rgba(9,51,44,0.35)"
+              value={heightCm}
+              onChangeText={setHeightCm}
+              keyboardType="numeric"
+              onFocus={() => setFocusedField('height-cm')}
+              onBlur={() => setFocusedField(null)}
+            />
+            <Text style={styles.unitLabel}>cm</Text>
+          </View>
+        ) : (
+          <View style={styles.ftRow}>
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-ft' && styles.inputFocused]}>
+              <TextInput
+                style={styles.input}
+                placeholder="5"
+                placeholderTextColor="rgba(9,51,44,0.35)"
+                value={heightFt}
+                onChangeText={setHeightFt}
+                keyboardType="numeric"
+                onFocus={() => setFocusedField('height-ft')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <Text style={styles.unitLabel}>ft</Text>
+            </View>
+            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-in' && styles.inputFocused]}>
+              <TextInput
+                style={styles.input}
+                placeholder="8"
+                placeholderTextColor="rgba(9,51,44,0.35)"
+                value={heightIn}
+                onChangeText={setHeightIn}
+                keyboardType="numeric"
+                onFocus={() => setFocusedField('height-in')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <Text style={styles.unitLabel}>in</Text>
+            </View>
+          </View>
+        )}
+      </MotiView>
+      <Text style={styles.privacyNote}>Your measurements are stored locally and never shared without your permission.</Text>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 6,
-  },
-  card: {
-    width: CARD_SIZE,
-    height: CARD_SIZE * 0.72,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardSelected: {
-    backgroundColor: '#A9334D',
-    borderColor: '#A9334D',
-  },
-  cardLabel: {
-    fontFamily: 'Geist_700Bold',
-    fontSize: 14,
-    color: '#09332C',
-    letterSpacing: -0.2,
-    textAlign: 'center',
-  },
-  cardLabelSelected: {
-    color: '#FFFFFF',
-  },
-  unsureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    paddingVertical: 14,
-    marginBottom: 4,
-  },
-  unsureText: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 14,
-    color: 'rgba(9,51,44,0.4)',
-  },
-  unsureTextSelected: {
-    color: '#A9334D',
-    fontFamily: 'Geist_600SemiBold',
-  },
-  descSection: {
-    paddingTop: 40,
-    gap: 6,
-  },
-  descDivider: {
-    height: 1,
-    backgroundColor: 'rgba(9,51,44,0.08)',
-    marginBottom: 10,
-  },
-  descType: {
-    fontFamily: 'Geist_700Bold',
-    fontSize: 18,
-    color: '#09332C',
-    letterSpacing: -0.4,
-  },
-  descSubtitle: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 13,
-    color: 'rgba(9,51,44,0.45)',
-    marginBottom: 4,
-  },
-  descBody: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: 'rgba(9,51,44,0.6)',
-    lineHeight: 21,
-  },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 12 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  cardIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { fontFamily: 'Geist_600SemiBold', fontSize: 15, color: '#09332C' },
+  unitToggle: { flexDirection: 'row', backgroundColor: '#F8F4F0', borderRadius: 8, padding: 2 },
+  unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6 },
+  unitBtnActive: { backgroundColor: '#A9334D' },
+  unitBtnText: { fontFamily: 'Geist_500Medium', fontSize: 13, color: 'rgba(9,51,44,0.55)' },
+  unitBtnTextActive: { color: '#FFFFFF' },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
+  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
+  input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 16, color: '#09332C', padding: 0, margin: 0 },
+  unitLabel: { fontFamily: 'Geist_500Medium', fontSize: 14, color: 'rgba(9,51,44,0.4)' },
+  ftRow: { flexDirection: 'row', gap: 8 },
+  privacyNote: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center', lineHeight: 17 },
 });

@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import Svg, { Circle, Ellipse } from "react-native-svg";
 
-export const TOTAL_STEPS = 9;
+export const TOTAL_STEPS = 10;
 
 /**
  * Shared chrome for all onboarding steps.

@@ -1,117 +1,281 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { MotiView } from 'moti';
-import { Ruler, Weight } from 'lucide-react-native';
-import OnboardingStep from '@/components/OnboardingStep';
-import { useAppStore } from '@/store/appStore';
+import { router } from "expo-router";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { MotiView } from "moti";
+import { ArrowLeft, Bell } from "lucide-react-native";
+import * as Notifications from "expo-notifications";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { TOTAL_STEPS } from "@/components/OnboardingStep";
+import { useAppStore } from "@/store/appStore";
 
-function UnitToggle({ options, selected, onSelect }) {
+function PhoneMockup({ name }) {
   return (
-    <View style={styles.unitToggle}>
-      {options.map((opt) => (
-        <Pressable key={opt} style={[styles.unitBtn, selected === opt && styles.unitBtnActive]} onPress={() => onSelect(opt)}>
-          <Text style={[styles.unitBtnText, selected === opt && styles.unitBtnTextActive]}>{opt}</Text>
-        </Pressable>
-      ))}
-    </View>
+    <MotiView
+      from={{ opacity: 0, scale: 0.94, translateY: 12 }}
+      animate={{ opacity: 1, scale: 1, translateY: 0 }}
+      transition={{ type: "spring", damping: 16, stiffness: 80, delay: 80 }}
+      style={styles.phoneMockup}
+    >
+      {/* Status bar */}
+      <View style={styles.statusBar}>
+        <Text style={styles.statusTime}>9:41</Text>
+        <View style={styles.statusIcons}>
+          {[4, 6, 8, 10].map((h, i) => (
+            <View key={i} style={[styles.signalBar, { height: h }]} />
+          ))}
+          <View style={styles.battery}>
+            <View style={styles.batteryFill} />
+          </View>
+        </View>
+      </View>
+
+      {/* Notification card */}
+      <MotiView
+        from={{ opacity: 0, translateY: -8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 220 }}
+        style={styles.mockNotifCard}
+      >
+        <View style={styles.mockNotifAppIcon}>
+          <Bell size={13} color="#FFFFFF" strokeWidth={2.2} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={styles.mockNotifTopRow}>
+            <Text style={styles.mockNotifApp}>Hemo</Text>
+            <Text style={styles.mockNotifTime}>now</Text>
+          </View>
+          <Text style={styles.mockNotifTitle}>Daily check-in</Text>
+          <Text style={styles.mockNotifBody} numberOfLines={1}>
+            {`How are you feeling today${name !== "you" ? `, ${name}` : ""}?`}
+          </Text>
+        </View>
+      </MotiView>
+
+      {/* App icon placeholders */}
+      <View style={styles.appGrid}>
+        {[0, 1].map((row) => (
+          <View key={row} style={styles.appRow}>
+            {[0, 1, 2, 3].map((col) => (
+              <View
+                key={col}
+                style={[styles.appIcon, { opacity: row === 1 ? 0.45 : 0.75 }]}
+              />
+            ))}
+          </View>
+        ))}
+        <View style={styles.appRow}>
+          {[0, 1, 2, 3].map((col) => (
+            <View
+              key={col}
+              style={[styles.appIcon, { opacity: 0.22, borderRadius: 22 }]}
+            />
+          ))}
+        </View>
+      </View>
+    </MotiView>
   );
 }
 
 export default function Step7() {
-  const { setOnboardingField } = useAppStore();
-  const [heightUnit, setHeightUnit] = useState('cm');
-  const [weightUnit, setWeightUnit] = useState('kg');
-  const [heightCm, setHeightCm] = useState('');
-  const [heightFt, setHeightFt] = useState('');
-  const [heightIn, setHeightIn] = useState('');
-  const [weight, setWeight] = useState('');
-  const [focusedField, setFocusedField] = useState(null);
+  const { setOnboardingField, onboardingData } = useAppStore();
+  const insets = useSafeAreaInsets();
+  const name = onboardingData.nickname || "you";
 
-  const handleSkip = () => router.push('/(onboarding)/step-8');
+  const handleRequestPermission = async () => {
+    try {
+      const { status: current } = await Notifications.getPermissionsAsync();
+      if (current === "granted") {
+        setOnboardingField("notificationsEnabled", true);
+        router.push("/(onboarding)/step-8");
+        return;
+      }
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: { allowAlert: true, allowBadge: true, allowSound: true },
+      });
+      setOnboardingField("notificationsEnabled", status === "granted");
+      router.push("/(onboarding)/step-8");
+    } catch {
+      setOnboardingField("notificationsEnabled", false);
+      router.push("/(onboarding)/step-8");
+    }
+  };
 
-  const handleContinue = () => {
-    let heightInCm = null, weightInKg = null;
-    if (heightUnit === 'cm' && heightCm) heightInCm = parseFloat(heightCm);
-    else if (heightUnit === 'ft' && (heightFt || heightIn)) {
-      heightInCm = Math.round((parseFloat(heightFt) || 0) * 30.48 + (parseFloat(heightIn) || 0) * 2.54);
-    }
-    if (weight) {
-      const w = parseFloat(weight);
-      weightInKg = weightUnit === 'lb' ? Math.round(w * 0.453592 * 10) / 10 : w;
-    }
-    if (heightInCm !== null) setOnboardingField('height', heightInCm);
-    if (weightInKg !== null) setOnboardingField('weight', weightInKg);
-    router.push('/(onboarding)/step-8');
+  const handleSkip = () => {
+    setOnboardingField("notificationsEnabled", false);
+    router.push("/(onboarding)/step-8");
   };
 
   return (
-    <OnboardingStep
-      step={7}
-      title="Body measurements"
-      subtitle="Used for health tracking and personalised insights. Completely optional."
-      illustrationIcon={Ruler}
-      illustrationColor="#781D11"
-      onBack={() => router.back()}
-      skippable
-      onSkip={handleSkip}
-      onCta={handleContinue}
-      ctaLabel="Save & Next"
-    >
-      <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80 }} style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIconRow}><Ruler size={18} color="#09332C" strokeWidth={1.8} /><Text style={styles.cardTitle}>Height</Text></View>
-          <UnitToggle options={['cm', 'ft']} selected={heightUnit} onSelect={setHeightUnit} />
+    <View style={[styles.screen, { paddingTop: insets.top }]}>
+      {/* Top bar */}
+      <View style={styles.topBar}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.backCircle,
+            pressed && { opacity: 0.6 },
+          ]}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
+        </Pressable>
+        <View style={styles.dotsRow}>
+          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+            <View
+              key={i}
+              style={[
+                styles.dot,
+                i === 6
+                  ? styles.dotCurrent
+                  : i < 6
+                    ? styles.dotPast
+                    : styles.dotFuture,
+              ]}
+            />
+          ))}
         </View>
-        {heightUnit === 'cm' ? (
-          <View style={[styles.inputWrapper, focusedField === 'height-cm' && styles.inputFocused]}>
-            <TextInput style={styles.input} placeholder="e.g. 170" placeholderTextColor="rgba(9,51,44,0.35)" value={heightCm} onChangeText={setHeightCm} keyboardType="numeric" onFocus={() => setFocusedField('height-cm')} onBlur={() => setFocusedField(null)} />
-            <Text style={styles.unitLabel}>cm</Text>
-          </View>
-        ) : (
-          <View style={styles.ftRow}>
-            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-ft' && styles.inputFocused]}>
-              <TextInput style={styles.input} placeholder="5" placeholderTextColor="rgba(9,51,44,0.35)" value={heightFt} onChangeText={setHeightFt} keyboardType="numeric" onFocus={() => setFocusedField('height-ft')} onBlur={() => setFocusedField(null)} />
-              <Text style={styles.unitLabel}>ft</Text>
-            </View>
-            <View style={[styles.inputWrapper, { flex: 1 }, focusedField === 'height-in' && styles.inputFocused]}>
-              <TextInput style={styles.input} placeholder="8" placeholderTextColor="rgba(9,51,44,0.35)" value={heightIn} onChangeText={setHeightIn} keyboardType="numeric" onFocus={() => setFocusedField('height-in')} onBlur={() => setFocusedField(null)} />
-              <Text style={styles.unitLabel}>in</Text>
-            </View>
-          </View>
-        )}
-      </MotiView>
+        <Pressable onPress={handleSkip} hitSlop={10} style={styles.skipBtn}>
+          <Text style={styles.skipText}>Skip</Text>
+        </Pressable>
+      </View>
 
-      <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80, delay: 80 }} style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={styles.cardIconRow}><Weight size={18} color="#09332C" strokeWidth={1.8} /><Text style={styles.cardTitle}>Weight</Text></View>
-          <UnitToggle options={['kg', 'lb']} selected={weightUnit} onSelect={setWeightUnit} />
-        </View>
-        <View style={[styles.inputWrapper, focusedField === 'weight' && styles.inputFocused]}>
-          <TextInput style={styles.input} placeholder={weightUnit === 'kg' ? 'e.g. 65' : 'e.g. 143'} placeholderTextColor="rgba(9,51,44,0.35)" value={weight} onChangeText={setWeight} keyboardType="numeric" onFocus={() => setFocusedField('weight')} onBlur={() => setFocusedField(null)} />
-          <Text style={styles.unitLabel}>{weightUnit}</Text>
-        </View>
-      </MotiView>
+      {/* Middle: phone + heading, vertically centered */}
+      <View style={styles.middle}>
+        <PhoneMockup name={name} />
 
-      <Text style={styles.privacyNote}>Your measurements are stored locally and never shared without your permission.</Text>
-    </OnboardingStep>
+        <MotiView
+          from={{ opacity: 0, translateY: 16 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "spring", damping: 16, stiffness: 80, delay: 320 }}
+          style={styles.headingBlock}
+        >
+          <Text style={styles.title}>Never miss a moment</Text>
+          <Text style={styles.subtitle}>
+            Daily reminders, streak alerts, and health nudges — all in one place.
+          </Text>
+        </MotiView>
+      </View>
+
+      {/* Bottom: full-width CTA + skip link */}
+      <MotiView
+        from={{ opacity: 0, translateY: 20 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 420 }}
+        style={[styles.bottomArea, { paddingBottom: insets.bottom + 28 }]}
+      >
+        <Pressable
+          style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.85 }]}
+          onPress={handleRequestPermission}
+        >
+          <Text style={styles.ctaBtnText}>Turn on Notifications</Text>
+        </Pressable>
+        <Pressable onPress={handleSkip} hitSlop={12}>
+          <Text style={styles.notNowText}>Not right now</Text>
+        </Pressable>
+      </MotiView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 12 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardTitle: { fontFamily: 'Geist_600SemiBold', fontSize: 15, color: '#09332C' },
-  unitToggle: { flexDirection: 'row', backgroundColor: '#F8F4F0', borderRadius: 8, padding: 2 },
-  unitBtn: { paddingHorizontal: 12, paddingVertical: 5, borderRadius: 6 },
-  unitBtnActive: { backgroundColor: '#A9334D' },
-  unitBtnText: { fontFamily: 'Geist_500Medium', fontSize: 13, color: 'rgba(9,51,44,0.55)' },
-  unitBtnTextActive: { color: '#FFFFFF' },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 12, gap: 8 },
-  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
-  input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 16, color: '#09332C', padding: 0, margin: 0 },
-  unitLabel: { fontFamily: 'Geist_500Medium', fontSize: 14, color: 'rgba(9,51,44,0.4)' },
-  ftRow: { flexDirection: 'row', gap: 8 },
-  privacyNote: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center', lineHeight: 17 },
+  screen: { flex: 1, backgroundColor: "#F8F4F0" },
+  topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 10,
+    paddingBottom: 6,
+    minHeight: 52,
+  },
+  backCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(9,51,44,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  dotsRow: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 5,
+  },
+  dot: { height: 6, borderRadius: 3 },
+  dotCurrent: { width: 22, backgroundColor: "#A9334D" },
+  dotPast: { width: 6, backgroundColor: "#A9334D", opacity: 0.4 },
+  dotFuture: { width: 6, backgroundColor: "rgba(9,51,44,0.14)" },
+  skipBtn: { width: 44, alignItems: "flex-end" },
+  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: "rgba(9,51,44,0.4)" },
+  middle: { flex: 1, paddingHorizontal: 24, justifyContent: "center", gap: 36 },
+  headingBlock: { gap: 10, alignItems: "center" },
+  title: {
+    fontFamily: "Geist_700Bold",
+    fontSize: 30,
+    color: "#09332C",
+    letterSpacing: -0.9,
+    lineHeight: 36,
+    textAlign: "center",
+  },
+  subtitle: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+    color: "rgba(9,51,44,0.55)",
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  bottomArea: { paddingHorizontal: 24, paddingTop: 12, gap: 14, alignItems: "center" },
+  ctaBtn: {
+    width: "100%",
+    backgroundColor: "#A9334D",
+    borderRadius: 16,
+    paddingVertical: 18,
+    alignItems: "center",
+  },
+  ctaBtnText: { fontFamily: "Geist_700Bold", fontSize: 17, color: "#FFFFFF", letterSpacing: 0.2 },
+  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: "rgba(9,51,44,0.4)" },
+
+  // Phone mockup
+  phoneMockup: {
+    alignSelf: "center",
+    width: "100%",
+    backgroundColor: "rgba(9,51,44,0.035)",
+    borderRadius: 26,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.07)",
+    padding: 16,
+    gap: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  statusBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
+  statusTime: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "rgba(9,51,44,0.55)" },
+  statusIcons: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
+  signalBar: { width: 3, backgroundColor: "rgba(9,51,44,0.45)", borderRadius: 1 },
+  battery: { width: 20, height: 10, borderRadius: 2.5, borderWidth: 1.5, borderColor: "rgba(9,51,44,0.4)", justifyContent: "center", paddingHorizontal: 2, marginLeft: 4 },
+  batteryFill: { height: 5, width: "75%", backgroundColor: "rgba(9,51,44,0.4)", borderRadius: 1 },
+  mockNotifCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 14,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  mockNotifAppIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center" },
+  mockNotifTopRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: "rgba(9,51,44,0.45)" },
+  mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: "rgba(9,51,44,0.3)" },
+  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#09332C" },
+  mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: "rgba(9,51,44,0.5)", marginTop: 1 },
+  appGrid: { gap: 8, paddingTop: 4 },
+  appRow: { flexDirection: "row", gap: 8, justifyContent: "space-between" },
+  appIcon: { flex: 1, height: 70, width: 70, borderRadius: 12, backgroundColor: "rgba(9,51,44,0.07)" },
 });

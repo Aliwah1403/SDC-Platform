@@ -20,7 +20,7 @@ export const useAppStore = create((set, get) => ({
     biometricsEnabled: false,
     height: null,        // in cm
     weight: null,        // in kg
-    preferredHospital: null,
+    locationEnabled: false,
     medications: [],
     healthDataConnected: [],
   },
@@ -87,7 +87,7 @@ export const useAppStore = create((set, get) => ({
         biometricsEnabled: false,
         height: null,
         weight: null,
-        preferredHospital: null,
+        locationEnabled: false,
         medications: [],
         healthDataConnected: [],
       },

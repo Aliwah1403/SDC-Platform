@@ -1,133 +1,203 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Pill, Plus, Trash2, ChevronDown } from 'lucide-react-native';
+import { Fingerprint, ShieldCheck, AlertCircle } from 'lucide-react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-const FREQUENCIES = ['Once daily', 'Twice daily', 'Three times daily', 'Every other day', 'Weekly', 'As needed'];
+async function authenticateAsync() {
+  console.log('[BIOMETRICS STUB] authenticateAsync');
+  return { success: true };
+}
 
-const emptyMedication = () => ({ name: '', dosage: '', frequency: '' });
+function FaceIdGraphic() {
+  return (
+    <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+      <Circle cx="40" cy="40" r="38" stroke="#09332C" strokeWidth="2" strokeOpacity={0.15} />
+      <Circle cx="40" cy="40" r="30" stroke="#09332C" strokeWidth="1.5" strokeOpacity={0.1} />
+      <Path d="M24 36 C24 26 56 26 56 36 L56 46 C56 56 24 56 24 46 Z" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Circle cx="33" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
+      <Circle cx="47" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
+      <Path d="M33 48 Q40 53 47 48" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Path d="M24 28 L24 24 L28 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 28 L52 24 L56 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M24 52 L24 56 L28 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 52 L52 56 L56 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 export default function Step9() {
   const { setOnboardingField } = useAppStore();
-  const [medications, setMedications] = useState([emptyMedication()]);
-  const [focusedField, setFocusedField] = useState(null);
-  const [openFreqIndex, setOpenFreqIndex] = useState(null);
+  const [status, setStatus] = useState('idle');
+  const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
 
-  const updateMed = (index, field, value) => {
-    setMedications((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
-    });
+  const handleEnable = async () => {
+    try {
+      const result = await authenticateAsync();
+      if (result.success) {
+        setStatus('success');
+        setOnboardingField('biometricsEnabled', true);
+      } else {
+        setStatus('failed');
+      }
+    } catch {
+      setStatus('unavailable');
+    }
   };
 
-  const addMed = () => {
-    if (medications.length < 3) setMedications((prev) => [...prev, emptyMedication()]);
-  };
-
-  const removeMed = (index) => {
-    if (medications.length === 1) return;
-    setMedications((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSkip = () => router.push('/(onboarding)/complete');
-
-  const handleContinue = () => {
-    const validMeds = medications.filter((m) => m.name.trim());
-    if (validMeds.length) setOnboardingField('medications', validMeds);
-    router.push('/(onboarding)/complete');
+  const handleSkip = () => {
+    setOnboardingField('biometricsEnabled', false);
+    router.push('/(onboarding)/step-10');
   };
 
   return (
     <OnboardingStep
       step={9}
-      title="Current medications"
-      subtitle="Add medications you take for sickle cell. You can manage these fully in the Care Hub."
-      illustrationIcon={Pill}
-      illustrationColor="#781D11"
+      title="Secure your account"
+      subtitle={`Use ${biometricType} for quick and secure access to your health data.`}
+      illustrationIcon={Fingerprint}
+      illustrationColor="#A9334D"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
-      onCta={handleContinue}
-      ctaLabel={medications.some((m) => m.name.trim()) ? 'Save & Finish' : 'Skip'}
+      onCta={status === 'success' ? () => router.push('/(onboarding)/step-10') : handleEnable}
+      ctaLabel={status === 'success' ? 'Continue' : `Enable ${biometricType}`}
     >
-      {medications.map((med, index) => (
+      <View style={styles.graphicContainer}>
         <MotiView
-          key={index}
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 16, stiffness: 80, delay: index * 60 }}
-          style={styles.medCard}
+          from={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 15, stiffness: 80, delay: 100 }}
+          style={styles.graphicWrapper}
         >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardHeaderLeft}>
-              <Pill size={16} color="#09332C" strokeWidth={1.8} />
-              <Text style={styles.cardLabel}>{index === 0 ? 'Medication' : `Medication ${index + 1}`}</Text>
-            </View>
-            {index > 0 && (
-              <Pressable onPress={() => removeMed(index)} hitSlop={8}>
-                <Trash2 size={15} color="#DC2626" strokeWidth={1.8} />
-              </Pressable>
-            )}
-          </View>
-
-          <View style={[styles.inputWrapper, focusedField === `name-${index}` && styles.inputFocused]}>
-            <TextInput style={styles.input} placeholder="Drug name (e.g. Hydroxyurea)" placeholderTextColor="rgba(9,51,44,0.35)" value={med.name} onChangeText={(v) => updateMed(index, 'name', v)} onFocus={() => setFocusedField(`name-${index}`)} onBlur={() => setFocusedField(null)} />
-          </View>
-
-          <View style={[styles.inputWrapper, focusedField === `dosage-${index}` && styles.inputFocused]}>
-            <TextInput style={styles.input} placeholder="Dosage (e.g. 500mg)" placeholderTextColor="rgba(9,51,44,0.35)" value={med.dosage} onChangeText={(v) => updateMed(index, 'dosage', v)} onFocus={() => setFocusedField(`dosage-${index}`)} onBlur={() => setFocusedField(null)} />
-          </View>
-
-          <Pressable style={styles.freqSelector} onPress={() => setOpenFreqIndex(openFreqIndex === index ? null : index)}>
-            <Text style={[styles.freqText, !med.frequency && styles.freqPlaceholder]}>{med.frequency || 'Frequency'}</Text>
-            <ChevronDown size={16} color="rgba(9,51,44,0.4)" strokeWidth={2} style={{ transform: [{ rotate: openFreqIndex === index ? '180deg' : '0deg' }] }} />
-          </Pressable>
-
-          {openFreqIndex === index && (
-            <MotiView from={{ opacity: 0, translateY: -4 }} animate={{ opacity: 1, translateY: 0 }} style={styles.freqDropdown}>
-              {FREQUENCIES.map((freq) => (
-                <Pressable key={freq} style={({ pressed }) => [styles.freqOption, med.frequency === freq && styles.freqOptionSelected, pressed && { backgroundColor: 'rgba(9,51,44,0.05)' }]} onPress={() => { updateMed(index, 'frequency', freq); setOpenFreqIndex(null); }}>
-                  <Text style={[styles.freqOptionText, med.frequency === freq && styles.freqOptionTextSelected]}>{freq}</Text>
-                </Pressable>
-              ))}
-            </MotiView>
+          {status === 'success' && (
+            <>
+              <MotiView from={{ scale: 1, opacity: 0.4 }} animate={{ scale: 1.5, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />
+              <MotiView from={{ scale: 1, opacity: 0.3 }} animate={{ scale: 1.3, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true, delay: 300 }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />
+            </>
           )}
+          <View style={[styles.graphicCircle, status === 'success' && styles.graphicCircleSuccess]}>
+            {status === 'success'
+              ? <ShieldCheck size={44} color="#A9334D" strokeWidth={1.5} />
+              : <FaceIdGraphic />
+            }
+          </View>
         </MotiView>
-      ))}
 
-      {medications.length < 3 && (
-        <Pressable style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]} onPress={addMed}>
-          <Plus size={16} color="#09332C" strokeWidth={2} />
-          <Text style={styles.addBtnText}>Add another medication</Text>
-        </Pressable>
+        {status === 'success' && (
+          <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80 }}>
+            <Text style={styles.successText}>{biometricType} enabled!</Text>
+          </MotiView>
+        )}
+        {status === 'failed' && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.warningRow}>
+            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
+            <Text style={styles.warningText}>Authentication failed. Try again or skip for now.</Text>
+          </MotiView>
+        )}
+        {status === 'unavailable' && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.warningRow}>
+            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
+            <Text style={styles.warningText}>{biometricType} is not available on this device. You can enable it later in Settings.</Text>
+          </MotiView>
+        )}
+      </View>
+
+      {status !== 'success' && (
+        <View style={styles.bullets}>
+          {[
+            'Quick access without typing your password',
+            'Your health data stays private and secure',
+            'Works even in an emergency when time matters',
+          ].map((text) => (
+            <View key={text} style={styles.bulletRow}>
+              <View style={styles.bulletDot} />
+              <Text style={styles.bulletText}>{text}</Text>
+            </View>
+          ))}
+        </View>
       )}
-
-      <Text style={styles.hint}>Up to 3 medications in onboarding. Add more from the Care Hub after setup.</Text>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  medCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 10 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cardLabel: { fontFamily: 'Geist_600SemiBold', fontSize: 13, color: '#09332C' },
-  inputWrapper: { backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 11 },
-  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
-  input: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C', padding: 0, margin: 0 },
-  freqSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 11 },
-  freqText: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C' },
-  freqPlaceholder: { color: 'rgba(9,51,44,0.35)' },
-  freqDropdown: { backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.1)', overflow: 'hidden', marginTop: -6 },
-  freqOption: { paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: 'rgba(9,51,44,0.06)' },
-  freqOptionSelected: { backgroundColor: 'rgba(169,51,77,0.08)' },
-  freqOptionText: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C' },
-  freqOptionTextSelected: { fontFamily: 'Geist_600SemiBold', color: '#A9334D' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: 'rgba(9,51,44,0.04)', borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', borderStyle: 'dashed', justifyContent: 'center', marginBottom: 12 },
-  addBtnText: { fontFamily: 'Geist_500Medium', fontSize: 14, color: '#09332C' },
-  hint: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center' },
+  graphicContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 16,
+  },
+  graphicWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 120,
+    height: 120,
+  },
+  pulseRing: {
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: '#A9334D',
+  },
+  graphicCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(9,51,44,0.06)',
+    borderWidth: 2,
+    borderColor: 'rgba(9,51,44,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  graphicCircleSuccess: {
+    backgroundColor: 'rgba(169,51,77,0.08)',
+    borderColor: 'rgba(169,51,77,0.25)',
+  },
+  successText: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 16,
+    color: '#A9334D',
+    textAlign: 'center',
+  },
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 16,
+  },
+  warningText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13,
+    color: '#B45309',
+    flex: 1,
+    lineHeight: 18,
+  },
+  bullets: {
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#A9334D',
+    marginTop: 6,
+  },
+  bulletText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    color: 'rgba(9,51,44,0.65)',
+    flex: 1,
+    lineHeight: 20,
+  },
 });
