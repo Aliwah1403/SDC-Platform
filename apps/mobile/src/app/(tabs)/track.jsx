@@ -28,6 +28,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  Footprints,
+  Wind,
+  Stethoscope,
+  Timer,
+  Flame,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAppStore } from "@/store/appStore";
@@ -503,6 +508,215 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   );
 }
 
+// ─── Activity Section ─────────────────────────────────────────────────────────
+
+function fmtTime(h, m) {
+  const hh = h % 12 || 12;
+  const mm = String(m).padStart(2, "0");
+  return `${hh}:${mm} ${h < 12 ? "AM" : "PM"}`;
+}
+
+function addMins(h, m, add) {
+  const t = h * 60 + m + add;
+  return { h: Math.floor(t / 60) % 24, m: t % 60 };
+}
+
+function getSessionsForEntry(entry) {
+  if (!entry) return [];
+
+  const steps = entry.steps ?? 0;
+  const pain  = entry.painLevel ?? 0;
+  const hr    = entry.heartRate ?? 72;
+
+  // Bed rest: high pain + nearly no movement
+  if (pain >= 7 && steps < 1000) {
+    return [{
+      id: "bed-rest", label: "Bed Rest", Icon: Moon, color: "#9CA3AF",
+      timeLabel: "All day", duration: null, calories: null, avgHR: hr,
+    }];
+  }
+
+  // Hospital visit: high pain with some movement
+  if (pain >= 7) {
+    const end = addMins(10, 0, 120);
+    return [{
+      id: "hospital", label: "Hospital Visit", Icon: Stethoscope, color: "#DC2626",
+      timeLabel: `${fmtTime(10, 0)} – ${fmtTime(end.h, end.m)}`,
+      duration: 120, calories: null, avgHR: Math.round(hr * 0.9),
+    }];
+  }
+
+  // Rest day: very low steps
+  if (steps < 1500) {
+    return [{
+      id: "rest", label: "Rest Day", Icon: Moon, color: "#6366F1",
+      timeLabel: "All day", duration: null, calories: null, avgHR: hr,
+    }];
+  }
+
+  // Light walk
+  if (steps < 4000) {
+    const mins = Math.round(steps / 80);
+    const end  = addMins(9, 0, mins);
+    return [{
+      id: "light-walk", label: "Light Walk", Icon: Footprints, color: "#3B82F6",
+      timeLabel: `${fmtTime(9, 0)} – ${fmtTime(end.h, end.m)}`,
+      duration: mins, calories: Math.round(steps * 0.038), avgHR: Math.round(hr * 0.82),
+    }];
+  }
+
+  // Walking
+  if (steps < 8000) {
+    const mins = Math.round(steps / 90);
+    const end  = addMins(8, 30, mins);
+    return [{
+      id: "walking", label: "Walking", Icon: Footprints, color: "#059669",
+      timeLabel: `${fmtTime(8, 30)} – ${fmtTime(end.h, end.m)}`,
+      duration: mins, calories: Math.round(steps * 0.042), avgHR: Math.round(hr * 0.87),
+    }];
+  }
+
+  // Active day: Brisk Walk + Light Stretching
+  const walkMins = Math.round(steps / 100);
+  const walkEnd  = addMins(7, 30, walkMins);
+  return [
+    {
+      id: "brisk-walk", label: "Brisk Walk", Icon: Activity, color: "#F0531C",
+      timeLabel: `${fmtTime(7, 30)} – ${fmtTime(walkEnd.h, walkEnd.m)}`,
+      duration: walkMins, calories: Math.round(steps * 0.045), avgHR: Math.round(hr * 0.92),
+    },
+    {
+      id: "stretching", label: "Light Stretching", Icon: Wind, color: "#6366F1",
+      timeLabel: `${fmtTime(18, 0)} – ${fmtTime(18, 20)}`,
+      duration: 20, calories: 45, avgHR: Math.round(hr * 0.65),
+    },
+  ];
+}
+
+const REST_IDS = new Set(["rest", "bed-rest"]);
+
+function ActivityItem({ session, index, isLast }) {
+  const { label, Icon, color, timeLabel, duration, calories, avgHR } = session;
+  const isRest = REST_IDS.has(session.id);
+
+  return (
+    <MotiView
+      from={{ opacity: 0, translateY: 6 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: 260, delay: 400 + index * 80 }}
+    >
+      <TouchableOpacity
+        activeOpacity={isRest ? 1 : 0.6}
+        style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 }}
+      >
+        {/* Icon bubble */}
+        <View style={{
+          width: 44, height: 44, borderRadius: 12,
+          backgroundColor: `${color}18`,
+          alignItems: "center", justifyContent: "center",
+          marginRight: 12,
+        }}>
+          <Icon size={20} color={color} strokeWidth={2} />
+        </View>
+
+        {/* Content */}
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1F2937", marginBottom: 2 }}>
+            {label}
+          </Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginBottom: isRest ? 2 : 8 }}>
+            {timeLabel}
+          </Text>
+
+          {isRest ? (
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#C4B5B3" }}>
+              {session.id === "bed-rest" ? "Pain crisis · limited movement" : "Rest & recovery day"}
+            </Text>
+          ) : (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              {duration !== null && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                  <Timer size={12} color="#9CA3AF" strokeWidth={2} />
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                    {duration} min
+                  </Text>
+                </View>
+              )}
+              {calories !== null && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                  <Flame size={12} color="#F0531C" strokeWidth={2} />
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                    {calories} kcal
+                  </Text>
+                </View>
+              )}
+              {avgHR !== null && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                  <Heart size={12} color="#EF4444" strokeWidth={2} />
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                    {avgHR} bpm
+                  </Text>
+                </View>
+              )}
+              <View style={{ backgroundColor: "#F3F4F6", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 }}>
+                <Text style={{ fontFamily: fonts.medium, fontSize: 9, color: "#9CA3AF" }}>AH</Text>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {!isRest && <ChevronRight size={16} color="#D1D5DB" />}
+      </TouchableOpacity>
+
+      {!isLast && (
+        <View style={{ height: 1, backgroundColor: "#F5EFEE", marginLeft: 72 }} />
+      )}
+    </MotiView>
+  );
+}
+
+function ActivitySection({ entry }) {
+  const sessions = getSessionsForEntry(entry);
+
+  return (
+    <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT, marginBottom: 14 }}>
+        Activity
+      </Text>
+
+      <View style={{
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        overflow: "hidden",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+      }}>
+        {sessions.length === 0 ? (
+          <View style={{ alignItems: "center", paddingVertical: 24 }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#9CA3AF" }}>
+              No data logged for this day
+            </Text>
+          </View>
+        ) : (
+          sessions.map((session, i) => (
+            <ActivityItem
+              key={session.id}
+              session={session}
+              index={i}
+              isLast={i === sessions.length - 1}
+            />
+          ))
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ─── Metrics Grid ─────────────────────────────────────────────────────────────
+
 function MetricsGrid({ entry, healthData }) {
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 24, marginBottom: 8 }}>
@@ -613,6 +827,7 @@ export default function TrackScreen() {
           setMedTaken={setMedTaken}
         />
         <MetricsGrid entry={entry} healthData={healthData} />
+        <ActivitySection entry={entry} />
       </ScrollView>
     </View>
   );
