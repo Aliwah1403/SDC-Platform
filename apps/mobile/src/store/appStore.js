@@ -6,10 +6,10 @@ const mockHealthData = generateMockHealthData();
 export const useAppStore = create((set, get) => ({
   // User & Profile State
   currentUser: mockUser,
-  isOnboardingComplete: false,
+  isOnboardingComplete: true,
 
   // Onboarding Data
-  onboardingComplete: false,
+  onboardingComplete: true,
   onboardingData: {
     nickname: null,      // preferred name e.g. "Cuto"
     dob: null,           // ISO date string e.g. "1995-04-15"

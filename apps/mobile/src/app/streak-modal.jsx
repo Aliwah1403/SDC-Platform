@@ -42,17 +42,34 @@ const BADGE_IMAGES = {
   c: require("../../assets/images/badge-c.png"),
 };
 
-const RARITY_TO_BADGE = {
-  Common: "a",
-  Uncommon: "a",
-  Rare: "b",
-  Epic: "c",
-  Legendary: "c",
+// Per-milestone badge — swap the require() path when final artwork is ready
+const MILESTONE_BADGE = {
+  "days-5":        BADGE_IMAGES.a,  // Getting Started
+  "streak-3":      BADGE_IMAGES.a,  // First Streak
+  "streak-7":      BADGE_IMAGES.b,  // On Track Streak
+  "days-10":       BADGE_IMAGES.a,  // Habit Builder
+  "streak-14":     BADGE_IMAGES.b,  // Fortnight Fighter
+  "streak-30":     BADGE_IMAGES.c,  // Monthly Monster
+  "days-25":       BADGE_IMAGES.b,  // Dedicated Tracker
+  "hydration-7":   BADGE_IMAGES.a,  // Hydration Junkie
+  "care-10":       BADGE_IMAGES.b,  // Self-Care Badge
+  "learning-5":    BADGE_IMAGES.a,  // Knowledge Seeker
+  "symptoms-10":   BADGE_IMAGES.b,  // Pattern Seeker
+  "repair-1":      BADGE_IMAGES.a,  // Back on Track
+  "restart-1":     BADGE_IMAGES.b,  // Resilient Restart
+  "meds-first":    BADGE_IMAGES.a,  // Dose One
+  "meds-streak-7": BADGE_IMAGES.c,  // On Time Hero
+  "week-perfect":  BADGE_IMAGES.c,  // Perfect Week
+  // Older milestones not in the 16-badge set
+  "days-1":        BADGE_IMAGES.a,
+  "days-50":       BADGE_IMAGES.c,
+  "days-100":      BADGE_IMAGES.c,
+  "symptoms-25":   BADGE_IMAGES.b,
 };
 
 export default function StreakModal() {
   const router = useRouter();
-  const { currentUser, healthStreak, healthData, getWeeklyAverage } = useAppStore();
+  const { currentUser, healthStreak, healthData, getWeeklyAverage, repairsUsed, onboardingData } = useAppStore();
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("streaks"); // "streaks" | "rewards"
@@ -182,7 +199,7 @@ export default function StreakModal() {
     },
     {
       id: "streak-3",
-      name: "Streak Starter",
+      name: "First Streak",
       type: "streak",
       value: 3,
       target: 3,
@@ -194,7 +211,7 @@ export default function StreakModal() {
     },
     {
       id: "streak-7",
-      name: "Week Warrior",
+      name: "On Track Streak",
       type: "streak",
       value: 7,
       target: 7,
@@ -218,7 +235,7 @@ export default function StreakModal() {
     },
     {
       id: "streak-30",
-      name: "Monthly Master",
+      name: "Monthly Monster",
       type: "streak",
       value: 30,
       target: 30,
@@ -254,7 +271,7 @@ export default function StreakModal() {
     },
     {
       id: "hydration-7",
-      name: "Hydration Hero",
+      name: "Hydration Junkie",
       type: "hydration",
       value: 7,
       target: 7,
@@ -266,7 +283,7 @@ export default function StreakModal() {
     },
     {
       id: "care-10",
-      name: "Self-Care Starter",
+      name: "Self-Care Badge",
       type: "care",
       value: 10,
       target: 10,
@@ -288,6 +305,66 @@ export default function StreakModal() {
       unlocked: learningModulesCompleted >= 5,
       current: learningModulesCompleted,
     },
+    {
+      id: "repair-1",
+      name: "Back on Track",
+      type: "repair",
+      value: 1,
+      target: 1,
+      requirement: "Use your first streak repair",
+      description: "Life happens. Using a repair shows you're committed to bouncing back.",
+      rarity: "Common",
+      unlocked: repairsUsed >= 1,
+      current: repairsUsed,
+    },
+    {
+      id: "restart-1",
+      name: "Resilient Restart",
+      type: "restart",
+      value: 1,
+      target: 1,
+      requirement: "Log again after missing 3+ days",
+      description: "Every restart is a win. Coming back after a gap takes real courage.",
+      rarity: "Uncommon",
+      unlocked: repairsUsed > 0,
+      current: repairsUsed > 0 ? 1 : 0,
+    },
+    {
+      id: "meds-first",
+      name: "Dose One",
+      type: "medications",
+      value: 1,
+      target: 1,
+      requirement: "Log your first medication",
+      description: "Your first logged medication. Knowledge of your treatment is a superpower.",
+      rarity: "Common",
+      unlocked: (onboardingData?.medications?.length ?? 0) > 0,
+      current: (onboardingData?.medications?.length ?? 0) > 0 ? 1 : 0,
+    },
+    {
+      id: "meds-streak-7",
+      name: "On Time Hero",
+      type: "medications",
+      value: 7,
+      target: 7,
+      requirement: "Complete 7 medication check-ins",
+      description: "Seven days of staying on top of your treatment. Your future self will thank you.",
+      rarity: "Rare",
+      unlocked: careTasksCompleted >= 7,
+      current: careTasksCompleted,
+    },
+    {
+      id: "week-perfect",
+      name: "Perfect Week",
+      type: "streak",
+      value: 7,
+      target: 7,
+      requirement: "Log every day for a full week",
+      description: "Seven days, zero gaps. A truly perfect week of health tracking.",
+      rarity: "Epic",
+      unlocked: completedDays >= 7,
+      current: completedDays,
+    },
   ];
 
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
@@ -300,21 +377,27 @@ export default function StreakModal() {
   const renderMilestoneCard = (milestone) => {
     const isUnlocked = milestone.unlocked;
     const progress = Math.min((milestone.current / milestone.target) * 100, 100);
-    const badgeSource = BADGE_IMAGES[RARITY_TO_BADGE[milestone.rarity] ?? "a"];
+    const badgeSource = MILESTONE_BADGE[milestone.id] ?? BADGE_IMAGES.a;
 
     const MilestoneIcon = {
-      days: Trophy,
-      streak: Flame,
-      symptoms: Target,
-      hydration: Droplet,
-      care: Heart,
-      learning: BookOpen,
+      days:        Trophy,
+      streak:      Flame,
+      symptoms:    Target,
+      hydration:   Droplet,
+      care:        Heart,
+      learning:    BookOpen,
+      repair:      Wrench,
+      restart:     Zap,
+      medications: Clock,
     }[milestone.type];
 
     const getUnitText = () => {
       if (["days", "streak", "hydration"].includes(milestone.type)) return "days";
       if (milestone.type === "symptoms") return "logged";
       if (milestone.type === "care") return "tasks";
+      if (milestone.type === "repair") return "repair";
+      if (milestone.type === "restart") return "restart";
+      if (milestone.type === "medications") return "check-ins";
       return "modules";
     };
 
@@ -544,7 +627,10 @@ export default function StreakModal() {
 
   const BadgeCard = ({ badge, size = "normal" }) => {
     const cardWidth = size === "large" ? width * 0.4 : 120;
+    const imgSize = size === "large" ? cardWidth - 40 : 72;
     const isUnlocked = badge.unlockedAt !== null;
+    const BadgeIcon = badge.icon;
+    const badgeSource = BADGE_IMAGES[RARITY_TO_BADGE[badge.rarity] ?? "a"];
 
     return (
       <View
@@ -557,7 +643,6 @@ export default function StreakModal() {
           alignItems: "center",
           borderWidth: 1,
           borderColor: isUnlocked ? HEMO.rose + "66" : "#E5E7EB",
-          opacity: isUnlocked ? 1 : 0.6,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: isUnlocked ? 0.05 : 0.02,
@@ -565,8 +650,30 @@ export default function StreakModal() {
           elevation: isUnlocked ? 2 : 1,
         }}
       >
-        <View style={{ marginBottom: size === "large" ? 12 : 8 }}>
-          <badge.icon size={size === "large" ? 40 : 32} color={isUnlocked ? HEMO.wine : "#9CA3AF"} strokeWidth={1.5} />
+        <View style={{ width: imgSize, height: imgSize, marginBottom: size === "large" ? 12 : 8 }}>
+          <Image
+            source={badgeSource}
+            style={{ width: "100%", height: "100%", borderRadius: 10, opacity: isUnlocked ? 1 : 0.35 }}
+            contentFit="cover"
+          />
+          {isUnlocked ? (
+            <View style={{
+              position: "absolute", bottom: 4, right: 4,
+              width: size === "large" ? 26 : 22, height: size === "large" ? 26 : 22,
+              borderRadius: size === "large" ? 13 : 11,
+              backgroundColor: "rgba(255,255,255,0.9)",
+              alignItems: "center", justifyContent: "center",
+            }}>
+              <BadgeIcon size={size === "large" ? 14 : 12} color={HEMO.wine} strokeWidth={2} />
+            </View>
+          ) : (
+            <View style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              alignItems: "center", justifyContent: "center",
+            }}>
+              <Lock size={size === "large" ? 24 : 20} color="#FFFFFF" strokeWidth={2} />
+            </View>
+          )}
         </View>
         <Text style={{ fontFamily: fonts.semibold, fontSize: size === "large" ? 14 : 12, color: "#111827", textAlign: "center", marginBottom: 4 }}>
           {badge.name}

@@ -9,25 +9,34 @@ import {
   BookOpen,
   Target,
   Star,
+  Wrench,
+  Zap,
+  Clock,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MILESTONE_ICONS = {
-  days: Trophy,
-  streak: Flame,
-  symptoms: Target,
-  hydration: Droplet,
-  care: Heart,
-  learning: BookOpen,
+  days:        Trophy,
+  streak:      Flame,
+  symptoms:    Target,
+  hydration:   Droplet,
+  care:        Heart,
+  learning:    BookOpen,
+  repair:      Wrench,
+  restart:     Zap,
+  medications: Clock,
 };
 
 const MILESTONE_COLORS = {
-  days:      { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
-  streak:    { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
-  symptoms:  { primary: "#D09F9A", secondary: "#B8827C", bg: "#F8E9E7" },
-  hydration: { primary: "#2563EB", secondary: "#3B82F6", bg: "#EFF6FF" },
-  care:      { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
-  learning:  { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
+  days:        { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  streak:      { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
+  symptoms:    { primary: "#D09F9A", secondary: "#B8827C", bg: "#F8E9E7" },
+  hydration:   { primary: "#2563EB", secondary: "#3B82F6", bg: "#EFF6FF" },
+  care:        { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  learning:    { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
+  repair:      { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
+  restart:     { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  medications: { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
 };
 
 const RARITY_CONFIG = {

@@ -1,133 +1,228 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Pill, Plus, Trash2, ChevronDown } from 'lucide-react-native';
+import { Check, Pill } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
-const FREQUENCIES = ['Once daily', 'Twice daily', 'Three times daily', 'Every other day', 'Weekly', 'As needed'];
+const SCD_MEDICATIONS = [
+  // Disease-modifying
+  { id: 'hydroxyurea', name: 'Hydroxyurea', subtitle: 'Siklos / Hydrea', category: 'Disease-modifying' },
+  { id: 'voxelotor', name: 'Voxelotor', subtitle: 'Oxbryta', category: 'Disease-modifying' },
+  { id: 'crizanlizumab', name: 'Crizanlizumab', subtitle: 'Adakveo', category: 'Disease-modifying' },
+  { id: 'lglutamine', name: 'L-glutamine', subtitle: 'Endari', category: 'Disease-modifying' },
+  // Iron chelation
+  { id: 'deferasirox', name: 'Deferasirox', subtitle: 'Exjade / Jadenu', category: 'Iron chelation' },
+  { id: 'deferiprone', name: 'Deferiprone', subtitle: 'Ferriprox', category: 'Iron chelation' },
+  { id: 'deferoxamine', name: 'Deferoxamine', subtitle: 'Desferal', category: 'Iron chelation' },
+  // Supportive
+  { id: 'folicacid', name: 'Folic acid', subtitle: null, category: 'Supportive' },
+  { id: 'penicillin', name: 'Penicillin', subtitle: 'Prophylactic', category: 'Supportive' },
+  { id: 'nsaids', name: 'Ibuprofen / NSAIDs', subtitle: null, category: 'Supportive' },
+  { id: 'opioids', name: 'Morphine / Opioids', subtitle: 'Pain crisis', category: 'Supportive' },
+  { id: 'transfusion', name: 'Blood transfusion', subtitle: 'Ongoing support', category: 'Supportive' },
+];
 
-const emptyMedication = () => ({ name: '', dosage: '', frequency: '' });
+const CATEGORIES = ['Disease-modifying', 'Iron chelation', 'Supportive'];
 
 export default function Step10() {
   const { setOnboardingField } = useAppStore();
-  const [medications, setMedications] = useState([emptyMedication()]);
-  const [focusedField, setFocusedField] = useState(null);
-  const [openFreqIndex, setOpenFreqIndex] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
 
-  const updateMed = (index, field, value) => {
-    setMedications((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
+  const toggleDrug = (id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
     });
-  };
-
-  const addMed = () => {
-    if (medications.length < 3) setMedications((prev) => [...prev, emptyMedication()]);
-  };
-
-  const removeMed = (index) => {
-    if (medications.length === 1) return;
-    setMedications((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSkip = () => router.push('/(onboarding)/complete');
 
   const handleContinue = () => {
-    const validMeds = medications.filter((m) => m.name.trim());
-    if (validMeds.length) setOnboardingField('medications', validMeds);
+    const selected = SCD_MEDICATIONS.filter((d) => selectedIds.has(d.id)).map((d) => ({
+      name: d.name,
+      dosage: '',
+      frequency: '',
+    }));
+    if (selected.length) setOnboardingField('medications', selected);
     router.push('/(onboarding)/complete');
   };
+
+  const selectedCount = selectedIds.size;
 
   return (
     <OnboardingStep
       step={10}
       title="Current medications"
-      subtitle="Add medications you take for sickle cell. You can manage these fully in the Care Hub."
+      subtitle="Select the medications you currently take. You can add dosages and schedules in the Care Hub."
       illustrationIcon={Pill}
       illustrationColor="#781D11"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
       onCta={handleContinue}
-      ctaLabel={medications.some((m) => m.name.trim()) ? 'Save & Finish' : 'Skip'}
+      ctaLabel={selectedCount > 0 ? 'Save & Finish' : 'Skip'}
     >
-      {medications.map((med, index) => (
-        <MotiView
-          key={index}
-          from={{ opacity: 0, translateY: 10 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: 'spring', damping: 16, stiffness: 80, delay: index * 60 }}
-          style={styles.medCard}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.cardHeaderLeft}>
-              <Pill size={16} color="#09332C" strokeWidth={1.8} />
-              <Text style={styles.cardLabel}>{index === 0 ? 'Medication' : `Medication ${index + 1}`}</Text>
+      <MotiView
+        from={{ opacity: 0, translateY: 8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: 'spring', damping: 16, stiffness: 80 }}
+        style={styles.container}
+      >
+        {selectedCount > 0 && (
+          <MotiView
+            from={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', damping: 14, stiffness: 120 }}
+            style={styles.badge}
+          >
+            <Text style={styles.badgeText}>{selectedCount} selected</Text>
+          </MotiView>
+        )}
+
+        {CATEGORIES.map((category) => {
+          const drugs = SCD_MEDICATIONS.filter((d) => d.category === category);
+          return (
+            <View key={category} style={styles.section}>
+              <Text style={styles.sectionLabel}>{category}</Text>
+              <View style={styles.chipGrid}>
+                {drugs.map((drug, i) => {
+                  const isSelected = selectedIds.has(drug.id);
+                  return (
+                    <MotiView
+                      key={drug.id}
+                      from={{ opacity: 0, translateY: 6 }}
+                      animate={{ opacity: 1, translateY: 0 }}
+                      transition={{ type: 'spring', damping: 16, stiffness: 80, delay: i * 40 }}
+                      style={styles.chipWrapper}
+                    >
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.chip,
+                          isSelected && styles.chipSelected,
+                          pressed && { opacity: 0.75 },
+                        ]}
+                        onPress={() => toggleDrug(drug.id)}
+                      >
+                        <View style={styles.chipTop}>
+                          {isSelected && (
+                            <View style={styles.checkCircle}>
+                              <Check size={10} color="#FFFFFF" strokeWidth={2.5} />
+                            </View>
+                          )}
+                          <Text style={[styles.chipName, isSelected && styles.chipNameSelected]} numberOfLines={2}>
+                            {drug.name}
+                          </Text>
+                        </View>
+                        {drug.subtitle && (
+                          <Text style={[styles.chipSubtitle, isSelected && styles.chipSubtitleSelected]} numberOfLines={1}>
+                            {drug.subtitle}
+                          </Text>
+                        )}
+                      </Pressable>
+                    </MotiView>
+                  );
+                })}
+              </View>
             </View>
-            {index > 0 && (
-              <Pressable onPress={() => removeMed(index)} hitSlop={8}>
-                <Trash2 size={15} color="#DC2626" strokeWidth={1.8} />
-              </Pressable>
-            )}
-          </View>
+          );
+        })}
 
-          <View style={[styles.inputWrapper, focusedField === `name-${index}` && styles.inputFocused]}>
-            <TextInput style={styles.input} placeholder="Drug name (e.g. Hydroxyurea)" placeholderTextColor="rgba(9,51,44,0.35)" value={med.name} onChangeText={(v) => updateMed(index, 'name', v)} onFocus={() => setFocusedField(`name-${index}`)} onBlur={() => setFocusedField(null)} />
-          </View>
-
-          <View style={[styles.inputWrapper, focusedField === `dosage-${index}` && styles.inputFocused]}>
-            <TextInput style={styles.input} placeholder="Dosage (e.g. 500mg)" placeholderTextColor="rgba(9,51,44,0.35)" value={med.dosage} onChangeText={(v) => updateMed(index, 'dosage', v)} onFocus={() => setFocusedField(`dosage-${index}`)} onBlur={() => setFocusedField(null)} />
-          </View>
-
-          <Pressable style={styles.freqSelector} onPress={() => setOpenFreqIndex(openFreqIndex === index ? null : index)}>
-            <Text style={[styles.freqText, !med.frequency && styles.freqPlaceholder]}>{med.frequency || 'Frequency'}</Text>
-            <ChevronDown size={16} color="rgba(9,51,44,0.4)" strokeWidth={2} style={{ transform: [{ rotate: openFreqIndex === index ? '180deg' : '0deg' }] }} />
-          </Pressable>
-
-          {openFreqIndex === index && (
-            <MotiView from={{ opacity: 0, translateY: -4 }} animate={{ opacity: 1, translateY: 0 }} style={styles.freqDropdown}>
-              {FREQUENCIES.map((freq) => (
-                <Pressable key={freq} style={({ pressed }) => [styles.freqOption, med.frequency === freq && styles.freqOptionSelected, pressed && { backgroundColor: 'rgba(9,51,44,0.05)' }]} onPress={() => { updateMed(index, 'frequency', freq); setOpenFreqIndex(null); }}>
-                  <Text style={[styles.freqOptionText, med.frequency === freq && styles.freqOptionTextSelected]}>{freq}</Text>
-                </Pressable>
-              ))}
-            </MotiView>
-          )}
-        </MotiView>
-      ))}
-
-      {medications.length < 3 && (
-        <Pressable style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]} onPress={addMed}>
-          <Plus size={16} color="#09332C" strokeWidth={2} />
-          <Text style={styles.addBtnText}>Add another medication</Text>
-        </Pressable>
-      )}
-
-      <Text style={styles.hint}>Up to 3 medications in onboarding. Add more from the Care Hub after setup.</Text>
+        <Text style={styles.hint}>
+          Dosages and frequency can be configured in the Care Hub after setup.
+        </Text>
+      </MotiView>
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  medCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', gap: 10 },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cardLabel: { fontFamily: 'Geist_600SemiBold', fontSize: 13, color: '#09332C' },
-  inputWrapper: { backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 11 },
-  inputFocused: { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.04)' },
-  input: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C', padding: 0, margin: 0 },
-  freqSelector: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#F8F4F0', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', paddingHorizontal: 14, paddingVertical: 11 },
-  freqText: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C' },
-  freqPlaceholder: { color: 'rgba(9,51,44,0.35)' },
-  freqDropdown: { backgroundColor: '#FFFFFF', borderRadius: 10, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.1)', overflow: 'hidden', marginTop: -6 },
-  freqOption: { paddingHorizontal: 14, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: 'rgba(9,51,44,0.06)' },
-  freqOptionSelected: { backgroundColor: 'rgba(169,51,77,0.08)' },
-  freqOptionText: { fontFamily: 'Geist_400Regular', fontSize: 14, color: '#09332C' },
-  freqOptionTextSelected: { fontFamily: 'Geist_600SemiBold', color: '#A9334D' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 14, paddingHorizontal: 16, backgroundColor: 'rgba(9,51,44,0.04)', borderRadius: 12, borderWidth: 1.5, borderColor: 'rgba(9,51,44,0.08)', borderStyle: 'dashed', justifyContent: 'center', marginBottom: 12 },
-  addBtnText: { fontFamily: 'Geist_500Medium', fontSize: 14, color: '#09332C' },
-  hint: { fontFamily: 'Geist_400Regular', fontSize: 12, color: 'rgba(9,51,44,0.4)', textAlign: 'center' },
+  container: {
+    gap: 20,
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#A9334D',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  badgeText: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+  section: {
+    gap: 10,
+  },
+  sectionLabel: {
+    fontFamily: 'Geist_600SemiBold',
+    fontSize: 12,
+    color: 'rgba(9,51,44,0.5)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  chipGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  chipWrapper: {
+    width: '48%',
+  },
+  chip: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(9,51,44,0.1)',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 3,
+  },
+  chipSelected: {
+    backgroundColor: '#A9334D',
+    borderColor: '#A9334D',
+  },
+  chipTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+  },
+  checkCircle: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+    flexShrink: 0,
+  },
+  chipName: {
+    fontFamily: 'Geist_500Medium',
+    fontSize: 13,
+    color: '#09332C',
+    flexShrink: 1,
+  },
+  chipNameSelected: {
+    color: '#FFFFFF',
+    fontFamily: 'Geist_600SemiBold',
+  },
+  chipSubtitle: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 11,
+    color: 'rgba(9,51,44,0.45)',
+  },
+  chipSubtitleSelected: {
+    color: 'rgba(255,255,255,0.7)',
+  },
+  hint: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 12,
+    color: 'rgba(9,51,44,0.4)',
+    textAlign: 'center',
+    lineHeight: 17,
+  },
 });

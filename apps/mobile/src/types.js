@@ -211,6 +211,7 @@ export const mockBadges = [
     description: "Completed your first symptom log",
     icon: Target,
     category: "milestone",
+    rarity: "Common",
     unlockedAt: new Date("2024-10-15"),
   },
   {
@@ -219,6 +220,7 @@ export const mockBadges = [
     description: "Logged symptoms for 7 consecutive days",
     icon: Flame,
     category: "streak",
+    rarity: "Rare",
     unlockedAt: new Date("2024-10-22"),
   },
   {
@@ -227,6 +229,7 @@ export const mockBadges = [
     description: "Met hydration goals for 30 days",
     icon: Droplets,
     category: "achievement",
+    rarity: "Epic",
     unlockedAt: null,
   },
 ];
