@@ -273,6 +273,9 @@ export const mockMedications = [
     nextDose: "08:00 AM",
     time: "8:00 AM",
     taken: true,
+    takenAt: "2024-01-15T08:05:00.000Z",
+    notes: "Take with plenty of water",
+    category: "Disease-modifying",
   },
   {
     id: "2",
@@ -285,6 +288,9 @@ export const mockMedications = [
     nextDose: "08:00 AM",
     time: "8:00 AM",
     taken: true,
+    takenAt: "2024-01-15T08:05:00.000Z",
+    notes: "",
+    category: "Supportive",
   },
   {
     id: "3",
@@ -297,6 +303,9 @@ export const mockMedications = [
     nextDose: "12:00 PM",
     time: "12:00 PM",
     taken: false,
+    takenAt: null,
+    notes: "Take with food",
+    category: "Supportive",
   },
   {
     id: "4",
@@ -309,6 +318,9 @@ export const mockMedications = [
     nextDose: "06:00 PM",
     time: "6:00 PM",
     taken: false,
+    takenAt: null,
+    notes: "",
+    category: "Supportive",
   },
 ];
 

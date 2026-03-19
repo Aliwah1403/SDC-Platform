@@ -530,7 +530,10 @@ function SummaryStep({ log, onSubmit }) {
 
 export default function LogSymptomsScreen() {
   const router = useRouter();
-  const { currentSymptomLog, updateSymptomLog, submitSymptomLog } = useAppStore();
+  const { currentSymptomLog, updateSymptomLog, submitSymptomLog, getLogsForDate } = useAppStore();
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  const hasLoggedToday = getLogsForDate(todayStr).length > 0;
 
   const [step, setStep] = useState(0);
 
@@ -639,6 +642,24 @@ export default function LogSymptomsScreen() {
 
       {/* Progress dots (not on summary) */}
       {!isSummary && <ProgressDots step={step} />}
+
+      {/* Already logged today notice */}
+      {hasLoggedToday && step === 0 && (
+        <View style={{
+          marginHorizontal: 24,
+          marginBottom: 8,
+          paddingVertical: 8,
+          paddingHorizontal: 14,
+          backgroundColor: "#A9334D18",
+          borderRadius: 10,
+          flexDirection: "row",
+          alignItems: "center",
+        }}>
+          <Text style={{ fontSize: 13, color: "#A9334D", fontFamily: "Geist-Medium" }}>
+            You've already logged today — adding a new entry
+          </Text>
+        </View>
+      )}
 
       {/* Step content */}
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }}>

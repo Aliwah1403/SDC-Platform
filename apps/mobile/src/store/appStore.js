@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { mockUser, generateMockHealthData, mockEmergencyContacts } from "../types";
+import { mockUser, generateMockHealthData, mockEmergencyContacts, mockMedications } from "../types";
 
 const mockHealthData = generateMockHealthData();
 
@@ -30,6 +30,7 @@ export const useAppStore = create((set, get) => ({
   lastLogDate: new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday — no log today
   todaysLog: null,
   healthData: mockHealthData,
+  healthLogs: [], // raw append-only archive — N entries per day possible
 
   // Streak Repairs State
   repairsAvailable: 2,
@@ -61,6 +62,9 @@ export const useAppStore = create((set, get) => ({
   chatMessages: [],
   isTyping: false,
 
+  // Medications
+  medications: mockMedications,
+
   // Metric Goals
   metricGoals: { hydration: 8, sleep: 8, steps: 10000 },
 
@@ -72,7 +76,32 @@ export const useAppStore = create((set, get) => ({
       onboardingData: { ...state.onboardingData, [field]: value },
     })),
 
-  completeOnboarding: () => set({ onboardingComplete: true, isOnboardingComplete: true }),
+  completeOnboarding: () => {
+    const state = get();
+    const existing = state.medications.map((m) => m.name.toLowerCase());
+    const newMeds = (state.onboardingData.medications || [])
+      .filter((m) => !existing.includes(m.name.toLowerCase()))
+      .map((m, i) => ({
+        id: `onboarding-${Date.now()}-${i}`,
+        name: m.name,
+        dosage: m.dosage || "",
+        frequency: m.frequency || "Daily",
+        prescribedBy: "",
+        startDate: new Date(),
+        isActive: true,
+        time: "8:00 AM",
+        nextDose: "08:00 AM",
+        taken: false,
+        takenAt: null,
+        notes: "",
+        category: m.category || "Supportive",
+      }));
+    set({
+      onboardingComplete: true,
+      isOnboardingComplete: true,
+      medications: [...state.medications, ...newMeds],
+    });
+  },
 
   resetOnboarding: () =>
     set({
@@ -93,6 +122,36 @@ export const useAppStore = create((set, get) => ({
       },
     }),
 
+  // Medication CRUD
+  addMedication: (med) =>
+    set((state) => ({
+      medications: [
+        ...state.medications,
+        { ...med, id: Date.now().toString(), isActive: true, taken: false, takenAt: null },
+      ],
+    })),
+
+  updateMedication: (id, updates) =>
+    set((state) => ({
+      medications: state.medications.map((m) => (m.id === id ? { ...m, ...updates } : m)),
+    })),
+
+  deleteMedication: (id) =>
+    set((state) => ({ medications: state.medications.filter((m) => m.id !== id) })),
+
+  toggleMedicationTaken: (id) =>
+    set((state) => ({
+      medications: state.medications.map((m) => {
+        if (m.id !== id) return m;
+        const nowTaken = !m.taken;
+        return { ...m, taken: nowTaken, takenAt: nowTaken ? new Date().toISOString() : null };
+      }),
+    })),
+
+  getActiveMedications: () => get().medications.filter((m) => m.isActive),
+
+  getDueCount: () => get().medications.filter((m) => m.isActive && !m.taken).length,
+
   setMetricGoal: (metric, value) =>
     set((state) => ({ metricGoals: { ...state.metricGoals, [metric]: value } })),
 
@@ -107,19 +166,8 @@ export const useAppStore = create((set, get) => ({
 
   submitSymptomLog: () => {
     const state = get();
-    const newLog = {
-      id: Date.now().toString(),
-      userId: state.currentUser?.id,
-      date: new Date(),
-      ...state.currentSymptomLog,
-    };
-
-    // Add to health data
-    const todayStr = new Date().toISOString().split("T")[0];
-    const updatedHealthData = [...state.healthData];
-    const existingIndex = updatedHealthData.findIndex(
-      (d) => d.date === todayStr,
-    );
+    const now = new Date();
+    const todayStr = now.toISOString().split("T")[0];
 
     const moodValue =
       state.currentSymptomLog.mood === "excellent"
@@ -132,31 +180,65 @@ export const useAppStore = create((set, get) => ({
               ? 2
               : 1;
 
-    const newHealthData = {
+    // Append to raw log archive (never replace)
+    const newLog = {
+      id: now.getTime().toString(),
+      userId: state.currentUser?.id,
       date: todayStr,
-      painLevel: state.currentSymptomLog.painLevel,
-      hydration: state.currentSymptomLog.hydration || 8,
+      timestamp: now.toISOString(),
+      ...state.currentSymptomLog,
       mood: moodValue,
     };
+    const updatedHealthLogs = [...state.healthLogs, newLog];
 
+    // Re-derive daily summary from ALL logs for today
+    const todaysLogs = updatedHealthLogs.filter((l) => l.date === todayStr);
+    const existingEntry = state.healthData.find((d) => d.date === todayStr);
+
+    const aggregatedEntry = {
+      date: todayStr,
+      // Preserve Apple Health fields from existing entry if present
+      steps: existingEntry?.steps,
+      sleepHours: existingEntry?.sleepHours,
+      heartRate: existingEntry?.heartRate,
+      // Aggregate from manual logs: max pain, max hydration, most recent mood
+      painLevel: Math.max(...todaysLogs.map((l) => l.painLevel ?? 0)),
+      hydration: Math.max(...todaysLogs.map((l) => l.hydration ?? 0)),
+      mood: todaysLogs[todaysLogs.length - 1].mood,
+    };
+
+    const updatedHealthData = [...state.healthData];
+    const existingIndex = updatedHealthData.findIndex((d) => d.date === todayStr);
     if (existingIndex >= 0) {
-      updatedHealthData[existingIndex] = newHealthData;
+      updatedHealthData[existingIndex] = aggregatedEntry;
     } else {
-      updatedHealthData.push(newHealthData);
+      updatedHealthData.push(aggregatedEntry);
     }
 
-    // Update streak
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const isConsecutive =
+    // Update streak — only change if not already logged today
+    const alreadyLoggedToday =
       state.lastLogDate &&
-      state.lastLogDate.toDateString() === yesterday.toDateString();
+      new Date(state.lastLogDate).toDateString() === now.toDateString();
+
+    let newStreak = state.healthStreak;
+    let newLastLogDate = state.lastLogDate;
+
+    if (!alreadyLoggedToday) {
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const isConsecutive =
+        state.lastLogDate &&
+        new Date(state.lastLogDate).toDateString() === yesterday.toDateString();
+      newStreak = isConsecutive ? state.healthStreak + 1 : 1;
+      newLastLogDate = now;
+    }
 
     set({
       healthData: updatedHealthData,
+      healthLogs: updatedHealthLogs,
       todaysLog: newLog,
-      lastLogDate: new Date(),
-      healthStreak: isConsecutive ? state.healthStreak + 1 : 1,
+      lastLogDate: newLastLogDate,
+      healthStreak: newStreak,
       currentSymptomLog: {
         painLevel: 0,
         bodyLocations: [],
@@ -277,6 +359,14 @@ export const useAppStore = create((set, get) => ({
 
   dismissMissedDay: () => {
     set({ missedDay: null });
+  },
+
+  // Raw log helpers
+  getLogsForDate: (dateStr) => {
+    const state = get();
+    return state.healthLogs
+      .filter((l) => l.date === dateStr)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   },
 
   // Health data helpers
