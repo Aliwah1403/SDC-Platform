@@ -6,696 +6,565 @@ import {
   TouchableOpacity,
   Alert,
   Share,
+  Switch,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  User,
-  Settings,
-  FileText,
+  ChevronRight,
+  Dna,
+  Calendar,
+  Ruler,
+  Pill,
+  Phone,
+  Bell,
+  Clock,
   Download,
   Share as ShareIcon,
-  ChevronDown,
-  ChevronRight,
-  Calendar,
-  Activity,
   Heart,
-  Award,
+  User,
+  Lock,
+  HelpCircle,
+  Info,
   LogOut,
-  Edit,
-  Phone,
-  Shield,
+  Fingerprint,
 } from "lucide-react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { useAppStore } from "../../store/appStore";
-import { mockBadges } from "../../types";
 import { fonts } from "@/utils/fonts";
+import { useRouter } from "expo-router";
 
-const HEMO_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function getInitials(name) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function formatHeight(cm) {
+  if (!cm) return "Not set";
+  return `${cm} cm`;
+}
+
+function formatWeight(kg) {
+  if (!kg) return "Not set";
+  return `${kg} kg`;
+}
+
+function formatDob(dob) {
+  if (!dob) return "Not set";
+  const d = new Date(dob);
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatAge(dob) {
+  if (!dob) return null;
+  return Math.floor((Date.now() - new Date(dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+}
+
+// ─── primitive components ────────────────────────────────────────────────────
+
+function Divider() {
+  return <View style={{ height: 1, backgroundColor: "#F8E9E7", marginLeft: 54 }} />;
+}
+
+function SettingRow({ icon: Icon, iconColor = "#A9334D", label, value, rightElement, onPress, isLast }) {
+  const content = (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 13,
+        paddingHorizontal: 16,
+      }}
+    >
+      {/* icon bubble */}
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 8,
+          backgroundColor: `${iconColor}18`,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 12,
+        }}
+      >
+        <Icon size={18} color={iconColor} />
+      </View>
+
+      {/* label */}
+      <Text
+        style={{
+          fontFamily: fonts.medium,
+          fontSize: 15,
+          color: "#09332C",
+          flex: 1,
+        }}
+      >
+        {label}
+      </Text>
+
+      {/* right side */}
+      {value ? (
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 14,
+            color: "#9CA3AF",
+            marginRight: rightElement === "chevron" ? 4 : 0,
+          }}
+        >
+          {value}
+        </Text>
+      ) : null}
+
+      {rightElement === "chevron" && <ChevronRight size={18} color="#C4A8A4" />}
+    </View>
+  );
+
+  if (onPress) {
+    return <TouchableOpacity onPress={onPress} activeOpacity={0.6}>{content}</TouchableOpacity>;
+  }
+  return content;
+}
+
+function SettingRowToggle({ icon: Icon, iconColor = "#A9334D", label, value, onChange }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 11,
+        paddingHorizontal: 16,
+      }}
+    >
+      <View
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: 8,
+          backgroundColor: `${iconColor}18`,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 12,
+        }}
+      >
+        <Icon size={18} color={iconColor} />
+      </View>
+      <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: "#09332C", flex: 1 }}>
+        {label}
+      </Text>
+      <Switch
+        value={value}
+        onValueChange={onChange}
+        trackColor={{ false: "#E5E7EB", true: "#A9334D" }}
+        thumbColor="#ffffff"
+        ios_backgroundColor="#E5E7EB"
+      />
+    </View>
+  );
+}
+
+function SectionCard({ title, children }) {
+  return (
+    <View style={{ marginBottom: 24 }}>
+      {title ? (
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 11,
+            color: "#9CA3AF",
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            marginBottom: 6,
+            marginLeft: 4,
+          }}
+        >
+          {title}
+        </Text>
+      ) : null}
+      <View
+        style={{
+          backgroundColor: "#ffffff",
+          borderRadius: 14,
+          borderWidth: 1,
+          borderColor: "#F0E4E1",
+          overflow: "hidden",
+        }}
+      >
+        {React.Children.map(children, (child, i) => {
+          if (!child) return null;
+          const isLast = i === React.Children.count(children) - 1;
+          return (
+            <>
+              {child}
+              {!isLast && <Divider />}
+            </>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ─── main screen ─────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
-  const [expandedSection, setExpandedSection] = useState(null);
+  const router = useRouter();
 
-  const { currentUser, healthStreak, healthData, emergencyContacts, onboardingData } = useAppStore();
+  const {
+    currentUser,
+    healthStreak,
+    emergencyContacts,
+    onboardingData,
+    setOnboardingField,
+  } = useAppStore();
 
-  const displayAge = onboardingData?.dob
-    ? Math.floor((Date.now() - new Date(onboardingData.dob).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : currentUser?.age;
-  const displayScdType = onboardingData?.scdType || currentUser?.scdType;
-  const totalLogs = healthData?.length || 0;
-  const unlockedBadges = mockBadges.filter((b) => b.unlockedAt).length;
-  const daysActive = currentUser?.joinedDays || 0;
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    onboardingData?.notificationsEnabled ?? false,
+  );
+  const [biometricsEnabled, setBiometricsEnabled] = useState(
+    onboardingData?.biometricsEnabled ?? false,
+  );
 
-  const toggleSection = (section) => {
-    setExpandedSection(expandedSection === section ? null : section);
+  const scdType = onboardingData?.scdType || currentUser?.scdType;
+  const age = formatAge(onboardingData?.dob) ?? currentUser?.age;
+  const medicationsCount = onboardingData?.medications?.length ?? 0;
+  const emergencyCount = emergencyContacts?.length ?? 0;
+  const initials = getInitials(currentUser?.name);
+
+  const handleToggleNotifications = (val) => {
+    setNotificationsEnabled(val);
+    setOnboardingField("notificationsEnabled", val);
   };
 
-  const handleShareHealthSummary = async () => {
-    try {
-      const summary = `
-Hemo - Health Summary
-Patient: ${currentUser?.name}
-Age: ${displayAge}
-SCD Type: ${displayScdType}
-Health Streak: ${healthStreak} days
-Date: ${new Date().toLocaleDateString()}
-
-This summary was generated by Hemo mobile app.
-      `.trim();
-
-      await Share.share({
-        message: summary,
-        title: "Health Summary",
-      });
-    } catch (error) {
-      Alert.alert("Error", "Unable to share health summary");
-    }
+  const handleToggleBiometrics = (val) => {
+    setBiometricsEnabled(val);
+    setOnboardingField("biometricsEnabled", val);
   };
 
   const handleExportData = () => {
     Alert.alert(
       "Export Health Data",
-      "Your health data will be prepared for download. You will receive a comprehensive PDF report.",
+      "Your health data will be prepared as a comprehensive PDF report.",
       [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Export",
-          onPress: () =>
-            Alert.alert("Success", "Health data export initiated!"),
-        },
+        { text: "Export", onPress: () => Alert.alert("Success", "Health data export initiated!") },
       ],
     );
   };
 
-  const healthRecordSections = [
-    {
-      id: "diagnosis",
-      title: "Diagnosis Information",
-      icon: FileText,
-      color: "#DC2626",
-      items: [
-        { label: "Primary Diagnosis", value: displayScdType ? `Sickle Cell Disease (${displayScdType})` : "Not specified" },
-        { label: "Date of Diagnosis", value: "March 15, 2010" },
-        { label: "Diagnosing Physician", value: "Dr. Sarah Johnson" },
-        { label: "Current Status", value: "Stable, Managing Well" },
-      ],
-    },
-    {
-      id: "medications",
-      title: "Current Medications",
-      icon: Heart,
-      color: "#059669",
-      items: onboardingData?.medications?.length > 0
-        ? onboardingData.medications.map((med) => ({
-            label: med.name,
-            value: `${med.dosage} ${med.frequency}`.trim(),
-          }))
-        : [{ label: "Medications", value: "No medications added yet" }],
-    },
-    {
-      id: "allergies",
-      title: "Allergies & Reactions",
-      icon: Shield,
-      color: "#EF4444",
-      items: [
-        { label: "Drug Allergies", value: "Codeine (severe reaction)" },
-        { label: "Environmental", value: "None known" },
-        { label: "Food Allergies", value: "None known" },
-        { label: "Last Updated", value: "August 20, 2024" },
-      ],
-    },
-    {
-      id: "vaccinations",
-      title: "Vaccination History",
-      icon: Activity,
-      color: "#A9334D",
-      items: [
-        { label: "Pneumococcal", value: "Up to date (2024)" },
-        { label: "Meningococcal", value: "Due for booster" },
-        { label: "Influenza", value: "Annual - Current" },
-        { label: "COVID-19", value: "Boosted (Sept 2024)" },
-      ],
-    },
-  ];
-
-  const ProfileHeader = () => (
-    <LinearGradient
-      colors={HEMO_GRADIENT}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={{
-        paddingTop: insets.top + 20,
-        paddingHorizontal: 20,
-        paddingBottom: 30,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
-        overflow: "hidden",
-      }}
-    >
-      {/* Decorative shapes */}
-      <View style={{ position: "absolute", width: 200, height: 200, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -60, right: -40 }} />
-      <View style={{ position: "absolute", width: 140, height: 140, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -40 }} />
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <View
-          style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            borderRadius: 40,
-            padding: 20,
-            marginRight: 16,
-          }}
-        >
-          <User size={32} color="#ffffff" />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 24,
-              color: "#ffffff",
-              marginBottom: 4,
-            }}
-          >
-            {currentUser?.name}
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: 16,
-              color: "rgba(248,233,231,0.8)",
-              marginBottom: 2,
-            }}
-          >
-            Age {displayAge} • {displayScdType}
-          </Text>
-
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 14,
-              color: "rgba(248,233,231,0.8)",
-            }}
-          >
-            Member since {currentUser?.createdAt?.toLocaleDateString()}
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            borderRadius: 10,
-            padding: 10,
-          }}
-        >
-          <Edit size={20} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Stats Row */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          backgroundColor: "rgba(255,255,255,0.1)",
-          borderRadius: 16,
-          paddingVertical: 16,
-        }}
-      >
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 24,
-              color: "#ffffff",
-            }}
-          >
-            {healthStreak}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: "rgba(248,233,231,0.8)",
-            }}
-          >
-            Day Streak
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 24,
-              color: "#ffffff",
-            }}
-          >
-            {totalLogs}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: "rgba(248,233,231,0.8)",
-            }}
-          >
-            Total Logs
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 24,
-              color: "#ffffff",
-            }}
-          >
-            {unlockedBadges}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: "rgba(248,233,231,0.8)",
-            }}
-          >
-            Badges
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "center" }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 24,
-              color: "#ffffff",
-            }}
-          >
-            {daysActive}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: "rgba(248,233,231,0.8)",
-            }}
-          >
-            Days Active
-          </Text>
-        </View>
-      </View>
-    </LinearGradient>
-  );
-
-  const QuickAction = ({ title, subtitle, icon: Icon, color, onPress }) => (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        backgroundColor: "#ffffff",
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#F8E9E7",
-        flexDirection: "row",
-        alignItems: "center",
-        shadowColor: "#781D11",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.04,
-        shadowRadius: 3,
-        elevation: 2,
-      }}
-    >
-      <View
-        style={{
-          backgroundColor: `${color}15`,
-          borderRadius: 10,
-          padding: 12,
-          marginRight: 16,
-        }}
-      >
-        <Icon size={22} color={color} />
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 16,
-            color: "#09332C",
-            marginBottom: 2,
-          }}
-        >
-          {title}
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 13,
-            color: "#9CA3AF",
-          }}
-        >
-          {subtitle}
-        </Text>
-      </View>
-
-      <ChevronRight size={20} color="#C4A8A4" />
-    </TouchableOpacity>
-  );
-
-  const HealthRecordSection = ({ section }) => {
-    const isExpanded = expandedSection === section.id;
-
-    return (
-      <View
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: 12,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: "#F8E9E7",
-          overflow: "hidden",
-          shadowColor: "#781D11",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 3,
-          elevation: 2,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => toggleSection(section.id)}
-          style={{
-            padding: 16,
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: isExpanded ? `${section.color}05` : "#ffffff",
-          }}
-        >
-          <View
-            style={{
-              backgroundColor: `${section.color}15`,
-              borderRadius: 8,
-              padding: 8,
-              marginRight: 12,
-            }}
-          >
-            <section.icon size={20} color={section.color} />
-          </View>
-
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 16,
-              color: "#09332C",
-              flex: 1,
-            }}
-          >
-            {section.title}
-          </Text>
-
-          {isExpanded ? (
-            <ChevronDown size={20} color="#C4A8A4" />
-          ) : (
-            <ChevronRight size={20} color="#C4A8A4" />
-          )}
-        </TouchableOpacity>
-
-        {isExpanded && (
-          <View
-            style={{
-              paddingHorizontal: 16,
-              paddingBottom: 16,
-              borderTopWidth: 1,
-              borderTopColor: "#F8E9E7",
-            }}
-          >
-            {section.items.map((item, index) => (
-              <View
-                key={index}
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  paddingVertical: 8,
-                  borderBottomWidth: index < section.items.length - 1 ? 1 : 0,
-                  borderBottomColor: "#F8E9E7",
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: fonts.regular,
-                    fontSize: 14,
-                    color: "#9CA3AF",
-                    flex: 1,
-                  }}
-                >
-                  {item.label}:
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: fonts.medium,
-                    fontSize: 14,
-                    color: "#09332C",
-                    flex: 2,
-                    textAlign: "right",
-                  }}
-                >
-                  {item.value}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-    );
+  const handleShareSummary = async () => {
+    try {
+      const summary = `Hemo — Health Summary\nPatient: ${currentUser?.name}\nAge: ${age}\nSCD Type: ${scdType}\nHealth Streak: ${healthStreak} days\nDate: ${new Date().toLocaleDateString()}\n\nGenerated by Hemo.`.trim();
+      await Share.share({ message: summary, title: "Health Summary" });
+    } catch {
+      Alert.alert("Error", "Unable to share health summary");
+    }
   };
 
-  const BadgeCard = ({ badge }) => (
-    <View
-      style={{
-        backgroundColor: badge.unlockedAt ? "#ffffff" : "#F8E9E7",
-        borderRadius: 12,
-        padding: 16,
-        marginRight: 12,
-        width: 120,
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: badge.unlockedAt ? "#F8E9E7" : "#F0D9D5",
-        opacity: badge.unlockedAt ? 1 : 0.55,
-      }}
-    >
-      <View style={{ marginBottom: 8 }}>
-        <badge.icon size={32} color={badge.unlockedAt ? "#781D11" : "#C4A8A4"} strokeWidth={1.5} />
-      </View>
+  const handleSignOut = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => Alert.alert("Signed Out", "You have been signed out successfully."),
+      },
+    ]);
+  };
 
-      <Text
-        style={{
-          fontFamily: fonts.semibold,
-          fontSize: 12,
-          color: "#781D11",
-          textAlign: "center",
-          marginBottom: 4,
-        }}
-      >
-        {badge.name}
-      </Text>
-
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: 10,
-          color: "#C4A8A4",
-          textAlign: "center",
-        }}
-      >
-        {badge.unlockedAt ? "Unlocked" : "Locked"}
-      </Text>
-    </View>
-  );
+  const comingSoon = (feature) =>
+    Alert.alert(feature, `${feature} is coming soon.`);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
-      <StatusBar style="light" />
+    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+      <StatusBar style="dark" />
 
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileHeader />
+        {/* ── Profile Header ── */}
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            paddingTop: insets.top + 16,
+            paddingBottom: 20,
+            paddingHorizontal: 20,
+            borderBottomWidth: 1,
+            borderBottomColor: "#F0E4E1",
+            marginBottom: 24,
+          }}
+        >
+          {/* Avatar + name + email */}
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            {/* Initials circle */}
+            <View
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 32,
+                backgroundColor: "#09332C",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 14,
+              }}
+            >
+              <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#F8E9E7" }}>
+                {initials}
+              </Text>
+            </View>
 
-        <View style={{ padding: 20 }}>
-          {/* Quick Actions */}
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 18,
-              color: "#781D11",
-              marginBottom: 16,
-            }}
-          >
-            Quick Actions
-          </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#09332C", marginBottom: 2 }}>
+                {currentUser?.name ?? "—"}
+              </Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", marginBottom: 6 }}>
+                {currentUser?.email ?? "—"}
+              </Text>
+              {/* SCD type badge */}
+              {scdType ? (
+                <View
+                  style={{
+                    alignSelf: "flex-start",
+                    backgroundColor: "#A9334D",
+                    borderRadius: 20,
+                    paddingHorizontal: 10,
+                    paddingVertical: 3,
+                  }}
+                >
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#ffffff" }}>
+                    {scdType}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
 
-          <QuickAction
-            title="Export Health Data"
-            subtitle="Download your complete health records"
-            icon={Download}
-            color="#059669"
-            onPress={handleExportData}
-          />
+            <TouchableOpacity
+              onPress={() => comingSoon("Edit Profile")}
+              style={{
+                backgroundColor: "#F8F4F0",
+                borderRadius: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 7,
+                borderWidth: 1,
+                borderColor: "#F0E4E1",
+              }}
+            >
+              <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: "#09332C" }}>Edit</Text>
+            </TouchableOpacity>
+          </View>
 
-          <QuickAction
-            title="Share Health Summary"
-            subtitle="Share a summary with healthcare providers"
-            icon={ShareIcon}
-            color="#A9334D"
-            onPress={handleShareHealthSummary}
-          />
-
-          <QuickAction
-            title="Emergency Contacts"
-            subtitle={`${emergencyContacts.length} contacts configured`}
-            icon={Phone}
-            color="#EF4444"
-            onPress={() =>
-              Alert.alert(
-                "Emergency Contacts",
-                "Emergency contact management coming soon!",
-              )
-            }
-          />
-
-          {/* Health Records */}
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 18,
-              color: "#781D11",
-              marginTop: 24,
-              marginBottom: 16,
-            }}
-          >
-            Health Records
-          </Text>
-
-          {healthRecordSections.map((section) => (
-            <HealthRecordSection key={section.id} section={section} />
-          ))}
-
-          {/* Achievements */}
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 18,
-              color: "#781D11",
-              marginTop: 24,
-              marginBottom: 16,
-            }}
-          >
-            Achievements
-          </Text>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 20 }}
-            style={{ marginBottom: 24 }}
-          >
-            {mockBadges.map((badge) => (
-              <BadgeCard key={badge.id} badge={badge} />
-            ))}
-          </ScrollView>
-
-          {/* Settings & Support */}
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 18,
-              color: "#781D11",
-              marginBottom: 16,
-            }}
-          >
-            Settings & Support
-          </Text>
-
-          <QuickAction
-            title="App Settings"
-            subtitle="Notifications, privacy, and preferences"
-            icon={Settings}
-            color="#6B7280"
-            onPress={() =>
-              Alert.alert("Settings", "Settings screen coming soon!")
-            }
-          />
-
-          <QuickAction
-            title="Help & Support"
-            subtitle="Get help and contact support"
-            icon={FileText}
-            color="#0EA5E9"
-            onPress={() => Alert.alert("Support", "Help center coming soon!")}
-          />
-
-          <QuickAction
-            title="Sign Out"
-            subtitle="Sign out of your account"
-            icon={LogOut}
-            color="#DC2626"
-            onPress={() => {
-              Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Sign Out",
-                  style: "destructive",
-                  onPress: () =>
-                    Alert.alert(
-                      "Signed Out",
-                      "You have been signed out successfully.",
-                    ),
-                },
-              ]);
-            }}
-          />
-
-          {/* App Info */}
+          {/* Stats strip */}
           <View
             style={{
-              alignItems: "center",
-              marginTop: 24,
-              paddingTop: 24,
-              borderTopWidth: 1,
-              borderTopColor: "#F8E9E7",
+              flexDirection: "row",
+              backgroundColor: "#F8F4F0",
+              borderRadius: 12,
+              paddingVertical: 12,
             }}
           >
-            <Text
-              style={{
-                fontFamily: fonts.semibold,
-                fontSize: 12,
-                color: "#A9334D",
-                marginBottom: 4,
-              }}
-            >
+            {[
+              { label: "Day Streak", value: healthStreak ?? 0 },
+              { label: "Total Logs", value: currentUser?.totalLogs ?? 0 },
+              { label: "Days Active", value: currentUser?.joinedDays ?? 0 },
+            ].map((stat, i) => (
+              <View key={stat.label} style={{ flex: 1, alignItems: "center" }}>
+                {i > 0 && (
+                  <View
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: 4,
+                      bottom: 4,
+                      width: 1,
+                      backgroundColor: "#F0E4E1",
+                    }}
+                  />
+                )}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#09332C" }}>
+                  {stat.value}
+                </Text>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF", marginTop: 2 }}>
+                  {stat.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ── Content ── */}
+        <View style={{ paddingHorizontal: 16 }}>
+
+          {/* My Health */}
+          <SectionCard title="My Health">
+            <SettingRow
+              icon={Dna}
+              iconColor="#A9334D"
+              label="SCD Type"
+              value={scdType || "Not set"}
+              rightElement="chevron"
+              onPress={() => comingSoon("SCD Type")}
+            />
+            <SettingRow
+              icon={Calendar}
+              iconColor="#781D11"
+              label="Date of Birth"
+              value={onboardingData?.dob ? formatDob(onboardingData.dob) : age ? `Age ${age}` : "Not set"}
+              rightElement="chevron"
+              onPress={() => comingSoon("Date of Birth")}
+            />
+            <SettingRow
+              icon={Ruler}
+              iconColor="#059669"
+              label="Height & Weight"
+              value={
+                onboardingData?.height || onboardingData?.weight
+                  ? `${formatHeight(onboardingData.height)} · ${formatWeight(onboardingData.weight)}`
+                  : "Not set"
+              }
+              rightElement="chevron"
+              onPress={() => comingSoon("Height & Weight")}
+            />
+          </SectionCard>
+
+          {/* Medical */}
+          <SectionCard title="Medical">
+            <SettingRow
+              icon={Pill}
+              iconColor="#A9334D"
+              label="Medications"
+              value={medicationsCount > 0 ? `${medicationsCount} active` : "None added"}
+              rightElement="chevron"
+              onPress={() => router.push("/(tabs)/care/medications")}
+            />
+            <SettingRow
+              icon={Phone}
+              iconColor="#DC2626"
+              label="Emergency Contacts"
+              value={emergencyCount > 0 ? `${emergencyCount} contacts` : "None added"}
+              rightElement="chevron"
+              onPress={() => comingSoon("Emergency Contacts")}
+            />
+          </SectionCard>
+
+          {/* Reminders */}
+          <SectionCard title="Reminders">
+            <SettingRow
+              icon={Clock}
+              iconColor="#F0531C"
+              label="Daily Check-in Time"
+              value={onboardingData?.checkInTime || "Not set"}
+              rightElement="chevron"
+              onPress={() => comingSoon("Check-in Time")}
+            />
+            <SettingRowToggle
+              icon={Bell}
+              iconColor="#F0531C"
+              label="Notifications"
+              value={notificationsEnabled}
+              onChange={handleToggleNotifications}
+            />
+          </SectionCard>
+
+          {/* Data & Reports */}
+          <SectionCard title="Data & Reports">
+            <SettingRow
+              icon={Download}
+              iconColor="#059669"
+              label="Export Health Data"
+              rightElement="chevron"
+              onPress={handleExportData}
+            />
+            <SettingRow
+              icon={ShareIcon}
+              iconColor="#A9334D"
+              label="Share Health Summary"
+              rightElement="chevron"
+              onPress={handleShareSummary}
+            />
+            <SettingRow
+              icon={Heart}
+              iconColor="#EF4444"
+              label="Connect Apple Health"
+              value="Not connected"
+              rightElement="chevron"
+              onPress={() => comingSoon("Apple Health")}
+            />
+          </SectionCard>
+
+          {/* Account */}
+          <SectionCard title="Account">
+            <SettingRow
+              icon={User}
+              iconColor="#09332C"
+              label="Manage Profile"
+              rightElement="chevron"
+              onPress={() => comingSoon("Manage Profile")}
+            />
+            <SettingRow
+              icon={Lock}
+              iconColor="#6B7280"
+              label="Password & Security"
+              rightElement="chevron"
+              onPress={() => comingSoon("Password & Security")}
+            />
+            <SettingRowToggle
+              icon={Fingerprint}
+              iconColor="#6B7280"
+              label="Biometric Login"
+              value={biometricsEnabled}
+              onChange={handleToggleBiometrics}
+            />
+          </SectionCard>
+
+          {/* Support */}
+          <SectionCard title="Support">
+            <SettingRow
+              icon={HelpCircle}
+              iconColor="#0EA5E9"
+              label="Help Center"
+              rightElement="chevron"
+              onPress={() => comingSoon("Help Center")}
+            />
+            <SettingRow
+              icon={Info}
+              iconColor="#6B7280"
+              label="About Hemo"
+              value="v1.0.0"
+              rightElement="chevron"
+              onPress={() => comingSoon("About Hemo")}
+            />
+          </SectionCard>
+
+          {/* Sign Out */}
+          <SectionCard>
+            <SettingRow
+              icon={LogOut}
+              iconColor="#DC2626"
+              label="Sign Out"
+              onPress={handleSignOut}
+            />
+          </SectionCard>
+
+          {/* Footer */}
+          <View style={{ alignItems: "center", marginTop: 4 }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#A9334D", marginBottom: 2 }}>
               Hemo
             </Text>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 12,
-                color: "#C4A8A4",
-              }}
-            >
-              Version 1.0.0 • Build 100
+            <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#C4A8A4" }}>
+              Your sickle cell companion
             </Text>
           </View>
+
         </View>
       </ScrollView>
     </View>
