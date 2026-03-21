@@ -156,6 +156,15 @@ export const useAppStore = create((set, get) => ({
       ),
     })),
 
+  addMedicationLog: (id) =>
+    set((state) => ({
+      medications: state.medications.map((m) =>
+        m.id === id
+          ? { ...m, logs: [...(m.logs ?? []), { time: new Date().toISOString() }] }
+          : m
+      ),
+    })),
+
   getActiveMedications: () => get().medications.filter((m) => m.isActive),
 
   getDueCount: () => get().medications.filter((m) => m.isActive && !m.taken).length,
