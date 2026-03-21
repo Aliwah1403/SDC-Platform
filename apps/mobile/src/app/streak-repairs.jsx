@@ -323,7 +323,7 @@ export default function StreakRepairsScreen() {
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: "#DBEAFE",
+                backgroundColor: "#F2EFEC",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,

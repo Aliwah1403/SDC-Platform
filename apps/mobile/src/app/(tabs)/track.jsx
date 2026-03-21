@@ -612,7 +612,7 @@ function ActivityItem({ session, index, isLast }) {
         {/* Icon bubble */}
         <View style={{
           width: 44, height: 44, borderRadius: 12,
-          backgroundColor: `${color}18`,
+          backgroundColor: "#F2EFEC",
           alignItems: "center", justifyContent: "center",
           marginRight: 12,
         }}>

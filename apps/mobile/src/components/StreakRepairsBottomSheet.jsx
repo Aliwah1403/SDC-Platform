@@ -75,7 +75,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: "#F8E9E7",
+              backgroundColor: "#F2EFEC",
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -398,7 +398,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: "#DBEAFE",
+                  backgroundColor: "#F2EFEC",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 16,

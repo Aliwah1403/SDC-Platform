@@ -217,7 +217,7 @@ export default function CareMenuScreen() {
             subtitle="Track your prescriptions and doses"
             icon={Pill}
             iconColor="#A9334D"
-            iconBg="#F8E9E7"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/medications")}
           />
 
@@ -226,7 +226,7 @@ export default function CareMenuScreen() {
             subtitle="Manage your healthcare schedule"
             icon={Calendar}
             iconColor="#2563EB"
-            iconBg="#DBEAFE"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/appointments")}
           />
 
@@ -235,7 +235,7 @@ export default function CareMenuScreen() {
             subtitle="Connect with your healthcare providers"
             icon={Users}
             iconColor="#059669"
-            iconBg="#D1FAE5"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/care-team")}
           />
 
@@ -244,7 +244,7 @@ export default function CareMenuScreen() {
             subtitle="Your personalized emergency plan"
             icon={FileText}
             iconColor="#DC2626"
-            iconBg="#FEE2E2"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/crisis-plan")}
           />
 
@@ -253,7 +253,7 @@ export default function CareMenuScreen() {
             subtitle="Find nearby healthcare facilities"
             icon={MapPin}
             iconColor="#A9334D"
-            iconBg="#FFEDD5"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/facilities")}
           />
         </View>

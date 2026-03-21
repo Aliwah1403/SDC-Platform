@@ -100,7 +100,7 @@ export default function OnboardingComplete() {
         >
           {STATS.map(({ icon: Icon, label, value, color }, i) => (
             <View key={label} style={styles.statCard}>
-              <View style={[styles.statIcon, { backgroundColor: `${color}18` }]}>
+              <View style={[styles.statIcon, { backgroundColor: "#F2EFEC" }]}>
                 <Icon size={20} color={color} strokeWidth={1.8} />
               </View>
               <Text style={styles.statValue}>{value}</Text>

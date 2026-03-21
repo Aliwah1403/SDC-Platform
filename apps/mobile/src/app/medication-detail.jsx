@@ -151,7 +151,7 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
             width: 34,
             height: 34,
             borderRadius: 9,
-            backgroundColor: `${iconColor}18`,
+            backgroundColor: "#F2EFEC",
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,

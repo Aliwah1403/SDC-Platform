@@ -565,7 +565,7 @@ export default function ProfileScreen() {
                   width: 34,
                   height: 34,
                   borderRadius: 8,
-                  backgroundColor: `${item.iconColor}18`,
+                  backgroundColor: "#F2EFEC",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 12,

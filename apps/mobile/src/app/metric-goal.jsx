@@ -72,15 +72,7 @@ function MetricIcon({ icon: Icon, color }) {
       <View style={{ position: "absolute", width: 8, height: 8, borderRadius: 1.5, backgroundColor: color, opacity: 0.35, top: 14, right: 14, transform: [{ rotate: "45deg" }] }} />
       <View style={{ position: "absolute", width: 6, height: 6, borderRadius: 1.5, backgroundColor: color, opacity: 0.4, bottom: 12, right: 20, transform: [{ rotate: "45deg" }] }} />
       <View style={{ position: "absolute", width: 10, height: 10, borderRadius: 2, backgroundColor: color, opacity: 0.3, bottom: 18, left: 12, transform: [{ rotate: "45deg" }] }} />
-      {/* Icon circle */}
-      <View style={{
-        width: 80, height: 80, borderRadius: 40,
-        backgroundColor: color + "18",
-        borderWidth: 2, borderColor: color + "30",
-        alignItems: "center", justifyContent: "center",
-      }}>
-        <Icon size={38} color={color} strokeWidth={1.5} />
-      </View>
+      <Icon size={42} color={color} strokeWidth={1.5} />
     </View>
   );
 }

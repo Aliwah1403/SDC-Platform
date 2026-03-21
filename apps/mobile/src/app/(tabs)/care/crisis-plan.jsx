@@ -161,7 +161,7 @@ export default function CrisisPlanScreen() {
           title="Warning Signs"
           icon={AlertCircle}
           iconColor="#DC2626"
-          iconBg="#FEE2E2"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -210,7 +210,7 @@ export default function CrisisPlanScreen() {
           title="Coping Strategies"
           icon={Heart}
           iconColor="#A9334D"
-          iconBg="#F8E9E7"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -263,7 +263,7 @@ export default function CrisisPlanScreen() {
           title="Emergency Contacts"
           icon={Phone}
           iconColor="#059669"
-          iconBg="#D1FAE5"
+          iconBg="#F2EFEC"
         >
           <View style={{ gap: 12 }}>
             <View
@@ -356,7 +356,7 @@ export default function CrisisPlanScreen() {
           title="Medication Information"
           icon={Pill}
           iconColor="#2563EB"
-          iconBg="#DBEAFE"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -429,7 +429,7 @@ export default function CrisisPlanScreen() {
           title="Safe People & Places"
           icon={Users}
           iconColor="#A9334D"
-          iconBg="#FFEDD5"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{

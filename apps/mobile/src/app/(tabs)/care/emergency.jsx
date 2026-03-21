@@ -234,7 +234,7 @@ export default function EmergencyScreen() {
           phone="988"
           icon={Phone}
           color="#A9334D"
-          bgColor="#F8E9E7"
+          bgColor="#F2EFEC"
         />
 
         <EmergencyCard
@@ -243,7 +243,7 @@ export default function EmergencyScreen() {
           phone="1-800-222-1222"
           icon={Phone}
           color="#A9334D"
-          bgColor="#FFEDD5"
+          bgColor="#F2EFEC"
         />
 
         <Text
@@ -264,7 +264,7 @@ export default function EmergencyScreen() {
           phone="(555) 123-4567"
           icon={Users}
           color="#059669"
-          bgColor="#D1FAE5"
+          bgColor="#F2EFEC"
         />
 
         <EmergencyCard
@@ -273,7 +273,7 @@ export default function EmergencyScreen() {
           phone="(555) 987-6543"
           icon={Users}
           color="#2563EB"
-          bgColor="#DBEAFE"
+          bgColor="#F2EFEC"
         />
 
         <TouchableOpacity
@@ -337,7 +337,7 @@ export default function EmergencyScreen() {
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: "#DBEAFE",
+                backgroundColor: "#F2EFEC",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,

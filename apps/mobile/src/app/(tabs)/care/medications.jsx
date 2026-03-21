@@ -125,7 +125,7 @@ function GroupHeader({ group, onLogAll, allTaken }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          backgroundColor: "#F8E9E7",
+          backgroundColor: "#F2EFEC",
           alignItems: "center",
           justifyContent: "center",
           marginRight: 10,
