@@ -6,18 +6,15 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Award,
   Trophy,
-  Target,
   Clock,
   Users,
   Star,
-  Gift,
-  TrendingUp,
-  Calendar,
   Zap,
 } from "lucide-react-native";
 import { useAppStore } from "../../store/appStore";
@@ -284,14 +281,16 @@ export default function RewardsScreen() {
           elevation: isUnlocked ? 2 : 1,
         }}
       >
-        <Text
+        <Image
+          source={badge.image}
           style={{
-            fontSize: size === "large" ? 40 : 32,
+            width: size === "large" ? 72 : 56,
+            height: size === "large" ? 72 : 56,
             marginBottom: size === "large" ? 12 : 8,
+            opacity: isUnlocked ? 1 : 0.35,
           }}
-        >
-          {badge.icon}
-        </Text>
+          contentFit="contain"
+        />
 
         <Text
           style={{

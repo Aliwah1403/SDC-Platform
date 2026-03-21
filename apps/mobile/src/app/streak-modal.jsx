@@ -1,5 +1,11 @@
 import React, { useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, Dimensions, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from "react-native";
 import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -36,40 +42,43 @@ const HEMO = {
   blush: "#F8E9E7",
 };
 
-const BADGE_IMAGES = {
-  a: require("../../assets/images/badge-a.png"),
-  b: require("../../assets/images/badge-b.png"),
-  c: require("../../assets/images/badge-c.png"),
-};
-
-// Per-milestone badge — swap the require() path when final artwork is ready
 const MILESTONE_BADGE = {
-  "days-5":        BADGE_IMAGES.a,  // Getting Started
-  "streak-3":      BADGE_IMAGES.a,  // First Streak
-  "streak-7":      BADGE_IMAGES.b,  // On Track Streak
-  "days-10":       BADGE_IMAGES.a,  // Habit Builder
-  "streak-14":     BADGE_IMAGES.b,  // Fortnight Fighter
-  "streak-30":     BADGE_IMAGES.c,  // Monthly Monster
-  "days-25":       BADGE_IMAGES.b,  // Dedicated Tracker
-  "hydration-7":   BADGE_IMAGES.a,  // Hydration Junkie
-  "care-10":       BADGE_IMAGES.b,  // Self-Care Badge
-  "learning-5":    BADGE_IMAGES.a,  // Knowledge Seeker
-  "symptoms-10":   BADGE_IMAGES.b,  // Pattern Seeker
-  "repair-1":      BADGE_IMAGES.a,  // Back on Track
-  "restart-1":     BADGE_IMAGES.b,  // Resilient Restart
-  "meds-first":    BADGE_IMAGES.a,  // Dose One
-  "meds-streak-7": BADGE_IMAGES.c,  // On Time Hero
-  "week-perfect":  BADGE_IMAGES.c,  // Perfect Week
-  // Older milestones not in the 16-badge set
-  "days-1":        BADGE_IMAGES.a,
-  "days-50":       BADGE_IMAGES.c,
-  "days-100":      BADGE_IMAGES.c,
-  "symptoms-25":   BADGE_IMAGES.b,
+  "onboarding-done": require("../../assets/images/badges/badge-1.svg"),
+  "streak-1": require("../../assets/images/badges/badge-2.svg"),
+  "streak-3": require("../../assets/images/badges/badge-3.svg"),
+  "streak-7": require("../../assets/images/badges/badge-4.svg"),
+  "streak-14": require("../../assets/images/badges/badge-5.svg"),
+  "streak-30": require("../../assets/images/badges/badge-6.svg"),
+  "streak-60": require("../../assets/images/badges/badge-7.svg"),
+  "hydration-7": require("../../assets/images/badges/badge-8.svg"),
+  "care-10": require("../../assets/images/badges/badge-9.svg"),
+  "learning-5": require("../../assets/images/badges/badge-10.svg"),
+  "symptoms-10": require("../../assets/images/badges/badge-11.svg"),
+  "repair-1": require("../../assets/images/badges/badge-12.svg"),
+  "restart-1": require("../../assets/images/badges/badge-13.svg"),
+  "meds-streak-7": require("../../assets/images/badges/badge-14.svg"),
+  "meds-first": require("../../assets/images/badges/badge-15.svg"),
+  "week-perfect": require("../../assets/images/badges/badge-16.svg"),
+  // Legacy keys
+  "days-5": require("../../assets/images/badges/badge-1.svg"),
+  "days-10": require("../../assets/images/badges/badge-4.svg"),
+  "days-25": require("../../assets/images/badges/badge-7.svg"),
+  "days-1": require("../../assets/images/badges/badge-2.svg"),
+  "days-50": require("../../assets/images/badges/badge-6.svg"),
+  "days-100": require("../../assets/images/badges/badge-7.svg"),
+  "symptoms-25": require("../../assets/images/badges/badge-11.svg"),
 };
 
 export default function StreakModal() {
   const router = useRouter();
-  const { currentUser, healthStreak, healthData, getWeeklyAverage, repairsUsed, onboardingData } = useAppStore();
+  const {
+    currentUser,
+    healthStreak,
+    healthData,
+    getWeeklyAverage,
+    repairsUsed,
+    onboardingData,
+  } = useAppStore();
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("streaks"); // "streaks" | "rewards"
@@ -132,7 +141,8 @@ export default function StreakModal() {
       value: 1,
       target: 1,
       requirement: "Log your first day",
-      description: "Welcome to your health journey! Every great journey begins with a single step.",
+      description:
+        "Welcome to your health journey! Every great journey begins with a single step.",
       rarity: "Common",
       unlocked: daysLogged >= 1,
       current: daysLogged,
@@ -144,7 +154,8 @@ export default function StreakModal() {
       value: 5,
       target: 5,
       requirement: "Log 5 days",
-      description: "You're building a habit! Consistency is the key to understanding your health patterns.",
+      description:
+        "You're building a habit! Consistency is the key to understanding your health patterns.",
       rarity: "Common",
       unlocked: daysLogged >= 5,
       current: daysLogged,
@@ -156,7 +167,8 @@ export default function StreakModal() {
       value: 10,
       target: 10,
       requirement: "Log 10 days",
-      description: "Double digits! You're developing a strong tracking habit that will serve you well.",
+      description:
+        "Double digits! You're developing a strong tracking habit that will serve you well.",
       rarity: "Uncommon",
       unlocked: daysLogged >= 10,
       current: daysLogged,
@@ -168,7 +180,8 @@ export default function StreakModal() {
       value: 25,
       target: 25,
       requirement: "Log 25 days",
-      description: "Your commitment is impressive! You're gathering valuable insights about your health.",
+      description:
+        "Your commitment is impressive! You're gathering valuable insights about your health.",
       rarity: "Rare",
       unlocked: daysLogged >= 25,
       current: daysLogged,
@@ -180,7 +193,8 @@ export default function StreakModal() {
       value: 50,
       target: 50,
       requirement: "Log 50 days",
-      description: "Incredible dedication! You're a true health champion with a wealth of data to guide you.",
+      description:
+        "Incredible dedication! You're a true health champion with a wealth of data to guide you.",
       rarity: "Epic",
       unlocked: daysLogged >= 50,
       current: daysLogged,
@@ -192,7 +206,8 @@ export default function StreakModal() {
       value: 100,
       target: 100,
       requirement: "Log 100 days",
-      description: "A hundred days of commitment! You've built an unshakeable health tracking foundation.",
+      description:
+        "A hundred days of commitment! You've built an unshakeable health tracking foundation.",
       rarity: "Legendary",
       unlocked: daysLogged >= 100,
       current: daysLogged,
@@ -228,7 +243,8 @@ export default function StreakModal() {
       value: 14,
       target: 14,
       requirement: "Maintain a 14-day streak",
-      description: "Two weeks strong! You're proving that consistency pays off.",
+      description:
+        "Two weeks strong! You're proving that consistency pays off.",
       rarity: "Rare",
       unlocked: currentStreak >= 14,
       current: currentStreak,
@@ -264,7 +280,8 @@ export default function StreakModal() {
       value: 25,
       target: 25,
       requirement: "Log 25 symptoms",
-      description: "Your symptom data is becoming more valuable with each entry.",
+      description:
+        "Your symptom data is becoming more valuable with each entry.",
       rarity: "Uncommon",
       unlocked: symptomsLogged >= 25,
       current: symptomsLogged,
@@ -312,7 +329,8 @@ export default function StreakModal() {
       value: 1,
       target: 1,
       requirement: "Use your first streak repair",
-      description: "Life happens. Using a repair shows you're committed to bouncing back.",
+      description:
+        "Life happens. Using a repair shows you're committed to bouncing back.",
       rarity: "Common",
       unlocked: repairsUsed >= 1,
       current: repairsUsed,
@@ -324,7 +342,8 @@ export default function StreakModal() {
       value: 1,
       target: 1,
       requirement: "Log again after missing 3+ days",
-      description: "Every restart is a win. Coming back after a gap takes real courage.",
+      description:
+        "Every restart is a win. Coming back after a gap takes real courage.",
       rarity: "Uncommon",
       unlocked: repairsUsed > 0,
       current: repairsUsed > 0 ? 1 : 0,
@@ -336,7 +355,8 @@ export default function StreakModal() {
       value: 1,
       target: 1,
       requirement: "Log your first medication",
-      description: "Your first logged medication. Knowledge of your treatment is a superpower.",
+      description:
+        "Your first logged medication. Knowledge of your treatment is a superpower.",
       rarity: "Common",
       unlocked: (onboardingData?.medications?.length ?? 0) > 0,
       current: (onboardingData?.medications?.length ?? 0) > 0 ? 1 : 0,
@@ -348,7 +368,8 @@ export default function StreakModal() {
       value: 7,
       target: 7,
       requirement: "Complete 7 medication check-ins",
-      description: "Seven days of staying on top of your treatment. Your future self will thank you.",
+      description:
+        "Seven days of staying on top of your treatment. Your future self will thank you.",
       rarity: "Rare",
       unlocked: careTasksCompleted >= 7,
       current: careTasksCompleted,
@@ -360,7 +381,8 @@ export default function StreakModal() {
       value: 7,
       target: 7,
       requirement: "Log every day for a full week",
-      description: "Seven days, zero gaps. A truly perfect week of health tracking.",
+      description:
+        "Seven days, zero gaps. A truly perfect week of health tracking.",
       rarity: "Epic",
       unlocked: completedDays >= 7,
       current: completedDays,
@@ -376,23 +398,27 @@ export default function StreakModal() {
 
   const renderMilestoneCard = (milestone) => {
     const isUnlocked = milestone.unlocked;
-    const progress = Math.min((milestone.current / milestone.target) * 100, 100);
+    const progress = Math.min(
+      (milestone.current / milestone.target) * 100,
+      100,
+    );
     const badgeSource = MILESTONE_BADGE[milestone.id] ?? BADGE_IMAGES.a;
 
     const MilestoneIcon = {
-      days:        Trophy,
-      streak:      Flame,
-      symptoms:    Target,
-      hydration:   Droplet,
-      care:        Heart,
-      learning:    BookOpen,
-      repair:      Wrench,
-      restart:     Zap,
+      days: Trophy,
+      streak: Flame,
+      symptoms: Target,
+      hydration: Droplet,
+      care: Heart,
+      learning: BookOpen,
+      repair: Wrench,
+      restart: Zap,
       medications: Clock,
     }[milestone.type];
 
     const getUnitText = () => {
-      if (["days", "streak", "hydration"].includes(milestone.type)) return "days";
+      if (["days", "streak", "hydration"].includes(milestone.type))
+        return "days";
       if (milestone.type === "symptoms") return "logged";
       if (milestone.type === "care") return "tasks";
       if (milestone.type === "repair") return "repair";
@@ -528,18 +554,37 @@ export default function StreakModal() {
 
   const getTypeColor = (type) => {
     switch (type) {
-      case "daily": return "#059669";
-      case "weekly": return HEMO.wine;
-      case "monthly": return "#F59E0B";
-      default: return "#6B7280";
+      case "daily":
+        return "#059669";
+      case "weekly":
+        return HEMO.wine;
+      case "monthly":
+        return "#F59E0B";
+      default:
+        return "#6B7280";
     }
   };
 
   const RewardsProgressBar = ({ progress, target, color = HEMO.wine }) => {
     const percentage = Math.min((progress / target) * 100, 100);
     return (
-      <View style={{ backgroundColor: HEMO.blush, borderRadius: 8, height: 8, overflow: "hidden", marginVertical: 8 }}>
-        <View style={{ backgroundColor: color, height: "100%", width: `${percentage}%`, borderRadius: 8 }} />
+      <View
+        style={{
+          backgroundColor: HEMO.blush,
+          borderRadius: 8,
+          height: 8,
+          overflow: "hidden",
+          marginVertical: 8,
+        }}
+      >
+        <View
+          style={{
+            backgroundColor: color,
+            height: "100%",
+            width: `${percentage}%`,
+            borderRadius: 8,
+          }}
+        />
       </View>
     );
   };
@@ -547,7 +592,9 @@ export default function StreakModal() {
   const ChallengeCard = ({ challenge }) => {
     const isCompleted = challenge.progress >= challenge.target;
     const daysLeft = challenge.expiresAt
-      ? Math.ceil((new Date(challenge.expiresAt) - new Date()) / (1000 * 60 * 60 * 24))
+      ? Math.ceil(
+          (new Date(challenge.expiresAt) - new Date()) / (1000 * 60 * 60 * 24),
+        )
       : null;
 
     return (
@@ -566,9 +613,22 @@ export default function StreakModal() {
           elevation: 2,
         }}
       >
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: 12,
+          }}
+        >
           <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginBottom: 4,
+              }}
+            >
               <View
                 style={{
                   backgroundColor: `${getTypeColor(challenge.type)}15`,
@@ -578,39 +638,90 @@ export default function StreakModal() {
                   marginRight: 8,
                 }}
               >
-                <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: getTypeColor(challenge.type), textTransform: "capitalize" }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 11,
+                    color: getTypeColor(challenge.type),
+                    textTransform: "capitalize",
+                  }}
+                >
                   {challenge.type}
                 </Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Star size={14} color="#F59E0B" />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#F59E0B", marginLeft: 2 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 12,
+                    color: "#F59E0B",
+                    marginLeft: 2,
+                  }}
+                >
                   {challenge.points} pts
                 </Text>
               </View>
             </View>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#111827", marginBottom: 4 }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#111827",
+                marginBottom: 4,
+              }}
+            >
               {challenge.title}
             </Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#6B7280", lineHeight: 18 }}>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 13,
+                color: "#6B7280",
+                lineHeight: 18,
+              }}
+            >
               {challenge.description}
             </Text>
           </View>
           {isCompleted && (
-            <View style={{ backgroundColor: "#F0FDF4", borderRadius: 20, padding: 8, marginLeft: 12 }}>
+            <View
+              style={{
+                backgroundColor: "#F0FDF4",
+                borderRadius: 20,
+                padding: 8,
+                marginLeft: 12,
+              }}
+            >
               <Trophy size={16} color="#059669" />
             </View>
           )}
         </View>
 
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#111827" }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <Text
+            style={{ fontFamily: fonts.medium, fontSize: 14, color: "#111827" }}
+          >
             Progress: {challenge.progress}/{challenge.target}
           </Text>
           {daysLeft !== null && daysLeft > 0 && (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Clock size={12} color="#6B7280" />
-              <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280", marginLeft: 4 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 12,
+                  color: "#6B7280",
+                  marginLeft: 4,
+                }}
+              >
                 {daysLeft} day{daysLeft !== 1 ? "s" : ""} left
               </Text>
             </View>
@@ -650,44 +761,102 @@ export default function StreakModal() {
           elevation: isUnlocked ? 2 : 1,
         }}
       >
-        <View style={{ width: imgSize, height: imgSize, marginBottom: size === "large" ? 12 : 8 }}>
+        <View
+          style={{
+            width: imgSize,
+            height: imgSize,
+            marginBottom: size === "large" ? 12 : 8,
+          }}
+        >
           <Image
             source={badgeSource}
-            style={{ width: "100%", height: "100%", borderRadius: 10, opacity: isUnlocked ? 1 : 0.35 }}
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: 10,
+              opacity: isUnlocked ? 1 : 0.35,
+            }}
             contentFit="cover"
           />
           {isUnlocked ? (
-            <View style={{
-              position: "absolute", bottom: 4, right: 4,
-              width: size === "large" ? 26 : 22, height: size === "large" ? 26 : 22,
-              borderRadius: size === "large" ? 13 : 11,
-              backgroundColor: "rgba(255,255,255,0.9)",
-              alignItems: "center", justifyContent: "center",
-            }}>
-              <BadgeIcon size={size === "large" ? 14 : 12} color={HEMO.wine} strokeWidth={2} />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 4,
+                right: 4,
+                width: size === "large" ? 26 : 22,
+                height: size === "large" ? 26 : 22,
+                borderRadius: size === "large" ? 13 : 11,
+                backgroundColor: "rgba(255,255,255,0.9)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <BadgeIcon
+                size={size === "large" ? 14 : 12}
+                color={HEMO.wine}
+                strokeWidth={2}
+              />
             </View>
           ) : (
-            <View style={{
-              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              alignItems: "center", justifyContent: "center",
-            }}>
-              <Lock size={size === "large" ? 24 : 20} color="#FFFFFF" strokeWidth={2} />
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Lock
+                size={size === "large" ? 24 : 20}
+                color="#FFFFFF"
+                strokeWidth={2}
+              />
             </View>
           )}
         </View>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: size === "large" ? 14 : 12, color: "#111827", textAlign: "center", marginBottom: 4 }}>
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: size === "large" ? 14 : 12,
+            color: "#111827",
+            textAlign: "center",
+            marginBottom: 4,
+          }}
+        >
           {badge.name}
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: size === "large" ? 12 : 10, color: "#6B7280", textAlign: "center", marginBottom: size === "large" ? 8 : 4, lineHeight: size === "large" ? 16 : 14 }}>
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: size === "large" ? 12 : 10,
+            color: "#6B7280",
+            textAlign: "center",
+            marginBottom: size === "large" ? 8 : 4,
+            lineHeight: size === "large" ? 16 : 14,
+          }}
+        >
           {badge.description}
         </Text>
         {isUnlocked && badge.unlockedAt && (
-          <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: HEMO.wine }}>
+          <Text
+            style={{ fontFamily: fonts.medium, fontSize: 10, color: HEMO.wine }}
+          >
             {new Date(badge.unlockedAt).toLocaleDateString()}
           </Text>
         )}
         {!isUnlocked && (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF", fontStyle: "italic" }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 10,
+              color: "#9CA3AF",
+              fontStyle: "italic",
+            }}
+          >
             Locked
           </Text>
         )}
@@ -695,7 +864,13 @@ export default function StreakModal() {
     );
   };
 
-  const LeaderboardItem = ({ rank, user, streak, points, isCurrentUser = false }) => (
+  const LeaderboardItem = ({
+    rank,
+    user,
+    streak,
+    points,
+    isCurrentUser = false,
+  }) => (
     <View
       style={{
         backgroundColor: isCurrentUser ? HEMO.blush : "#ffffff",
@@ -724,25 +899,59 @@ export default function StreakModal() {
           marginRight: 12,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: rank <= 3 ? "#ffffff" : "#6B7280" }}>
+        <Text
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 14,
+            color: rank <= 3 ? "#ffffff" : "#6B7280",
+          }}
+        >
           #{rank}
         </Text>
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#111827", marginBottom: 2 }}>
-          {user}{isCurrentUser ? " (You)" : ""}
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 16,
+            color: "#111827",
+            marginBottom: 2,
+          }}
+        >
+          {user}
+          {isCurrentUser ? " (You)" : ""}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View style={{ flexDirection: "row", alignItems: "center", marginRight: 16 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              marginRight: 16,
+            }}
+          >
             <Zap size={14} color="#F59E0B" />
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280", marginLeft: 4 }}>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#6B7280",
+                marginLeft: 4,
+              }}
+            >
               {streak} day streak
             </Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Star size={14} color="#F59E0B" />
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280", marginLeft: 4 }}>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#6B7280",
+                marginLeft: 4,
+              }}
+            >
               {points} pts
             </Text>
           </View>
@@ -766,7 +975,14 @@ export default function StreakModal() {
       }}
     >
       <Icon size={18} color={isActive ? HEMO.dark : "#6B7280"} />
-      <Text style={{ fontFamily: isActive ? fonts.semibold : fonts.regular, fontSize: 14, color: isActive ? HEMO.dark : "#6B7280", marginLeft: 6 }}>
+      <Text
+        style={{
+          fontFamily: isActive ? fonts.semibold : fonts.regular,
+          fontSize: 14,
+          color: isActive ? HEMO.dark : "#6B7280",
+          marginLeft: 6,
+        }}
+      >
         {title}
       </Text>
     </TouchableOpacity>
@@ -840,7 +1056,9 @@ export default function StreakModal() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={{ alignItems: "center", marginTop: 8, marginBottom: 32 }}>
+          <View
+            style={{ alignItems: "center", marginTop: 8, marginBottom: 32 }}
+          >
             <View
               style={{
                 width: 100,
@@ -855,15 +1073,32 @@ export default function StreakModal() {
               <Flame size={60} color={HEMO.wine} fill={HEMO.wine} />
             </View>
 
-            <Text style={{ fontFamily: fonts.extrabold, fontSize: 56, color: HEMO.dark, marginBottom: 8 }}>
+            <Text
+              style={{
+                fontFamily: fonts.extrabold,
+                fontSize: 56,
+                color: HEMO.dark,
+                marginBottom: 8,
+              }}
+            >
               {healthStreak}
             </Text>
 
-            <Text style={{ fontFamily: fonts.bold, fontSize: 24, marginBottom: 12 }}>
+            <Text
+              style={{ fontFamily: fonts.bold, fontSize: 24, marginBottom: 12 }}
+            >
               Day Streak
             </Text>
 
-            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#666", textAlign: "center", lineHeight: 22 }}>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 14,
+                color: "#666",
+                textAlign: "center",
+                lineHeight: 22,
+              }}
+            >
               You are doing really great,{" "}
               {currentUser?.name?.split(" ")[0] || "there"}!
             </Text>
@@ -871,16 +1106,34 @@ export default function StreakModal() {
 
           {/* Week Progress */}
           <View style={{ marginBottom: 24 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 16 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 16,
+              }}
+            >
               <Text style={{ fontFamily: fonts.bold, fontSize: 17 }}>
                 This Week
               </Text>
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#666" }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 14,
+                  color: "#666",
+                }}
+              >
                 {completedDays}/7 days
               </Text>
             </View>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                paddingHorizontal: 4,
+              }}
+            >
               {weekData.map((day, index) => (
                 <View key={index} style={{ alignItems: "center", width: 48 }}>
                   <Text
@@ -915,7 +1168,14 @@ export default function StreakModal() {
                       <Check size={17} color="#FFFFFF" strokeWidth={3} />
                     </LinearGradient>
                   ) : (
-                    <View style={{ width: 35, height: 35, alignItems: "center", justifyContent: "center" }}>
+                    <View
+                      style={{
+                        width: 35,
+                        height: 35,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Text
                         style={{
                           fontFamily: day.isToday ? fonts.bold : fonts.regular,
@@ -946,21 +1206,55 @@ export default function StreakModal() {
               elevation: 2,
             }}
           >
-            <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#9CA3AF", textAlign: "center", marginBottom: 24 }}>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 16,
+                color: "#9CA3AF",
+                textAlign: "center",
+                marginBottom: 24,
+              }}
+            >
               Your Stats
             </Text>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 20 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: 20,
+              }}
+            >
               {stats.map((stat, index) => (
                 <React.Fragment key={index}>
                   {index > 0 && (
-                    <View style={{ width: 1, height: 36, backgroundColor: "#E5E7EB", alignSelf: "center" }} />
+                    <View
+                      style={{
+                        width: 1,
+                        height: 36,
+                        backgroundColor: "#E5E7EB",
+                        alignSelf: "center",
+                      }}
+                    />
                   )}
                   <View style={{ alignItems: "center", flex: 1 }}>
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: "#9CA3AF", marginBottom: 8 }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 13,
+                        color: "#9CA3AF",
+                        marginBottom: 8,
+                      }}
+                    >
                       {stat.label}
                     </Text>
-                    <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#1F2937" }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.bold,
+                        fontSize: 20,
+                        color: "#1F2937",
+                      }}
+                    >
                       {stat.value}
                     </Text>
                   </View>
@@ -987,7 +1281,13 @@ export default function StreakModal() {
               }}
             >
               <Sparkles size={14} color={HEMO.wine} />
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: HEMO.wine }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 12,
+                  color: HEMO.wine,
+                }}
+              >
                 2 Insights Available
               </Text>
             </TouchableOpacity>
@@ -1010,7 +1310,9 @@ export default function StreakModal() {
               elevation: 2,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
               <View
                 style={{
                   width: 48,
@@ -1024,10 +1326,23 @@ export default function StreakModal() {
                 <Wrench size={24} color="#92400E" strokeWidth={2} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1a1a1a", marginBottom: 2 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.bold,
+                    fontSize: 16,
+                    color: "#1a1a1a",
+                    marginBottom: 2,
+                  }}
+                >
                   Streak Repairs
                 </Text>
-                <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: "#92400E" }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 13,
+                    color: "#92400E",
+                  }}
+                >
                   3 repairs available
                 </Text>
               </View>
@@ -1048,25 +1363,67 @@ export default function StreakModal() {
 
           {/* Milestones */}
           <View style={{ marginBottom: 24 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: HEMO.dark }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 20,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 22,
+                  color: HEMO.dark,
+                }}
+              >
                 Your Milestones
               </Text>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#9CA3AF" }}>
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                }}
+              >
                 {unlockedCount}/{milestones.length}
               </Text>
             </View>
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "space-between",
+              }}
+            >
               {milestones.map((milestone) => renderMilestoneCard(milestone))}
             </View>
           </View>
 
           {/* Footer */}
-          <View style={{ backgroundColor: HEMO.blush, borderRadius: 12, padding: 16, alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <View
+            style={{
+              backgroundColor: HEMO.blush,
+              borderRadius: 12,
+              padding: 16,
+              alignItems: "center",
+            }}
+          >
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+            >
               <Zap size={16} color={HEMO.wine} strokeWidth={2} />
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: HEMO.wine, textAlign: "center", lineHeight: 20 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 14,
+                  color: HEMO.wine,
+                  textAlign: "center",
+                  lineHeight: 20,
+                }}
+              >
                 Keep logging daily to maintain your streak!
               </Text>
             </View>
@@ -1079,7 +1436,9 @@ export default function StreakModal() {
           showsVerticalScrollIndicator={false}
         >
           {/* Points Banner */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}>
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 0 }}
+          >
             <LinearGradient
               colors={[HEMO.wine, HEMO.dark]}
               start={{ x: 0, y: 0 }}
@@ -1094,23 +1453,49 @@ export default function StreakModal() {
               }}
             >
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#ffffff", marginBottom: 4 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#ffffff",
+                    marginBottom: 4,
+                  }}
+                >
                   Total Points
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: HEMO.rose }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 12,
+                    color: HEMO.rose,
+                  }}
+                >
                   Keep logging to earn more!
                 </Text>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Star size={24} color="#F59E0B" />
-                <Text style={{ fontFamily: fonts.bold, fontSize: 32, color: "#ffffff", marginLeft: 8 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.bold,
+                    fontSize: 32,
+                    color: "#ffffff",
+                    marginLeft: 8,
+                  }}
+                >
                   {healthStreak * 15 + 120}
                 </Text>
               </View>
             </LinearGradient>
 
             {/* Rewards Sub-tab Navigation */}
-            <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#F3F4F6" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                borderBottomWidth: 1,
+                borderBottomColor: "#F3F4F6",
+              }}
+            >
               <RewardsSubTabButton
                 title="Challenges"
                 icon={Target}
@@ -1136,12 +1521,38 @@ export default function StreakModal() {
           <View style={{ padding: 20 }}>
             {activeRewardsTab === "challenges" && (
               <View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: "#111827" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 18,
+                      color: "#111827",
+                    }}
+                  >
                     Active Challenges
                   </Text>
-                  <View style={{ backgroundColor: HEMO.blush, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: HEMO.wine }}>
+                  <View
+                    style={{
+                      backgroundColor: HEMO.blush,
+                      borderRadius: 6,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 12,
+                        color: HEMO.wine,
+                      }}
+                    >
                       {mockChallenges.length} active
                     </Text>
                   </View>
@@ -1163,14 +1574,34 @@ export default function StreakModal() {
                     alignItems: "center",
                   }}
                 >
-                  <View style={{ backgroundColor: "#059669", borderRadius: 20, padding: 8, marginRight: 12 }}>
+                  <View
+                    style={{
+                      backgroundColor: "#059669",
+                      borderRadius: 20,
+                      padding: 8,
+                      marginRight: 12,
+                    }}
+                  >
                     <Trophy size={20} color="#ffffff" />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#059669", marginBottom: 2 }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 16,
+                        color: "#059669",
+                        marginBottom: 2,
+                      }}
+                    >
                       5 Challenges Completed
                     </Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#16A34A" }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 13,
+                        color: "#16A34A",
+                      }}
+                    >
                       You've earned 175 total points!
                     </Text>
                   </View>
@@ -1180,27 +1611,63 @@ export default function StreakModal() {
 
             {activeRewardsTab === "badges" && (
               <View>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: "#111827", marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 18,
+                    color: "#111827",
+                    marginBottom: 16,
+                  }}
+                >
                   Achievement Badges
                 </Text>
 
                 <View style={{ marginBottom: 24 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#111827", marginBottom: 12 }}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 16,
+                      color: "#111827",
+                      marginBottom: 12,
+                    }}
+                  >
                     Recently Unlocked
                   </Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 20 }}>
-                    {mockBadges.filter((b) => b.unlockedAt).map((badge) => (
-                      <BadgeCard key={badge.id} badge={badge} size="large" />
-                    ))}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingRight: 20 }}
+                  >
+                    {mockBadges
+                      .filter((b) => b.unlockedAt)
+                      .map((badge) => (
+                        <BadgeCard key={badge.id} badge={badge} size="large" />
+                      ))}
                   </ScrollView>
                 </View>
 
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#111827", marginBottom: 12 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#111827",
+                    marginBottom: 12,
+                  }}
+                >
                   All Badges
                 </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    justifyContent: "space-between",
+                  }}
+                >
                   {mockBadges.map((badge) => (
-                    <View key={badge.id} style={{ width: "48%", marginBottom: 12 }}>
+                    <View
+                      key={badge.id}
+                      style={{ width: "48%", marginBottom: 12 }}
+                    >
                       <BadgeCard badge={badge} />
                     </View>
                   ))}
@@ -1210,19 +1677,54 @@ export default function StreakModal() {
 
             {activeRewardsTab === "leaderboard" && (
               <View>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: "#111827" }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 18,
+                      color: "#111827",
+                    }}
+                  >
                     Community Leaderboard
                   </Text>
-                  <View style={{ backgroundColor: HEMO.blush, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 }}>
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: HEMO.wine }}>
+                  <View
+                    style={{
+                      backgroundColor: HEMO.blush,
+                      borderRadius: 6,
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 12,
+                        color: HEMO.wine,
+                      }}
+                    >
                       This Week
                     </Text>
                   </View>
                 </View>
 
-                <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", marginBottom: 20, lineHeight: 20 }}>
-                  Compete with others in the Hemo community! Rankings based on health tracking consistency and points earned.
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 14,
+                    color: "#6B7280",
+                    marginBottom: 20,
+                    lineHeight: 20,
+                  }}
+                >
+                  Compete with others in the Hemo community! Rankings based on
+                  health tracking consistency and points earned.
                 </Text>
 
                 {leaderboardData.map((item, index) => (
@@ -1246,21 +1748,81 @@ export default function StreakModal() {
                     borderColor: "#F3F4F6",
                   }}
                 >
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#111827", marginBottom: 12 }}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 16,
+                      color: "#111827",
+                      marginBottom: 12,
+                    }}
+                  >
                     Community Stats
                   </Text>
-                  <View style={{ flexDirection: "row", justifyContent: "space-around" }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-around",
+                    }}
+                  >
                     <View style={{ alignItems: "center" }}>
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: HEMO.wine }}>1,247</Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280" }}>Active Users</Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 20,
+                          color: HEMO.wine,
+                        }}
+                      >
+                        1,247
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: "#6B7280",
+                        }}
+                      >
+                        Active Users
+                      </Text>
                     </View>
                     <View style={{ alignItems: "center" }}>
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#059669" }}>23.5</Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280" }}>Avg Streak</Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 20,
+                          color: "#059669",
+                        }}
+                      >
+                        23.5
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: "#6B7280",
+                        }}
+                      >
+                        Avg Streak
+                      </Text>
                     </View>
                     <View style={{ alignItems: "center" }}>
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: HEMO.wine }}>15,823</Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280" }}>Total Logs</Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 20,
+                          color: HEMO.wine,
+                        }}
+                      >
+                        15,823
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: "#6B7280",
+                        }}
+                      >
+                        Total Logs
+                      </Text>
                     </View>
                   </View>
                 </View>
