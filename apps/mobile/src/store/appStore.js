@@ -95,6 +95,7 @@ export const useAppStore = create((set, get) => ({
         takenAt: null,
         notes: "",
         category: m.category || "Supportive",
+        type: m.type || "tablet",
       }));
     set({
       onboardingComplete: true,
@@ -127,7 +128,7 @@ export const useAppStore = create((set, get) => ({
     set((state) => ({
       medications: [
         ...state.medications,
-        { ...med, id: Date.now().toString(), isActive: true, taken: false, takenAt: null },
+        { ...med, id: Date.now().toString(), isActive: true, taken: false, takenAt: null, type: med.type || "tablet" },
       ],
     })),
 
@@ -146,6 +147,13 @@ export const useAppStore = create((set, get) => ({
         const nowTaken = !m.taken;
         return { ...m, taken: nowTaken, takenAt: nowTaken ? new Date().toISOString() : null };
       }),
+    })),
+
+  markGroupTaken: (ids) =>
+    set((state) => ({
+      medications: state.medications.map((m) =>
+        ids.includes(m.id) ? { ...m, taken: true, takenAt: new Date().toISOString() } : m
+      ),
     })),
 
   getActiveMedications: () => get().medications.filter((m) => m.isActive),
