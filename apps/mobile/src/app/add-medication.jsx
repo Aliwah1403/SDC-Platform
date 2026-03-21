@@ -23,6 +23,7 @@ import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon from "@/components/MedicationIcon";
+import { useDrugSearch } from "@/hooks/useDrugSearch";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -252,6 +253,9 @@ export default function AddMedicationScreen() {
   const [remindAfterMin, setRemindAfterMin] = useState(5);
   const [notes, setNotes] = useState(existing?.notes ?? "");
 
+  // ── Step 1: Live drug search (saved medications + RxNorm API)
+  const { results: drugResults, isLoading: drugLoading, error: drugError } = useDrugSearch(searchQuery);
+
   const computedTime =
     time === "custom"
       ? `${customHour}:${String(customMinute).padStart(2, "0")} ${customPeriod}`
@@ -337,14 +341,6 @@ export default function AddMedicationScreen() {
       },
     ]);
   };
-
-  const filteredDrugs = searchQuery.trim()
-    ? SCD_MEDICATIONS.filter(
-        (d) =>
-          d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (d.subtitle && d.subtitle.toLowerCase().includes(searchQuery.toLowerCase()))
-      )
-    : SCD_MEDICATIONS;
 
   // ── Full-screen overlays
   if (cameraMode === "barcode") {
@@ -482,7 +478,7 @@ export default function AddMedicationScreen() {
                       Search & select drug
                     </Text>
                     <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 2 }}>
-                      From our SCD medication list
+                      Search any medication by name
                     </Text>
                   </View>
                   <ChevronRight size={18} color={C.muted} />
@@ -619,17 +615,21 @@ export default function AddMedicationScreen() {
                     backgroundColor: C.card,
                     borderRadius: 12,
                     borderWidth: 1,
-                    borderColor: C.inputBorder,
+                    borderColor: drugLoading ? C.accent : C.inputBorder,
                     paddingHorizontal: 14,
-                    marginBottom: 20,
+                    marginBottom: 16,
                     gap: 10,
                   }}
                 >
-                  <Search size={16} color={C.muted} />
+                  {drugLoading ? (
+                    <ActivityIndicator size="small" color={C.accent} />
+                  ) : (
+                    <Search size={16} color={C.muted} />
+                  )}
                   <TextInput
                     value={searchQuery}
                     onChangeText={setSearchQuery}
-                    placeholder="Search medications…"
+                    placeholder="Search any medication…"
                     placeholderTextColor={C.muted}
                     autoFocus
                     style={{
@@ -641,32 +641,36 @@ export default function AddMedicationScreen() {
                     }}
                   />
                   {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => setSearchQuery("")}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
                       <X size={16} color={C.muted} />
                     </TouchableOpacity>
                   )}
                 </View>
 
-                {/* Category-grouped results */}
-                {SCD_CATEGORIES.map((cat) => {
-                  const drugs = filteredDrugs.filter((d) => d.category === cat);
-                  if (drugs.length === 0) return null;
-                  const cc = CATEGORY_COLORS[cat] ?? C.accent;
-                  return (
-                    <View key={cat} style={{ marginBottom: 20 }}>
-                      <Text
-                        style={{
-                          fontFamily: fonts.semibold,
-                          fontSize: 11,
-                          color: cc,
-                          textTransform: "uppercase",
-                          letterSpacing: 0.7,
-                          marginBottom: 8,
-                          marginLeft: 2,
-                        }}
-                      >
-                        {cat}
-                      </Text>
+                {/* API error banner */}
+                {drugError && (
+                  <View
+                    style={{
+                      backgroundColor: "#FEF3C7",
+                      borderRadius: 10,
+                      paddingHorizontal: 12,
+                      paddingVertical: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E" }}>
+                      {drugError}
+                    </Text>
+                  </View>
+                )}
+
+                {/* ── Autocomplete results (query ≥ 2 chars) ── */}
+                {searchQuery.trim().length >= 2 && (
+                  <>
+                    {drugResults.length > 0 && (
                       <View
                         style={{
                           backgroundColor: C.card,
@@ -674,10 +678,11 @@ export default function AddMedicationScreen() {
                           borderWidth: 1,
                           borderColor: C.border,
                           overflow: "hidden",
+                          marginBottom: 16,
                         }}
                       >
-                        {drugs.map((drug, i) => (
-                          <React.Fragment key={drug.id}>
+                        {drugResults.map((drug, i) => (
+                          <React.Fragment key={`${drug.name}-${i}`}>
                             <TouchableOpacity
                               onPress={() => {
                                 setName(drug.name);
@@ -686,10 +691,11 @@ export default function AddMedicationScreen() {
                               }}
                               activeOpacity={0.7}
                               style={{
-                                paddingVertical: 14,
+                                paddingVertical: 13,
                                 paddingHorizontal: 16,
                                 flexDirection: "row",
                                 alignItems: "center",
+                                gap: 10,
                               }}
                             >
                               <View style={{ flex: 1 }}>
@@ -702,88 +708,224 @@ export default function AddMedicationScreen() {
                                   </Text>
                                 )}
                               </View>
+                              {/* Source badge */}
+                              {drug.source === "saved" && (
+                                <View
+                                  style={{
+                                    backgroundColor: "#EBF5F0",
+                                    borderRadius: 6,
+                                    paddingHorizontal: 7,
+                                    paddingVertical: 2,
+                                  }}
+                                >
+                                  <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.success }}>
+                                    Saved
+                                  </Text>
+                                </View>
+                              )}
+                              {drug.source === "scd" && (
+                                <View
+                                  style={{
+                                    backgroundColor: "#F5EBF0",
+                                    borderRadius: 6,
+                                    paddingHorizontal: 7,
+                                    paddingVertical: 2,
+                                  }}
+                                >
+                                  <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.accent }}>
+                                    SCD
+                                  </Text>
+                                </View>
+                              )}
                               <ChevronRight size={16} color={C.muted} />
                             </TouchableOpacity>
-                            {i < drugs.length - 1 && (
+                            {i < drugResults.length - 1 && (
                               <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 16 }} />
                             )}
                           </React.Fragment>
                         ))}
                       </View>
-                    </View>
-                  );
-                })}
+                    )}
 
-                {/* Unlisted / custom */}
-                {!showCustomInput ? (
-                  <TouchableOpacity
-                    onPress={() => setShowCustomInput(true)}
-                    activeOpacity={0.7}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderRadius: 14,
-                      paddingVertical: 14,
-                      borderWidth: 1.5,
-                      borderColor: C.border,
-                      borderStyle: "dashed",
-                      gap: 8,
-                    }}
-                  >
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.muted }}>
-                      + Add unlisted medication
-                    </Text>
-                  </TouchableOpacity>
-                ) : (
-                  <View
-                    style={{
-                      backgroundColor: C.card,
-                      borderRadius: 14,
-                      borderWidth: 1,
-                      borderColor: C.inputBorder,
-                      padding: 16,
-                    }}
-                  >
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: C.dark, marginBottom: 10 }}>
-                      Enter medication name
-                    </Text>
-                    <TextInput
-                      value={customNameInput}
-                      onChangeText={setCustomNameInput}
-                      placeholder="e.g. Ibuprofen"
-                      placeholderTextColor={C.muted}
-                      autoFocus
+                    {/* Loading with no results yet */}
+                    {drugLoading && drugResults.length === 0 && (
+                      <View style={{ alignItems: "center", paddingVertical: 32 }}>
+                        <ActivityIndicator color={C.accent} />
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 10 }}>
+                          Searching drug database…
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* Not found + manual entry */}
+                    {!showCustomInput ? (
+                      <TouchableOpacity
+                        onPress={() => setShowCustomInput(true)}
+                        activeOpacity={0.7}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          borderRadius: 14,
+                          paddingVertical: 14,
+                          borderWidth: 1.5,
+                          borderColor: C.border,
+                          borderStyle: "dashed",
+                          gap: 8,
+                        }}
+                      >
+                        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.muted }}>
+                          Can't find it? Add manually
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View
+                        style={{
+                          backgroundColor: C.card,
+                          borderRadius: 14,
+                          borderWidth: 1,
+                          borderColor: C.inputBorder,
+                          padding: 16,
+                        }}
+                      >
+                        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: C.dark, marginBottom: 10 }}>
+                          Enter medication name
+                        </Text>
+                        <TextInput
+                          value={customNameInput}
+                          onChangeText={setCustomNameInput}
+                          placeholder={searchQuery || "e.g. Ibuprofen"}
+                          placeholderTextColor={C.muted}
+                          autoFocus
+                          style={{
+                            backgroundColor: C.bg,
+                            borderWidth: 1,
+                            borderColor: C.inputBorder,
+                            borderRadius: 10,
+                            padding: 12,
+                            fontFamily: fonts.regular,
+                            fontSize: 15,
+                            color: C.dark,
+                            marginBottom: 12,
+                          }}
+                        />
+                        <TouchableOpacity
+                          onPress={() => {
+                            const n = (customNameInput.trim() || searchQuery.trim());
+                            if (!n) return;
+                            setName(n);
+                            setCategory("Supportive");
+                            setStep(2);
+                          }}
+                          activeOpacity={0.8}
+                          style={{
+                            backgroundColor: C.accent,
+                            borderRadius: 10,
+                            paddingVertical: 12,
+                            alignItems: "center",
+                          }}
+                        >
+                          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#fff" }}>Continue</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                {/* ── Quick picks (empty query) ── */}
+                {searchQuery.trim().length < 2 && (
+                  <>
+                    <Text
                       style={{
-                        backgroundColor: C.bg,
-                        borderWidth: 1,
-                        borderColor: C.inputBorder,
-                        borderRadius: 10,
-                        padding: 12,
-                        fontFamily: fonts.regular,
-                        fontSize: 15,
-                        color: C.dark,
-                        marginBottom: 12,
-                      }}
-                    />
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (!customNameInput.trim()) return;
-                        setName(customNameInput.trim());
-                        setCategory("Supportive");
-                        setStep(2);
-                      }}
-                      activeOpacity={0.8}
-                      style={{
-                        backgroundColor: C.accent,
-                        borderRadius: 10,
-                        paddingVertical: 12,
-                        alignItems: "center",
+                        fontFamily: fonts.semibold,
+                        fontSize: 11,
+                        color: C.muted,
+                        textTransform: "uppercase",
+                        letterSpacing: 0.7,
+                        marginBottom: 10,
+                        marginLeft: 2,
                       }}
                     >
-                      <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#fff" }}>Continue</Text>
-                    </TouchableOpacity>
-                  </View>
+                      Common SCD medications
+                    </Text>
+                    {SCD_CATEGORIES.map((cat) => {
+                      const drugs = SCD_MEDICATIONS.filter((d) => d.category === cat);
+                      const cc = CATEGORY_COLORS[cat] ?? C.accent;
+                      return (
+                        <View key={cat} style={{ marginBottom: 18 }}>
+                          <Text
+                            style={{
+                              fontFamily: fonts.semibold,
+                              fontSize: 11,
+                              color: cc,
+                              textTransform: "uppercase",
+                              letterSpacing: 0.7,
+                              marginBottom: 8,
+                              marginLeft: 2,
+                            }}
+                          >
+                            {cat}
+                          </Text>
+                          <View
+                            style={{
+                              backgroundColor: C.card,
+                              borderRadius: 14,
+                              borderWidth: 1,
+                              borderColor: C.border,
+                              overflow: "hidden",
+                            }}
+                          >
+                            {drugs.map((drug, i) => (
+                              <React.Fragment key={drug.id}>
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    setName(drug.name);
+                                    setCategory(drug.category);
+                                    setStep(2);
+                                  }}
+                                  activeOpacity={0.7}
+                                  style={{
+                                    paddingVertical: 13,
+                                    paddingHorizontal: 16,
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <View style={{ flex: 1 }}>
+                                    <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}>
+                                      {drug.name}
+                                    </Text>
+                                    {drug.subtitle && (
+                                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1 }}>
+                                        {drug.subtitle}
+                                      </Text>
+                                    )}
+                                  </View>
+                                  <View
+                                    style={{
+                                      backgroundColor: "#F5EBF0",
+                                      borderRadius: 6,
+                                      paddingHorizontal: 7,
+                                      paddingVertical: 2,
+                                      marginRight: 8,
+                                    }}
+                                  >
+                                    <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.accent }}>
+                                      SCD
+                                    </Text>
+                                  </View>
+                                  <ChevronRight size={16} color={C.muted} />
+                                </TouchableOpacity>
+                                {i < drugs.length - 1 && (
+                                  <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 16 }} />
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </>
                 )}
               </View>
             )}

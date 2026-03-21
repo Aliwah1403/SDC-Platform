@@ -5,7 +5,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Dimensions,
 } from "react-native";
+
+const CARD_WIDTH = (Dimensions.get("window").width - 32 - 12) / 2;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -246,36 +249,68 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
   );
 }
 
-function MedicationListRow({ medication, onPress }) {
+function MedicationGridCard({ medication, onPress }) {
   const color = CATEGORY_COLORS[medication.category] ?? C.accent;
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={0.6}
-      style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 }}
+      activeOpacity={0.7}
+      style={{
+        width: CARD_WIDTH,
+        backgroundColor: C.card,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: C.border,
+        overflow: "hidden",
+      }}
     >
+      {/* Icon area */}
       <View
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 10,
-          backgroundColor: `${color}12`,
+          height: 96,
+          backgroundColor: `${color}10`,
           alignItems: "center",
           justifyContent: "center",
-          marginRight: 12,
         }}
       >
-        <MedicationIcon type={medication.type ?? "tablet"} color={color} size={28} />
+        <MedicationIcon type={medication.type ?? "tablet"} color={color} size={52} />
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}>
+
+      {/* Info area */}
+      <View style={{ padding: 12 }}>
+        <Text
+          numberOfLines={1}
+          style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.dark, marginBottom: 2 }}
+        >
           {medication.name}
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 1 }}>
-          {medication.dosage}
-        </Text>
+        {medication.dosage ? (
+          <Text
+            numberOfLines={1}
+            style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginBottom: 8 }}
+          >
+            {medication.dosage}
+          </Text>
+        ) : (
+          <View style={{ marginBottom: 8 }} />
+        )}
+        <View
+          style={{
+            alignSelf: "flex-start",
+            backgroundColor: `${color}15`,
+            borderRadius: 6,
+            paddingHorizontal: 7,
+            paddingVertical: 3,
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{ fontFamily: fonts.medium, fontSize: 10, color, textTransform: "uppercase", letterSpacing: 0.3 }}
+          >
+            {medication.category}
+          </Text>
+        </View>
       </View>
-      <ChevronRight size={18} color={C.muted} />
     </TouchableOpacity>
   );
 }
@@ -460,26 +495,20 @@ export default function MedicationsScreen() {
             <SectionLabel title="All Medications" />
             <View
               style={{
-                backgroundColor: C.card,
-                borderRadius: 14,
-                borderWidth: 1,
-                borderColor: C.border,
-                overflow: "hidden",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                gap: 12,
                 marginBottom: 24,
               }}
             >
-              {medications.map((med, i) => (
-                <React.Fragment key={med.id}>
-                  <MedicationListRow
-                    medication={med}
-                    onPress={() =>
-                      router.push({ pathname: "/medication-detail", params: { medicationId: med.id } })
-                    }
-                  />
-                  {i < medications.length - 1 && (
-                    <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 64 }} />
-                  )}
-                </React.Fragment>
+              {medications.map((med) => (
+                <MedicationGridCard
+                  key={med.id}
+                  medication={med}
+                  onPress={() =>
+                    router.push({ pathname: "/medication-detail", params: { medicationId: med.id } })
+                  }
+                />
               ))}
             </View>
           </>
