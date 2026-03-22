@@ -392,7 +392,10 @@ export default function StreakModal() {
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
-    setSelectedMilestone({ ...milestone, image: MILESTONE_BADGE[milestone.id] });
+    setSelectedMilestone({
+      ...milestone,
+      image: MILESTONE_BADGE[milestone.id],
+    });
     setMilestoneModalVisible(true);
   };
 
@@ -1051,9 +1054,7 @@ export default function StreakModal() {
       </View>
 
       {activeTab === "streaks" ? (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView showsVerticalScrollIndicator={false}>
           {/* ── GRADIENT HERO ── */}
           <LinearGradient
             colors={["#FFF9F8", "#F8E9E7", "#ECDAD4"]}
@@ -1078,7 +1079,7 @@ export default function StreakModal() {
               <Image
                 source={getStreakFireAsset(healthStreak)}
                 style={{ width: 220, height: 220 }}
-                contentFit="contain"
+                contentFit="cover"
               />
             </MotiView>
 
@@ -1118,8 +1119,8 @@ export default function StreakModal() {
                 marginBottom: 36,
               }}
             >
-              You are doing great,{" "}
-              {currentUser?.name?.split(" ")[0] || "there"}!
+              You are doing great, {currentUser?.name?.split(" ")[0] || "there"}
+              !
             </Text>
 
             {/* Week calendar */}
@@ -1136,9 +1137,7 @@ export default function StreakModal() {
                     style={{
                       fontFamily: day.isToday ? fonts.bold : fonts.medium,
                       fontSize: 12,
-                      color: day.isToday
-                        ? HEMO.wine
-                        : "rgba(9,51,44,0.35)",
+                      color: day.isToday ? HEMO.wine : "rgba(9,51,44,0.35)",
                       marginBottom: 8,
                     }}
                   >
@@ -1188,13 +1187,9 @@ export default function StreakModal() {
                     >
                       <Text
                         style={{
-                          fontFamily: day.isToday
-                            ? fonts.bold
-                            : fonts.regular,
+                          fontFamily: day.isToday ? fonts.bold : fonts.regular,
                           fontSize: 13,
-                          color: day.isToday
-                            ? HEMO.wine
-                            : "rgba(9,51,44,0.22)",
+                          color: day.isToday ? HEMO.wine : "rgba(9,51,44,0.22)",
                         }}
                       >
                         {day.dayNumber}
@@ -1218,244 +1213,244 @@ export default function StreakModal() {
               paddingBottom: 48,
             }}
           >
-
-          {/* Stats Card */}
-          <View
-            style={{
-              backgroundColor: "#F8F4F0",
-              borderRadius: 20,
-              padding: 20,
-              marginBottom: 24,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: fonts.medium,
-                fontSize: 16,
-                color: "#9CA3AF",
-                textAlign: "center",
-                marginBottom: 24,
-              }}
-            >
-              Your Stats
-            </Text>
-
+            {/* Stats Card */}
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 20,
-              }}
-            >
-              {stats.map((stat, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && (
-                    <View
-                      style={{
-                        width: 1,
-                        height: 36,
-                        backgroundColor: "#E5E7EB",
-                        alignSelf: "center",
-                      }}
-                    />
-                  )}
-                  <View style={{ alignItems: "center", flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.medium,
-                        fontSize: 13,
-                        color: "#9CA3AF",
-                        marginBottom: 8,
-                      }}
-                    >
-                      {stat.label}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.bold,
-                        fontSize: 20,
-                        color: "#1F2937",
-                      }}
-                    >
-                      {stat.value}
-                    </Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              onPress={() => router.push("/health-insights")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: "#FFFFFF",
-                borderRadius: 100,
-                paddingVertical: 8,
-                paddingHorizontal: 14,
-                alignSelf: "flex-start",
+                backgroundColor: "#F8F4F0",
+                borderRadius: 20,
+                padding: 20,
+                marginBottom: 24,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 3,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
                 elevation: 2,
-                gap: 6,
               }}
             >
-              <Sparkles size={14} color={HEMO.wine} />
               <Text
                 style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 12,
-                  color: HEMO.wine,
+                  fontFamily: fonts.medium,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                  textAlign: "center",
+                  marginBottom: 24,
                 }}
               >
-                2 Insights Available
+                Your Stats
               </Text>
-            </TouchableOpacity>
-          </View>
 
-          {/* Streak Repairs */}
-          <TouchableOpacity
-            onPress={() => router.push("/streak-repairs")}
-            style={{
-              borderRadius: 16,
-              padding: 20,
-              marginBottom: 24,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
-            >
               <View
                 style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginRight: 16,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  marginBottom: 20,
                 }}
               >
-                <Wrench size={24} color="#92400E" strokeWidth={2} />
+                {stats.map((stat, index) => (
+                  <React.Fragment key={index}>
+                    {index > 0 && (
+                      <View
+                        style={{
+                          width: 1,
+                          height: 36,
+                          backgroundColor: "#E5E7EB",
+                          alignSelf: "center",
+                        }}
+                      />
+                    )}
+                    <View style={{ alignItems: "center", flex: 1 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 13,
+                          color: "#9CA3AF",
+                          marginBottom: 8,
+                        }}
+                      >
+                        {stat.label}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.bold,
+                          fontSize: 20,
+                          color: "#1F2937",
+                        }}
+                      >
+                        {stat.value}
+                      </Text>
+                    </View>
+                  </React.Fragment>
+                ))}
               </View>
-              <View style={{ flex: 1 }}>
+
+              <TouchableOpacity
+                onPress={() => router.push("/health-insights")}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: 100,
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  alignSelf: "flex-start",
+                  shadowColor: "#000",
+                  shadowOffset: { width: 0, height: 1 },
+                  shadowOpacity: 0.06,
+                  shadowRadius: 3,
+                  elevation: 2,
+                  gap: 6,
+                }}
+              >
+                <Sparkles size={14} color={HEMO.wine} />
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 12,
+                    color: HEMO.wine,
+                  }}
+                >
+                  2 Insights Available
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Streak Repairs */}
+            <TouchableOpacity
+              onPress={() => router.push("/streak-repairs")}
+              style={{
+                borderRadius: 16,
+                padding: 20,
+                marginBottom: 24,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 8,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginRight: 16,
+                  }}
+                >
+                  <Wrench size={24} color="#92400E" strokeWidth={2} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 16,
+                      color: "#1a1a1a",
+                      marginBottom: 2,
+                    }}
+                  >
+                    Streak Repairs
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      fontSize: 13,
+                      color: "#92400E",
+                    }}
+                  >
+                    3 repairs available
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 16,
+                  backgroundColor: "rgba(146, 64, 14, 0.1)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ fontSize: 18, color: "#92400E" }}>→</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Milestones */}
+            <View style={{ marginBottom: 24 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: 20,
+                }}
+              >
                 <Text
                   style={{
                     fontFamily: fonts.bold,
-                    fontSize: 16,
-                    color: "#1a1a1a",
-                    marginBottom: 2,
+                    fontSize: 22,
+                    color: HEMO.dark,
                   }}
                 >
-                  Streak Repairs
+                  Your Milestones
                 </Text>
                 <Text
                   style={{
-                    fontFamily: fonts.medium,
+                    fontFamily: fonts.bold,
                     fontSize: 13,
-                    color: "#92400E",
+                    color: "#9CA3AF",
                   }}
                 >
-                  3 repairs available
+                  {unlockedCount}/{milestones.length}
+                </Text>
+              </View>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "space-between",
+                }}
+              >
+                {milestones.map((milestone) => renderMilestoneCard(milestone))}
+              </View>
+            </View>
+
+            {/* Footer */}
+            <View
+              style={{
+                backgroundColor: HEMO.blush,
+                borderRadius: 12,
+                padding: 16,
+                alignItems: "center",
+              }}
+            >
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              >
+                <Zap size={16} color={HEMO.wine} strokeWidth={2} />
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 14,
+                    color: HEMO.wine,
+                    textAlign: "center",
+                    lineHeight: 20,
+                  }}
+                >
+                  Keep logging daily to maintain your streak!
                 </Text>
               </View>
             </View>
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: "rgba(146, 64, 14, 0.1)",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontSize: 18, color: "#92400E" }}>→</Text>
-            </View>
-          </TouchableOpacity>
-
-          {/* Milestones */}
-          <View style={{ marginBottom: 24 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 20,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 22,
-                  color: HEMO.dark,
-                }}
-              >
-                Your Milestones
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 13,
-                  color: "#9CA3AF",
-                }}
-              >
-                {unlockedCount}/{milestones.length}
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                flexWrap: "wrap",
-                justifyContent: "space-between",
-              }}
-            >
-              {milestones.map((milestone) => renderMilestoneCard(milestone))}
-            </View>
           </View>
-
-          {/* Footer */}
-          <View
-            style={{
-              backgroundColor: HEMO.blush,
-              borderRadius: 12,
-              padding: 16,
-              alignItems: "center",
-            }}
-          >
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
-            >
-              <Zap size={16} color={HEMO.wine} strokeWidth={2} />
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: HEMO.wine,
-                  textAlign: "center",
-                  lineHeight: 20,
-                }}
-              >
-                Keep logging daily to maintain your streak!
-              </Text>
-            </View>
-          </View>
-          </View>{/* end white body */}
+          {/* end white body */}
         </ScrollView>
       ) : (
         <ScrollView

@@ -2,10 +2,10 @@ import { Image } from "expo-image";
 import { useAppStore } from "@/store/appStore";
 
 const STREAK_FIRES = [
-  require("../../assets/images/streak/1.svg"), // 1–7 days
-  require("../../assets/images/streak/2.svg"), // 8–29 days
-  require("../../assets/images/streak/3.svg"), // 30–89 days
-  require("../../assets/images/streak/4.svg"), // 90+ days
+  require("../../assets/images/streak/1.png"),
+  require("../../assets/images/streak/2.png"),
+  require("../../assets/images/streak/3.png"),
+  require("../../assets/images/streak/4.png"),
 ];
 
 export function getStreakFireAsset(streakCount) {
