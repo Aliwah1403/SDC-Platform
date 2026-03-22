@@ -8,11 +8,11 @@ import {
   Heart,
   BookOpen,
   Target,
-  Star,
   Wrench,
   Zap,
   Clock,
 } from "lucide-react-native";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MILESTONE_ICONS = {
@@ -25,6 +25,18 @@ const MILESTONE_ICONS = {
   repair: Wrench,
   restart: Zap,
   medications: Clock,
+};
+
+const MILESTONE_BADGE_IMAGES = {
+  days:        require("../../assets/images/badges/badge-4.svg"),
+  streak:      require("../../assets/images/badges/badge-2.svg"),
+  symptoms:    require("../../assets/images/badges/badge-11.svg"),
+  hydration:   require("../../assets/images/badges/badge-8.svg"),
+  care:        require("../../assets/images/badges/badge-9.svg"),
+  learning:    require("../../assets/images/badges/badge-10.svg"),
+  repair:      require("../../assets/images/badges/badge-12.svg"),
+  restart:     require("../../assets/images/badges/badge-13.svg"),
+  medications: require("../../assets/images/badges/badge-14.svg"),
 };
 
 const MILESTONE_COLORS = {
@@ -56,6 +68,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
   const Icon = MILESTONE_ICONS[milestone.type];
   const colors = MILESTONE_COLORS[milestone.type];
   const rarityInfo = RARITY_CONFIG[milestone.rarity];
+  const badgeImage = MILESTONE_BADGE_IMAGES[milestone.type];
 
   return (
     <Modal
@@ -116,62 +129,18 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
               {milestone.name}
             </Text>
 
-            {/* Milestone Icon/Badge */}
-            <View
+            {/* Milestone Badge */}
+            <Image
+              source={badgeImage}
               style={{
-                width: "100%",
-                aspectRatio: 1,
-                maxWidth: 340,
+                width: 260,
+                height: 260,
                 alignSelf: "center",
-                borderRadius: 24,
-                backgroundColor: colors.bg,
-                alignItems: "center",
-                justifyContent: "center",
                 marginBottom: 32,
-                borderWidth: 4,
-                borderColor: milestone.unlocked ? colors.primary : "#D09F9A",
-                opacity: milestone.unlocked ? 1 : 0.5,
+                opacity: milestone.unlocked ? 1 : 0.3,
               }}
-            >
-              {milestone.unlocked && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -12,
-                    left: "50%",
-                    marginLeft: -20,
-                  }}
-                >
-                  <Star size={40} color="#F59E0B" />
-                </View>
-              )}
-
-              <View
-                style={{
-                  width: 160,
-                  height: 160,
-                  borderRadius: 80,
-                  backgroundColor: milestone.unlocked
-                    ? colors.primary
-                    : "#D09F9A",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon size={80} color="white" strokeWidth={2.5} />
-              </View>
-
-              <Text
-                style={{
-                  fontSize: 48,
-                  fontWeight: "800",
-                  color: milestone.unlocked ? colors.primary : "#999",
-                  marginTop: 16,
-                }}
-              >
-                {milestone.value}
-              </Text>
-            </View>
+              contentFit="contain"
+            />
 
             {/* Info Cards */}
             <View style={{ gap: 12, marginBottom: 24 }}>
