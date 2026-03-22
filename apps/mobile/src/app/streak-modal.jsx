@@ -10,8 +10,6 @@ import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
-  Flame,
-  Check,
   Sparkles,
   Trophy,
   Droplet,
@@ -31,6 +29,8 @@ import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
+import { getStreakFireAsset, StreakFireIcon } from "@/utils/streakFire";
+import { MotiView } from "moti";
 import { mockBadges, mockChallenges } from "@/types";
 
 const { width } = Dimensions.get("window");
@@ -392,7 +392,7 @@ export default function StreakModal() {
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
-    setSelectedMilestone(milestone);
+    setSelectedMilestone({ ...milestone, image: MILESTONE_BADGE[milestone.id] });
     setMilestoneModalVisible(true);
   };
 
@@ -406,7 +406,7 @@ export default function StreakModal() {
 
     const MilestoneIcon = {
       days: Trophy,
-      streak: Flame,
+      streak: StreakFireIcon,
       symptoms: Target,
       hydration: Droplet,
       care: Heart,
@@ -989,7 +989,7 @@ export default function StreakModal() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F8" }}>
       {/* Close button */}
       <View
         style={{
@@ -1052,135 +1052,149 @@ export default function StreakModal() {
 
       {activeTab === "streaks" ? (
         <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* Header */}
-          <View
-            style={{ alignItems: "center", marginTop: 8, marginBottom: 32 }}
+          {/* ── GRADIENT HERO ── */}
+          <LinearGradient
+            colors={["#FFF9F8", "#F8E9E7", "#ECDAD4"]}
+            style={{
+              paddingTop: 8,
+              paddingBottom: 56,
+              paddingHorizontal: 24,
+              alignItems: "center",
+            }}
           >
-            <View
-              style={{
-                width: 100,
-                height: 100,
-                borderRadius: 50,
-                backgroundColor: HEMO.blush,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 20,
+            {/* Animated fire */}
+            <MotiView
+              from={{ scale: 1, translateY: 0 }}
+              animate={{ scale: 1.05, translateY: -6 }}
+              transition={{
+                type: "timing",
+                duration: 1000,
+                loop: true,
+                repeatReverse: true,
               }}
             >
-              <Flame size={60} color={HEMO.wine} fill={HEMO.wine} />
-            </View>
+              <Image
+                source={getStreakFireAsset(healthStreak)}
+                style={{ width: 220, height: 220 }}
+                contentFit="contain"
+              />
+            </MotiView>
 
+            {/* Streak number */}
             <Text
               style={{
                 fontFamily: fonts.extrabold,
-                fontSize: 56,
-                color: HEMO.dark,
-                marginBottom: 8,
+                fontSize: 80,
+                color: HEMO.wine,
+                lineHeight: 82,
+                marginTop: -8,
               }}
             >
               {healthStreak}
             </Text>
 
+            {/* Label */}
             <Text
-              style={{ fontFamily: fonts.bold, fontSize: 24, marginBottom: 12 }}
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 22,
+                color: HEMO.dark,
+                letterSpacing: -0.4,
+                marginBottom: 8,
+              }}
             >
               Day Streak
             </Text>
 
+            {/* Motivational text */}
             <Text
               style={{
-                fontFamily: fonts.medium,
+                fontFamily: fonts.regular,
                 fontSize: 14,
-                color: "#666",
+                color: "rgba(9,51,44,0.5)",
                 textAlign: "center",
-                lineHeight: 22,
+                marginBottom: 36,
               }}
             >
-              You are doing really great,{" "}
+              You are doing great,{" "}
               {currentUser?.name?.split(" ")[0] || "there"}!
             </Text>
-          </View>
 
-          {/* Week Progress */}
-          <View style={{ marginBottom: 24 }}>
+            {/* Week calendar */}
             <View
               style={{
                 flexDirection: "row",
                 justifyContent: "space-between",
-                marginBottom: 16,
-              }}
-            >
-              <Text style={{ fontFamily: fonts.bold, fontSize: 17 }}>
-                This Week
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: "#666",
-                }}
-              >
-                {completedDays}/7 days
-              </Text>
-            </View>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                paddingHorizontal: 4,
+                width: "100%",
               }}
             >
               {weekData.map((day, index) => (
-                <View key={index} style={{ alignItems: "center", width: 48 }}>
+                <View key={index} style={{ alignItems: "center", flex: 1 }}>
                   <Text
                     style={{
                       fontFamily: day.isToday ? fonts.bold : fonts.medium,
-                      fontSize: 14,
-                      color: day.isToday ? HEMO.dark : "#999",
-                      marginBottom: 12,
+                      fontSize: 12,
+                      color: day.isToday
+                        ? HEMO.wine
+                        : "rgba(9,51,44,0.35)",
+                      marginBottom: 8,
                     }}
                   >
                     {day.day}
                   </Text>
 
                   {day.hasData ? (
-                    <LinearGradient
-                      colors={[HEMO.rose, HEMO.wine]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                    <View
                       style={{
-                        width: 35,
-                        height: 35,
-                        borderRadius: 20,
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: HEMO.wine,
                         alignItems: "center",
                         justifyContent: "center",
                         shadowColor: HEMO.wine,
-                        shadowOffset: { width: 0, height: 4 },
-                        shadowOpacity: 0.3,
-                        shadowRadius: 8,
+                        shadowOffset: { width: 0, height: 3 },
+                        shadowOpacity: 0.35,
+                        shadowRadius: 6,
                         elevation: 4,
-                      }}
-                    >
-                      <Check size={17} color="#FFFFFF" strokeWidth={3} />
-                    </LinearGradient>
-                  ) : (
-                    <View
-                      style={{
-                        width: 35,
-                        height: 35,
-                        alignItems: "center",
-                        justifyContent: "center",
                       }}
                     >
                       <Text
                         style={{
-                          fontFamily: day.isToday ? fonts.bold : fonts.regular,
-                          fontSize: 20,
-                          color: day.isToday ? HEMO.dark : "#D1D5DB",
+                          fontFamily: fonts.bold,
+                          fontSize: 13,
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        {day.dayNumber}
+                      </Text>
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        backgroundColor: day.isToday
+                          ? "rgba(169,51,77,0.12)"
+                          : "rgba(9,51,44,0.06)",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderWidth: day.isToday ? 1.5 : 0,
+                        borderColor: "rgba(169,51,77,0.3)",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: day.isToday
+                            ? fonts.bold
+                            : fonts.regular,
+                          fontSize: 13,
+                          color: day.isToday
+                            ? HEMO.wine
+                            : "rgba(9,51,44,0.22)",
                         }}
                       >
                         {day.dayNumber}
@@ -1190,18 +1204,31 @@ export default function StreakModal() {
                 </View>
               ))}
             </View>
-          </View>
+          </LinearGradient>
+
+          {/* ── WHITE BODY ── */}
+          <View
+            style={{
+              backgroundColor: "#FFFFFF",
+              borderTopLeftRadius: 28,
+              borderTopRightRadius: 28,
+              marginTop: -28,
+              paddingTop: 28,
+              paddingHorizontal: 24,
+              paddingBottom: 48,
+            }}
+          >
 
           {/* Stats Card */}
           <View
             style={{
-              backgroundColor: "#F9FAFB",
+              backgroundColor: "#F8F4F0",
               borderRadius: 20,
+              padding: 20,
               marginBottom: 24,
-              marginTop: 20,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.05,
+              shadowOpacity: 0.04,
               shadowRadius: 8,
               elevation: 2,
             }}
@@ -1428,6 +1455,7 @@ export default function StreakModal() {
               </Text>
             </View>
           </View>
+          </View>{/* end white body */}
         </ScrollView>
       ) : (
         <ScrollView

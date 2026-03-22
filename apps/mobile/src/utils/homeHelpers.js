@@ -3,8 +3,8 @@ import {
   Plus,
   TrendingUp,
   Droplets,
-  Flame,
 } from "lucide-react-native";
+import { StreakFireIcon } from "@/utils/streakFire";
 
 export function getDynamicMessage(
   hasLoggedData,
@@ -112,7 +112,7 @@ export function getInsightCards(
             : "Start your streak today",
       value: String(healthStreak),
       unit: healthStreak === 1 ? "day" : "days",
-      icon: Flame,
+      icon: StreakFireIcon,
       bgColor: "#F8E9E7",
       accentColor: "#A9334D",
       cta: null,

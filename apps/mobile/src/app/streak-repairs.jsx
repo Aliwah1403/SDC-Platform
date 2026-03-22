@@ -7,7 +7,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { X, Gift, Wrench, Flame, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
+import { X, Gift, Wrench, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
+import { StreakFireIcon } from "@/utils/streakFire";
 
 const { height } = Dimensions.get("window");
 
@@ -389,7 +390,7 @@ export default function StreakRepairsScreen() {
                 marginRight: 16,
               }}
             >
-              <Flame size={24} color="#DC2626" />
+              <StreakFireIcon size={36} />
             </View>
             <Text
               style={{

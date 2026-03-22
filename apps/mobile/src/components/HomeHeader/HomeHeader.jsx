@@ -1,6 +1,8 @@
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Flame, User } from "lucide-react-native";
+import { User } from "lucide-react-native";
+import { Image } from "expo-image";
+import { getStreakFireAsset } from "@/utils/streakFire";
 import Svg, { Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
@@ -99,7 +101,7 @@ export function HomeHeader({
                 borderRadius: 20,
               }}
             >
-              <Flame size={18} color="#FFFFFF" />
+              <Image source={getStreakFireAsset(healthStreak)} style={{ width: 36, height: 36 }} contentFit="contain" />
               <Text
                 style={{
                   fontFamily: fonts.bold,

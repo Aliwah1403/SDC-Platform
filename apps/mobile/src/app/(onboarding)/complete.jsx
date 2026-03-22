@@ -3,14 +3,15 @@ import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MotiView } from 'moti';
-import { CheckCircle, Flame, Heart, Activity } from 'lucide-react-native';
+import { CheckCircle, Heart, Activity } from 'lucide-react-native';
+import { StreakFireIcon } from '@/utils/streakFire';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/utils/auth/store';
 
 const STATS = [
-  { icon: Flame, label: 'Streak', value: '1 day', color: '#781D11' },
+  { icon: StreakFireIcon, label: 'Streak', value: '1 day', color: '#781D11' },
   { icon: Heart, label: 'Health score', value: 'Ready', color: '#A9334D' },
   { icon: Activity, label: 'Tracking', value: 'Active', color: '#09332C' },
 ];
@@ -101,7 +102,7 @@ export default function OnboardingComplete() {
           {STATS.map(({ icon: Icon, label, value, color }, i) => (
             <View key={label} style={styles.statCard}>
               <View style={[styles.statIcon, { backgroundColor: "#F2EFEC" }]}>
-                <Icon size={20} color={color} strokeWidth={1.8} />
+                <Icon size={28} color={color} strokeWidth={1.8} />
               </View>
               <Text style={styles.statValue}>{value}</Text>
               <Text style={styles.statLabel}>{label}</Text>

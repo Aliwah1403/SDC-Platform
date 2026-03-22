@@ -1,7 +1,9 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import { Flame, User } from "lucide-react-native";
+import { User } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
+import { Image } from "expo-image";
+import { getStreakFireAsset } from "@/utils/streakFire";
 
 export function CompactNavbar({ date, healthStreak, insets }) {
   const router = useRouter();
@@ -41,7 +43,7 @@ export function CompactNavbar({ date, healthStreak, insets }) {
             borderRadius: 20,
           }}
         >
-          <Flame size={16} color="#FFFFFF" />
+          <Image source={getStreakFireAsset(healthStreak)} style={{ width: 32, height: 32 }} contentFit="contain" />
           <Text
             style={{
               fontFamily: fonts.bold,
