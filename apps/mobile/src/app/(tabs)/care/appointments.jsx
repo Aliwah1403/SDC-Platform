@@ -1,3 +1,4 @@
+import { useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -6,6 +7,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,6 +21,8 @@ import {
   CalendarCheck,
   MoreHorizontal,
   FileText,
+  Pencil,
+  Trash2,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUtils";
@@ -147,6 +151,9 @@ export default function AppointmentsScreen() {
   const appointments = useAppStore((s) => s.appointments);
   const deleteAppointment = useAppStore((s) => s.deleteAppointment);
 
+  const [selectedAppt, setSelectedAppt] = useState(null);
+  const sheetRef = useRef(null);
+
   const today = format(new Date(), "yyyy-MM-dd");
 
   const upcoming = appointments
@@ -157,21 +164,37 @@ export default function AppointmentsScreen() {
     .filter((a) => a.date < today || a.status === "completed")
     .sort((a, b) => b.date.localeCompare(a.date));
 
-  const handleMore = (appt) => {
-    Alert.alert(appt.title, undefined, [
-      { text: "Edit", onPress: () => router.push(`/appointment-form?id=${appt.id}`) },
+  const handleMore = useCallback((appt) => {
+    setSelectedAppt(appt);
+    sheetRef.current?.expand();
+  }, []);
+
+  const handleSheetClose = useCallback(() => {
+    sheetRef.current?.close();
+    setSelectedAppt(null);
+  }, []);
+
+  const handleEdit = useCallback(() => {
+    sheetRef.current?.close();
+    router.push(`/appointment-form?id=${selectedAppt.id}`);
+  }, [selectedAppt]);
+
+  const handleDelete = useCallback(() => {
+    sheetRef.current?.close();
+    Alert.alert("Delete Appointment", `Remove "${selectedAppt?.title}"?`, [
+      { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          if (appt.calendarEventId) await removeFromDeviceCalendar(appt.calendarEventId);
-          if (appt.reminderIds?.length) await cancelReminders(appt.reminderIds);
-          deleteAppointment(appt.id);
+          if (selectedAppt?.calendarEventId) await removeFromDeviceCalendar(selectedAppt.calendarEventId);
+          if (selectedAppt?.reminderIds?.length) await cancelReminders(selectedAppt.reminderIds);
+          deleteAppointment(selectedAppt.id);
+          setSelectedAppt(null);
         },
       },
-      { text: "Cancel", style: "cancel" },
     ]);
-  };
+  }, [selectedAppt]);
 
   const SectionHeader = ({ label, count }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, marginTop: 8 }}>
@@ -266,6 +289,53 @@ export default function AppointmentsScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Actions Bottom Sheet */}
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={["32%"]}
+        enablePanDownToClose
+        onClose={() => setSelectedAppt(null)}
+        backgroundStyle={{ backgroundColor: "#fff", borderRadius: 24 }}
+        handleIndicatorStyle={{ backgroundColor: "#D1D5DB", width: 36 }}
+      >
+        <BottomSheetView style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: insets.bottom + 16 }}>
+          {selectedAppt && (
+            <>
+              {/* Appointment label */}
+              <Text style={{ fontSize: 17, fontWeight: "700", color: "#1a1a1a", fontFamily: "Geist-Bold", marginBottom: 4 }}>
+                {selectedAppt.title}
+              </Text>
+              <Text style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "Geist-Regular", marginBottom: 20 }}>
+                {formatApptDate(selectedAppt.date)}  ·  {selectedAppt.time}
+              </Text>
+
+              {/* Edit */}
+              <TouchableOpacity
+                onPress={handleEdit}
+                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
+                  <Pencil size={18} color="#A9334D" />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: "#1a1a1a", fontFamily: "Geist-SemiBold" }}>Edit Appointment</Text>
+              </TouchableOpacity>
+
+              {/* Delete */}
+              <TouchableOpacity
+                onPress={handleDelete}
+                style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+              >
+                <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
+                  <Trash2 size={18} color="#DC2626" />
+                </View>
+                <Text style={{ fontSize: 16, fontWeight: "600", color: "#DC2626", fontFamily: "Geist-SemiBold" }}>Delete Appointment</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </BottomSheetView>
+      </BottomSheet>
     </View>
   );
 }
