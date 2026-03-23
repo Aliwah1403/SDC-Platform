@@ -51,7 +51,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="care/index"
+        name="care"
         options={{
           title: "Care",
           tabBarIcon: ({ color }) => <Calendar color={color} size={22} />,

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { mockUser, generateMockHealthData, mockEmergencyContacts, mockMedications } from "../types";
+import { mockUser, generateMockHealthData, mockEmergencyContacts, mockMedications, mockAppointments } from "../types";
 
 const mockHealthData = generateMockHealthData();
 
@@ -64,6 +64,9 @@ export const useAppStore = create((set, get) => ({
 
   // Medications
   medications: mockMedications,
+
+  // Appointments
+  appointments: mockAppointments,
 
   // Metric Goals
   metricGoals: { hydration: 8, sleep: 8, steps: 10000 },
@@ -168,6 +171,22 @@ export const useAppStore = create((set, get) => ({
   getActiveMedications: () => get().medications.filter((m) => m.isActive),
 
   getDueCount: () => get().medications.filter((m) => m.isActive && !m.taken).length,
+
+  // Appointment actions
+  addAppointment: (appt) =>
+    set((state) => ({ appointments: [...state.appointments, appt] })),
+
+  updateAppointment: (id, changes) =>
+    set((state) => ({
+      appointments: state.appointments.map((a) =>
+        a.id === id ? { ...a, ...changes } : a
+      ),
+    })),
+
+  deleteAppointment: (id) =>
+    set((state) => ({
+      appointments: state.appointments.filter((a) => a.id !== id),
+    })),
 
   setMetricGoal: (metric, value) =>
     set((state) => ({ metricGoals: { ...state.metricGoals, [metric]: value } })),

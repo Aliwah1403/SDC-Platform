@@ -1,340 +1,270 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
-  Calendar,
   ChevronLeft,
   Plus,
   Clock,
   MapPin,
+  User,
+  Calendar,
+  CalendarCheck,
+  MoreHorizontal,
+  FileText,
 } from "lucide-react-native";
-import { mockAppointments } from "../../../types";
+import { useAppStore } from "@/store/appStore";
+import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUtils";
+import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
+
+const TYPE_COLORS = {
+  "routine":     { bg: "#F8F4F0", text: "#374151" },
+  "follow-up":   { bg: "#FBE9ED", text: "#A9334D" },
+  "urgent":      { bg: "#FEF2F2", text: "#DC2626" },
+  "blood-work":  { bg: "#FEF0EB", text: "#F0531C" },
+  "transfusion": { bg: "#F9E8E6", text: "#781D11" },
+  "specialist":  { bg: "#F8E9E7", text: "#374151" },
+};
+
+const TYPE_LABELS = {
+  "routine":     "Routine",
+  "follow-up":   "Follow-up",
+  "urgent":      "Urgent",
+  "blood-work":  "Blood Work",
+  "transfusion": "Transfusion",
+  "specialist":  "Specialist",
+};
+
+function formatApptDate(dateStr) {
+  const d = parseISO(dateStr);
+  if (isToday(d)) return "Today";
+  if (isTomorrow(d)) return "Tomorrow";
+  return format(d, "EEE, d MMM yyyy");
+}
+
+function AppointmentCard({ appointment, onEdit, onMore }) {
+  const typeColor = TYPE_COLORS[appointment.type] ?? { bg: "#F3F4F6", text: "#6B7280" };
+  const isPastAppt = isPast(parseISO(appointment.date + "T23:59:59"));
+
+  return (
+    <TouchableOpacity
+      onPress={onEdit}
+      activeOpacity={0.85}
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 18,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#F0EDE8",
+        opacity: isPastAppt ? 0.75 : 1,
+      }}
+    >
+      {/* Top row: title + ⋯ */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <Text style={{ fontSize: 17, fontWeight: "700", color: "#1a1a1a", fontFamily: "Geist-Bold", marginBottom: 3 }}>
+            {appointment.title}
+          </Text>
+          {appointment.doctor ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <User size={13} color="#6B7280" />
+              <Text style={{ fontSize: 14, color: "#6B7280", fontFamily: "Geist-Regular" }}>
+                Dr. {appointment.doctor}
+                {appointment.specialty ? `  ·  ${appointment.specialty}` : ""}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <TouchableOpacity
+          onPress={onMore}
+          hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+          style={{ padding: 4 }}
+        >
+          <MoreHorizontal size={20} color="#9CA3AF" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Type pill */}
+      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 }}>
+        <View style={{ backgroundColor: typeColor.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: typeColor.text, fontFamily: "Geist-SemiBold" }}>
+            {TYPE_LABELS[appointment.type] ?? appointment.type}
+          </Text>
+        </View>
+        {appointment.addedToCalendar && (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <CalendarCheck size={12} color="#09332C" />
+            <Text style={{ fontSize: 12, color: "#09332C", fontFamily: "Geist-Regular" }}>In calendar</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Detail rows */}
+      <View style={{ gap: 6 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Calendar size={14} color="#A9334D" />
+          <Text style={{ fontSize: 14, color: "#374151", fontFamily: "Geist-Regular" }}>
+            {formatApptDate(appointment.date)}
+          </Text>
+          <Clock size={14} color="#A9334D" style={{ marginLeft: 8 }} />
+          <Text style={{ fontSize: 14, color: "#374151", fontFamily: "Geist-Regular" }}>
+            {appointment.time}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <MapPin size={14} color="#6B7280" />
+          <Text style={{ fontSize: 14, color: "#6B7280", fontFamily: "Geist-Regular", flex: 1 }}>
+            {appointment.facility}
+          </Text>
+        </View>
+
+        {appointment.notes ? (
+          <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 2 }}>
+            <FileText size={14} color="#6B7280" style={{ marginTop: 2 }} />
+            <Text style={{ fontSize: 13, color: "#9CA3AF", fontFamily: "Geist-Regular", flex: 1 }} numberOfLines={2}>
+              {appointment.notes}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+}
 
 export default function AppointmentsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  // Get next 7 days for calendar strip
-  const getNext7Days = () => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() + i);
-      days.push({
-        date,
-        dayName: date.toLocaleDateString("en", { weekday: "short" }),
-        dayNumber: date.getDate(),
-        isToday: i === 0,
-      });
-    }
-    return days;
+  const appointments = useAppStore((s) => s.appointments);
+  const deleteAppointment = useAppStore((s) => s.deleteAppointment);
+
+  const today = format(new Date(), "yyyy-MM-dd");
+
+  const upcoming = appointments
+    .filter((a) => a.date >= today && a.status !== "cancelled")
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  const past = appointments
+    .filter((a) => a.date < today || a.status === "completed")
+    .sort((a, b) => b.date.localeCompare(a.date));
+
+  const handleMore = (appt) => {
+    Alert.alert(appt.title, undefined, [
+      { text: "Edit", onPress: () => router.push(`/appointment-form?id=${appt.id}`) },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          if (appt.calendarEventId) await removeFromDeviceCalendar(appt.calendarEventId);
+          if (appt.reminderIds?.length) await cancelReminders(appt.reminderIds);
+          deleteAppointment(appt.id);
+        },
+      },
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
-  const days = getNext7Days();
-
-  const CalendarDay = ({ day }) => (
-    <TouchableOpacity
-      style={{
-        backgroundColor: day.isToday ? "#2563EB" : "#ffffff",
-        borderRadius: 12,
-        padding: 12,
-        alignItems: "center",
-        marginRight: 12,
-        minWidth: 60,
-        borderWidth: 1,
-        borderColor: day.isToday ? "#2563EB" : "#E5E7EB",
-      }}
-    >
-      <Text
-        style={{
-          fontSize: 12,
-          fontWeight: "500",
-          color: day.isToday ? "#ffffff" : "#6B7280",
-          marginBottom: 4,
-        }}
-      >
-        {day.dayName}
-      </Text>
-
-      <Text
-        style={{
-          fontSize: 18,
-          fontWeight: "bold",
-          color: day.isToday ? "#ffffff" : "#111827",
-        }}
-      >
-        {day.dayNumber}
-      </Text>
-    </TouchableOpacity>
+  const SectionHeader = ({ label, count }) => (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, marginTop: 8 }}>
+      <Text style={{ fontSize: 16, fontWeight: "700", color: "#09332C", fontFamily: "Geist-Bold" }}>{label}</Text>
+      <View style={{ backgroundColor: "#F0EDE8", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
+        <Text style={{ fontSize: 12, fontWeight: "600", color: "#6B7280", fontFamily: "Geist-SemiBold" }}>{count}</Text>
+      </View>
+    </View>
   );
 
-  const AppointmentCard = ({ appointment }) => {
-    const appointmentDate = new Date(appointment.date);
-    const formattedDate = appointmentDate.toLocaleDateString("en", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-
-    const getTypeColor = (type) => {
-      switch (type) {
-        case "urgent":
-          return "#EF4444";
-        case "routine":
-          return "#059669";
-        case "follow-up":
-          return "#A9334D";
-        default:
-          return "#6B7280";
-      }
-    };
-
-    return (
-      <View
-        style={{
-          backgroundColor: "#ffffff",
-          borderRadius: 16,
-          padding: 20,
-          marginBottom: 16,
-          borderWidth: 1,
-          borderColor: "#F3F4F6",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 8,
-          elevation: 3,
-        }}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            marginBottom: 16,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "700",
-                color: "#1a1a1a",
-                marginBottom: 6,
-              }}
-            >
-              {appointment.title}
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 15,
-                color: "#666",
-                marginBottom: 4,
-              }}
-            >
-              Dr. {appointment.doctor}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              backgroundColor: `${getTypeColor(appointment.type)}15`,
-              borderRadius: 8,
-              paddingHorizontal: 10,
-              paddingVertical: 6,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 12,
-                fontWeight: "600",
-                color: getTypeColor(appointment.type),
-                textTransform: "capitalize",
-              }}
-            >
-              {appointment.type}
-            </Text>
-          </View>
-        </View>
-
-        <View style={{ gap: 8 }}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Calendar size={16} color="#666" />
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#666",
-                marginLeft: 8,
-              }}
-            >
-              {formattedDate}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Clock size={16} color="#666" />
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#666",
-                marginLeft: 8,
-              }}
-            >
-              {appointment.time}
-            </Text>
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <MapPin size={16} color="#666" />
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#666",
-                marginLeft: 8,
-                flex: 1,
-              }}
-            >
-              {appointment.facility}
-            </Text>
-          </View>
-        </View>
-      </View>
-    );
-  };
+  const EmptyState = ({ message }) => (
+    <View style={{ backgroundColor: "#fff", borderRadius: 16, padding: 24, alignItems: "center", borderWidth: 1, borderColor: "#F0EDE8", borderStyle: "dashed", marginBottom: 12 }}>
+      <Calendar size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
+      <Text style={{ fontSize: 14, color: "#9CA3AF", textAlign: "center", fontFamily: "Geist-Regular" }}>{message}</Text>
+    </View>
+  );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+      <StatusBar style="light" />
 
       {/* Header */}
-      <View
-        style={{
-          paddingTop: insets.top + 16,
-          paddingHorizontal: 20,
-          paddingBottom: 16,
-          backgroundColor: "#ffffff",
-          borderBottomWidth: 1,
-          borderBottomColor: "#F3F4F6",
-        }}
+      <LinearGradient
+        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 12, paddingHorizontal: 20, paddingBottom: 20, overflow: "hidden" }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
+        {/* Abstract shapes */}
+        <View style={{ position: "absolute", width: 180, height: 180, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -60, right: -40 }} />
+        <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -30 }} />
+
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <TouchableOpacity
             onPress={() => router.back()}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: "#F9FAFB",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}
           >
-            <ChevronLeft size={24} color="#1a1a1a" />
+            <ChevronLeft size={24} color="#F8E9E7" />
           </TouchableOpacity>
 
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 28,
-                fontWeight: "700",
-                color: "#1a1a1a",
-              }}
-            >
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: "#F8E9E7", fontFamily: "Geist-Bold" }}>
               Appointments
             </Text>
+            <Text style={{ fontSize: 13, color: "rgba(248,233,231,0.6)", marginTop: 2, fontFamily: "Geist-Regular" }}>
+              {upcoming.length} upcoming
+            </Text>
           </View>
+
+          <TouchableOpacity
+            onPress={() => router.push("/appointment-form")}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
+          >
+            <Plus size={22} color="#F8E9E7" strokeWidth={2.5} />
+          </TouchableOpacity>
         </View>
+      </LinearGradient>
 
-        {/* Calendar Strip */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ paddingRight: 20 }}
-          style={{ flexGrow: 0 }}
-        >
-          {days.map((day, index) => (
-            <CalendarDay key={index} day={day} />
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Content */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: 20,
-          paddingBottom: insets.bottom + 100,
-        }}
+        contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Add Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#2563EB",
-            borderRadius: 16,
-            padding: 18,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 24,
-            shadowColor: "#2563EB",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
-          }}
-        >
-          <Plus size={20} color="#ffffff" strokeWidth={2.5} />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: "#ffffff",
-              marginLeft: 8,
-            }}
-          >
-            Schedule Appointment
-          </Text>
-        </TouchableOpacity>
+        {/* Upcoming */}
+        <SectionHeader label="Upcoming" count={upcoming.length} />
+        {upcoming.length === 0 ? (
+          <EmptyState message={"No upcoming appointments.\nTap + to log one."} />
+        ) : (
+          upcoming.map((appt) => (
+            <AppointmentCard
+              key={appt.id}
+              appointment={appt}
+              onEdit={() => router.push(`/appointment-form?id=${appt.id}`)}
+              onMore={() => handleMore(appt)}
+            />
+          ))
+        )}
 
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: "#1a1a1a",
-            marginBottom: 16,
-          }}
-        >
-          Upcoming Appointments
-        </Text>
-
-        {mockAppointments.map((appointment) => (
-          <AppointmentCard key={appointment.id} appointment={appointment} />
-        ))}
+        {/* Past */}
+        {past.length > 0 && (
+          <>
+            <View style={{ height: 16 }} />
+            <SectionHeader label="Past" count={past.length} />
+            {past.map((appt) => (
+              <AppointmentCard
+                key={appt.id}
+                appointment={appt}
+                onEdit={() => router.push(`/appointment-form?id=${appt.id}`)}
+                onMore={() => handleMore(appt)}
+              />
+            ))}
+          </>
+        )}
       </ScrollView>
     </View>
   );

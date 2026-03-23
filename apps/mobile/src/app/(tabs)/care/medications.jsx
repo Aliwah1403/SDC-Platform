@@ -7,6 +7,7 @@ import {
   Alert,
   Dimensions,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const CARD_WIDTH = (Dimensions.get("window").width - 32 - 12) / 2;
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -330,18 +331,22 @@ export default function MedicationsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       {/* Header */}
-      <View
+      <LinearGradient
+        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={{
-          backgroundColor: C.card,
           paddingTop: insets.top + 12,
           paddingBottom: 16,
           paddingHorizontal: 16,
-          borderBottomWidth: 1,
-          borderBottomColor: C.border,
           flexDirection: "row",
           alignItems: "center",
+          overflow: "hidden",
         }}
       >
+        <View style={{ position: "absolute", width: 180, height: 180, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -60, right: -40 }} />
+        <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -30 }} />
+
         <TouchableOpacity
           onPress={() => router.back()}
           activeOpacity={0.6}
@@ -349,16 +354,16 @@ export default function MedicationsScreen() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: C.bg,
+            backgroundColor: "rgba(255,255,255,0.15)",
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
           }}
         >
-          <ChevronLeft size={22} color={C.dark} />
+          <ChevronLeft size={22} color="#F8E9E7" />
         </TouchableOpacity>
 
-        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: C.dark, flex: 1 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#F8E9E7", flex: 1 }}>
           Medications
         </Text>
 
@@ -369,14 +374,14 @@ export default function MedicationsScreen() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: C.accent,
+            backgroundColor: "rgba(255,255,255,0.2)",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Plus size={20} color="#fff" />
+          <Plus size={20} color="#F8E9E7" />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={{ flex: 1 }}

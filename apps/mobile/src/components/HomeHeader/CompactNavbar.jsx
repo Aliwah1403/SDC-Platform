@@ -43,7 +43,7 @@ export function CompactNavbar({ date, healthStreak, insets }) {
             borderRadius: 20,
           }}
         >
-          <Image source={getStreakFireAsset(healthStreak)} style={{ width: 32, height: 32 }} contentFit="contain" />
+          <Image source={getStreakFireAsset(healthStreak)} style={{ width: 15, height: 20 }} contentFit="contain" />
           <Text
             style={{
               fontFamily: fonts.bold,
