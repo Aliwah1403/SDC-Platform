@@ -2,10 +2,10 @@ import { Image } from "expo-image";
 import { useAppStore } from "@/store/appStore";
 
 const STREAK_FIRES = [
-  require("../../assets/images/streak/1.png"),
-  require("../../assets/images/streak/2.png"),
-  require("../../assets/images/streak/3.png"),
-  require("../../assets/images/streak/4.png"),
+  require("../../assets/images/streak/1.svg"),
+  require("../../assets/images/streak/2.svg"),
+  require("../../assets/images/streak/3.svg"),
+  require("../../assets/images/streak/4.svg"),
 ];
 
 export function getStreakFireAsset(streakCount) {

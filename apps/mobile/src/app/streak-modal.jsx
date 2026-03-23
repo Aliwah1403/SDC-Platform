@@ -1078,8 +1078,8 @@ export default function StreakModal() {
             >
               <Image
                 source={getStreakFireAsset(healthStreak)}
-                style={{ width: 220, height: 220 }}
-                contentFit="cover"
+                style={{ width: 150, height: 200 }}
+                contentFit="contain"
               />
             </MotiView>
 

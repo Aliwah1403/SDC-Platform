@@ -101,7 +101,7 @@ export function HomeHeader({
                 borderRadius: 20,
               }}
             >
-              <Image source={getStreakFireAsset(healthStreak)} style={{ width: 36, height: 36 }} contentFit="contain" />
+              <Image source={getStreakFireAsset(healthStreak)} style={{ width: 15, height: 20 }} contentFit="contain" />
               <Text
                 style={{
                   fontFamily: fonts.bold,
