@@ -29,7 +29,7 @@ export default function VerifyCodeScreen() {
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const [resending, setResending] = useState(false);
 
-  const inputRefs = useRef([]);
+  const hiddenInputRef = useRef(null);
   const timerRef = useRef(null);
 
   const startTimer = useCallback(() => {
@@ -45,30 +45,18 @@ export default function VerifyCodeScreen() {
 
   useEffect(() => {
     startTimer();
-    // Auto-focus first input
-    setTimeout(() => inputRefs.current[0]?.focus(), 300);
+    setTimeout(() => hiddenInputRef.current?.focus(), 300);
     return () => clearInterval(timerRef.current);
   }, [startTimer]);
 
-  const handleDigitChange = (text, index) => {
-    const digit = text.replace(/[^0-9]/g, '').slice(-1);
-    const next = [...digits];
-    next[index] = digit;
+  const handleOtpChange = (text) => {
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH);
+    const next = Array(CODE_LENGTH).fill('');
+    for (let i = 0; i < cleaned.length; i++) {
+      next[i] = cleaned[i];
+    }
     setDigits(next);
     setError('');
-
-    if (digit && index < CODE_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-      const next = [...digits];
-      next[index - 1] = '';
-      setDigits(next);
-    }
   };
 
   const allFilled = digits.every((d) => d !== '');
@@ -83,10 +71,10 @@ export default function VerifyCodeScreen() {
       if (verifyError) {
         setError('Incorrect Code. Please Try Again');
         setDigits(Array(CODE_LENGTH).fill(''));
-        setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        setTimeout(() => hiddenInputRef.current?.focus(), 50);
         return;
       }
-      router.replace('/(auth)/signin');
+      router.replace('/(auth)/reset-password');
     } catch {
       setError('Something went wrong. Please try again.');
     } finally {
@@ -103,7 +91,7 @@ export default function VerifyCodeScreen() {
       const { resetPassword } = await import('@/utils/auth/supabase');
       await resetPassword(email);
       startTimer();
-      setTimeout(() => inputRefs.current[0]?.focus(), 50);
+      setTimeout(() => hiddenInputRef.current?.focus(), 50);
     } catch {
       setError('Failed to resend. Please try again.');
     } finally {
@@ -140,7 +128,7 @@ export default function VerifyCodeScreen() {
           >
             <Text style={styles.title}>Enter verification{'\n'}code</Text>
             <Text style={styles.subtitle}>
-              We sent a 4-digit code to{'\n'}
+              We sent a 6-digit code to{'\n'}
               <Text style={styles.emailHighlight}>{email || 'your email'}</Text>
             </Text>
           </MotiView>
@@ -161,28 +149,33 @@ export default function VerifyCodeScreen() {
               </MotiView>
             )}
 
-            {/* OTP boxes */}
-            <View style={styles.codeRow}>
+            {/* OTP input — hidden TextInput captures full paste/autofill, View boxes show digits */}
+            <Pressable onPress={() => hiddenInputRef.current?.focus()} style={styles.codeRow}>
+              <TextInput
+                ref={hiddenInputRef}
+                value={code}
+                onChangeText={handleOtpChange}
+                keyboardType="number-pad"
+                maxLength={CODE_LENGTH}
+                textContentType="oneTimeCode"
+                autoComplete="one-time-code"
+                caretHidden
+                style={styles.hiddenInput}
+              />
               {digits.map((digit, i) => (
-                <TextInput
+                <View
                   key={i}
-                  ref={(r) => { inputRefs.current[i] = r; }}
                   style={[
                     styles.codeBox,
                     digit && styles.codeBoxFilled,
                     !!error && styles.codeBoxError,
                   ]}
-                  value={digit}
-                  onChangeText={(t) => handleDigitChange(t, i)}
-                  onKeyPress={(e) => handleKeyPress(e, i)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  selectTextOnFocus
-                  caretHidden
-                  textAlign="center"
-                />
+                  pointerEvents="none"
+                >
+                  <Text style={styles.codeBoxText}>{digit}</Text>
+                </View>
               ))}
-            </View>
+            </Pressable>
 
             {/* Resend row */}
             <View style={styles.resendRow}>
@@ -286,6 +279,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: -6,
   },
+  hiddenInput: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
   codeRow: {
     flexDirection: 'row',
     gap: 12,
@@ -298,10 +297,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(248,233,231,0.15)',
     backgroundColor: 'rgba(248,233,231,0.06)',
-    fontFamily: 'Geist_700Bold',
-    fontSize: 28,
-    color: '#F8E9E7',
-    textAlign: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   codeBoxFilled: {
     borderColor: '#F0531C',
@@ -310,6 +307,12 @@ const styles = StyleSheet.create({
   codeBoxError: {
     borderColor: '#EF4444',
     backgroundColor: 'rgba(239,68,68,0.07)',
+  },
+  codeBoxText: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 28,
+    color: '#F8E9E7',
+    textAlign: 'center',
   },
   resendRow: {
     alignItems: 'center',
