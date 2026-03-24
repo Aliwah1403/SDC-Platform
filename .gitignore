@@ -58,6 +58,8 @@ Thumbs.db
 CLAUDE.md
 CODE_REVIEW.md
 FEATURES.md
+SUPABASE.md
+.mcp.json
 
 # TypeScript
 *.tsbuildinfo

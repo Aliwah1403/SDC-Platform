@@ -16,7 +16,7 @@ import { MotiView } from 'moti';
 import { ArrowLeft } from 'lucide-react-native';
 import { verifyOtp } from '@/utils/auth/supabase';
 
-const CODE_LENGTH = 4;
+const CODE_LENGTH = 6;
 const RESEND_SECONDS = 55;
 
 export default function VerifyCodeScreen() {
@@ -292,8 +292,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   codeBox: {
-    width: 68,
-    height: 72,
+    width: 50,
+    height: 62,
     borderRadius: 16,
     borderWidth: 1.5,
     borderColor: 'rgba(248,233,231,0.15)',

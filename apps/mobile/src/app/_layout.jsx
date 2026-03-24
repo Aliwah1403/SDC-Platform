@@ -43,7 +43,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    initiate();
+    return initiate(); // returns onAuthStateChange unsubscribe
   }, [initiate]);
 
   useEffect(() => {

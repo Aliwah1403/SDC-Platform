@@ -37,6 +37,7 @@ import {
 import { useAppStore } from "../../store/appStore";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
+import { signOut } from "@/utils/auth/supabase";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -305,8 +306,10 @@ export default function ProfileScreen() {
       {
         text: "Sign Out",
         style: "destructive",
-        onPress: () =>
-          Alert.alert("Signed Out", "You have been signed out successfully."),
+        onPress: async () => {
+          await signOut();
+          router.replace("/");
+        },
       },
     ]);
   };

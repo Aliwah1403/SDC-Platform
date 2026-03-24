@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -85,7 +86,11 @@ export default function SignUpScreen() {
         setError(authError.message || 'Sign up failed. Please try again.');
         return;
       }
-      setAuth({ token: data.session.access_token, user: data.user });
+      if (!data.session) {
+        setError('Account created! Please check your email to confirm before signing in.');
+        return;
+      }
+      setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch {
@@ -260,14 +265,14 @@ export default function SignUpScreen() {
             <View style={styles.socialRow}>
               <Pressable
                 style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => {}}
+                onPress={() => Alert.alert('Coming Soon', 'Google sign-in is coming soon.')}
               >
                 <GoogleIcon />
                 <Text style={styles.socialBtnText}>Google</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => {}}
+                onPress={() => Alert.alert('Coming Soon', 'Apple sign-in is coming soon.')}
               >
                 <AppleIcon />
                 <Text style={styles.socialBtnText}>Apple</Text>

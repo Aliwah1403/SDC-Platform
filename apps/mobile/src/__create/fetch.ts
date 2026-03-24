@@ -84,8 +84,9 @@ const fetchToWeb = async function fetchWithHeaders(...args: Params) {
       return null;
     });
 
-  if (auth) {
-    finalHeaders.set('authorization', `Bearer ${auth.jwt}`);
+  // Legacy Create.xyz fetch wrapper — will be replaced in Phase 3
+  if (auth?.session?.access_token) {
+    finalHeaders.set('authorization', `Bearer ${auth.session.access_token}`);
   }
 
   return expoFetch(finalInput, {
