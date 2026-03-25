@@ -35,10 +35,10 @@ import {
   Flame,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAppStore } from "@/store/appStore";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useMedicationsQuery, useToggleMedicationTakenMutation } from "@/hooks/queries/useMedicationsQuery";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
-import { mockMedications } from "@/types";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -310,7 +310,10 @@ function MedicationItem({ medication, taken, onToggle }) {
   );
 }
 
-function MedicationsSection({ selectedDate, medTaken, setMedTaken }) {
+function MedicationsSection({ selectedDate }) {
+  const { data: medications = [] } = useMedicationsQuery();
+  const toggleTaken = useToggleMedicationTakenMutation();
+  const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
     <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
@@ -318,12 +321,12 @@ function MedicationsSection({ selectedDate, medTaken, setMedTaken }) {
         <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT }}>Medications due</Text>
         <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>{dateLabel}</Text>
       </View>
-      {mockMedications.map((med) => (
+      {active.map((med) => (
         <MedicationItem
           key={med.id}
           medication={med}
-          taken={!!medTaken[med.id]}
-          onToggle={() => setMedTaken((prev) => ({ ...prev, [med.id]: !prev[med.id] }))}
+          taken={!!med.taken}
+          onToggle={() => toggleTaken.mutate(med.id)}
         />
       ))}
     </View>
@@ -752,13 +755,10 @@ function MetricsGrid({ entry, healthData }) {
 export default function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { healthData } = useAppStore();
+  const { data: healthData = [] } = useHealthDataQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [medTaken, setMedTaken] = useState(
-    Object.fromEntries(mockMedications.map((m) => [m.id, m.taken]))
-  );
 
   const loggedDates = useMemo(() => new Set(healthData.map((d) => d.date)), [healthData]);
 
@@ -821,11 +821,7 @@ export default function TrackScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isToday(selectedDate) && !hasLoggedData && <LogTodayCard />}
-        <MedicationsSection
-          selectedDate={selectedDate}
-          medTaken={medTaken}
-          setMedTaken={setMedTaken}
-        />
+        <MedicationsSection selectedDate={selectedDate} />
         <MetricsGrid entry={entry} healthData={healthData} />
         <ActivitySection entry={entry} />
       </ScrollView>

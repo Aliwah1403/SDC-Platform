@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { useAppStore } from "@/store/appStore";
+import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 
 const STREAK_FIRES = [
   require("../../assets/images/streak/1.svg"),
@@ -21,7 +21,8 @@ export function getStreakFireAsset(streakCount) {
  * Accepts `size`, `color`, `strokeWidth` props to match the lucide icon API (color/strokeWidth are unused).
  */
 export function StreakFireIcon({ size = 36 }) {
-  const healthStreak = useAppStore((s) => s.healthStreak);
+  const { data: streak } = useStreakQuery();
+  const healthStreak = streak?.currentStreak ?? 0;
   return (
     <Image
       source={getStreakFireAsset(healthStreak)}

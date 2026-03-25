@@ -23,7 +23,8 @@ import {
   Moon,
   Heart,
 } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -528,12 +529,13 @@ export default function MetricDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { metric } = useLocalSearchParams();
-  const { healthData, metricGoals } = useAppStore();
+  const { data: healthData = [] } = useHealthDataQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
   const [range, setRange] = useState(30);
 
-  const goal = meta.hasGoal ? (metricGoals[metric] ?? null) : null;
+  const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
   const data = useMemo(
     () => getLastNDays(healthData, meta.dataField, range),

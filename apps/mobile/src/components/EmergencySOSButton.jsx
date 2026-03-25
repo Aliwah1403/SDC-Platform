@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
+import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useAppStore } from "../store/appStore";
 
 export default function EmergencySOSButton() {
@@ -23,7 +24,8 @@ export default function EmergencySOSButton() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  const { emergencyContacts, setEmergencyMode } = useAppStore();
+  const { data: emergencyContacts = [] } = useEmergencyContactsQuery();
+  const { setEmergencyMode } = useAppStore();
 
   const primaryContact =
     emergencyContacts.find((contact) => contact.isPrimary) ||

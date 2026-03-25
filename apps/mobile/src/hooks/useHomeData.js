@@ -1,31 +1,29 @@
 import { useState, useEffect } from "react";
-import { useAppStore } from "@/store/appStore";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useStreakQuery, useMissedDay } from "@/hooks/queries/useStreakQuery";
 
 export function useHomeData() {
-  const {
-    currentUser,
-    healthStreak,
-    healthData,
-    getHealthDataForDate,
-    detectMissedDay,
-    missedDay,
-  } = useAppStore();
+  const { data: profile } = useProfileQuery();
+  const { data: healthData = [] } = useHealthDataQuery();
+  const { data: streak } = useStreakQuery();
+  const missedDay = useMissedDay();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [repairVisible, setRepairVisible] = useState(false);
 
-  // Check for missed days on mount
+  // Show repair sheet when a missed day is detected
   useEffect(() => {
-    const hasMissedDay = detectMissedDay();
-    if (hasMissedDay) {
+    if (missedDay) {
       setTimeout(() => {
         setRepairVisible(true);
       }, 500);
     }
-  }, [detectMissedDay]);
+  }, [!!missedDay]);
 
   // Get data for selected date
-  const selectedDateData = getHealthDataForDate(selectedDate);
+  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const selectedDateData = healthData.find((d) => d.date === selectedDateStr) ?? null;
   const hasLoggedData =
     selectedDateData &&
     (selectedDateData.painLevel > 0 ||
@@ -33,8 +31,8 @@ export function useHomeData() {
       selectedDateData.hydration > 0);
 
   return {
-    currentUser,
-    healthStreak,
+    currentUser: profile,
+    healthStreak: streak?.currentStreak ?? 0,
     healthData,
     selectedDate,
     setSelectedDate,

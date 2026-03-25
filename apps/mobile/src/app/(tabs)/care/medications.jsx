@@ -21,7 +21,7 @@ import {
   Camera,
 } from "lucide-react-native";
 import { MotiView } from "moti";
-import { useAppStore } from "@/store/appStore";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useMarkGroupTakenMutation } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
 
@@ -319,7 +319,9 @@ function MedicationGridCard({ medication, onPress }) {
 export default function MedicationsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { medications, toggleMedicationTaken, markGroupTaken } = useAppStore();
+  const { data: medications = [] } = useMedicationsQuery();
+  const toggleTaken = useToggleMedicationTakenMutation();
+  const markGroupTaken = useMarkGroupTakenMutation();
 
   const active = medications.filter((m) => m.isActive);
   const takenCount = active.filter((m) => m.taken).length;
@@ -473,7 +475,7 @@ export default function MedicationsScreen() {
                 <GroupHeader
                   group={group}
                   allTaken={allTaken}
-                  onLogAll={() => markGroupTaken(untakenIds)}
+                  onLogAll={() => markGroupTaken.mutate(untakenIds)}
                 />
                 <View style={{ height: 1, backgroundColor: C.divider }} />
                 {group.meds.map((med, i) => (
@@ -481,7 +483,7 @@ export default function MedicationsScreen() {
                     <MedicationScheduleRow
                       medication={med}
                       index={gi * 4 + i}
-                      onToggle={() => toggleMedicationTaken(med.id)}
+                      onToggle={() => toggleTaken.mutate(med.id)}
                       onPress={() =>
                         router.push({ pathname: "/medication-detail", params: { medicationId: med.id } })
                       }

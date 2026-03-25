@@ -2,7 +2,8 @@ import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { BarChart3 } from "lucide-react-native";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
-import { useAppStore } from "@/store/appStore";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -28,7 +29,8 @@ function getScoreLabel(score) {
 
 export function TodayHealthCard() {
   const router = useRouter();
-  const { healthData, healthStreak } = useAppStore();
+  const { data: healthData = [] } = useHealthDataQuery();
+  const { data: streak } = useStreakQuery();
 
   const todayStr = new Date().toISOString().split("T")[0];
   const todayData = healthData.find((d) => d.date === todayStr);
@@ -316,7 +318,7 @@ export function TodayHealthCard() {
                   color: "#FFFFFF",
                 }}
               >
-                {healthStreak}
+                {streak?.currentStreak ?? 0}
               </Text>
               <Text
                 style={{

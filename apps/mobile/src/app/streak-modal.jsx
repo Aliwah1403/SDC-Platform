@@ -25,7 +25,11 @@ import {
   Zap,
   Wrench,
 } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useAuthStore } from "@/utils/auth/store";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
+import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
@@ -71,14 +75,15 @@ const MILESTONE_BADGE = {
 
 export default function StreakModal() {
   const router = useRouter();
-  const {
-    currentUser,
-    healthStreak,
-    healthData,
-    getWeeklyAverage,
-    repairsUsed,
-    onboardingData,
-  } = useAppStore();
+  const { auth } = useAuthStore();
+  const { data: profile } = useProfileQuery();
+  const { data: healthData = [] } = useHealthDataQuery();
+  const { data: streak } = useStreakQuery();
+  const { data: medications = [] } = useMedicationsQuery();
+
+  const currentUser = { name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You" };
+  const healthStreak = streak?.currentStreak ?? 0;
+  const repairsUsed = streak?.repairsUsed ?? 0;
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("streaks"); // "streaks" | "rewards"
@@ -109,7 +114,12 @@ export default function StreakModal() {
   const weekData = getCurrentWeekData();
   const completedDays = weekData.filter((d) => d.hasData).length;
 
-  const avgHydration = getWeeklyAverage("hydration");
+  const avgHydration = useMemo(() => {
+    if (!healthData.length) return 0;
+    const last7 = healthData.slice(-7);
+    const sum = last7.reduce((acc, d) => acc + (d.hydration ?? 0), 0);
+    return parseFloat((sum / last7.length).toFixed(1));
+  }, [healthData]);
   const totalEntries = healthData.length;
   const daysLogged = healthStreak;
   const avgSteps = 8200;
@@ -358,8 +368,8 @@ export default function StreakModal() {
       description:
         "Your first logged medication. Knowledge of your treatment is a superpower.",
       rarity: "Common",
-      unlocked: (onboardingData?.medications?.length ?? 0) > 0,
-      current: (onboardingData?.medications?.length ?? 0) > 0 ? 1 : 0,
+      unlocked: (medications.length ?? 0) > 0,
+      current: (medications.length ?? 0) > 0 ? 1 : 0,
     },
     {
       id: "meds-streak-7",

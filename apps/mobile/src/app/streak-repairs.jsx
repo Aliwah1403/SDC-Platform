@@ -9,20 +9,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { X, Gift, Wrench, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
 import { StreakFireIcon } from "@/utils/streakFire";
+import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 
 const { height } = Dimensions.get("window");
 
-// Mock data - replace with real data later
-const repairs = {
-  available: 3,
-  totalUsed: 0,
-  totalEarned: 3,
-  nextRepairProgress: 0,
-  daysUntilNext: 30,
-};
-
 export default function StreakRepairsScreen() {
   const router = useRouter();
+  const { data: streak } = useStreakQuery();
+
+  const repairs = {
+    available: streak?.repairsAvailable ?? 0,
+    totalUsed: streak?.repairsUsed ?? 0,
+    totalEarned: (streak?.repairsAvailable ?? 0) + (streak?.repairsUsed ?? 0),
+    nextRepairProgress: 0,
+    daysUntilNext: 30,
+  };
+
   const progressPercentage =
     (repairs.nextRepairProgress / repairs.daysUntilNext) * 100;
 

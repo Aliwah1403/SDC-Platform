@@ -3,7 +3,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { X, TrendingUp, TrendingDown } from "lucide-react-native";
 import { BarChart } from "react-native-gifted-charts";
-import { useAppStore } from "@/store/appStore";
+import { useAuthStore } from "@/utils/auth/store";
+import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -330,8 +331,9 @@ function InsightCard({ insight }) {
 
 export default function HealthInsightsScreen() {
   const router = useRouter();
-  const { healthData, currentUser } = useAppStore();
-  const firstName = currentUser?.name?.split(" ")[0] || "there";
+  const { auth } = useAuthStore();
+  const { data: healthData = [] } = useHealthDataQuery();
+  const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
 
   const insights = buildInsights(healthData, firstName);
 

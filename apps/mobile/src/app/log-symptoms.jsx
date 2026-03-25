@@ -18,6 +18,8 @@ import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
 import { useAppStore } from "@/store/appStore";
+import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
+import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
@@ -530,10 +532,12 @@ function SummaryStep({ log, onSubmit }) {
 
 export default function LogSymptomsScreen() {
   const router = useRouter();
-  const { currentSymptomLog, updateSymptomLog, submitSymptomLog, getLogsForDate } = useAppStore();
+  const { currentSymptomLog, updateSymptomLog, resetSymptomLog } = useAppStore();
+  const submitLogMutation = useSubmitLogMutation();
 
   const todayStr = new Date().toISOString().split("T")[0];
-  const hasLoggedToday = getLogsForDate(todayStr).length > 0;
+  const { data: todayLogs = [] } = useHealthLogsQuery(todayStr);
+  const hasLoggedToday = todayLogs.length > 0;
 
   const [step, setStep] = useState(0);
 
@@ -585,13 +589,21 @@ export default function LogSymptomsScreen() {
   }
 
   function handleSubmit() {
-    flushToStore();
-    // submitSymptomLog reads from store, but we flush first
-    // Use a timeout to let Zustand commit
-    setTimeout(() => {
-      submitSymptomLog();
-      router.back();
-    }, 50);
+    const logData = {
+      painLevel,
+      mood: MOOD_VALUES[moodValue - 1],
+      bodyLocations,
+      symptoms,
+      hydration,
+      notes,
+    };
+    updateSymptomLog(logData);
+    submitLogMutation.mutate(logData, {
+      onSuccess: () => {
+        resetSymptomLog();
+        router.back();
+      },
+    });
   }
 
   function toggleLocation(loc) {

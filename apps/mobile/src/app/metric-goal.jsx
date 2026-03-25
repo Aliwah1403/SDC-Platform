@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { X, Minus, Plus, Droplets, Moon, Activity, TriangleAlert } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -176,11 +176,21 @@ export default function MetricGoalScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { metric } = useLocalSearchParams();
-  const { metricGoals, setMetricGoal } = useAppStore();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const setGoalMutation = useSetGoalMutation();
 
   const meta = GOAL_META[metric];
-  const [value, setValue] = useState(metricGoals[metric] ?? (meta?.recommended?.min ?? meta?.min ?? 8));
+  const defaultValue = meta?.recommended?.min ?? meta?.min ?? 8;
+  const [value, setValue] = useState(defaultValue);
+  const initialized = useRef(false);
   const lastHapticValue = useRef(null);
+
+  useEffect(() => {
+    if (metricGoals && !initialized.current) {
+      initialized.current = true;
+      setValue(metricGoals[metric] ?? defaultValue);
+    }
+  }, [metricGoals]);
 
   if (!meta) {
     router.back();
@@ -198,8 +208,7 @@ export default function MetricGoalScreen() {
   };
 
   const handleSave = () => {
-    setMetricGoal(metric, value);
-    router.back();
+    setGoalMutation.mutate({ metric, value }, { onSuccess: () => router.back() });
   };
 
   const isBelowRecommended = value < meta.recommended.min;

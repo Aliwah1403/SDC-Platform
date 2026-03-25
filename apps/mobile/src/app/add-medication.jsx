@@ -19,7 +19,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import { MotiView } from "moti";
-import { useAppStore } from "@/store/appStore";
+import { useMedicationsQuery, useAddMedicationMutation, useUpdateMedicationMutation, useDeleteMedicationMutation } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon from "@/components/MedicationIcon";
@@ -210,7 +210,10 @@ export default function AddMedicationScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { medicationId } = useLocalSearchParams();
-  const { medications, addMedication, updateMedication, deleteMedication } = useAppStore();
+  const { data: medications = [] } = useMedicationsQuery();
+  const addMed = useAddMedicationMutation();
+  const updateMed = useUpdateMedicationMutation();
+  const deleteMed = useDeleteMedicationMutation();
 
   const existing = medicationId ? medications.find((m) => m.id === medicationId) : null;
   const isEditing = !!existing;
@@ -321,11 +324,10 @@ export default function AddMedicationScreen() {
     };
 
     if (isEditing) {
-      updateMedication(medicationId, med);
+      updateMed.mutate({ id: medicationId, updates: med }, { onSuccess: () => router.back() });
     } else {
-      addMedication(med);
+      addMed.mutate(med, { onSuccess: () => router.back() });
     }
-    router.back();
   };
 
   const handleDelete = () => {
@@ -335,7 +337,7 @@ export default function AddMedicationScreen() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
-          deleteMedication(medicationId);
+          deleteMed.mutate(medicationId);
           router.back();
         },
       },

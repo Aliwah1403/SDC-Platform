@@ -24,7 +24,7 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useAppStore } from "@/store/appStore";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
 
@@ -293,13 +293,10 @@ export default function MedicationDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { medicationId } = useLocalSearchParams();
-  const {
-    medications,
-    toggleMedicationTaken,
-    deleteMedication,
-    updateMedication,
-    addMedicationLog,
-  } = useAppStore();
+  const { data: medications = [] } = useMedicationsQuery();
+  const toggleTaken = useToggleMedicationTakenMutation();
+  const deleteMed = useDeleteMedicationMutation();
+  const updateMed = useUpdateMedicationMutation();
 
   const [adherencePeriod, setAdherencePeriod] = useState(7);
   const [heroHeight, setHeroHeight] = useState(insets.top + 280);
@@ -377,12 +374,12 @@ export default function MedicationDetailScreen() {
 
   const handleMarkTaken = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleMedicationTaken(med.id);
+    toggleTaken.mutate(med.id);
   };
 
   const handleAddLog = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    addMedicationLog(med.id);
+    toggleTaken.mutate(med.id);
   };
 
   const handleDelete = () => {
@@ -395,7 +392,7 @@ export default function MedicationDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
-            deleteMedication(med.id);
+            deleteMed.mutate(med.id);
             router.back();
           },
         },
@@ -404,7 +401,7 @@ export default function MedicationDetailScreen() {
   };
 
   const handleArchive = () => {
-    updateMedication(med.id, { isActive: false });
+    updateMed.mutate({ id: med.id, updates: { isActive: false } });
     router.back();
   };
 

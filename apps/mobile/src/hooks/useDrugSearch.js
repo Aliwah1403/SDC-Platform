@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useAppStore } from "@/store/appStore";
+import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { SCD_MEDICATIONS } from "@/utils/scdDrugs";
 
 // RxNorm approximate-term endpoint — free, no API key, maintained by NIH
@@ -63,7 +63,7 @@ async function searchRxNorm(query, signal) {
  *   source   — "saved" | "scd" | "api"
  */
 export function useDrugSearch(query) {
-  const { medications } = useAppStore();
+  const { data: medications = [] } = useMedicationsQuery();
   const [results, setResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);

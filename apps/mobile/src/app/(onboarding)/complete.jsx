@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/utils/auth/store';
+import { useCompleteOnboardingMutation } from '@/hooks/queries/useProfileQuery';
 
 const STATS = [
   { icon: StreakFireIcon, label: 'Streak', value: '1 day', color: '#781D11' },
@@ -18,8 +19,9 @@ const STATS = [
 
 export default function OnboardingComplete() {
   const insets = useSafeAreaInsets();
-  const { completeOnboarding, onboardingData } = useAppStore();
+  const { resetOnboarding, onboardingData } = useAppStore();
   const { auth } = useAuthStore();
+  const completeOnboardingMutation = useCompleteOnboardingMutation();
 
   const firstName = auth?.user?.user_metadata?.full_name?.split(' ')[0] || 'there';
 
@@ -28,8 +30,12 @@ export default function OnboardingComplete() {
   }, []);
 
   const handleGetStarted = () => {
-    completeOnboarding();
-    router.replace('/(tabs)/home');
+    completeOnboardingMutation.mutate(onboardingData, {
+      onSuccess: () => {
+        resetOnboarding();
+        router.replace('/(tabs)/home');
+      },
+    });
   };
 
   return (

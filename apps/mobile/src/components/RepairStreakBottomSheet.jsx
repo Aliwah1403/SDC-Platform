@@ -2,15 +2,15 @@ import React, { useCallback, useRef, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, Animated } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { X, Wrench } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useMissedDay, useStreakQuery, useStreakRepairMutation } from "@/hooks/queries/useStreakQuery";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
   const bottomSheetRef = useRef(null);
-  const missedDay = useAppStore((state) => state.missedDay);
-  const repairsAvailable = useAppStore((state) => state.repairsAvailable);
-  const healthStreak = useAppStore((state) => state.healthStreak);
-  const useStreakRepair = useAppStore((state) => state.useStreakRepair);
-  const dismissMissedDay = useAppStore((state) => state.dismissMissedDay);
+  const missedDay = useMissedDay();
+  const { data: streak } = useStreakQuery();
+  const repairsAvailable = streak?.repairsAvailable ?? 0;
+  const healthStreak = streak?.currentStreak ?? 0;
+  const repairMutation = useStreakRepairMutation();
 
   const [isRepairing, setIsRepairing] = useState(false);
   const [repairComplete, setRepairComplete] = useState(false);
@@ -49,45 +49,40 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Actually apply the repair
-      const result = useStreakRepair();
-
-      if (result.success) {
-        setRepairComplete(true);
-
-        // Success animations
-        Animated.parallel([
-          Animated.spring(checkScale, {
-            toValue: 1,
-            useNativeDriver: true,
-          }),
-          Animated.timing(successOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }),
-        ]).start(() => {
-          // Auto close after showing success
-          setTimeout(() => {
-            handleClose();
-          }, 2000);
-        });
-      } else {
-        setIsRepairing(false);
-        // Could show error state here
-      }
+      repairMutation.mutate(missedDay.dateString, {
+        onSuccess: () => {
+          setRepairComplete(true);
+          Animated.parallel([
+            Animated.spring(checkScale, {
+              toValue: 1,
+              useNativeDriver: true,
+            }),
+            Animated.timing(successOpacity, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setTimeout(() => {
+              handleClose();
+            }, 2000);
+          });
+        },
+        onError: () => {
+          setIsRepairing(false);
+        },
+      });
     });
-  }, [useStreakRepair, wrenchRotation, checkScale, successOpacity]);
+  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity]);
 
   const handleClose = useCallback(() => {
-    dismissMissedDay();
     setIsRepairing(false);
     setRepairComplete(false);
     wrenchRotation.setValue(0);
     checkScale.setValue(0);
     successOpacity.setValue(0);
     onClose();
-  }, [dismissMissedDay, onClose, wrenchRotation, checkScale, successOpacity]);
+  }, [onClose, wrenchRotation, checkScale, successOpacity]);
 
   const rotateInterpolate = wrenchRotation.interpolate({
     inputRange: [-1, 1],

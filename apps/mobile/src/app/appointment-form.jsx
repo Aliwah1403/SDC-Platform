@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { X, Calendar, Clock, MapPin, User, FileText, Bell, CalendarCheck } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useAppointmentsQuery, useAddAppointmentMutation, useUpdateAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
 import { addToDeviceCalendar, scheduleReminders } from "@/utils/appointmentUtils";
 import { format } from "date-fns";
 
@@ -42,9 +42,9 @@ export default function AppointmentForm() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
 
-  const appointments = useAppStore((s) => s.appointments);
-  const addAppointment = useAppStore((s) => s.addAppointment);
-  const updateAppointment = useAppStore((s) => s.updateAppointment);
+  const { data: appointments = [] } = useAppointmentsQuery();
+  const addAppt = useAddAppointmentMutation();
+  const updateAppt = useUpdateAppointmentMutation();
 
   const existing = id ? appointments.find((a) => a.id === id) : null;
 
@@ -131,25 +131,19 @@ export default function AppointmentForm() {
       reminderIds = await scheduleReminders({ ...apptBase, id: existing?.id ?? "new" }, opts);
     }
 
+    const afterSave = () => { setSaving(false); router.back(); };
+    const onSaveError = () => setSaving(false);
     if (existing) {
-      updateAppointment(existing.id, {
-        ...apptBase,
-        addedToCalendar: calendarOn,
-        calendarEventId,
-        reminderIds,
-      });
+      updateAppt.mutate(
+        { id: existing.id, changes: { ...apptBase, addedToCalendar: calendarOn, calendarEventId, reminderIds } },
+        { onSuccess: afterSave, onError: onSaveError },
+      );
     } else {
-      addAppointment({
-        id: String(Date.now()),
-        ...apptBase,
-        addedToCalendar: calendarOn,
-        calendarEventId,
-        reminderIds,
-      });
+      addAppt.mutate(
+        { ...apptBase, addedToCalendar: calendarOn, calendarEventId, reminderIds },
+        { onSuccess: afterSave, onError: onSaveError },
+      );
     }
-
-    setSaving(false);
-    router.back();
   };
 
   const SectionLabel = ({ icon: Icon, label }) => (

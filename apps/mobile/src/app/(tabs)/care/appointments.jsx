@@ -24,7 +24,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useAppointmentsQuery, useDeleteAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
 import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUtils";
 import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 
@@ -148,8 +148,8 @@ export default function AppointmentsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const appointments = useAppStore((s) => s.appointments);
-  const deleteAppointment = useAppStore((s) => s.deleteAppointment);
+  const { data: appointments = [] } = useAppointmentsQuery();
+  const deleteAppt = useDeleteAppointmentMutation();
 
   const [selectedAppt, setSelectedAppt] = useState(null);
   const sheetRef = useRef(null);
@@ -189,7 +189,7 @@ export default function AppointmentsScreen() {
         onPress: async () => {
           if (selectedAppt?.calendarEventId) await removeFromDeviceCalendar(selectedAppt.calendarEventId);
           if (selectedAppt?.reminderIds?.length) await cancelReminders(selectedAppt.reminderIds);
-          deleteAppointment(selectedAppt.id);
+          deleteAppt.mutate(selectedAppt.id);
           setSelectedAppt(null);
         },
       },

@@ -17,7 +17,8 @@ import {
   Star,
   Zap,
 } from "lucide-react-native";
-import { useAppStore } from "../../store/appStore";
+import { useAuthStore } from "../../utils/auth/store";
+import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
 
 const { width } = Dimensions.get("window");
@@ -26,7 +27,10 @@ export default function RewardsScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("challenges"); // challenges, badges, leaderboard
 
-  const { currentUser, healthStreak } = useAppStore();
+  const { auth } = useAuthStore();
+  const { data: streak } = useStreakQuery();
+  const currentUser = { name: auth?.user?.user_metadata?.full_name ?? "You" };
+  const healthStreak = streak?.currentStreak ?? 0;
 
   const TabButton = ({ title, isActive, onPress, icon: Icon }) => (
     <TouchableOpacity
