@@ -51,9 +51,9 @@ const TIME_GROUPS = [
   { key: "night",     label: "Night",     emoji: "🌙", hours: [21, 4] },
 ];
 
-function parseHour(timeStr = "") {
+function parseHour(timeStr) {
   // e.g. "8:00 AM" → 8, "12:00 PM" → 12, "6:00 PM" → 18
-  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  const match = (timeStr ?? "").match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return 8;
   let h = parseInt(match[1], 10);
   const period = match[3].toUpperCase();

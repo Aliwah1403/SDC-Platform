@@ -76,6 +76,8 @@ export default function RootLayout() {
           <Stack.Screen name="metric-goal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="add-medication" options={{ presentation: 'modal' }} />
           <Stack.Screen name="medication-detail" options={{ presentation: 'card' }} />
+          <Stack.Screen name="add-contact" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="contact-detail" options={{ presentation: 'card' }} />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>
