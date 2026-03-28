@@ -101,7 +101,11 @@ export function HomeHeader({
                 borderRadius: 20,
               }}
             >
-              <Image source={getStreakFireAsset(healthStreak)} style={{ width: 15, height: 20 }} contentFit="contain" />
+              <Image
+                source={getStreakFireAsset(healthStreak)}
+                style={{ width: 15, height: 20 }}
+                contentFit="contain"
+              />
               <Text
                 style={{
                   fontFamily: fonts.bold,
@@ -170,7 +174,7 @@ export function HomeHeader({
             {message.subtitle}
           </Text>
 
-          {!hasLoggedData && isToday(selectedDate) && (
+          {/* {!hasLoggedData && isToday(selectedDate) && (
             <TouchableOpacity
               onPress={() => router.push("/log-symptoms")}
               style={{
@@ -202,7 +206,7 @@ export function HomeHeader({
                 →
               </Text>
             </TouchableOpacity>
-          )}
+          )} */}
 
           {hasLoggedData && (
             <TouchableOpacity

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -9,6 +9,8 @@ import Animated, {
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
+import StreakAchievementModal from "@/components/StreakAchievementModal";
+import { useAppStore } from "@/store/appStore";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
@@ -25,6 +27,24 @@ import {
   getInsightCards,
 } from "@/utils/homeHelpers";
 
+const ALL_MILESTONES = [
+  { id: "streak-1",   type: "streak",   count: 1,   name: "First Check-in",     description: "Your health journey has begun. Keep it going!" },
+  { id: "streak-3",   type: "streak",   count: 3,   name: "First Streak",        description: "Three days in a row — momentum is building!" },
+  { id: "streak-7",   type: "streak",   count: 7,   name: "On Track Streak",     description: "A full week of consistency. Your dedication is showing." },
+  { id: "streak-14",  type: "streak",   count: 14,  name: "Fortnight Fighter",   description: "Two weeks strong. Consistency is paying off." },
+  { id: "streak-30",  type: "streak",   count: 30,  name: "Monthly Monster",     description: "A full month! Your habit is now deeply ingrained." },
+  { id: "streak-60",  type: "streak",   count: 60,  name: "Relentless",          description: "Two months of relentless tracking. Incredible." },
+  { id: "days-1",     type: "days",     count: 1,   name: "First Step",          description: "Welcome to your health journey!" },
+  { id: "days-5",     type: "days",     count: 5,   name: "Getting Started",     description: "You're building a habit. Consistency is key." },
+  { id: "days-10",    type: "days",     count: 10,  name: "Habit Builder",       description: "Double digits! You're developing a strong tracking habit." },
+  { id: "days-25",    type: "days",     count: 25,  name: "Dedicated Tracker",   description: "25 days logged. Your commitment is impressive!" },
+  { id: "days-50",    type: "days",     count: 50,  name: "Health Champion",     description: "Incredible dedication. You're a true health champion." },
+  { id: "days-100",   type: "days",     count: 100, name: "Century Master",      description: "A hundred days of commitment. You're unstoppable." },
+  { id: "symptoms-10",type: "symptoms", count: 10,  name: "Pattern Seeker",      description: "You're starting to identify patterns in your symptoms." },
+  { id: "symptoms-25",type: "symptoms", count: 25,  name: "Symptom Tracker",     description: "Your symptom data is becoming more valuable with each entry." },
+  { id: "hydration-7",type: "hydration",count: 7,   name: "Hydration Hero",      description: "7 days of great hydration! Your body thanks you." },
+];
+
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
@@ -38,6 +58,57 @@ export default function HomeScreen() {
     repairVisible,
     setRepairVisible,
   } = useHomeData();
+
+  const pendingMilestone = useAppStore((s) => s.pendingMilestone);
+  const setPendingMilestone = useAppStore((s) => s.setPendingMilestone);
+  const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
+  const claimedBadges = useAppStore((s) => s.claimedBadges);
+  const claimBadge = useAppStore((s) => s.claimBadge);
+  const claimBadges = useAppStore((s) => s.claimBadges);
+
+  const initialized = useRef(false);
+
+  const totalEntries = healthData.length;
+  const symptomsLogged = useMemo(
+    () => healthData.reduce((sum, d) => sum + (d.symptoms?.length || 0), 0),
+    [healthData],
+  );
+  const hydrationDays = useMemo(
+    () => healthData.filter((d) => d.hydration >= 8).length,
+    [healthData],
+  );
+
+  useEffect(() => {
+    if (!healthData.length && !healthStreak) return;
+
+    const earned = ALL_MILESTONES.filter((m) => {
+      if (m.type === "streak")    return healthStreak  >= m.count;
+      if (m.type === "days")      return totalEntries  >= m.count;
+      if (m.type === "symptoms")  return symptomsLogged >= m.count;
+      if (m.type === "hydration") return hydrationDays >= m.count;
+      return false;
+    });
+
+    if (!initialized.current) {
+      // First load: silently mark all already-earned badges so they don't pop up
+      claimBadges(earned.map((m) => m.id));
+      initialized.current = true;
+      return;
+    }
+
+    if (pendingMilestone) return;
+
+    const newBadge = earned.find((m) => !claimedBadges.includes(m.id));
+    if (newBadge) {
+      setPendingMilestone({
+        milestoneId: newBadge.id,
+        type: newBadge.type,
+        title: newBadge.type === "streak" ? `${healthStreak} Day Streak!` : newBadge.name,
+        subtitle: newBadge.description,
+        streakCount: newBadge.type === "streak" ? healthStreak : null,
+      });
+    }
+  }, [healthData, healthStreak, pendingMilestone, claimedBadges]);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 
@@ -184,6 +255,16 @@ export default function HomeScreen() {
       <RepairStreakBottomSheet
         isVisible={repairVisible}
         onClose={() => setRepairVisible(false)}
+      />
+
+      <StreakAchievementModal
+        visible={!!pendingMilestone}
+        milestone={pendingMilestone}
+        healthData={healthData}
+        onClaim={() => {
+          if (pendingMilestone) claimBadge(pendingMilestone.milestoneId);
+          clearPendingMilestone();
+        }}
       />
     </View>
   );

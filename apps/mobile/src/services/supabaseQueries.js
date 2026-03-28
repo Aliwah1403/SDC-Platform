@@ -230,7 +230,11 @@ export async function submitHealthLog(userId, logData) {
       })
       .eq('user_id', userId);
     if (streakUpdateError) throw streakUpdateError;
+
+    return { newStreak, isNewDay: true };
   }
+
+  return { newStreak: streakRow.current_streak ?? 0, isNewDay: false };
 }
 
 // ============================================================
