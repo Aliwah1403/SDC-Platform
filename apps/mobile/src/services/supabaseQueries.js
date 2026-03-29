@@ -529,17 +529,24 @@ export async function addEmergencyContact(userId, contact) {
 }
 
 export async function uploadContactPhoto(userId, contactId, localUri) {
-  // Normalize to a standard file:// URI — handles assets-library://, ph://, content://, etc.
-  const normalized = await manipulateAsync(localUri, [], {
+  // Normalize URI and get base64 — avoids fetch().blob() which is unreliable in Hermes/RN
+  const result = await manipulateAsync(localUri, [], {
     format: SaveFormat.JPEG,
     compress: 0.8,
+    base64: true,
   });
-  const response = await fetch(normalized.uri);
-  const blob = await response.blob();
+
+  // Decode base64 → Uint8Array for a reliable binary upload
+  const binaryStr = atob(result.base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+
   const path = `${userId}/${contactId}.jpg`;
   const { error: uploadError } = await supabase.storage
     .from('contact-photos')
-    .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
   if (uploadError) throw uploadError;
   const { data } = supabase.storage.from('contact-photos').getPublicUrl(path);
   return data.publicUrl;
