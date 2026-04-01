@@ -252,10 +252,15 @@ export default function HomeScreen() {
         />
       </Animated.ScrollView>
 
-      <RepairStreakBottomSheet
-        isVisible={repairVisible}
-        onClose={() => setRepairVisible(false)}
-      />
+      <View
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 50 }}
+        pointerEvents="box-none"
+      >
+        <RepairStreakBottomSheet
+          isVisible={repairVisible}
+          onClose={() => setRepairVisible(false)}
+        />
+      </View>
 
       <StreakAchievementModal
         visible={!!pendingMilestone}

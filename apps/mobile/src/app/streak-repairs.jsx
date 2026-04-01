@@ -17,16 +17,18 @@ export default function StreakRepairsScreen() {
   const router = useRouter();
   const { data: streak } = useStreakQuery();
 
+  const daysTarget = streak?.daysUntilNextRepair ?? 30;
+  const repairProgress = streak?.repairProgress ?? 0;
+
   const repairs = {
     available: streak?.repairsAvailable ?? 0,
     totalUsed: streak?.repairsUsed ?? 0,
-    totalEarned: (streak?.repairsAvailable ?? 0) + (streak?.repairsUsed ?? 0),
-    nextRepairProgress: 0,
-    daysUntilNext: 30,
+    totalEarned: streak?.repairsEarned ?? 0,
+    nextRepairProgress: repairProgress,
+    daysUntilNext: daysTarget,
   };
 
-  const progressPercentage =
-    (repairs.nextRepairProgress / repairs.daysUntilNext) * 100;
+  const progressPercentage = Math.min((repairProgress / daysTarget) * 100, 100);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -343,7 +345,7 @@ export default function StreakRepairsScreen() {
                 paddingTop: 4,
               }}
             >
-              Earn 1 repair for every 30 consecutive days logged
+              Earn 1 repair for every {daysTarget} consecutive days logged
             </Text>
           </View>
 

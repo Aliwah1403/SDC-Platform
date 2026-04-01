@@ -204,7 +204,7 @@ export async function submitHealthLog(userId, logData) {
   // 4. Update streak
   const { data: streakRow, error: streakFetchError } = await supabase
     .from('streaks')
-    .select('current_streak, longest_streak, last_log_date')
+    .select('current_streak, longest_streak, last_log_date, repair_progress, days_until_next_repair, repairs_available, repairs_earned')
     .eq('user_id', userId)
     .single();
   if (streakFetchError) throw streakFetchError;
@@ -221,21 +221,33 @@ export async function submitHealthLog(userId, logData) {
     const newStreak = isConsecutive ? (streakRow.current_streak ?? 0) + 1 : 1;
     const newLongest = Math.max(streakRow.longest_streak ?? 0, newStreak);
 
+    // Repair progress tracks consecutive days actually logged — resets on any
+    // missed day regardless of streak repairs, since it measures genuine logging.
+    const daysTarget = streakRow.days_until_next_repair ?? 30;
+    const prevProgress = isConsecutive ? (streakRow.repair_progress ?? 0) : 0;
+    const newProgress = prevProgress + 1;
+    const earnedRepair = newProgress >= daysTarget;
+
     const { error: streakUpdateError } = await supabase
       .from('streaks')
       .update({
         current_streak: newStreak,
         longest_streak: newLongest,
         last_log_date: todayStr,
+        repair_progress: earnedRepair ? 0 : newProgress,
+        ...(earnedRepair && {
+          repairs_available: (streakRow.repairs_available ?? 0) + 1,
+          repairs_earned: (streakRow.repairs_earned ?? 0) + 1,
+        }),
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
     if (streakUpdateError) throw streakUpdateError;
 
-    return { newStreak, isNewDay: true };
+    return { newStreak, isNewDay: true, earnedRepair };
   }
 
-  return { newStreak: streakRow.current_streak ?? 0, isNewDay: false };
+  return { newStreak: streakRow.current_streak ?? 0, isNewDay: false, earnedRepair: false };
 }
 
 // ============================================================
@@ -435,10 +447,10 @@ export async function fetchStreak(userId) {
  * - Inserts a repaired daily_summary for the missed date
  * - Decrements repairs_available, increments repairs_used
  */
-export async function repairStreak(userId, missedDateStr) {
+export async function repairStreak(userId) {
   const { data: streakRow, error: fetchError } = await supabase
     .from('streaks')
-    .select('repairs_available, repairs_used')
+    .select('repairs_available, repairs_used, current_streak')
     .eq('user_id', userId)
     .single();
   if (fetchError) throw fetchError;
@@ -446,33 +458,27 @@ export async function repairStreak(userId, missedDateStr) {
     throw new Error('No repairs available');
   }
 
-  // Insert repaired daily summary
-  const { error: summaryError } = await supabase
-    .from('daily_summaries')
-    .upsert(
-      {
-        user_id: userId,
-        date: missedDateStr,
-        pain_level: 0,
-        hydration: 0,
-        mood: 0,
-        is_repaired: true,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,date' }
-    );
-  if (summaryError) throw summaryError;
+  // A repair forgives the entire gap — set last_log_date to yesterday so
+  // the streak appears alive again. The current_streak value is preserved
+  // (the repair restores it, not extends it). When the user logs today,
+  // submitHealthLog sees last_log_date = yesterday → isConsecutive = true
+  // → streak increments normally.
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
 
-  // Decrement repairs
   const { error: updateError } = await supabase
     .from('streaks')
     .update({
       repairs_available: (streakRow.repairs_available ?? 0) - 1,
       repairs_used: (streakRow.repairs_used ?? 0) + 1,
+      last_log_date: yesterdayStr,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId);
   if (updateError) throw updateError;
+
+  return { restoredStreak: streakRow.current_streak ?? 0 };
 }
 
 // ============================================================
