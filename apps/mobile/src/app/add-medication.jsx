@@ -24,6 +24,8 @@ import { fonts } from "@/utils/fonts";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
+import { normalizeDoseForm } from "@/components/MedicationIcon";
+import { fetchDoseForm } from "@/services/supabaseQueries";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -234,6 +236,8 @@ export default function AddMedicationScreen() {
   // ── Step 1: Drug
   const [name, setName] = useState(existing?.name ?? "");
   const [category, setCategory] = useState(existing?.category ?? "Supportive");
+  const [rxcui, setRxcui] = useState(existing?.rxcui ?? null);
+  const [medType, setMedType] = useState(existing?.type ?? "tablet");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customNameInput, setCustomNameInput] = useState("");
@@ -321,6 +325,8 @@ export default function AddMedicationScreen() {
       nextDose: computedTime,
       reminders,
       notes,
+      rxcui: rxcui || null,
+      type: medType,
     };
 
     if (isEditing) {
@@ -686,9 +692,14 @@ export default function AddMedicationScreen() {
                         {drugResults.map((drug, i) => (
                           <React.Fragment key={`${drug.name}-${i}`}>
                             <TouchableOpacity
-                              onPress={() => {
+                              onPress={async () => {
                                 setName(drug.name);
                                 setCategory(drug.category);
+                                if (drug.rxcui) {
+                                  setRxcui(drug.rxcui);
+                                  const form = await fetchDoseForm(drug.rxcui);
+                                  if (form) setMedType(normalizeDoseForm(form));
+                                }
                                 setStep(2);
                               }}
                               activeOpacity={0.7}
@@ -880,9 +891,14 @@ export default function AddMedicationScreen() {
                             {drugs.map((drug, i) => (
                               <React.Fragment key={drug.id}>
                                 <TouchableOpacity
-                                  onPress={() => {
+                                  onPress={async () => {
                                     setName(drug.name);
                                     setCategory(drug.category);
+                                    if (drug.rxcui) {
+                                      setRxcui(drug.rxcui);
+                                      const form = await fetchDoseForm(drug.rxcui);
+                                      if (form) setMedType(normalizeDoseForm(form));
+                                    }
                                     setStep(2);
                                   }}
                                   activeOpacity={0.7}

@@ -490,6 +490,80 @@ export async function updateClaimedBadges(userId, badgeIds) {
 }
 
 // ============================================================
+// DRUG INFO CACHE
+// ============================================================
+
+const OPENFDA_URL = 'https://api.fda.gov/drug/label.json';
+const CACHE_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 days
+
+function cleanFdaText(raw) {
+  if (!raw) return null;
+  // Strip leading section numbers like "6 ADVERSE REACTIONS" or "1 INDICATIONS AND USAGE"
+  return raw.replace(/^\d+(\.\d+)?\s+[A-Z][A-Z\s]+\n?/, '').trim();
+}
+
+async function queryOpenFDA(searchParam) {
+  const res = await fetch(`${OPENFDA_URL}?search=${encodeURIComponent(searchParam)}&limit=1`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.results?.[0] ?? null;
+}
+
+export async function fetchDrugInfo(drugName) {
+  if (!drugName) return null;
+  const normalizedName = drugName.toLowerCase().trim();
+
+  // Check cache first
+  const { data: cached } = await supabase
+    .from('drug_info_cache')
+    .select('*')
+    .ilike('drug_name', normalizedName)
+    .maybeSingle();
+
+  if (cached) {
+    const age = Date.now() - new Date(cached.fetched_at).getTime();
+    if (age < CACHE_TTL_MS) return toCamelCase(cached);
+  }
+
+  // Fetch from OpenFDA — try generic name first, then brand name
+  let result = await queryOpenFDA(`openfda.generic_name:"${normalizedName}"`);
+  if (!result) result = await queryOpenFDA(`openfda.brand_name:"${normalizedName}"`);
+  if (!result) return null;
+
+  const row = {
+    drug_name: normalizedName,
+    rxcui: result?.openfda?.rxcui?.[0] ?? null,
+    description: cleanFdaText(result?.description?.[0]) ?? null,
+    indications: cleanFdaText(result?.indications_and_usage?.[0]) ?? null,
+    side_effects: cleanFdaText(result?.adverse_reactions?.[0]) ?? null,
+    warnings: cleanFdaText(result?.warnings_and_cautions?.[0] ?? result?.warnings?.[0]) ?? null,
+    mechanism: cleanFdaText(result?.mechanism_of_action?.[0]) ?? null,
+    drug_interactions: cleanFdaText(result?.drug_interactions?.[0]) ?? null,
+    dose_form: result?.dosage_forms_and_strengths?.[0] ?? null,
+    brand_names: result?.openfda?.brand_name?.join(', ') ?? null,
+    fetched_at: new Date().toISOString(),
+  };
+
+  await supabase
+    .from('drug_info_cache')
+    .upsert(row, { onConflict: 'drug_name' });
+
+  return toCamelCase(row);
+}
+
+export async function fetchDoseForm(rxcui) {
+  if (!rxcui) return null;
+  try {
+    const res = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${rxcui}/properties.json`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.properties?.doseForms ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================
 // METRIC GOALS
 // ============================================================
 

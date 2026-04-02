@@ -24,9 +24,9 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation } from "@/hooks/queries/useMedicationsQuery";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
-import MedicationIcon from "@/components/MedicationIcon";
+import MedicationBottle from "@/components/MedicationBottle";
 
 const C = {
   bg: "#F8F4F0",
@@ -331,6 +331,7 @@ export default function MedicationDetailScreen() {
   }));
 
   const med = medications.find((m) => m.id === medicationId);
+  const { data: drugInfo, isLoading: drugInfoLoading } = useDrugInfoQuery(med?.name);
 
   if (!med) {
     return (
@@ -477,22 +478,13 @@ export default function MedicationDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Icon */}
-          <View
-            style={{
-              width: 108,
-              height: 108,
-              borderRadius: 54,
-              backgroundColor: `${color}20`,
-              alignItems: "center",
-              justifyContent: "center",
-              marginBottom: 18,
-            }}
-          >
-            <MedicationIcon
+          {/* Bottle illustration */}
+          <View style={{ alignItems: "center", marginBottom: 12 }}>
+            <MedicationBottle
               type={med.type ?? "tablet"}
               color={color}
-              size={60}
+              drugName={med.name}
+              size={180}
             />
           </View>
 
@@ -812,54 +804,138 @@ export default function MedicationDetailScreen() {
             />
           </Card>
 
-          {/* About — plain prose, no card */}
-          <SectionLabel title="About" />
-          <View style={{ marginBottom: 24, gap: 16 }}>
-            <View style={{ paddingHorizontal: 4 }}>
-              <Text
+          {/* Quick Info Row */}
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 24 }}>
+            {[
+              { label: "Category", value: med.category },
+              { label: "Form", value: med.type ? med.type.charAt(0).toUpperCase() + med.type.slice(1) : "Tablet" },
+              { label: "Status", value: med.isActive === false ? "Archived" : "Active" },
+            ].map(({ label, value }) => (
+              <View
+                key={label}
                 style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: C.dark,
-                  marginBottom: 4,
+                  flex: 1,
+                  backgroundColor: C.card,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: C.border,
+                  padding: 12,
+                  alignItems: "center",
                 }}
               >
-                Side Effects
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 14,
-                  color: C.muted,
-                  lineHeight: 20,
-                }}
-              >
-                No information available for this medication.
-              </Text>
-            </View>
-            <View style={{ paddingHorizontal: 4 }}>
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: C.dark,
-                  marginBottom: 4,
-                }}
-              >
-                Drug Class
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 14,
-                  color: C.muted,
-                  lineHeight: 20,
-                }}
-              >
-                {med.category}
-              </Text>
-            </View>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark, marginBottom: 4 }}>
+                  {value}
+                </Text>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: C.muted, textAlign: "center" }}>
+                  {label}
+                </Text>
+              </View>
+            ))}
           </View>
+
+          {/* About This Medication */}
+          <SectionLabel title="About This Medication" />
+          <Card>
+            {drugInfoLoading ? (
+              <View style={{ padding: 16, gap: 10 }}>
+                {[80, 60, 90, 50].map((w, i) => (
+                  <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: "#F0EBE8", borderRadius: 6 }} />
+                ))}
+              </View>
+            ) : drugInfo?.indications || drugInfo?.description || drugInfo?.mechanism ? (
+              <View style={{ padding: 16, gap: 14 }}>
+                {drugInfo.indications && (
+                  <View>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                      What it's for
+                    </Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={5}>
+                      {drugInfo.indications}
+                    </Text>
+                  </View>
+                )}
+                {drugInfo.mechanism && (
+                  <View>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                      How it works
+                    </Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={4}>
+                      {drugInfo.mechanism}
+                    </Text>
+                  </View>
+                )}
+                {drugInfo.description && !drugInfo.indications && (
+                  <View>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                      Description
+                    </Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={5}>
+                      {drugInfo.description}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ) : (
+              <View style={{ padding: 16 }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted }}>
+                  No additional information available for this medication.
+                </Text>
+              </View>
+            )}
+          </Card>
+
+          {/* Side Effects & Warnings */}
+          {(drugInfoLoading || drugInfo?.sideEffects || drugInfo?.warnings) && (
+            <>
+              <SectionLabel title="Side Effects & Warnings" />
+              <Card>
+                {drugInfoLoading ? (
+                  <View style={{ padding: 16, gap: 10 }}>
+                    {[70, 55, 80].map((w, i) => (
+                      <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: "#F0EBE8", borderRadius: 6 }} />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={{ padding: 16, gap: 14 }}>
+                    {drugInfo?.sideEffects && (
+                      <View>
+                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                          Common Side Effects
+                        </Text>
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
+                          {drugInfo.sideEffects}
+                        </Text>
+                      </View>
+                    )}
+                    {drugInfo?.warnings && (
+                      <View style={{ backgroundColor: "#FEF3C7", borderRadius: 10, padding: 12 }}>
+                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#92400E", marginBottom: 4 }}>
+                          Warnings
+                        </Text>
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#78350F", lineHeight: 20 }} numberOfLines={5}>
+                          {drugInfo.warnings}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* Drug Interactions */}
+          {drugInfo?.drugInteractions && (
+            <>
+              <SectionLabel title="Drug Interactions" />
+              <Card>
+                <View style={{ padding: 16 }}>
+                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
+                    {drugInfo.drugInteractions}
+                  </Text>
+                </View>
+              </Card>
+            </>
+          )}
 
           {/* Options — centered text links, no card */}
           <SectionLabel title="Options" />

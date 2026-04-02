@@ -7,6 +7,7 @@ import {
   deleteMedication,
   toggleMedicationTaken,
   markGroupTaken,
+  fetchDrugInfo,
 } from '@/services/supabaseQueries';
 
 function useUserId() {
@@ -89,6 +90,16 @@ export function useToggleMedicationTakenMutation() {
 /**
  * Optimistic bulk mark-taken.
  */
+export function useDrugInfoQuery(drugName) {
+  return useQuery({
+    queryKey: ['drugInfo', drugName?.toLowerCase()],
+    queryFn: () => fetchDrugInfo(drugName),
+    enabled: !!drugName,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 7 * 24 * 60 * 60 * 1000,
+  });
+}
+
 export function useMarkGroupTakenMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
