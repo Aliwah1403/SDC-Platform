@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchStreak, repairStreak } from '@/services/supabaseQueries';
+import { fetchStreak, repairStreak, updateClaimedBadges } from '@/services/supabaseQueries';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
@@ -69,6 +69,29 @@ export function useStreakRepairMutation() {
   return useMutation({
     mutationFn: () => repairStreak(userId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+    },
+  });
+}
+
+export function useClaimBadgeMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (badgeIds) => updateClaimedBadges(userId, badgeIds),
+    onMutate: async (badgeIds) => {
+      await queryClient.cancelQueries({ queryKey: ['streak', userId] });
+      const previous = queryClient.getQueryData(['streak', userId]);
+      queryClient.setQueryData(['streak', userId], (old) => ({
+        ...old,
+        claimedBadges: badgeIds,
+      }));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      queryClient.setQueryData(['streak', userId], context.previous);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['streak', userId] });
     },
   });

@@ -481,6 +481,14 @@ export async function repairStreak(userId) {
   return { restoredStreak: streakRow.current_streak ?? 0 };
 }
 
+export async function updateClaimedBadges(userId, badgeIds) {
+  const { error } = await supabase
+    .from('streaks')
+    .update({ claimed_badges: badgeIds, updated_at: new Date().toISOString() })
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
 // ============================================================
 // METRIC GOALS
 // ============================================================

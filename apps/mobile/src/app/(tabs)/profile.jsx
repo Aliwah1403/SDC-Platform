@@ -33,9 +33,13 @@ import {
   Fingerprint,
   Search,
   QrCode,
+  Star,
 } from "lucide-react-native";
 import { useAppStore } from "../../store/appStore";
-import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/queries/useProfileQuery";
+import {
+  useProfileQuery,
+  useUpdateProfileMutation,
+} from "@/hooks/queries/useProfileQuery";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -259,7 +263,9 @@ export default function ProfileScreen() {
   const { onboardingData } = useAppStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
-    profile?.notificationsEnabled ?? onboardingData?.notificationsEnabled ?? false,
+    profile?.notificationsEnabled ??
+      onboardingData?.notificationsEnabled ??
+      false,
   );
   const [biometricsEnabled, setBiometricsEnabled] = useState(
     profile?.biometricsEnabled ?? onboardingData?.biometricsEnabled ?? false,
@@ -272,7 +278,8 @@ export default function ProfileScreen() {
   const age = formatAge(profile?.dob);
   const medicationsCount = medications.filter((m) => m.isActive).length;
   const emergencyCount = emergencyContacts.length;
-  const userName = auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "—";
+  const userName =
+    auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "—";
   const userEmail = auth?.user?.email ?? "—";
   const initials = getInitials(userName);
   const healthStreak = streak?.currentStreak ?? 0;
@@ -449,6 +456,14 @@ export default function ProfileScreen() {
         icon: HelpCircle,
         iconColor: "#0EA5E9",
         onPress: () => comingSoon("Help Center"),
+      },
+      {
+        key: "feedback",
+        label: "Add Feedback",
+        section: "Support",
+        icon: Star,
+        iconColor: "#F59E0B",
+        onPress: () => comingSoon("Add Feedback"),
       },
       {
         key: "about",
@@ -903,6 +918,13 @@ export default function ProfileScreen() {
               label="Help Center"
               rightElement="chevron"
               onPress={() => comingSoon("Help Center")}
+            />
+            <SettingRow
+              icon={Star}
+              iconColor="#F59E0B"
+              label="Add Feedback"
+              // rightElement="chevron"
+              onPress={() => comingSoon("Add Feedback")}
             />
             <SettingRow
               icon={Info}

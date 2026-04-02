@@ -81,15 +81,6 @@ export const useAppStore = create((set) => ({
   setPendingMilestone: (m) => set({ pendingMilestone: m }),
   clearPendingMilestone: () => set({ pendingMilestone: null }),
 
-  // ── Claimed badges (session-scoped; prevents re-showing earned badges) ──────
-  claimedBadges: [],
-  claimBadge: (id) =>
-    set((state) => ({ claimedBadges: [...state.claimedBadges, id] })),
-  claimBadges: (ids) =>
-    set((state) => ({
-      claimedBadges: [...new Set([...state.claimedBadges, ...ids])],
-    })),
-
   activeTab: "dashboard",
   setActiveTab: (tab) => set({ activeTab: tab }),
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
 import StreakAchievementModal from "@/components/StreakAchievementModal";
 import { useAppStore } from "@/store/appStore";
+import { useStreakQuery, useClaimBadgeMutation } from "@/hooks/queries/useStreakQuery";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
@@ -62,11 +63,10 @@ export default function HomeScreen() {
   const pendingMilestone = useAppStore((s) => s.pendingMilestone);
   const setPendingMilestone = useAppStore((s) => s.setPendingMilestone);
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
-  const claimedBadges = useAppStore((s) => s.claimedBadges);
-  const claimBadge = useAppStore((s) => s.claimBadge);
-  const claimBadges = useAppStore((s) => s.claimBadges);
 
-  const initialized = useRef(false);
+  const { data: streak } = useStreakQuery();
+  const claimedBadges = streak?.claimedBadges ?? [];
+  const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
   const totalEntries = healthData.length;
   const symptomsLogged = useMemo(
@@ -80,6 +80,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     if (!healthData.length && !healthStreak) return;
+    if (pendingMilestone) return;
 
     const earned = ALL_MILESTONES.filter((m) => {
       if (m.type === "streak")    return healthStreak  >= m.count;
@@ -88,15 +89,6 @@ export default function HomeScreen() {
       if (m.type === "hydration") return hydrationDays >= m.count;
       return false;
     });
-
-    if (!initialized.current) {
-      // First load: silently mark all already-earned badges so they don't pop up
-      claimBadges(earned.map((m) => m.id));
-      initialized.current = true;
-      return;
-    }
-
-    if (pendingMilestone) return;
 
     const newBadge = earned.find((m) => !claimedBadges.includes(m.id));
     if (newBadge) {
@@ -267,7 +259,10 @@ export default function HomeScreen() {
         milestone={pendingMilestone}
         healthData={healthData}
         onClaim={() => {
-          if (pendingMilestone) claimBadge(pendingMilestone.milestoneId);
+          if (pendingMilestone) {
+            const updated = [...new Set([...claimedBadges, pendingMilestone.milestoneId])];
+            saveClaimedBadges(updated);
+          }
           clearPendingMilestone();
         }}
       />
