@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Switch,
   TextInput,
   Keyboard,
+  ActivityIndicator,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -47,6 +48,8 @@ import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
 import { signOut } from "@/utils/auth/supabase";
+import { WebView } from "react-native-webview";
+import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -99,6 +102,7 @@ function SettingRow({
   value,
   rightElement,
   onPress,
+  disabled = false,
 }) {
   const content = (
     <View
@@ -144,12 +148,21 @@ function SettingRow({
           {value}
         </Text>
       ) : null}
-      {rightElement === "chevron" && <ChevronRight size={18} color="#C4A8A4" />}
+      {rightElement === "chevron" ? (
+        <ChevronRight size={18} color="#C4A8A4" />
+      ) : (
+        rightElement || null
+      )}
     </View>
   );
   if (onPress)
     return (
-      <TouchableOpacity onPress={onPress} activeOpacity={0.6}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.6}
+        disabled={disabled}
+        style={disabled ? { opacity: 0.65 } : undefined}
+      >
         {content}
       </TouchableOpacity>
     );
@@ -272,7 +285,10 @@ export default function ProfileScreen() {
   );
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
+  const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const searchInputRef = useRef(null);
+  const feedbackOpenedRef = useRef(false);
 
   const scdType = profile?.scdType;
   const age = formatAge(profile?.dob);
@@ -340,6 +356,23 @@ export default function ProfileScreen() {
     Keyboard.dismiss();
     setSearchVisible(false);
     setSearchQuery("");
+  };
+
+  const openFeedbackModal = () => {
+    if (feedbackOpenedRef.current) return;
+
+    feedbackOpenedRef.current = true;
+    setIsFeedbackInitializing(false);
+    setShouldPreloadFeedback(false);
+    router.push("/feedback-modal");
+  };
+
+  const handleStartFeedback = () => {
+    if (isFeedbackInitializing) return;
+
+    feedbackOpenedRef.current = false;
+    setIsFeedbackInitializing(true);
+    setShouldPreloadFeedback(true);
   };
 
   // Flat list of all settings items for search
@@ -463,7 +496,7 @@ export default function ProfileScreen() {
         section: "Support",
         icon: Star,
         iconColor: "#F59E0B",
-        onPress: () => comingSoon("Add Feedback"),
+        onPress: () => router.push("/feedback-modal"),
       },
       {
         key: "about",
@@ -923,8 +956,15 @@ export default function ProfileScreen() {
               icon={Star}
               iconColor="#F59E0B"
               label="Add Feedback"
-              // rightElement="chevron"
-              onPress={() => comingSoon("Add Feedback")}
+              rightElement={
+                isFeedbackInitializing ? (
+                  <ActivityIndicator size="small" color="#A9334D" />
+                ) : (
+                  "chevron"
+                )
+              }
+              disabled={isFeedbackInitializing}
+              onPress={handleStartFeedback}
             />
             <SettingRow
               icon={Info}
@@ -968,6 +1008,39 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {shouldPreloadFeedback ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: -1000,
+            left: -1000,
+            width: 1,
+            height: 1,
+            overflow: "hidden",
+          }}
+        >
+          <WebView
+            source={{ uri: USERJOT_FEEDBACK_URL }}
+            onLoadEnd={openFeedbackModal}
+            onError={() => {
+              setIsFeedbackInitializing(false);
+              setShouldPreloadFeedback(false);
+              Alert.alert(
+                "Unable to open feedback",
+                "Please check your connection and try again.",
+              );
+            }}
+            style={{
+              width: 1,
+              height: 1,
+              opacity: 0,
+              flex: 0,
+            }}
+          />
+        </View>
+      ) : null}
     </View>
   );
 }
