@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Share } from "react-native";
+import { View, Text, TouchableOpacity, Share, Image } from "react-native";
 import { Heart, MessageCircle, Share2 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
@@ -31,7 +31,9 @@ const CATEGORY_LABELS = {
 export function PostCard({ post, isLiked, onLike, onPress }) {
   const handleShare = async () => {
     try {
-      await Share.share({ message: `${post.author.name} on Hemo: "${post.content}"` });
+      await Share.share({
+        message: `${post.author.name} on Hemo: "${post.content}"`,
+      });
     } catch (_) {}
   };
 
@@ -46,7 +48,7 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
         borderRadius: 16,
         marginHorizontal: 16,
         marginBottom: 12,
-        padding: 16,
+        overflow: "hidden",
         shadowColor: "#09332C",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -55,7 +57,14 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
       }}
     >
       {/* Author row */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          padding: 16,
+          paddingBottom: 10,
+        }}
+      >
         <View
           style={{
             width: 40,
@@ -67,14 +76,22 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
             marginRight: 10,
           }}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: "#F8E9E7" }}>
+          <Text
+            style={{ fontFamily: fonts.bold, fontSize: 14, color: "#F8E9E7" }}
+          >
             {post.author.avatarInitials}
           </Text>
         </View>
 
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#09332C" }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 14,
+                color: "#09332C",
+              }}
+            >
               {post.author.name}
             </Text>
             <View
@@ -84,13 +101,16 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
                 paddingHorizontal: 7,
                 paddingVertical: 2,
               }}
-            >
-              <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: "#A9334D" }}>
-                {post.author.scdType}
-              </Text>
-            </View>
+            ></View>
           </View>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#6B7280", marginTop: 1 }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: "#6B7280",
+              marginTop: 1,
+            }}
+          >
             {timeAgo(post.timestamp)}
           </Text>
         </View>
@@ -98,20 +118,30 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
 
       {/* Content */}
       <Text
-        numberOfLines={4}
+        numberOfLines={post.imageUrl ? 3 : 4}
         style={{
           fontFamily: fonts.regular,
           fontSize: 15,
           color: "#09332C",
           lineHeight: 22,
-          marginBottom: 10,
+          paddingHorizontal: 16,
+          marginBottom: 12,
         }}
       >
         {post.content}
       </Text>
 
-      {/* Category chip */}
-      <View style={{ marginBottom: 12 }}>
+      {/* Photo */}
+      {post.imageUrl && (
+        <Image
+          source={{ uri: post.imageUrl }}
+          style={{ width: "100%", height: 200 }}
+          resizeMode="cover"
+        />
+      )}
+
+      {/* Category chip + action row */}
+      <View style={{ padding: 16, paddingTop: post.imageUrl ? 12 : 0 }}>
         <View
           style={{
             alignSelf: "flex-start",
@@ -119,68 +149,73 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
             borderRadius: 10,
             paddingHorizontal: 10,
             paddingVertical: 3,
+            marginBottom: 12,
           }}
         >
-          <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: "#09332C" }}>
+          <Text
+            style={{ fontFamily: fonts.medium, fontSize: 11, color: "#09332C" }}
+          >
             {CATEGORY_LABELS[post.category] ?? post.category}
           </Text>
         </View>
-      </View>
 
-      {/* Action row */}
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 20,
-          borderTopWidth: 1,
-          borderTopColor: "#F0EAE8",
-          paddingTop: 10,
-        }}
-      >
-        <TouchableOpacity
-          onPress={onLike}
-          style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 20,
+            borderTopWidth: 1,
+            borderTopColor: "#F0EAE8",
+            paddingTop: 10,
+          }}
         >
-          <Heart
-            size={18}
-            color={isLiked ? "#A9334D" : "#9CA3AF"}
-            fill={isLiked ? "#A9334D" : "transparent"}
-            strokeWidth={2}
-          />
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: 13,
-              color: isLiked ? "#A9334D" : "#6B7280",
-            }}
+          <TouchableOpacity
+            onPress={onLike}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            {displayLikes}
-          </Text>
-        </TouchableOpacity>
+            <Heart
+              size={18}
+              color={isLiked ? "#A9334D" : "#9CA3AF"}
+              fill={isLiked ? "#A9334D" : "transparent"}
+              strokeWidth={2}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 13,
+                color: isLiked ? "#A9334D" : "#6B7280",
+              }}
+            >
+              {displayLikes}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={onPress}
-          style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MessageCircle size={18} color="#9CA3AF" strokeWidth={2} />
-          <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: "#6B7280" }}>
-            {post.comments.length}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onPress}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MessageCircle size={18} color="#9CA3AF" strokeWidth={2} />
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 13,
+                color: "#6B7280",
+              }}
+            >
+              {post.comments.length}
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleShare}
-          style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Share2 size={18} color="#9CA3AF" strokeWidth={2} />
-          <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: "#6B7280" }}>
-            Share
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleShare}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Share2 size={18} color="#9CA3AF" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );

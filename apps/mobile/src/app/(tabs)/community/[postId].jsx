@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Share,
+  Image,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -235,11 +236,26 @@ export default function PostDetailScreen() {
             fontSize: 16,
             color: "#09332C",
             lineHeight: 24,
-            marginBottom: 14,
+            marginBottom: post.imageUrl ? 16 : 14,
           }}
         >
           {post.content}
         </Text>
+
+        {/* Photo */}
+        {post.imageUrl && (
+          <Image
+            source={{ uri: post.imageUrl }}
+            style={{
+              width: "100%",
+              height: 260,
+              borderRadius: 12,
+              marginBottom: 16,
+              
+            }}
+            resizeMode="cover"
+          />
+        )}
 
         {/* Category chip */}
         <View
