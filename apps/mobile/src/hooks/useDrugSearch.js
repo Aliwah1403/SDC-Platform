@@ -36,6 +36,7 @@ async function searchRxNorm(query, signal) {
   const seen = new Set();
   const results = [];
   for (const c of candidates) {
+    if (!c.name) continue;
     const key = c.name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);

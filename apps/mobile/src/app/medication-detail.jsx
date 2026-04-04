@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TouchableOpacity, Alert, Dimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -23,7 +23,6 @@ import {
   Bell,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
-import { BarChart } from "react-native-gifted-charts";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
@@ -49,26 +48,6 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
-function generateAdherenceData(taken, days, color) {
-  const now = new Date();
-  return Array.from({ length: days }, (_, i) => {
-    const d = new Date(now);
-    d.setDate(d.getDate() - (days - 1 - i));
-    const isTaken = i === days - 1 ? !!taken : (i * 7 + 3) % 5 !== 0;
-    const label =
-      days <= 7
-        ? d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2)
-        : i % 7 === 0
-          ? `W${Math.floor(i / 7) + 1}`
-          : "";
-    return {
-      value: isTaken ? 1 : 0.12,
-      label,
-      frontColor: isTaken ? color : `${color}30`,
-    };
-  });
-}
-
 function parseTimes(timeStr) {
   if (!timeStr) return [];
   return timeStr
@@ -89,6 +68,322 @@ function formatLogTime(isoString) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+// ── adherence chart helpers ─────────────────────────────────────────────────
+
+function fmtShort(d) {
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function hashInt(str) {
+  let h = 5381;
+  for (let i = 0; i < str.length; i++)
+    h = (((h << 5) + h) ^ str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function deterministicTaken(medId, date, takenToday) {
+  const today = new Date();
+  if (date.toDateString() === today.toDateString()) return !!takenToday;
+  const seed = hashInt(
+    `${medId}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
+  );
+  return seed % 100 < 82;
+}
+
+function getAdherenceChartData(period, med) {
+  const now = new Date();
+  const startDate = med.startDate ? new Date(med.startDate) : null;
+  const isBefore = (d) => startDate && new Date(d) < startDate;
+  const dayTaken = (d) =>
+    !isBefore(d) && deterministicTaken(med.id ?? "med", d, med.taken);
+
+  if (period === "D") {
+    const times = parseTimes(med.time);
+    const slots = times.length > 0 ? times : ["Today"];
+    let takenCount = 0;
+    const bars = slots.map((label, i) => {
+      const taken = i === 0 && !!med.taken;
+      if (taken) takenCount++;
+      return { value: taken ? 1 : 0, label };
+    });
+    return {
+      bars,
+      takenCount,
+      missedCount: slots.length - takenCount,
+      pct: Math.round((takenCount / slots.length) * 100),
+      dateRange: now.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      }),
+      missedLabel: "DOSES MISSED",
+    };
+  }
+
+  if (period === "W") {
+    let takenCount = 0;
+    const bars = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (6 - i));
+      const taken = dayTaken(d);
+      if (taken) takenCount++;
+      return {
+        value: taken ? 1 : 0,
+        label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 3),
+      };
+    });
+    const start = new Date(now);
+    start.setDate(start.getDate() - 6);
+    return {
+      bars,
+      takenCount,
+      missedCount: 7 - takenCount,
+      pct: Math.round((takenCount / 7) * 100),
+      dateRange: `${fmtShort(start)} – ${fmtShort(now)}`,
+      missedLabel: "DAYS MISSED",
+    };
+  }
+
+  if (period === "M") {
+    let totalTaken = 0;
+    const bars = Array.from({ length: 4 }, (_, wi) => {
+      const wEnd = new Date(now);
+      wEnd.setDate(wEnd.getDate() - (3 - wi) * 7);
+      const wStart = new Date(wEnd);
+      wStart.setDate(wStart.getDate() - 6);
+      let taken = 0,
+        total = 0;
+      for (let d = new Date(wStart); d <= wEnd; d.setDate(d.getDate() + 1)) {
+        if (!isBefore(d)) {
+          total++;
+          if (dayTaken(new Date(d))) {
+            taken++;
+            totalTaken++;
+          }
+        }
+      }
+      return { value: total > 0 ? taken / total : 0, label: fmtShort(wStart) };
+    });
+    const start = new Date(now);
+    start.setDate(start.getDate() - 27);
+    return {
+      bars,
+      takenCount: totalTaken,
+      missedCount: 28 - totalTaken,
+      pct: Math.round((totalTaken / 28) * 100),
+      dateRange: `${fmtShort(start)} – ${fmtShort(now)}`,
+      missedLabel: "DAYS MISSED",
+    };
+  }
+
+  const months = period === "6M" ? 6 : 12;
+  let totalTaken = 0,
+    totalDays = 0;
+  const bars = Array.from({ length: months }, (_, i) => {
+    const mStart = new Date(
+      now.getFullYear(),
+      now.getMonth() - (months - 1 - i),
+      1,
+    );
+    const mEnd = new Date(
+      now.getFullYear(),
+      now.getMonth() - (months - 1 - i) + 1,
+      0,
+    );
+    let taken = 0,
+      total = 0;
+    for (
+      let d = new Date(mStart);
+      d <= mEnd && d <= now;
+      d.setDate(d.getDate() + 1)
+    ) {
+      if (!isBefore(d)) {
+        total++;
+        if (dayTaken(new Date(d))) {
+          taken++;
+          totalTaken++;
+        }
+      }
+    }
+    totalDays += total;
+    const showLabel = months === 6 || i % 2 === 0;
+    return {
+      value: total > 0 ? taken / total : 0,
+      label: showLabel
+        ? mStart.toLocaleDateString("en-US", { month: "short" })
+        : "",
+    };
+  });
+  const pStart = new Date(
+    now.getFullYear(),
+    now.getMonth() - (months - 1),
+    1,
+  );
+  return {
+    bars,
+    takenCount: totalTaken,
+    missedCount: totalDays - totalTaken,
+    pct: totalDays > 0 ? Math.round((totalTaken / totalDays) * 100) : 0,
+    dateRange: `${pStart.toLocaleDateString("en-US", { month: "short", year: "numeric" })} – ${now.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`,
+    missedLabel: "DAYS MISSED",
+  };
+}
+
+// ── AdherenceBarChart ───────────────────────────────────────────────────────
+
+const CHART_H = 120;
+const Y_W = 34;
+const DASH = 3;
+const GAP = 4;
+
+function AdherenceBarChart({ bars, color, width }) {
+  const barsW = width - Y_W;
+  const count = bars.length;
+  const slotW = barsW / count;
+  const barFrac = count <= 3 ? 0.38 : count <= 7 ? 0.5 : 0.6;
+  const barW = Math.max(4, slotW * barFrac);
+  const barOff = (slotW - barW) / 2;
+  const radius = Math.min(barW / 2, 7);
+  const dashCount = Math.floor(CHART_H / (DASH + GAP));
+
+  const showGridAt = (i) => i > 0;
+
+  return (
+    <View style={{ width }}>
+      <View style={{ flexDirection: "row", height: CHART_H }}>
+        {/* Chart body */}
+        <View style={{ width: barsW, height: CHART_H, position: "relative" }}>
+          {/* Horizontal ref lines */}
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              backgroundColor: C.border,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              top: CHART_H * 0.5,
+              left: 0,
+              right: 0,
+              height: 1,
+              backgroundColor: `${C.border}99`,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 1,
+              backgroundColor: C.border,
+            }}
+          />
+
+          {/* Vertical dashed grid lines */}
+          {bars.map((_, i) =>
+            showGridAt(i) ? (
+              <View
+                key={`g${i}`}
+                style={{
+                  position: "absolute",
+                  left: Math.round(i * slotW),
+                  top: 0,
+                  width: 1,
+                  height: CHART_H,
+                  overflow: "hidden",
+                }}
+              >
+                {Array.from({ length: dashCount }, (__, j) => (
+                  <View
+                    key={j}
+                    style={{
+                      height: DASH,
+                      width: 1,
+                      backgroundColor: C.border,
+                      marginBottom: GAP,
+                    }}
+                  />
+                ))}
+              </View>
+            ) : null,
+          )}
+
+          {/* Bars — only render where value > 0 */}
+          {bars.map((bar, i) => {
+            if (bar.value <= 0) return null;
+            const barH = Math.max(6, bar.value * (CHART_H - 1));
+            return (
+              <View
+                key={`b${i}`}
+                style={{
+                  position: "absolute",
+                  bottom: 1,
+                  left: i * slotW + barOff,
+                  width: barW,
+                  height: barH,
+                  backgroundColor: color,
+                  borderRadius: radius,
+                }}
+              />
+            );
+          })}
+        </View>
+
+        {/* Y-axis labels on right */}
+        <View
+          style={{
+            width: Y_W,
+            height: CHART_H,
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            paddingRight: 2,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
+            100%
+          </Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
+            50%
+          </Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
+            0%
+          </Text>
+        </View>
+      </View>
+
+      {/* X-axis labels */}
+      <View
+        style={{ width: barsW, height: 20, position: "relative", marginTop: 6 }}
+      >
+        {bars.map((bar, i) =>
+          bar.label ? (
+            <Text
+              key={`l${i}`}
+              style={{
+                position: "absolute",
+                left: i * slotW,
+                width: slotW,
+                fontFamily: fonts.regular,
+                fontSize: count > 9 ? 9 : 10,
+                color: C.muted,
+                textAlign: "center",
+              }}
+            >
+              {bar.label}
+            </Text>
+          ) : null,
+        )}
+      </View>
+    </View>
+  );
 }
 
 // ── sub-components ─────────────────────────────────────────────────────────
@@ -298,7 +593,7 @@ export default function MedicationDetailScreen() {
   const deleteMed = useDeleteMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
 
-  const [adherencePeriod, setAdherencePeriod] = useState(7);
+  const [adherencePeriod, setAdherencePeriod] = useState("W");
   const [heroHeight, setHeroHeight] = useState(insets.top + 280);
 
   const scrollY = useSharedValue(0);
@@ -365,12 +660,10 @@ export default function MedicationDetailScreen() {
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
   const times = parseTimes(med.time);
   const extraLogs = med.logs ?? [];
-  const adherenceData = generateAdherenceData(
-    med.taken,
-    adherencePeriod,
-    color,
+  const adherenceResult = useMemo(
+    () => getAdherenceChartData(adherencePeriod, med),
+    [adherencePeriod, med.id, med.taken],
   );
-  const takenCount = adherenceData.filter((d) => d.value > 0.5).length;
   const CHART_WIDTH = SCREEN_WIDTH - 64;
 
   const handleMarkTaken = () => {
@@ -682,75 +975,153 @@ export default function MedicationDetailScreen() {
           {/* Adherence */}
           <SectionLabel title="Adherence" />
           <Card>
-            <View style={{ padding: 16 }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "flex-end",
-                  marginBottom: 16,
-                }}
-              >
-                {[7, 28].map((p) => (
-                  <TouchableOpacity
-                    key={p}
-                    onPress={() => setAdherencePeriod(p)}
-                    activeOpacity={0.7}
+            {/* Period selector — full-width pill strip */}
+            <View
+              style={{
+                flexDirection: "row",
+                backgroundColor: `${color}0E`,
+                margin: 12,
+                marginBottom: 0,
+                borderRadius: 22,
+                padding: 3,
+              }}
+            >
+              {["D", "W", "M", "6M", "Y"].map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  onPress={() => setAdherencePeriod(p)}
+                  activeOpacity={0.7}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 7,
+                    borderRadius: 18,
+                    backgroundColor: adherencePeriod === p ? color : "transparent",
+                    alignItems: "center",
+                  }}
+                >
+                  <Text
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 5,
-                      borderRadius: 20,
-                      backgroundColor:
-                        adherencePeriod === p ? color : `${color}12`,
-                      marginLeft: 6,
+                      fontFamily: fonts.semibold,
+                      fontSize: 13,
+                      color: adherencePeriod === p ? "#fff" : C.muted,
                     }}
                   >
+                    {p}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={{ padding: 16 }}>
+              {/* Stats */}
+              <View style={{ flexDirection: "row", marginBottom: 4 }}>
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 4,
+                        backgroundColor: color,
+                      }}
+                    />
                     <Text
                       style={{
                         fontFamily: fonts.semibold,
-                        fontSize: 12,
-                        color: adherencePeriod === p ? "#fff" : color,
+                        fontSize: 10,
+                        color: C.muted,
+                        letterSpacing: 0.6,
+                        textTransform: "uppercase",
                       }}
                     >
-                      {p === 7 ? "7D" : "28D"}
+                      Adherence
                     </Text>
-                  </TouchableOpacity>
-                ))}
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 30,
+                      color: C.dark,
+                      lineHeight: 34,
+                    }}
+                  >
+                    {adherenceResult.pct}
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 14,
+                        color: C.muted,
+                      }}
+                    >
+                      %
+                    </Text>
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 5,
+                      marginBottom: 2,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 4,
+                        backgroundColor: "#C4B8B3",
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 10,
+                        color: C.muted,
+                        letterSpacing: 0.6,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {adherenceResult.missedLabel}
+                    </Text>
+                  </View>
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 30,
+                      color: C.dark,
+                      lineHeight: 34,
+                    }}
+                  >
+                    {adherenceResult.missedCount}
+                  </Text>
+                </View>
               </View>
-
-              <BarChart
-                data={adherenceData}
-                width={CHART_WIDTH}
-                height={90}
-                barWidth={adherencePeriod === 7 ? 28 : 10}
-                spacing={adherencePeriod === 7 ? 14 : 4}
-                maxValue={1}
-                hideRules
-                hideYAxisText
-                hideAxesAndRules
-                xAxisLabelTextStyle={{
-                  fontFamily: fonts.regular,
-                  fontSize: 10,
-                  color: C.muted,
-                }}
-                barBorderRadius={4}
-                noOfSections={1}
-                isAnimated
-              />
-
               <Text
                 style={{
                   fontFamily: fonts.regular,
-                  fontSize: 13,
+                  fontSize: 12,
                   color: C.muted,
-                  marginTop: 10,
-                  textAlign: "center",
+                  marginBottom: 20,
                 }}
               >
-                <Text style={{ fontFamily: fonts.semibold, color: C.dark }}>
-                  {takenCount}
-                </Text>
-                {` of ${adherencePeriod} days taken`}
+                {adherenceResult.dateRange}
               </Text>
+
+              {/* Custom chart */}
+              <AdherenceBarChart
+                bars={adherenceResult.bars}
+                color={color}
+                width={CHART_WIDTH}
+              />
             </View>
           </Card>
 

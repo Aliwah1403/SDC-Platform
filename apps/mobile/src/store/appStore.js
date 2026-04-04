@@ -84,6 +84,15 @@ export const useAppStore = create((set) => ({
   activeTab: "dashboard",
   setActiveTab: (tab) => set({ activeTab: tab }),
 
+  // ── Community state ────────────────────────────────────────────────────────
+  likedPostIds: [],
+  toggleLike: (postId) =>
+    set((state) => ({
+      likedPostIds: state.likedPostIds.includes(postId)
+        ? state.likedPostIds.filter((id) => id !== postId)
+        : [...state.likedPostIds, postId],
+    })),
+
   // ── Chat state (local AI session) ──────────────────────────────────────────
   chatMessages: [],
   isTyping: false,
