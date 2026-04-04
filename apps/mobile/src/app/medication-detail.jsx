@@ -23,6 +23,7 @@ import {
   Bell,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
+import { BarChart } from "react-native-gifted-charts";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
@@ -229,161 +230,6 @@ function getAdherenceChartData(period, med) {
     dateRange: `${pStart.toLocaleDateString("en-US", { month: "short", year: "numeric" })} – ${now.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`,
     missedLabel: "DAYS MISSED",
   };
-}
-
-// ── AdherenceBarChart ───────────────────────────────────────────────────────
-
-const CHART_H = 120;
-const Y_W = 34;
-const DASH = 3;
-const GAP = 4;
-
-function AdherenceBarChart({ bars, color, width }) {
-  const barsW = width - Y_W;
-  const count = bars.length;
-  const slotW = barsW / count;
-  const barFrac = count <= 3 ? 0.38 : count <= 7 ? 0.5 : 0.6;
-  const barW = Math.max(4, slotW * barFrac);
-  const barOff = (slotW - barW) / 2;
-  const radius = Math.min(barW / 2, 7);
-  const dashCount = Math.floor(CHART_H / (DASH + GAP));
-
-  const showGridAt = (i) => i > 0;
-
-  return (
-    <View style={{ width }}>
-      <View style={{ flexDirection: "row", height: CHART_H }}>
-        {/* Chart body */}
-        <View style={{ width: barsW, height: CHART_H, position: "relative" }}>
-          {/* Horizontal ref lines */}
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              height: 1,
-              backgroundColor: C.border,
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              top: CHART_H * 0.5,
-              left: 0,
-              right: 0,
-              height: 1,
-              backgroundColor: `${C.border}99`,
-            }}
-          />
-          <View
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 1,
-              backgroundColor: C.border,
-            }}
-          />
-
-          {/* Vertical dashed grid lines */}
-          {bars.map((_, i) =>
-            showGridAt(i) ? (
-              <View
-                key={`g${i}`}
-                style={{
-                  position: "absolute",
-                  left: Math.round(i * slotW),
-                  top: 0,
-                  width: 1,
-                  height: CHART_H,
-                  overflow: "hidden",
-                }}
-              >
-                {Array.from({ length: dashCount }, (__, j) => (
-                  <View
-                    key={j}
-                    style={{
-                      height: DASH,
-                      width: 1,
-                      backgroundColor: C.border,
-                      marginBottom: GAP,
-                    }}
-                  />
-                ))}
-              </View>
-            ) : null,
-          )}
-
-          {/* Bars — only render where value > 0 */}
-          {bars.map((bar, i) => {
-            if (bar.value <= 0) return null;
-            const barH = Math.max(6, bar.value * (CHART_H - 1));
-            return (
-              <View
-                key={`b${i}`}
-                style={{
-                  position: "absolute",
-                  bottom: 1,
-                  left: i * slotW + barOff,
-                  width: barW,
-                  height: barH,
-                  backgroundColor: color,
-                  borderRadius: radius,
-                }}
-              />
-            );
-          })}
-        </View>
-
-        {/* Y-axis labels on right */}
-        <View
-          style={{
-            width: Y_W,
-            height: CHART_H,
-            justifyContent: "space-between",
-            alignItems: "flex-end",
-            paddingRight: 2,
-          }}
-        >
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
-            100%
-          </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
-            50%
-          </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: C.muted }}>
-            0%
-          </Text>
-        </View>
-      </View>
-
-      {/* X-axis labels */}
-      <View
-        style={{ width: barsW, height: 20, position: "relative", marginTop: 6 }}
-      >
-        {bars.map((bar, i) =>
-          bar.label ? (
-            <Text
-              key={`l${i}`}
-              style={{
-                position: "absolute",
-                left: i * slotW,
-                width: slotW,
-                fontFamily: fonts.regular,
-                fontSize: count > 9 ? 9 : 10,
-                color: C.muted,
-                textAlign: "center",
-              }}
-            >
-              {bar.label}
-            </Text>
-          ) : null,
-        )}
-      </View>
-    </View>
-  );
 }
 
 // ── sub-components ─────────────────────────────────────────────────────────
@@ -1116,12 +962,55 @@ export default function MedicationDetailScreen() {
                 {adherenceResult.dateRange}
               </Text>
 
-              {/* Custom chart */}
-              <AdherenceBarChart
-                bars={adherenceResult.bars}
-                color={color}
-                width={CHART_WIDTH}
-              />
+              {/* Chart */}
+              {(() => {
+                const chartData = adherenceResult.bars.map((bar) => ({
+                  value: bar.value,
+                  label: bar.label,
+                  frontColor: bar.value > 0 ? color : "transparent",
+                  gradientColor: bar.value > 0 ? `${color}80` : "transparent",
+                  topLabelComponent: null,
+                }));
+                const cfg = {
+                  D:   { barWidth: 52, spacing: 32 },
+                  W:   { barWidth: 24, spacing: 13 },
+                  M:   { barWidth: 48, spacing: 26 },
+                  "6M":{ barWidth: 26, spacing: 16 },
+                  Y:   { barWidth: 14, spacing: 8  },
+                }[adherencePeriod] ?? { barWidth: 24, spacing: 13 };
+                return (
+                  <BarChart
+                    data={chartData}
+                    width={CHART_WIDTH}
+                    height={200}
+                    barWidth={cfg.barWidth}
+                    spacing={cfg.spacing}
+                    maxValue={1}
+                    noOfSections={2}
+                    rulesType="dashed"
+                    rulesColor={C.border}
+                    yAxisLabelTexts={["0%", "50%", "100%"]}
+                    yAxisTextStyle={{
+                      fontFamily: fonts.regular,
+                      fontSize: 10,
+                      color: C.muted,
+                    }}
+                    yAxisLabelWidth={34}
+                    yAxisThickness={0}
+                    xAxisThickness={1}
+                    xAxisColor={C.border}
+                    xAxisLabelTextStyle={{
+                      fontFamily: fonts.regular,
+                      fontSize: adherencePeriod === "Y" ? 9 : 10,
+                      color: C.muted,
+                    }}
+                    barBorderRadius={6}
+                    isAnimated
+                    animationDuration={400}
+                    showGradient
+                  />
+                );
+              })()}
             </View>
           </Card>
 
