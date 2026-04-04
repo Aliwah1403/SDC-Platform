@@ -17,10 +17,10 @@ export function CategoryFilter({ active, onSelect }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, gap: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
       style={{ backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F0EAE8" }}
     >
-      {COMMUNITY_CATEGORIES.map((cat) => {
+      {COMMUNITY_CATEGORIES.map((cat, index) => {
         const isActive = active === cat.id;
         return (
           <TouchableOpacity
@@ -32,6 +32,7 @@ export function CategoryFilter({ active, onSelect }) {
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 7,
+              marginRight: index < COMMUNITY_CATEGORIES.length - 1 ? 8 : 0,
             }}
           >
             <Text
