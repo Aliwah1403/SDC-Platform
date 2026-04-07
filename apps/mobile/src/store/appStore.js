@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { mockCommunityPosts } from "@/types";
 
 export const useAppStore = create((set) => ({
   // ── Onboarding form state (ephemeral; written to Supabase on complete) ────────
@@ -85,6 +86,10 @@ export const useAppStore = create((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   // ── Community state ────────────────────────────────────────────────────────
+  communityPosts: mockCommunityPosts,
+  addCommunityPost: (post) =>
+    set((state) => ({ communityPosts: [post, ...state.communityPosts] })),
+
   likedPostIds: [],
   toggleLike: (postId) =>
     set((state) => ({
