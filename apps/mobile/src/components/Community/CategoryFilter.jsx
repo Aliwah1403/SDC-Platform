@@ -17,7 +17,7 @@ export function CategoryFilter({ active, onSelect }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12, alignItems: "center" }}
       style={{ backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#F0EAE8" }}
     >
       {COMMUNITY_CATEGORIES.map((cat, index) => {
@@ -31,7 +31,9 @@ export function CategoryFilter({ active, onSelect }) {
               backgroundColor: isActive ? "#A9334D" : "#F8E9E7",
               borderRadius: 20,
               paddingHorizontal: 16,
-              paddingVertical: 7,
+              height: 35,
+              justifyContent: "center",
+              alignItems: "center",
               marginRight: index < COMMUNITY_CATEGORIES.length - 1 ? 8 : 0,
             }}
           >
@@ -39,6 +41,8 @@ export function CategoryFilter({ active, onSelect }) {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 13,
+                lineHeight: 17,
+                includeFontPadding: false,
                 color: isActive ? "#F8E9E7" : "#09332C",
               }}
             >
