@@ -21,6 +21,7 @@ import { useAppStore } from "@/store/appStore";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
+import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
@@ -312,23 +313,17 @@ function LocationsStep({ selected, onToggle }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
       >
-        {BODY_LOCATIONS.map((loc) => {
-          const active = selected.includes(loc);
-          return (
-            <MotiView
-              key={loc}
-              animate={{ scale: active ? 1.05 : 1 }}
-              transition={{ type: "spring", damping: 15 }}
-            >
-              <TouchableOpacity
-                onPress={() => onToggle(loc)}
-                style={[styles.chip, active && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{loc}</Text>
-              </TouchableOpacity>
-            </MotiView>
-          );
-        })}
+        {BODY_LOCATIONS.map((loc) => (
+          <CheckboxChip
+            key={loc}
+            label={loc}
+            checked={selected.includes(loc)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onToggle(loc);
+            }}
+          />
+        ))}
       </ScrollView>
     </View>
   );
@@ -344,23 +339,17 @@ function SymptomsStep({ selected, onToggle }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
       >
-        {SCD_SYMPTOMS.map((sym) => {
-          const active = selected.includes(sym);
-          return (
-            <MotiView
-              key={sym}
-              animate={{ scale: active ? 1.05 : 1 }}
-              transition={{ type: "spring", damping: 15 }}
-            >
-              <TouchableOpacity
-                onPress={() => onToggle(sym)}
-                style={[styles.chip, active && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, active && styles.chipTextActive]}>{sym}</Text>
-              </TouchableOpacity>
-            </MotiView>
-          );
-        })}
+        {SCD_SYMPTOMS.map((sym) => (
+          <CheckboxChip
+            key={sym}
+            label={sym}
+            checked={selected.includes(sym)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onToggle(sym);
+            }}
+          />
+        ))}
       </ScrollView>
     </View>
   );
