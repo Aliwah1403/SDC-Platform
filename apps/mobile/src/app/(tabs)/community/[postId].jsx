@@ -16,7 +16,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Heart, Share2, Send } from "lucide-react-native";
 import { CommentItem } from "@/components/Community/CommentItem";
 import { useAppStore } from "@/store/appStore";
-import { mockCommunityPosts } from "@/types";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -53,7 +52,8 @@ export default function PostDetailScreen() {
   const likedPostIds = useAppStore((s) => s.likedPostIds);
   const toggleLike = useAppStore((s) => s.toggleLike);
 
-  const post = mockCommunityPosts.find((p) => p.id === postId);
+  const communityPosts = useAppStore((s) => s.communityPosts);
+  const post = communityPosts.find((p) => p.id === postId);
   const [comments, setComments] = useState(post?.comments ?? []);
   const [inputText, setInputText] = useState("");
 
