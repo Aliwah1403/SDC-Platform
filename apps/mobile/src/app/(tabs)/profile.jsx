@@ -725,12 +725,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() =>
-                Alert.alert(
-                  "ED Emergency Card",
-                  "Your scannable QR card is coming soon.\n\nED staff will be able to scan it to instantly view your SCD type, medications, allergies, pain plan, and emergency contacts — no login required.",
-                )
-              }
+              onPress={() => router.push("/qr-code")}
               activeOpacity={0.6}
               style={{
                 width: 40,
