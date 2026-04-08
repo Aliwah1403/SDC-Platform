@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import * as Location from "expo-location";
 import MapView, { Marker } from "react-native-maps";
 import {
   ChevronLeft,
+  ChevronRight,
   MapPin,
   Phone,
   Navigation,
@@ -29,7 +30,9 @@ import {
   Search,
   Check,
   Plus,
+  ExternalLink,
 } from "lucide-react-native";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { useAppStore } from "@/store/appStore";
 import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
 
@@ -210,6 +213,185 @@ function FacilityCard({ facility, userLocation, isFavourite, onToggleFavourite, 
   );
 }
 
+// ── Sheet helpers ─────────────────────────────────────────────────────────────
+const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+function todayAbbr() {
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()];
+}
+
+// ── Facility sheet content (map view bottom sheet) ───────────────────────────
+function FacilitySheetContent({ facility, userLocation, isFavourite, onToggleFavourite, onNavigateToDetail }) {
+  const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
+  const distance = userLocation
+    ? distanceMiles(userLocation.lat, userLocation.lng, facility.lat, facility.lng).toFixed(1)
+    : null;
+  const today = todayAbbr();
+  const todayHours = facility.weeklyHours?.find((h) => h.day === today);
+  const sortedHours = facility.weeklyHours
+    ? [...facility.weeklyHours].sort((a, b) => DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day))
+    : [];
+
+  const handleCall = () => Linking.openURL(`tel:${facility.phone}`);
+  const handleDirections = () => {
+    const scheme = Platform.OS === "ios" ? "maps:" : "geo:";
+    Linking.openURL(`${scheme}?q=${encodeURIComponent(facility.address)}&daddr=${facility.lat},${facility.lng}`);
+  };
+
+  const todayOpen = todayHours?.hours !== "Closed";
+  const todayLabel =
+    todayHours?.hours === "Open 24 hours"
+      ? "Open 24h"
+      : todayHours?.hours === "Closed"
+      ? "Closed today"
+      : todayHours
+      ? `Today ${todayHours.hours}`
+      : null;
+
+  return (
+    <View style={styles.sheetWrap}>
+      {/* ── Always visible at small snap ── */}
+      <View style={styles.sheetHeader}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.sheetName}>{facility.name}</Text>
+          <View style={styles.sheetBadgesRow}>
+            <View style={[styles.typeBadge, { backgroundColor: cfg.bg }]}>
+              <Text style={[styles.typeBadgeText, { color: cfg.color }]}>{facility.type}</Text>
+            </View>
+            {facility.scdSpecialist && facility.type !== FACILITY_TYPES.SCD_SPECIALIST && (
+              <View style={[styles.typeBadge, { backgroundColor: "#F8E9E7" }]}>
+                <Star size={10} color="#A9334D" fill="#A9334D" />
+                <Text style={[styles.typeBadgeText, { color: "#A9334D", marginLeft: 3 }]}>SCD</Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <TouchableOpacity onPress={() => onToggleFavourite(facility.id)} hitSlop={10}>
+          <Heart
+            size={22}
+            color={isFavourite ? "#A9334D" : "#C4C4C4"}
+            fill={isFavourite ? "#A9334D" : "transparent"}
+            strokeWidth={2}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.sheetMetaRow}>
+        {distance && (
+          <View style={styles.metaChip}>
+            <Navigation size={11} color="#A9334D" />
+            <Text style={styles.metaChipText}>{distance} mi away</Text>
+          </View>
+        )}
+        {facility.rating && (
+          <View style={styles.metaChip}>
+            <Star size={11} color="#F59E0B" fill="#F59E0B" />
+            <Text style={styles.metaChipText}>{facility.rating}</Text>
+          </View>
+        )}
+        {todayLabel && (
+          <View style={[styles.metaChip, { backgroundColor: todayOpen ? "#F0FDF4" : "#FEF2F2" }]}>
+            <Clock size={11} color={todayOpen ? "#059669" : "#DC2626"} />
+            <Text style={[styles.metaChipText, { color: todayOpen ? "#059669" : "#DC2626" }]}>
+              {todayLabel}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.sheetDivider} />
+
+      {/* ── Visible at mid snap ── */}
+      <TouchableOpacity style={styles.sheetRow} onPress={handleDirections}>
+        <View style={styles.sheetRowIcon}><MapPin size={16} color="#A9334D" /></View>
+        <Text style={styles.sheetRowText} numberOfLines={2}>{facility.address}</Text>
+        <Text style={styles.sheetRowAction}>Directions</Text>
+      </TouchableOpacity>
+
+      <View style={styles.sheetRowDivider} />
+
+      <TouchableOpacity style={styles.sheetRow} onPress={handleCall}>
+        <View style={styles.sheetRowIcon}><Phone size={16} color="#A9334D" /></View>
+        <Text style={styles.sheetRowText}>{facility.phone}</Text>
+        <Text style={styles.sheetRowAction}>Call</Text>
+      </TouchableOpacity>
+
+      {facility.website && (
+        <>
+          <View style={styles.sheetRowDivider} />
+          <TouchableOpacity
+            style={styles.sheetRow}
+            onPress={() => Linking.openURL(facility.website)}
+          >
+            <View style={styles.sheetRowIcon}><ExternalLink size={16} color="#A9334D" /></View>
+            <Text style={styles.sheetRowText} numberOfLines={1}>
+              {facility.website.replace(/^https?:\/\//, "")}
+            </Text>
+            <Text style={styles.sheetRowAction}>Open</Text>
+          </TouchableOpacity>
+        </>
+      )}
+
+      <View style={[styles.sheetDivider, { marginTop: 16 }]} />
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={[styles.actionBtn, styles.actionBtnOutlined]} onPress={handleDirections}>
+          <Navigation size={16} color="#A9334D" />
+          <Text style={[styles.actionBtnText, { color: "#A9334D" }]}>Directions</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionBtn, styles.actionBtnFilled]} onPress={handleCall}>
+          <Phone size={16} color="#FFFFFF" />
+          <Text style={[styles.actionBtnText, { color: "#FFFFFF" }]}>Call Now</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
+
+      {/* ── Visible at full snap ── */}
+      {facility.description && (
+        <>
+          <Text style={styles.sheetSectionLabel}>About</Text>
+          <Text style={styles.sheetDescription}>{facility.description}</Text>
+          <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
+        </>
+      )}
+
+      {sortedHours.length > 0 && (
+        <>
+          <Text style={styles.sheetSectionLabel}>Opening Hours</Text>
+          <View style={styles.sheetHoursTable}>
+            {sortedHours.map((h, i) => (
+              <View key={h.day}>
+                <View style={[styles.sheetHoursRow, h.day === today && styles.sheetHoursRowToday]}>
+                  <Text style={[styles.hoursDay, h.day === today && styles.hoursDayToday]}>{h.day}</Text>
+                  <Text
+                    style={[
+                      styles.hoursValue,
+                      h.day === today && styles.hoursValueToday,
+                      h.hours === "Closed" && styles.hoursValueClosed,
+                    ]}
+                  >
+                    {h.hours}
+                  </Text>
+                  {h.day === today && <View style={styles.todayDot} />}
+                </View>
+                {i < sortedHours.length - 1 && <View style={styles.sheetRowDivider} />}
+              </View>
+            ))}
+          </View>
+          <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
+        </>
+      )}
+
+      <TouchableOpacity style={styles.viewProfileBtn} onPress={onNavigateToDetail}>
+        <Text style={styles.viewProfileBtnText}>View Full Profile</Text>
+        <ChevronRight size={16} color="#A9334D" />
+      </TouchableOpacity>
+
+      <View style={{ height: 32 }} />
+    </View>
+  );
+}
+
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function FacilitiesScreen() {
   const insets = useSafeAreaInsets();
@@ -221,8 +403,19 @@ export default function FacilitiesScreen() {
   const [userLocation, setUserLocation] = useState(null);
   const [locationDenied, setLocationDenied] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFacility, setSelectedFacility] = useState(null);
   const searchRef = useRef(null);
   const mapRef = useRef(null);
+  const bottomSheetRef = useRef(null);
+  const snapPoints = useMemo(() => ["20%", "52%", "92%"], []);
+
+  // Close the sheet when user switches away from map view
+  useEffect(() => {
+    if (view !== "map") {
+      bottomSheetRef.current?.close();
+      setSelectedFacility(null);
+    }
+  }, [view]);
 
   const isSearchMode = searchQuery.trim().length > 0;
 
@@ -473,7 +666,10 @@ export default function FacilitiesScreen() {
                 <Marker
                   key={facility.id}
                   coordinate={{ latitude: facility.lat, longitude: facility.lng }}
-                  onPress={() => navigateToDetail(facility)}
+                  onPress={() => {
+                    setSelectedFacility(facility);
+                    bottomSheetRef.current?.snapToIndex(1);
+                  }}
                 >
                   <View style={[styles.mapMarker, { backgroundColor: cfg.color }]}>
                     {facility.scdSpecialist ? (
@@ -487,6 +683,30 @@ export default function FacilitiesScreen() {
             })}
           </MapView>
 
+          <BottomSheet
+            ref={bottomSheetRef}
+            index={-1}
+            snapPoints={snapPoints}
+            enablePanDownToClose
+            onClose={() => setSelectedFacility(null)}
+            backgroundStyle={styles.sheetBg}
+            handleIndicatorStyle={styles.sheetHandleBar}
+          >
+            <BottomSheetScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+            >
+              {selectedFacility && (
+                <FacilitySheetContent
+                  facility={selectedFacility}
+                  userLocation={userLocation}
+                  isFavourite={favouriteHospitalIds.includes(selectedFacility.id)}
+                  onToggleFavourite={toggleFavouriteHospital}
+                  onNavigateToDetail={() => navigateToDetail(selectedFacility)}
+                />
+              )}
+            </BottomSheetScrollView>
+          </BottomSheet>
         </View>
       )}
     </View>
@@ -737,5 +957,107 @@ const styles = StyleSheet.create({
     fontFamily: "Geist_400Regular",
     fontSize: 13,
     color: "rgba(9,51,44,0.35)",
+  },
+
+  // ── Bottom sheet ────────────────────────────────────────────────────────────
+  sheetBg: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: "#09332C",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  sheetHandleBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(9,51,44,0.15)",
+  },
+  sheetWrap: { paddingHorizontal: 20, paddingTop: 8 },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 10,
+  },
+  sheetName: {
+    fontFamily: "Geist_700Bold",
+    fontSize: 19,
+    color: "#09332C",
+    letterSpacing: -0.4,
+    marginBottom: 6,
+  },
+  sheetBadgesRow: { flexDirection: "row", gap: 6 },
+  sheetMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 16 },
+  sheetDivider: { height: 1, backgroundColor: "rgba(9,51,44,0.07)" },
+  sheetRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 13,
+    gap: 12,
+  },
+  sheetRowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: "#F8E9E7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sheetRowText: {
+    flex: 1,
+    fontFamily: "Geist_400Regular",
+    fontSize: 14,
+    color: "#09332C",
+  },
+  sheetRowAction: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 13,
+    color: "#A9334D",
+  },
+  sheetRowDivider: { height: 1, backgroundColor: "rgba(9,51,44,0.05)" },
+  sheetSectionLabel: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 12,
+    color: "rgba(9,51,44,0.4)",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    marginBottom: 12,
+  },
+  sheetDescription: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 14,
+    color: "rgba(9,51,44,0.7)",
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  sheetHoursTable: {
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "#F8F4F0",
+  },
+  sheetHoursRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  sheetHoursRowToday: { backgroundColor: "#FFF5F5" },
+  viewProfileBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#A9334D",
+  },
+  viewProfileBtnText: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 15,
+    color: "#A9334D",
   },
 });
