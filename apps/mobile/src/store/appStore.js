@@ -98,6 +98,15 @@ export const useAppStore = create((set) => ({
         : [...state.likedPostIds, postId],
     })),
 
+  // ── Facility favourites ────────────────────────────────────────────────────
+  favouriteHospitalIds: [],
+  toggleFavouriteHospital: (id) =>
+    set((state) => ({
+      favouriteHospitalIds: state.favouriteHospitalIds.includes(id)
+        ? state.favouriteHospitalIds.filter((fid) => fid !== id)
+        : [...state.favouriteHospitalIds, id],
+    })),
+
   // ── Chat state (local AI session) ──────────────────────────────────────────
   chatMessages: [],
   isTyping: false,
