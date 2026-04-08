@@ -14,7 +14,7 @@ export function DailyInsights({ insightCards }) {
         style={{
           fontSize: 20,
           fontWeight: "700",
-          color: "#09332C",
+          color: "#781D11",
           marginBottom: 16,
           paddingHorizontal: 20,
         }}
@@ -28,7 +28,7 @@ export function DailyInsights({ insightCards }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          gap: 12,
+          gap: 15,
         }}
         style={{ flexGrow: 0 }}
       >

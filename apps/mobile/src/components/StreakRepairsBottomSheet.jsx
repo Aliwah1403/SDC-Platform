@@ -7,7 +7,8 @@ import {
   Dimensions,
 } from "react-native";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { X, Gift, Wrench, Flame } from "lucide-react-native";
+import { X, Gift, Wrench, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
+import { StreakFireIcon } from "@/utils/streakFire";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height } = Dimensions.get("window");
@@ -36,10 +37,10 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
       enablePanDownToClose
       onClose={onClose}
       backgroundStyle={{
-        backgroundColor: "#F5F1E8",
+        backgroundColor: "#FFF9F9",
       }}
       handleIndicatorStyle={{
-        backgroundColor: "#D1C4B0",
+        backgroundColor: "#F8E9E7",
         width: 40,
       }}
     >
@@ -75,7 +76,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: "#E5DED0",
+              backgroundColor: "#F2EFEC",
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -113,7 +114,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                   justifyContent: "center",
                 }}
               >
-                <Text style={{ fontSize: 60 }}>🛠️</Text>
+                <Wrench size={60} color="#F59E0B" />
               </View>
             </View>
           </View>
@@ -178,7 +179,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                     marginRight: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 18 }}>✅</Text>
+                  <CheckCircle2 size={18} color="#059669" />
                 </View>
                 <Text
                   style={{
@@ -221,7 +222,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                     marginRight: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 18 }}>🚧</Text>
+                  <AlertTriangle size={18} color="#F59E0B" />
                 </View>
                 <Text
                   style={{
@@ -264,7 +265,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                     marginRight: 8,
                   }}
                 >
-                  <Text style={{ fontSize: 18 }}>✨</Text>
+                  <Sparkles size={18} color="#A9334D" />
                 </View>
                 <Text
                   style={{
@@ -398,7 +399,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                   width: 44,
                   height: 44,
                   borderRadius: 22,
-                  backgroundColor: "#DBEAFE",
+                  backgroundColor: "#F2EFEC",
                   alignItems: "center",
                   justifyContent: "center",
                   marginRight: 16,
@@ -471,7 +472,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                   marginRight: 16,
                 }}
               >
-                <Flame size={24} color="#DC2626" />
+                <StreakFireIcon size={36} />
               </View>
               <Text
                 style={{

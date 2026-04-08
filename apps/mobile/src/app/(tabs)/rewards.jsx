@@ -6,21 +6,19 @@ import {
   TouchableOpacity,
   Dimensions,
 } from "react-native";
+import { Image } from "expo-image";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Award,
   Trophy,
-  Target,
   Clock,
   Users,
   Star,
-  Gift,
-  TrendingUp,
-  Calendar,
   Zap,
 } from "lucide-react-native";
-import { useAppStore } from "../../store/appStore";
+import { useAuthStore } from "../../utils/auth/store";
+import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
 
 const { width } = Dimensions.get("window");
@@ -29,7 +27,10 @@ export default function RewardsScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("challenges"); // challenges, badges, leaderboard
 
-  const { currentUser, healthStreak } = useAppStore();
+  const { auth } = useAuthStore();
+  const { data: streak } = useStreakQuery();
+  const currentUser = { name: auth?.user?.user_metadata?.full_name ?? "You" };
+  const healthStreak = streak?.currentStreak ?? 0;
 
   const TabButton = ({ title, isActive, onPress, icon: Icon }) => (
     <TouchableOpacity
@@ -96,7 +97,7 @@ export default function RewardsScreen() {
         case "daily":
           return "#059669";
         case "weekly":
-          return "#7C3AED";
+          return "#A9334D";
         case "monthly":
           return "#F59E0B";
         default:
@@ -284,14 +285,16 @@ export default function RewardsScreen() {
           elevation: isUnlocked ? 2 : 1,
         }}
       >
-        <Text
+        <Image
+          source={badge.image}
           style={{
-            fontSize: size === "large" ? 40 : 32,
+            width: size === "large" ? 72 : 56,
+            height: size === "large" ? 72 : 56,
             marginBottom: size === "large" ? 12 : 8,
+            opacity: isUnlocked ? 1 : 0.35,
           }}
-        >
-          {badge.icon}
-        </Text>
+          contentFit="contain"
+        />
 
         <Text
           style={{
@@ -806,7 +809,7 @@ export default function RewardsScreen() {
                 lineHeight: 20,
               }}
             >
-              Compete with others in the SickleCell Compass community! Rankings
+              Compete with others in the Hemo community! Rankings
               based on health tracking consistency and points earned.
             </Text>
 
@@ -894,7 +897,7 @@ export default function RewardsScreen() {
                     style={{
                       fontSize: 20,
                       fontWeight: "bold",
-                      color: "#7C3AED",
+                      color: "#A9334D",
                     }}
                   >
                     15,823

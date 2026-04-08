@@ -3,6 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+
+const HEMO_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 import {
   Pill,
   Calendar,
@@ -136,68 +139,75 @@ export default function CareMenuScreen() {
         <TouchableOpacity
           onPress={() => router.push("/(tabs)/care/emergency")}
           style={{
-            backgroundColor: "#FF6B6B",
             borderRadius: 16,
-            padding: 20,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
             marginBottom: 32,
-            shadowColor: "#FF6B6B",
+            overflow: "hidden",
+            shadowColor: "#781D11",
             shadowOffset: { width: 0, height: 4 },
             shadowOpacity: 0.3,
             shadowRadius: 12,
             elevation: 6,
           }}
         >
-          <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+          <LinearGradient
+            colors={HEMO_GRADIENT}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{ padding: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+          >
+            {/* Decorative shapes */}
+            <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -40, right: 40 }} />
+            <View style={{ position: "absolute", width: 80, height: 80, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -20 }} />
+
+            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  marginRight: 16,
+                }}
+              >
+                <Phone size={24} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "700",
+                    color: "#FFFFFF",
+                    marginBottom: 2,
+                  }}
+                >
+                  Emergency Help
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: "rgba(255,255,255,0.9)",
+                  }}
+                >
+                  Quick access to emergency services
+                </Text>
+              </View>
+            </View>
+
             <View
               style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
+                width: 32,
+                height: 32,
+                borderRadius: 16,
                 backgroundColor: "rgba(255,255,255,0.2)",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: 16,
               }}
             >
-              <Phone size={24} color="#FFFFFF" strokeWidth={2.5} />
+              <Text style={{ fontSize: 20, color: "#FFFFFF" }}>→</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 18,
-                  fontWeight: "700",
-                  color: "#FFFFFF",
-                  marginBottom: 2,
-                }}
-              >
-                Emergency Help
-              </Text>
-              <Text
-                style={{
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                Quick access to emergency services
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 16,
-              backgroundColor: "rgba(255,255,255,0.2)",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={{ fontSize: 20, color: "#FFFFFF" }}>→</Text>
-          </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* Menu Cards */}
@@ -206,8 +216,8 @@ export default function CareMenuScreen() {
             title="Medications"
             subtitle="Track your prescriptions and doses"
             icon={Pill}
-            iconColor="#7C3AED"
-            iconBg="#F3E8FF"
+            iconColor="#A9334D"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/medications")}
           />
 
@@ -216,7 +226,7 @@ export default function CareMenuScreen() {
             subtitle="Manage your healthcare schedule"
             icon={Calendar}
             iconColor="#2563EB"
-            iconBg="#DBEAFE"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/appointments")}
           />
 
@@ -225,7 +235,7 @@ export default function CareMenuScreen() {
             subtitle="Connect with your healthcare providers"
             icon={Users}
             iconColor="#059669"
-            iconBg="#D1FAE5"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/care-team")}
           />
 
@@ -234,7 +244,7 @@ export default function CareMenuScreen() {
             subtitle="Your personalized emergency plan"
             icon={FileText}
             iconColor="#DC2626"
-            iconBg="#FEE2E2"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/crisis-plan")}
           />
 
@@ -242,8 +252,8 @@ export default function CareMenuScreen() {
             title="Clinics & Hospitals"
             subtitle="Find nearby healthcare facilities"
             icon={MapPin}
-            iconColor="#EA580C"
-            iconBg="#FFEDD5"
+            iconColor="#A9334D"
+            iconBg="#F2EFEC"
             onPress={() => router.push("/(tabs)/care/facilities")}
           />
         </View>

@@ -3,49 +3,114 @@ import {
   X,
   Sparkles,
   Trophy,
-  Flame,
   Droplet,
   Heart,
   BookOpen,
   Target,
+  Wrench,
+  Zap,
+  Clock,
 } from "lucide-react-native";
+import { StreakFireIcon } from "@/utils/streakFire";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MILESTONE_ICONS = {
   days: Trophy,
-  streak: Flame,
+  streak: StreakFireIcon,
   symptoms: Target,
   hydration: Droplet,
   care: Heart,
   learning: BookOpen,
+  repair: Wrench,
+  restart: Zap,
+  medications: Clock,
+};
+
+const MILESTONE_BADGE_IMAGES = {
+  days:        require("../../assets/images/badges/badge-4.svg"),
+  streak:      require("../../assets/images/badges/badge-2.svg"),
+  symptoms:    require("../../assets/images/badges/badge-11.svg"),
+  hydration:   require("../../assets/images/badges/badge-8.svg"),
+  care:        require("../../assets/images/badges/badge-9.svg"),
+  learning:    require("../../assets/images/badges/badge-10.svg"),
+  repair:      require("../../assets/images/badges/badge-12.svg"),
+  restart:     require("../../assets/images/badges/badge-13.svg"),
+  medications: require("../../assets/images/badges/badge-14.svg"),
 };
 
 const MILESTONE_COLORS = {
-  days: { primary: "#FF6B6B", secondary: "#FF8E8E", bg: "#FFF5F5" },
-  streak: { primary: "#FF6B35", secondary: "#FF8F5C", bg: "#FFF6F0" },
-  symptoms: { primary: "#9B59B6", secondary: "#B77DD4", bg: "#F8F3FF" },
-  hydration: { primary: "#3498DB", secondary: "#5DADE2", bg: "#F0F8FF" },
-  care: { primary: "#E91E63", secondary: "#F06292", bg: "#FFF0F5" },
-  learning: { primary: "#2ECC71", secondary: "#58D68D", bg: "#F0FFF4" },
+  days: { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  streak: { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
+  symptoms: { primary: "#D09F9A", secondary: "#B8827C", bg: "#F8E9E7" },
+  hydration: { primary: "#2563EB", secondary: "#3B82F6", bg: "#EFF6FF" },
+  care: { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  learning: { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
+  repair: { primary: "#781D11", secondary: "#9B3628", bg: "#FFF9F9" },
+  restart: { primary: "#A9334D", secondary: "#C4566D", bg: "#FFF9F9" },
+  medications: { primary: "#059669", secondary: "#34D399", bg: "#ECFDF5" },
 };
 
 const RARITY_CONFIG = {
-  Common: { color: "#9E9E9E", emoji: "⚪" },
-  Uncommon: { color: "#4CAF50", emoji: "🟢" },
-  Rare: { color: "#2196F3", emoji: "🔵" },
-  Epic: { color: "#9C27B0", emoji: "🟣" },
-  Legendary: { color: "#FF9800", emoji: "🟠" },
-  Mythic: { color: "#F44336", emoji: "🔴" },
+  Common: { color: "#9CA3AF" },
+  Uncommon: { color: "#059669" },
+  Rare: { color: "#2563EB" },
+  Epic: { color: "#A9334D" },
+  Legendary: { color: "#781D11" },
+  Mythic: { color: "#D09F9A" },
 };
 
 export default function MilestoneModal({ visible, milestone, onClose }) {
   const insets = useSafeAreaInsets();
+
+  // All hooks must be called unconditionally before any early return
+  const rotateX = useSharedValue(0);
+  const rotateY = useSharedValue(0);
+
+  const panGesture = Gesture.Pan()
+    .onUpdate((e) => {
+      rotateY.value = interpolate(e.translationX, [-150, 150], [-28, 28], Extrapolation.CLAMP);
+      rotateX.value = interpolate(e.translationY, [-150, 150], [28, -28], Extrapolation.CLAMP);
+    })
+    .onEnd(() => {
+      rotateX.value = withSpring(0, { damping: 14, stiffness: 140 });
+      rotateY.value = withSpring(0, { damping: 14, stiffness: 140 });
+    });
+
+  const badgeAnimStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 800 },
+      { rotateX: `${rotateX.value}deg` },
+      { rotateY: `${rotateY.value}deg` },
+    ],
+  }));
+
+  const shineStyle = useAnimatedStyle(() => {
+    const magnitude = Math.sqrt(rotateX.value ** 2 + rotateY.value ** 2);
+    return {
+      opacity: interpolate(magnitude, [0, 40], [0, 0.55], Extrapolation.CLAMP),
+      transform: [
+        { translateX: interpolate(rotateY.value, [-28, 28], [70, -70], Extrapolation.CLAMP) },
+        { translateY: interpolate(rotateX.value, [-28, 28], [-70, 70], Extrapolation.CLAMP) },
+      ],
+    };
+  });
 
   if (!milestone) return null;
 
   const Icon = MILESTONE_ICONS[milestone.type];
   const colors = MILESTONE_COLORS[milestone.type];
   const rarityInfo = RARITY_CONFIG[milestone.rarity];
+  const badgeImage = milestone.image ?? MILESTONE_BADGE_IMAGES[milestone.type];
 
   return (
     <Modal
@@ -63,7 +128,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
 
         <View
           style={{
-            backgroundColor: "#F5F5F0",
+            backgroundColor: "#FFF9F9",
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             paddingTop: Math.max(insets.top, 24),
@@ -106,62 +171,51 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
               {milestone.name}
             </Text>
 
-            {/* Milestone Icon/Badge */}
-            <View
-              style={{
-                width: "100%",
-                aspectRatio: 1,
-                maxWidth: 340,
-                alignSelf: "center",
-                borderRadius: 24,
-                backgroundColor: colors.bg,
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 32,
-                borderWidth: 4,
-                borderColor: milestone.unlocked ? colors.primary : "#D0D0CC",
-                opacity: milestone.unlocked ? 1 : 0.5,
-              }}
-            >
-              {milestone.unlocked && (
-                <View
-                  style={{
-                    position: "absolute",
-                    top: -12,
-                    left: "50%",
-                    marginLeft: -20,
-                  }}
+            {/* Milestone Badge — 3D tilt */}
+            <GestureDetector gesture={panGesture}>
+              <Animated.View
+                style={[
+                  {
+                    width: 260,
+                    height: 260,
+                    alignSelf: "center",
+                    marginBottom: 32,
+                    opacity: milestone.unlocked ? 1 : 0.3,
+                  },
+                  badgeAnimStyle,
+                ]}
+              >
+                <Image
+                  source={badgeImage}
+                  style={{ width: 260, height: 260 }}
+                  contentFit="contain"
+                />
+                {/* Specular highlight overlay */}
+                <Animated.View
+                  pointerEvents="none"
+                  style={[
+                    {
+                      position: "absolute",
+                      width: 180,
+                      height: 180,
+                      borderRadius: 90,
+                    },
+                    shineStyle,
+                  ]}
                 >
-                  <Text style={{ fontSize: 40 }}>⭐</Text>
-                </View>
-              )}
-
-              <View
-                style={{
-                  width: 160,
-                  height: 160,
-                  borderRadius: 80,
-                  backgroundColor: milestone.unlocked
-                    ? colors.primary
-                    : "#D0D0CC",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Icon size={80} color="white" strokeWidth={2.5} />
-              </View>
-
-              <Text
-                style={{
-                  fontSize: 48,
-                  fontWeight: "800",
-                  color: milestone.unlocked ? colors.primary : "#999",
-                  marginTop: 16,
-                }}
-              >
-                {milestone.value}
-              </Text>
-            </View>
+                  <LinearGradient
+                    colors={[
+                      "rgba(255,255,255,0.65)",
+                      "rgba(255,255,255,0.15)",
+                      "transparent",
+                    ]}
+                    style={{ width: "100%", height: "100%", borderRadius: 90 }}
+                    start={{ x: 0.1, y: 0.1 }}
+                    end={{ x: 1, y: 1 }}
+                  />
+                </Animated.View>
+              </Animated.View>
+            </GestureDetector>
 
             {/* Info Cards */}
             <View style={{ gap: 12, marginBottom: 24 }}>
@@ -219,7 +273,14 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                 <View
                   style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                 >
-                  <Text style={{ fontSize: 20 }}>{rarityInfo.emoji}</Text>
+                  <View
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: 10,
+                      backgroundColor: rarityInfo.color,
+                    }}
+                  />
                   <Text
                     style={{
                       fontSize: 16,
@@ -255,7 +316,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                 <View
                   style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
                 >
-                  <Text style={{ fontSize: 20 }}>{milestone.emoji}</Text>
+                  <Icon size={20} color={colors.primary} strokeWidth={2} />
                   <Text
                     style={{
                       fontSize: 16,
@@ -292,7 +353,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                   <View
                     style={{
                       height: 8,
-                      backgroundColor: "#F0F0ED",
+                      backgroundColor: "#FFF9F9",
                       borderRadius: 4,
                       overflow: "hidden",
                     }}

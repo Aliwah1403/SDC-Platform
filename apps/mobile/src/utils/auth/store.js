@@ -1,30 +1,16 @@
-import * as SecureStore from 'expo-secure-store';
 import { create } from 'zustand';
 
-export const authKey = `${process.env.EXPO_PUBLIC_PROJECT_GROUP_ID}-jwt`;
-
 /**
- * This store manages the authentication state of the application.
+ * Manages authentication state. Session persistence is handled by the
+ * Supabase client internally via AsyncStorage. This store holds the
+ * current session and user for UI consumption.
  */
 export const useAuthStore = create((set) => ({
   isReady: false,
   auth: null,
-  setAuth: (auth) => {
-    if (auth) {
-      SecureStore.setItemAsync(authKey, JSON.stringify(auth));
-    } else {
-      SecureStore.deleteItemAsync(authKey);
-    }
-    set({ auth });
+  isNewUser: false,
+  setAuth: (session, user) => {
+    set({ auth: session ? { session, user } : null });
   },
-}));
-
-/**
- * This store manages the state of the authentication modal.
- */
-export const useAuthModal = create((set) => ({
-  isOpen: false,
-  mode: 'signup',
-  open: (options) => set({ isOpen: true, mode: options?.mode || 'signup' }),
-  close: () => set({ isOpen: false }),
+  setIsNewUser: (isNewUser) => set({ isNewUser }),
 }));

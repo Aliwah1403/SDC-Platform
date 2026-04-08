@@ -1,297 +1,304 @@
-import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Linking,
-} from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Plus, Phone, Mail, MapPin } from "lucide-react-native";
+import { ChevronLeft, Plus, Users, Search, X } from "lucide-react-native";
+import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
+import { fonts } from "@/utils/fonts";
+import { useState } from "react";
+
+const RELATIONSHIP_COLORS = {
+  doctor:    { color: "#2563EB", bg: "#DBEAFE" },
+  nurse:     { color: "#0891B2", bg: "#CFFAFE" },
+  family:    { color: "#A9334D", bg: "#F8E9E7" },
+  friend:    { color: "#059669", bg: "#D1FAE5" },
+  caregiver: { color: "#7C3AED", bg: "#EDE9FE" },
+  parent:    { color: "#A9334D", bg: "#F8E9E7" },
+  sibling:   { color: "#F0531C", bg: "#FEF0EB" },
+  partner:   { color: "#A9334D", bg: "#FBE9ED" },
+  carer:     { color: "#7C3AED", bg: "#EDE9FE" },
+};
+
+function getAccent(relationship = "") {
+  const key = relationship.toLowerCase();
+  return RELATIONSHIP_COLORS[key] ?? { color: "#A9334D", bg: "#F8E9E7" };
+}
+
+function initials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((n) => n[0].toUpperCase())
+    .join("");
+}
+
+function ContactCard({ contact, onPress }) {
+  const { color, bg } = getAccent(contact.relationship);
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 18,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: "#F0EDE8",
+        flexDirection: "row",
+        alignItems: "center",
+      }}
+    >
+      {/* Avatar */}
+      <View
+        style={{
+          width: 52,
+          height: 52,
+          borderRadius: 26,
+          backgroundColor: bg,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 14,
+          overflow: "hidden",
+        }}
+      >
+        {contact.photoUrl ? (
+          <Image
+            source={{ uri: contact.photoUrl }}
+            style={{ width: 52, height: 52 }}
+            contentFit="cover"
+          />
+        ) : (
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color }}>
+            {initials(contact.name)}
+          </Text>
+        )}
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#09332C", marginBottom: 4 }}>
+          {contact.name}
+        </Text>
+        <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
+          {contact.relationship ? (
+            <View style={{ backgroundColor: bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color, textTransform: "capitalize" }}>
+                {contact.relationship}
+              </Text>
+            </View>
+          ) : null}
+          {contact.isPrimary ? (
+            <View style={{ backgroundColor: "#FEF3C7", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#92400E" }}>Primary</Text>
+            </View>
+          ) : null}
+        </View>
+        {contact.phone ? (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", marginTop: 4 }}>
+            {contact.phone}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Chevron */}
+      <ChevronLeft size={18} color="#D1D5DB" style={{ transform: [{ rotate: "180deg" }] }} />
+    </TouchableOpacity>
+  );
+}
+
+function EmptyState() {
+  return (
+    <View
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        padding: 32,
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: "#F0EDE8",
+        borderStyle: "dashed",
+        marginTop: 8,
+      }}
+    >
+      <Users size={36} color="#D09F9A" style={{ marginBottom: 12 }} />
+      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#09332C", marginBottom: 6 }}>
+        No contacts yet
+      </Text>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", textAlign: "center", lineHeight: 20 }}>
+        Add emergency contacts so they can be reached quickly in a crisis.
+      </Text>
+    </View>
+  );
+}
 
 export default function CareTeamScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { data: contacts = [], isLoading } = useEmergencyContactsQuery();
+  const [query, setQuery] = useState("");
 
-  const ProviderCard = ({
-    name,
-    specialty,
-    facility,
-    phone,
-    email,
-    color,
-    bgColor,
-  }) => (
-    <View
-      style={{
-        backgroundColor: "#ffffff",
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 16,
-        borderLeftWidth: 4,
-        borderLeftColor: color,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
-      }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "flex-start",
-          marginBottom: 16,
-        }}
-      >
-        <View
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: bgColor,
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 16,
-          }}
-        >
-          <Text style={{ fontSize: 24, fontWeight: "700", color: color }}>
-            {name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
-          </Text>
-        </View>
+  const trimmed = query.trim().toLowerCase();
+  const filtered = trimmed
+    ? contacts.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(trimmed) ||
+          c.relationship?.toLowerCase().includes(trimmed) ||
+          c.phone?.toLowerCase().includes(trimmed),
+      )
+    : contacts;
 
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontSize: 18,
-              fontWeight: "700",
-              color: "#1a1a1a",
-              marginBottom: 4,
-            }}
-          >
-            Dr. {name}
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#666",
-              marginBottom: 2,
-            }}
-          >
-            {specialty}
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <MapPin size={12} color="#999" />
-            <Text
-              style={{
-                fontSize: 12,
-                color: "#999",
-                marginLeft: 4,
-              }}
-            >
-              {facility}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <TouchableOpacity
-          onPress={() => Linking.openURL(`tel:${phone}`)}
-          style={{
-            flex: 1,
-            backgroundColor: bgColor,
-            borderRadius: 12,
-            padding: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Phone size={16} color={color} />
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: color,
-              marginLeft: 6,
-            }}
-          >
-            Call
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => Linking.openURL(`mailto:${email}`)}
-          style={{
-            flex: 1,
-            backgroundColor: bgColor,
-            borderRadius: 12,
-            padding: 12,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Mail size={16} color={color} />
-          <Text
-            style={{
-              fontSize: 13,
-              fontWeight: "600",
-              color: color,
-              marginLeft: 6,
-            }}
-          >
-            Email
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  const primary = filtered.filter((c) => c.isPrimary);
+  const others = filtered.filter((c) => !c.isPrimary);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+      <StatusBar style="light" />
 
       {/* Header */}
-      <View
-        style={{
-          paddingTop: insets.top + 16,
-          paddingHorizontal: 20,
-          paddingBottom: 16,
-          backgroundColor: "#ffffff",
-          borderBottomWidth: 1,
-          borderBottomColor: "#F3F4F6",
-        }}
+      <LinearGradient
+        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{ paddingTop: insets.top + 12, paddingHorizontal: 20, paddingBottom: 20, overflow: "hidden" }}
       >
+        <View style={{ position: "absolute", width: 180, height: 180, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -60, right: -40 }} />
+        <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -30 }} />
+
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" }}
+          >
+            <ChevronLeft size={24} color="#F8E9E7" />
+          </TouchableOpacity>
+
+          <View style={{ alignItems: "center" }}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#F8E9E7" }}>My Care Team</Text>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "rgba(248,233,231,0.6)", marginTop: 2 }}>
+              {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => router.push("/add-contact")}
+            style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
+          >
+            <Plus size={22} color="#F8E9E7" strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search bar */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
+            backgroundColor: "rgba(255,255,255,0.15)",
+            borderRadius: 12,
+            marginTop: 14,
+            paddingHorizontal: 12,
+            height: 40,
+            gap: 8,
           }}
         >
-          <TouchableOpacity
-            onPress={() => router.back()}
+          <Search size={16} color="rgba(248,233,231,0.7)" />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search contacts..."
+            placeholderTextColor="rgba(248,233,231,0.5)"
             style={{
-              width: 40,
-              height: 40,
-              borderRadius: 20,
-              backgroundColor: "#F9FAFB",
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
+              flex: 1,
+              fontFamily: fonts.regular,
+              fontSize: 14,
+              color: "#F8E9E7",
+              paddingVertical: 0,
             }}
-          >
-            <ChevronLeft size={24} color="#1a1a1a" />
-          </TouchableOpacity>
-
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 28,
-                fontWeight: "700",
-                color: "#1a1a1a",
-              }}
-            >
-              My Care Team
-            </Text>
-          </View>
+            returnKeyType="search"
+            autoCorrect={false}
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery("")} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <X size={15} color="rgba(248,233,231,0.7)" />
+            </TouchableOpacity>
+          )}
         </View>
-      </View>
+      </LinearGradient>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{
-          padding: 20,
-          paddingBottom: insets.bottom + 100,
-        }}
+        contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        {/* Add Button */}
-        <TouchableOpacity
-          style={{
-            backgroundColor: "#059669",
-            borderRadius: 16,
-            padding: 18,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 24,
-            shadowColor: "#059669",
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4,
-          }}
-        >
-          <Plus size={20} color="#ffffff" strokeWidth={2.5} />
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "600",
-              color: "#ffffff",
-              marginLeft: 8,
-            }}
-          >
-            Add Healthcare Provider
-          </Text>
-        </TouchableOpacity>
+        {!isLoading && contacts.length === 0 && <EmptyState />}
 
-        <Text
-          style={{
-            fontSize: 20,
-            fontWeight: "700",
-            color: "#1a1a1a",
-            marginBottom: 16,
-          }}
-        >
-          Your Healthcare Providers
-        </Text>
+        {/* No results state */}
+        {!isLoading && contacts.length > 0 && filtered.length === 0 && (
+          <View style={{ alignItems: "center", marginTop: 32 }}>
+            <Search size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#09332C", marginBottom: 4 }}>
+              No results for "{query}"
+            </Text>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+              Try searching by name, relationship, or phone
+            </Text>
+          </View>
+        )}
 
-        <ProviderCard
-          name="Sarah Johnson"
-          specialty="Primary Care Physician"
-          facility="City Medical Center"
-          phone="(555) 123-4567"
-          email="s.johnson@citymedical.com"
-          color="#2563EB"
-          bgColor="#DBEAFE"
-        />
+        {/* Flat results when searching */}
+        {trimmed && filtered.length > 0 && (
+          <>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10 }}>
+              {filtered.length} {filtered.length === 1 ? "result" : "results"}
+            </Text>
+            {filtered.map((c) => (
+              <ContactCard
+                key={c.id}
+                contact={c}
+                onPress={() => router.push(`/contact-detail?contactId=${c.id}`)}
+              />
+            ))}
+          </>
+        )}
 
-        <ProviderCard
-          name="Michael Chen"
-          specialty="Cardiologist"
-          facility="Heart Health Clinic"
-          phone="(555) 234-5678"
-          email="m.chen@hearthealthclinic.com"
-          color="#7C3AED"
-          bgColor="#F3E8FF"
-        />
+        {/* Sectioned list when not searching */}
+        {!trimmed && (
+          <>
+            {primary.length > 0 && (
+              <>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10 }}>
+                  Primary Contact
+                </Text>
+                {primary.map((c) => (
+                  <ContactCard
+                    key={c.id}
+                    contact={c}
+                    onPress={() => router.push(`/contact-detail?contactId=${c.id}`)}
+                  />
+                ))}
+              </>
+            )}
 
-        <ProviderCard
-          name="Emily Rodriguez"
-          specialty="Mental Health Counselor"
-          facility="Wellness Psychology Center"
-          phone="(555) 345-6789"
-          email="e.rodriguez@wellnesspsych.com"
-          color="#059669"
-          bgColor="#D1FAE5"
-        />
-
-        <ProviderCard
-          name="David Park"
-          specialty="Endocrinologist"
-          facility="Metro Diabetes Center"
-          phone="(555) 456-7890"
-          email="d.park@metrodiabetes.com"
-          color="#EA580C"
-          bgColor="#FFEDD5"
-        />
+            {others.length > 0 && (
+              <>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10, marginTop: primary.length > 0 ? 8 : 0 }}>
+                  Other Contacts
+                </Text>
+                {others.map((c) => (
+                  <ContactCard
+                    key={c.id}
+                    contact={c}
+                    onPress={() => router.push(`/contact-detail?contactId=${c.id}`)}
+                  />
+                ))}
+              </>
+            )}
+          </>
+        )}
       </ScrollView>
     </View>
   );

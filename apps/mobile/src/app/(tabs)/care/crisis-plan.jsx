@@ -161,7 +161,7 @@ export default function CrisisPlanScreen() {
           title="Warning Signs"
           icon={AlertCircle}
           iconColor="#DC2626"
-          iconBg="#FEE2E2"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -209,8 +209,8 @@ export default function CrisisPlanScreen() {
         <SectionCard
           title="Coping Strategies"
           icon={Heart}
-          iconColor="#7C3AED"
-          iconBg="#F3E8FF"
+          iconColor="#A9334D"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -247,7 +247,7 @@ export default function CrisisPlanScreen() {
                     height: 20,
                     borderRadius: 10,
                     borderWidth: 2,
-                    borderColor: "#7C3AED",
+                    borderColor: "#A9334D",
                     marginRight: 12,
                   }}
                 />
@@ -263,7 +263,7 @@ export default function CrisisPlanScreen() {
           title="Emergency Contacts"
           icon={Phone}
           iconColor="#059669"
-          iconBg="#D1FAE5"
+          iconBg="#F2EFEC"
         >
           <View style={{ gap: 12 }}>
             <View
@@ -356,7 +356,7 @@ export default function CrisisPlanScreen() {
           title="Medication Information"
           icon={Pill}
           iconColor="#2563EB"
-          iconBg="#DBEAFE"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -428,8 +428,8 @@ export default function CrisisPlanScreen() {
         <SectionCard
           title="Safe People & Places"
           icon={Users}
-          iconColor="#EA580C"
-          iconBg="#FFEDD5"
+          iconColor="#A9334D"
+          iconBg="#F2EFEC"
         >
           <Text
             style={{
@@ -453,7 +453,7 @@ export default function CrisisPlanScreen() {
                 style={{ flexDirection: "row", alignItems: "flex-start" }}
               >
                 <Text
-                  style={{ fontSize: 14, color: "#EA580C", marginRight: 8 }}
+                  style={{ fontSize: 14, color: "#A9334D", marginRight: 8 }}
                 >
                   •
                 </Text>

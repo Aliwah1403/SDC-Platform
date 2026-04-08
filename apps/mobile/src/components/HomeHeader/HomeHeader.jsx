@@ -1,9 +1,12 @@
-import React from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Flame } from "lucide-react-native";
+import { User } from "lucide-react-native";
+import { Image } from "expo-image";
+import { getStreakFireAsset } from "@/utils/streakFire";
 import Svg, { Path } from "react-native-svg";
+import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
+import { fonts } from "@/utils/fonts";
 
 const { width } = Dimensions.get("window");
 
@@ -27,16 +30,13 @@ export function HomeHeader({
   formatNavDate,
   selectedDate,
   healthStreak,
-  bottomSheetRef,
-  dates,
   setSelectedDate,
-  formatDatePickerDay,
-  formatDatePickerDate,
   isToday,
   isFuture,
   isSelected,
   message,
 }) {
+  const router = useRouter();
   return (
     <View style={{ position: "relative" }}>
       <LinearGradient
@@ -45,7 +45,7 @@ export function HomeHeader({
         end={{ x: 1, y: 1 }}
         style={{
           paddingTop: insets.top,
-          paddingBottom: 40,
+          paddingBottom: 60,
         }}
       >
         {/* Abstract shapes */}
@@ -53,7 +53,7 @@ export function HomeHeader({
           style={{
             width: 200,
             height: 200,
-            backgroundColor: hasLoggedData ? "#5DD9D0" : "#D8D8D8",
+            backgroundColor: hasLoggedData ? "#D09F9A" : "#D8D8D8",
             top: -60,
             right: -40,
           }}
@@ -62,7 +62,7 @@ export function HomeHeader({
           style={{
             width: 150,
             height: 150,
-            backgroundColor: hasLoggedData ? "#3A9A92" : "#B8B8B8",
+            backgroundColor: hasLoggedData ? "#781D11" : "#B8B8B8",
             bottom: 20,
             left: -30,
           }}
@@ -81,47 +81,63 @@ export function HomeHeader({
         >
           <Text
             style={{
+              fontFamily: fonts.bold,
               fontSize: 18,
-              fontWeight: "700",
               color: "#FFFFFF",
             }}
           >
             {formatNavDate(selectedDate)}
           </Text>
 
-          {/* Streak Icon - Now Touchable */}
-          <TouchableOpacity
-            onPress={() => bottomSheetRef.current?.snapToIndex(0)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              backgroundColor: "rgba(255, 255, 255, 0.25)",
-              paddingHorizontal: 12,
-              paddingVertical: 6,
-              borderRadius: 20,
-            }}
-          >
-            <Flame size={18} color="#FFFFFF" />
-            <Text
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/streak-modal")}
               style={{
-                fontSize: 14,
-                fontWeight: "700",
-                color: "#FFFFFF",
-                marginLeft: 4,
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: "rgba(255, 255, 255, 0.25)",
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 20,
               }}
             >
-              {healthStreak}
-            </Text>
-          </TouchableOpacity>
+              <Image
+                source={getStreakFireAsset(healthStreak)}
+                style={{ width: 15, height: 20 }}
+                contentFit="contain"
+              />
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 14,
+                  color: "#FFFFFF",
+                  marginLeft: 4,
+                }}
+              >
+                {healthStreak}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/profile")}
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: 17,
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <User size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Horizontal Date Picker */}
+        {/* Weekly Date Picker */}
         <DatePicker
-          dates={dates}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
-          formatDatePickerDay={formatDatePickerDay}
-          formatDatePickerDate={formatDatePickerDate}
           isToday={isToday}
           isFuture={isFuture}
           isSelected={isSelected}
@@ -138,8 +154,8 @@ export function HomeHeader({
         >
           <Text
             style={{
+              fontFamily: fonts.medium,
               fontSize: 16,
-              fontWeight: "500",
               color: "#FFFFFF",
               opacity: 0.9,
               marginBottom: 8,
@@ -149,8 +165,8 @@ export function HomeHeader({
           </Text>
           <Text
             style={{
+              fontFamily: fonts.bold,
               fontSize: 40,
-              fontWeight: "700",
               color: "#FFFFFF",
               marginBottom: 16,
             }}
@@ -158,9 +174,9 @@ export function HomeHeader({
             {message.subtitle}
           </Text>
 
-          {/* Action message or button */}
-          {!hasLoggedData && isToday(selectedDate) && (
+          {/* {!hasLoggedData && isToday(selectedDate) && (
             <TouchableOpacity
+              onPress={() => router.push("/log-symptoms")}
               style={{
                 backgroundColor: "rgba(255, 255, 255, 0.3)",
                 paddingHorizontal: 14,
@@ -172,17 +188,25 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 14,
-                  fontWeight: "600",
                   color: "#FFFFFF",
                   marginRight: 4,
                 }}
               >
                 Your health data is important
               </Text>
-              <Text style={{ fontSize: 16, color: "#FFFFFF" }}>→</Text>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#FFFFFF",
+                }}
+              >
+                →
+              </Text>
             </TouchableOpacity>
-          )}
+          )} */}
 
           {hasLoggedData && (
             <TouchableOpacity
@@ -197,15 +221,23 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 14,
-                  fontWeight: "600",
                   color: "#FFFFFF",
                   marginRight: 4,
                 }}
               >
                 Keep up the good work!
               </Text>
-              <Text style={{ fontSize: 16, color: "#FFFFFF" }}>→</Text>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#FFFFFF",
+                }}
+              >
+                →
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -214,6 +246,7 @@ export function HomeHeader({
         {!hasLoggedData && isToday(selectedDate) && (
           <View style={{ alignItems: "center", paddingBottom: 20 }}>
             <TouchableOpacity
+              onPress={() => router.push("/log-symptoms")}
               style={{
                 backgroundColor: "#FFFFFF",
                 paddingHorizontal: 32,
@@ -228,9 +261,9 @@ export function HomeHeader({
             >
               <Text
                 style={{
+                  fontFamily: fonts.semibold,
                   fontSize: 16,
-                  fontWeight: "600",
-                  color: hasLoggedData ? "#4ECDC4" : "#888",
+                  color: "#A9334D",
                 }}
               >
                 Log health
@@ -240,18 +273,15 @@ export function HomeHeader({
         )}
       </LinearGradient>
 
-      {/* Curved Bottom Edge */}
+      {/* Curved bottom edge */}
       <Svg
-        height="40"
+        height="50"
         width={width}
-        style={{
-          position: "absolute",
-          bottom: 0,
-        }}
+        style={{ position: "absolute", bottom: 0 }}
       >
         <Path
-          d={`M0,0 Q${width / 2},40 ${width},0 L${width},40 L0,40 Z`}
-          fill={hasLoggedData ? "#3A9A92" : "#C0C0C0"}
+          d={`M0,0 Q${width / 2},50 ${width},0 L${width},50 L0,50 Z`}
+          fill="#FFF9F9"
         />
       </Svg>
     </View>

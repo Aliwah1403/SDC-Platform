@@ -1,8 +1,33 @@
-import React from "react";
-import { View, Text } from "react-native";
-import { LineGraph } from "react-native-graph";
+import { View, Text, Dimensions } from "react-native";
+import { LineChart } from "react-native-gifted-charts";
+import { Smile, Meh, Frown } from "lucide-react-native";
+import { fonts } from "@/utils/fonts";
 
-export function MoodChart({ moodData, graphWidth, chartData }) {
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const GRAPH_WIDTH = SCREEN_WIDTH - 32;
+const CHART_WIDTH = GRAPH_WIDTH - 40;
+
+function getMoodInsight(chartData) {
+  const total = chartData.length;
+  if (total === 0) return "Log more days to start seeing mood insights.";
+  const goodDays = chartData.filter((d) => d.mood >= 4).length;
+  const poorDays = chartData.filter((d) => d.mood <= 2 && d.mood > 0).length;
+  const goodRatio = goodDays / total;
+  const poorRatio = poorDays / total;
+  if (goodRatio >= 0.7)
+    return `Your mood has been mostly positive this month — a real strength. Emotional well-being directly supports physical resilience with SCD, so this is just as important as your other health metrics.`;
+  if (poorRatio >= 0.3)
+    return `You've had a number of difficult mood days this month. Living with SCD is genuinely challenging, and it's okay to ask for support. Consider sharing how you're feeling with your care team or a trusted person.`;
+  return `Your mood has been variable this month, which is very common with SCD. On harder days, gentle movement, connection with others, and adequate rest can make a meaningful difference to how you feel.`;
+}
+
+export function MoodChart({ moodData, chartData }) {
+  const giftedData = moodData.map((d, i) => ({
+    value: d.value,
+    label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
+    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+  }));
+
   return (
     <View
       style={{
@@ -17,6 +42,7 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         elevation: 2,
       }}
     >
+      {/* Title row */}
       <View
         style={{
           flexDirection: "row",
@@ -45,21 +71,35 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         Your emotional well-being over time
       </Text>
 
-      <LineGraph
-        points={moodData}
-        color="#D97706"
-        animated={true}
-        enablePanGesture={true}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
-        xLength={moodData.length}
-        height={200}
-        width={graphWidth}
-        gradientFillColors={["rgba(217, 119, 6, 0.1)", "rgba(217, 119, 6, 0)"]}
-      />
+      {/* Chart */}
+      <View style={{ marginLeft: -8 }}>
+        <LineChart
+          data={giftedData}
+          width={CHART_WIDTH}
+          height={160}
+          color="#10B981"
+          thickness={2}
+          curved
+          dataPointsColor="#10B981"
+          dataPointsRadius={3}
+          hideDataPoints={false}
+          noOfSections={5}
+          maxValue={5}
+          yAxisColor="transparent"
+          xAxisColor="#E5E7EB"
+          rulesColor="#F3F4F6"
+          rulesType="solid"
+          initialSpacing={8}
+          spacing={Math.max(4, Math.floor(CHART_WIDTH / 32))}
+          yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+          xAxisLabelTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+          backgroundColor="transparent"
+          hideYAxisText={false}
+          yAxisLabelWidth={24}
+        />
+      </View>
 
+      {/* Stats row */}
       <View
         style={{
           flexDirection: "row",
@@ -71,29 +111,53 @@ export function MoodChart({ moodData, graphWidth, chartData }) {
         }}
       >
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😊 Excellent
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Smile size={13} color="#10B981" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Excellent</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#10B981" }}>
             {chartData.filter((d) => d.mood === 5).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😐 Fair
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Meh size={13} color="#F59E0B" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Fair</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#F59E0B" }}>
             {chartData.filter((d) => d.mood === 3).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
-          <Text style={{ fontSize: 11, color: "#6B7280", marginBottom: 2 }}>
-            😔 Poor
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
+            <Frown size={13} color="#DC2626" strokeWidth={2} />
+            <Text style={{ fontSize: 11, color: "#6B7280" }}>Poor</Text>
+          </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#DC2626" }}>
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
           </Text>
         </View>
+      </View>
+
+      {/* AI Insight */}
+      <View
+        style={{
+          marginTop: 16,
+          paddingTop: 14,
+          borderTopWidth: 1,
+          borderTopColor: "#F3F4F6",
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 13,
+            color: "#4B5563",
+            lineHeight: 20,
+          }}
+        >
+          {getMoodInsight(chartData)}
+        </Text>
       </View>
     </View>
   );

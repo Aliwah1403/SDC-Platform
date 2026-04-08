@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "app-icon": {
+      "source": "code-with-beto/skills",
+      "sourceType": "github",
+      "computedHash": "dc551a26318622c831286711961a4cab90e134bf3378083d9cfe1e52bb466524"
+    }
+  }
+}

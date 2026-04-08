@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
+import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useAppStore } from "../store/appStore";
 
 export default function EmergencySOSButton() {
@@ -23,7 +24,8 @@ export default function EmergencySOSButton() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
-  const { emergencyContacts, setEmergencyMode } = useAppStore();
+  const { data: emergencyContacts = [] } = useEmergencyContactsQuery();
+  const { setEmergencyMode } = useAppStore();
 
   const primaryContact =
     emergencyContacts.find((contact) => contact.isPrimary) ||
@@ -165,9 +167,9 @@ export default function EmergencySOSButton() {
       >
         <Animated.View
           style={{
-            backgroundColor: "#F7DFBA", // Cream background
+            backgroundColor: "#F8E9E7", // Cream background
             borderWidth: 2,
-            borderColor: "#09332C", // Dark teal border
+            borderColor: "#781D11", // Dark teal border
             borderRadius: 20,
             padding: 24,
             width: "100%",
@@ -181,20 +183,20 @@ export default function EmergencySOSButton() {
         >
           <View
             style={{
-              backgroundColor: "#F0531C", // Orange background
+              backgroundColor: "#A9334D", // Orange background
               borderRadius: 40,
               padding: 16,
               marginBottom: 20,
             }}
           >
-            <AlertTriangle size={32} color="#F7DFBA" /> {/* Cream icon */}
+            <AlertTriangle size={32} color="#F8E9E7" /> {/* Cream icon */}
           </View>
 
           <Text
             style={{
               fontSize: 24,
               fontWeight: "bold",
-              color: "#F0531C", // Orange text
+              color: "#A9334D", // Orange text
               marginBottom: 8,
               textAlign: "center",
             }}
@@ -207,7 +209,7 @@ export default function EmergencySOSButton() {
               <Text
                 style={{
                   fontSize: 16,
-                  color: "#09332C", // Dark teal text
+                  color: "#781D11", // Dark teal text
                   textAlign: "center",
                   marginBottom: 20,
                   lineHeight: 22,
@@ -220,7 +222,7 @@ export default function EmergencySOSButton() {
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#09332C", // Dark teal text
+                  color: "#781D11", // Dark teal text
                   opacity: 0.7,
                   textAlign: "center",
                   marginBottom: 24,
@@ -244,7 +246,7 @@ export default function EmergencySOSButton() {
                   onPress={closeModal}
                   style={{
                     flex: 1,
-                    backgroundColor: "#09332C", // Dark teal background
+                    backgroundColor: "#781D11", // Dark teal background
                     borderRadius: 12,
                     padding: 16,
                     alignItems: "center",
@@ -254,7 +256,7 @@ export default function EmergencySOSButton() {
                     style={{
                       fontSize: 16,
                       fontWeight: "600",
-                      color: "#F7DFBA", // Cream text
+                      color: "#F8E9E7", // Cream text
                     }}
                   >
                     Cancel
@@ -265,11 +267,11 @@ export default function EmergencySOSButton() {
                   onPress={startCountdown}
                   style={{
                     flex: 1,
-                    backgroundColor: "#F0531C", // Orange background
+                    backgroundColor: "#A9334D", // Orange background
                     borderRadius: 12,
                     padding: 16,
                     alignItems: "center",
-                    shadowColor: "#F0531C",
+                    shadowColor: "#A9334D",
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.3,
                     shadowRadius: 8,
@@ -280,7 +282,7 @@ export default function EmergencySOSButton() {
                     style={{
                       fontSize: 16,
                       fontWeight: "bold",
-                      color: "#F7DFBA", // Cream text
+                      color: "#F8E9E7", // Cream text
                     }}
                   >
                     Start SOS
@@ -294,7 +296,7 @@ export default function EmergencySOSButton() {
                 style={{
                   fontSize: 72,
                   fontWeight: "bold",
-                  color: "#F0531C", // Orange text
+                  color: "#A9334D", // Orange text
                   marginBottom: 12,
                 }}
               >
@@ -304,7 +306,7 @@ export default function EmergencySOSButton() {
               <Text
                 style={{
                   fontSize: 18,
-                  color: "#09332C", // Dark teal text
+                  color: "#781D11", // Dark teal text
                   textAlign: "center",
                   marginBottom: 24,
                 }}
@@ -315,7 +317,7 @@ export default function EmergencySOSButton() {
               <TouchableOpacity
                 onPress={closeModal}
                 style={{
-                  backgroundColor: "#09332C", // Dark teal background
+                  backgroundColor: "#781D11", // Dark teal background
                   borderRadius: 12,
                   paddingVertical: 16,
                   paddingHorizontal: 32,
@@ -327,7 +329,7 @@ export default function EmergencySOSButton() {
                   style={{
                     fontSize: 16,
                     fontWeight: "bold",
-                    color: "#F7DFBA", // Cream text
+                    color: "#F8E9E7", // Cream text
                   }}
                 >
                   Cancel Emergency Call
@@ -348,41 +350,41 @@ export default function EmergencySOSButton() {
           position: "absolute",
           bottom: insets.bottom + 100, // Above tab bar
           right: 20,
-          backgroundColor: "#F0531C", // Orange background
+          backgroundColor: "#A9334D", // Orange background
           borderRadius: 30,
           width: 60,
           height: 60,
           alignItems: "center",
           justifyContent: "center",
-          shadowColor: "#F0531C",
+          shadowColor: "#A9334D",
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.4,
           shadowRadius: 12,
           elevation: 8,
           zIndex: 1000,
           borderWidth: 2,
-          borderColor: "#09332C", // Dark teal border
+          borderColor: "#781D11", // Dark teal border
         }}
       >
-        <Phone size={24} color="#F7DFBA" /> {/* Cream icon */}
+        <Phone size={24} color="#F8E9E7" /> {/* Cream icon */}
         <View
           style={{
             position: "absolute",
             top: -2,
             right: -2,
-            backgroundColor: "#F7DFBA", // Cream background
+            backgroundColor: "#F8E9E7", // Cream background
             borderRadius: 8,
             paddingHorizontal: 4,
             paddingVertical: 1,
             borderWidth: 1,
-            borderColor: "#09332C", // Dark teal border
+            borderColor: "#781D11", // Dark teal border
           }}
         >
           <Text
             style={{
               fontSize: 8,
               fontWeight: "bold",
-              color: "#F0531C", // Orange text
+              color: "#A9334D", // Orange text
             }}
           >
             SOS
