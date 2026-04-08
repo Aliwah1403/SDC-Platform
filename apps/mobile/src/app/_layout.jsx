@@ -109,6 +109,10 @@ export default function RootLayout() {
             name="contact-detail"
             options={{ presentation: "card" }}
           />
+          <Stack.Screen
+            name="facility-detail"
+            options={{ presentation: "modal" }}
+          />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>
