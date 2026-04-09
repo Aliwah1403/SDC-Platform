@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Share, Image } from "react-native";
-import { Heart, MessageCircle, Share2 } from "lucide-react-native";
+import { Bookmark, Heart, MessageCircle, Share2 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
 const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
@@ -20,15 +20,21 @@ function timeAgo(date) {
 }
 
 const CATEGORY_LABELS = {
-  wins: "Wins",
-  tips: "Tips",
+  wins: "Wins & Achievements",
+  daily: "Daily Life",
+  pain: "Pain & Crisis",
+  mental: "Mental Health & Emotions",
+  tips: "Tips & Advice",
+  medications: "Medications",
+  diet: "Diet & Nutrition",
+  exercise: "Exercise & Movement",
   questions: "Questions",
-  pain: "Pain & Treatment",
   new: "New to SCD",
-  research: "Research",
+  research: "Research & Clinical Trials",
+  support: "Support & Encouragement",
 };
 
-export function PostCard({ post, isLiked, onLike, onPress }) {
+export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
   const handleShare = async () => {
     try {
       await Share.share({
@@ -163,7 +169,6 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
           style={{
             flexDirection: "row",
             alignItems: "center",
-            gap: 20,
             borderTopWidth: 1,
             borderTopColor: "#F0EAE8",
             paddingTop: 10,
@@ -171,7 +176,7 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
         >
           <TouchableOpacity
             onPress={onLike}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, marginRight: 16 }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Heart
@@ -193,7 +198,7 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
 
           <TouchableOpacity
             onPress={onPress}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 5, marginRight: 16 }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <MessageCircle size={18} color="#9CA3AF" strokeWidth={2} />
@@ -214,6 +219,20 @@ export function PostCard({ post, isLiked, onLike, onPress }) {
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Share2 size={18} color="#9CA3AF" strokeWidth={2} />
+          </TouchableOpacity>
+
+          <View style={{ flex: 1 }} />
+
+          <TouchableOpacity
+            onPress={onSave}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Bookmark
+              size={18}
+              color={isSaved ? "#A9334D" : "#9CA3AF"}
+              fill={isSaved ? "#A9334D" : "transparent"}
+              strokeWidth={2}
+            />
           </TouchableOpacity>
         </View>
       </View>

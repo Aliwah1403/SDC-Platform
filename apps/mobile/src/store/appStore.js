@@ -98,6 +98,14 @@ export const useAppStore = create((set) => ({
         : [...state.likedPostIds, postId],
     })),
 
+  savedPostIds: [],
+  toggleSave: (postId) =>
+    set((state) => ({
+      savedPostIds: state.savedPostIds.includes(postId)
+        ? state.savedPostIds.filter((id) => id !== postId)
+        : [...state.savedPostIds, postId],
+    })),
+
   // ── Facility favourites ────────────────────────────────────────────────────
   favouriteHospitalIds: [],
   toggleFavouriteHospital: (id) =>
