@@ -413,6 +413,7 @@ export const mockCommunityPosts = [
     content: "Just completed my first 5K walk since my last crisis. Took me 55 mins and I had to stop twice, but I finished it! Six months ago I couldn't walk to the corner shop without pain. Small steps, big wins 💪",
     imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80",
     category: "wins",
+    flair: "win",
     likes: 47,
     timestamp: _ago(1.5),
     comments: [
@@ -441,6 +442,7 @@ export const mockCommunityPosts = [
     content: "Hot tip that changed my pain crisis management: I now keep a 'crisis kit' by my bed — heating pad, a water bottle, paracetamol/codeine already measured out, a playlist, and a laminated sheet with my pain plan. In those moments your brain doesn't work well so having everything ready is a game changer.",
     imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80",
     category: "tips",
+    flair: "advice",
     likes: 112,
     timestamp: _ago(11),
     comments: [
@@ -469,6 +471,7 @@ export const mockCommunityPosts = [
     author: { id: "u5", name: "Priya N.", avatarInitials: "PN", scdType: "HbSS" },
     content: "Has anyone tried the GBT601 gene therapy trial? I've been shortlisted for a site near me and my haematologist is cautiously optimistic. Would love to hear from anyone who's been through a gene therapy process — what questions should I be asking?",
     category: "research",
+    flair: "story",
     likes: 34,
     timestamp: _ago(26),
     comments: [
@@ -511,6 +514,7 @@ export const mockCommunityPosts = [
     author: { id: "u8", name: "Marcus T.", avatarInitials: "MT", scdType: "HbSS" },
     content: "Reminder that the cold IS a trigger and it's okay to skip things because of it. I used to push through cold outdoor events to seem 'normal' and ended up in A&E twice. Now I wear layers aggressively, carry a pocket warmer, and leave early if I get cold. My friends understand — and those who don't aren't my people.",
     category: "tips",
+    flair: "vent",
     likes: 76,
     timestamp: _ago(60),
     comments: [
@@ -575,6 +579,240 @@ export const mockCommunityPosts = [
       { id: "cc12c", author: { name: "Olivia W.", avatarInitials: "OW" }, content: "Also — get the accommodations sorted BEFORE a crisis hits. It's much harder to sort in an emergency.", timestamp: _ago(110) },
       { id: "cc12d", author: { name: "Lena H.", avatarInitials: "LH" }, content: "This is all so reassuring. I didn't know the confidentiality piece. Booking the disability services appointment today!", timestamp: _ago(108) },
     ],
+  },
+];
+
+// ── System posts ──────────────────────────────────────────────────────────────
+const _UX = "?w=800&h=600&fit=crop&q=80&auto=format";
+const _img = (id) => `https://images.unsplash.com/photo-${id}${_UX}`;
+
+mockCommunityPosts.push(
+  // System poll — Pain & Crisis
+  {
+    id: "sp1",
+    author: { id: "system_pain", name: "Pain & Crisis", avatarInitials: "PC" },
+    content: "Has Hydroxyurea reduced your pain crisis frequency?",
+    category: "pain",
+    isSystemPost: true,
+    systemCategory: "pain",
+    likes: 203,
+    timestamp: _ago(8),
+    comments: [
+      { id: "spc1a", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Life-changing for me. Down from 6 hospitalisations a year to 1.", timestamp: _ago(7) },
+      { id: "spc1b", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Took about 6 months before I noticed a real difference. Patience is key.", timestamp: _ago(6) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Yes, significantly", votes: 142 },
+        { id: "b", text: "Somewhat", votes: 89 },
+        { id: "c", text: "Not really", votes: 34 },
+        { id: "d", text: "I don't take it", votes: 21 },
+      ],
+    },
+  },
+  // System discussion prompt — Mental Health
+  {
+    id: "sp2",
+    author: { id: "system_mental", name: "Mental Health & Emotions", avatarInitials: "MH" },
+    content: "What's one mental health habit that genuinely helps you on hard days?",
+    category: "mental",
+    isSystemPost: true,
+    systemCategory: "mental",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1506126613408-eca07ce68773"),
+    likes: 167,
+    timestamp: _ago(20),
+    comments: [
+      { id: "spc2a", author: { name: "Priya N.", avatarInitials: "PN" }, content: "Morning journaling. Even just 5 minutes of writing what I'm grateful for shifts my whole day.", timestamp: _ago(19) },
+      { id: "spc2b", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "Limiting social media when I'm in a flare. The comparison spiral is brutal when you're already struggling.", timestamp: _ago(18) },
+    ],
+  },
+  // System poll — Tips & Advice
+  {
+    id: "sp3",
+    author: { id: "system_tips", name: "Tips & Advice", avatarInitials: "TA" },
+    content: "What's the first thing you do when you feel a crisis coming on?",
+    category: "tips",
+    isSystemPost: true,
+    systemCategory: "tips",
+    likes: 189,
+    timestamp: _ago(40),
+    comments: [
+      { id: "spc3a", author: { name: "Noah B.", avatarInitials: "NB" }, content: "Drink 500ml of water immediately, no exceptions.", timestamp: _ago(39) },
+      { id: "spc3b", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "Heat pad on, lie flat, start my pain plan.", timestamp: _ago(38) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Drink lots of water", votes: 218 },
+        { id: "b", text: "Apply heat immediately", votes: 156 },
+        { id: "c", text: "Take pain relief early", votes: 134 },
+        { id: "d", text: "Rest and stay warm", votes: 97 },
+      ],
+    },
+  },
+  // System discussion prompt — Wins & Achievements
+  {
+    id: "sp4",
+    author: { id: "system_wins", name: "Wins & Achievements", avatarInitials: "WA" },
+    content: "Share a win from this week — big or small 🏆",
+    category: "wins",
+    isSystemPost: true,
+    systemCategory: "wins",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1543269865-cbf427effbad"),
+    likes: 241,
+    timestamp: _ago(56),
+    comments: [
+      { id: "spc4a", author: { name: "Lena H.", avatarInitials: "LH" }, content: "Walked to the shops without stopping! First time in three weeks 🙌", timestamp: _ago(55) },
+      { id: "spc4b", author: { name: "Ben O.", avatarInitials: "BO" }, content: "Made it to my cousin's birthday dinner. Wore layers and left by 9pm, but I was THERE.", timestamp: _ago(54) },
+    ],
+  },
+  // System poll — Medications
+  {
+    id: "sp5",
+    author: { id: "system_medications", name: "Medications", avatarInitials: "MD" },
+    content: "How long before you noticed Hydroxyurea working?",
+    category: "medications",
+    isSystemPost: true,
+    systemCategory: "medications",
+    likes: 145,
+    timestamp: _ago(78),
+    comments: [
+      { id: "spc5a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "About 4 months for me. But my HbF numbers started improving at 8 weeks.", timestamp: _ago(77) },
+      { id: "spc5b", author: { name: "Olivia W.", avatarInitials: "OW" }, content: "Still waiting at month 3. My doctor says some people take up to a year.", timestamp: _ago(76) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Under 3 months", votes: 48 },
+        { id: "b", text: "3–6 months", votes: 112 },
+        { id: "c", text: "6–12 months", votes: 87 },
+        { id: "d", text: "Over a year", votes: 31 },
+      ],
+    },
+  },
+  // System discussion prompt — Support & Encouragement
+  {
+    id: "sp6",
+    author: { id: "system_support", name: "Support & Encouragement", avatarInitials: "SE" },
+    content: "What's something you wish someone had told you when you were first diagnosed?",
+    category: "support",
+    isSystemPost: true,
+    systemCategory: "support",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1529156069898-49953e39b3ac"),
+    likes: 312,
+    timestamp: _ago(92),
+    comments: [
+      { id: "spc6a", author: { name: "Tobias M.", avatarInitials: "TM" }, content: "That it's okay to grieve. No one told me that and I spent years feeling guilty for being sad about my own diagnosis.", timestamp: _ago(91) },
+      { id: "spc6b", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "That you WILL find your rhythm. The first year is the hardest. It gets more manageable.", timestamp: _ago(90) },
+    ],
+  },
+  // Current user posts (for "My Posts" and notifications demo)
+  {
+    id: "cp_me1",
+    author: { id: "me", name: "You", avatarInitials: "Y", scdType: "HbSS", isCurrentUser: true },
+    content: "After 3 years of trial and error, finally found what works for my daily routine: 8 glasses of water minimum, no cold drinks ever, and a 20-min walk every morning (weather permitting). Boring as it sounds, consistency is everything.",
+    category: "tips",
+    flair: "story",
+    likes: 12,
+    timestamp: _ago(3),
+    comments: [
+      { id: "cme1a", author: { name: "Amara D.", avatarInitials: "AD" }, content: "The cold drinks thing is SO underrated. My crises dropped significantly when I cut those out.", timestamp: _ago(2.5) },
+      { id: "cme1b", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is great, thanks for sharing! Adding the morning walk to my routine 🙏", timestamp: _ago(1.8) },
+      { id: "cme1c", author: { name: "Priya N.", avatarInitials: "PN" }, content: "How long before you noticed a difference with the cold drinks?", timestamp: _ago(1) },
+    ],
+  },
+  {
+    id: "cp_me2",
+    author: { id: "me", name: "You", avatarInitials: "Y", scdType: "HbSS", isCurrentUser: true },
+    content: "Has anyone experienced joint pain specifically in the hips as a standalone symptom between crises? Not a full crisis, just persistent aching. My haematologist isn't sure if it's avascular necrosis starting or just typical SCD joint involvement.",
+    category: "questions",
+    flair: "advice",
+    likes: 8,
+    timestamp: _ago(15),
+    comments: [
+      { id: "cme2a", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Yes! Push for an MRI of the hip. AVN is more common than people realise and early detection matters a lot for treatment options.", timestamp: _ago(14) },
+      { id: "cme2b", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "I have this. Was told it was AVN at stage 1. Still manageable with physio but really glad I caught it early.", timestamp: _ago(13) },
+    ],
+  }
+);
+
+// ── Notifications mock data ────────────────────────────────────────────────────
+export const mockNotifications = [
+  {
+    id: "n1",
+    type: "like",
+    actorName: "Amara D.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(0.5),
+    read: false,
+  },
+  {
+    id: "n2",
+    type: "comment",
+    actorName: "Priya N.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(1),
+    read: false,
+  },
+  {
+    id: "n3",
+    type: "like",
+    actorName: "Marcus T.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(1.8),
+    read: false,
+  },
+  {
+    id: "n4",
+    type: "comment",
+    actorName: "Jordan L.",
+    postId: "cp_me2",
+    postSnippet: "Has anyone experienced joint pain specifically in the hips...",
+    timestamp: _ago(14),
+    read: true,
+  },
+  {
+    id: "n5",
+    type: "category_post",
+    actorName: null,
+    categoryName: "Pain & Crisis",
+    categoryId: "pain",
+    postSnippet: null,
+    timestamp: _ago(20),
+    read: true,
+  },
+  {
+    id: "n6",
+    type: "category_post",
+    actorName: null,
+    categoryName: "Tips & Advice",
+    categoryId: "tips",
+    postSnippet: null,
+    timestamp: _ago(40),
+    read: true,
+  },
+  {
+    id: "n7",
+    type: "system_poll",
+    actorName: null,
+    categoryName: "Medications",
+    categoryId: "medications",
+    postSnippet: "How long before you noticed Hydroxyurea working?",
+    timestamp: _ago(78),
+    read: true,
+  },
+  {
+    id: "n8",
+    type: "like",
+    actorName: "Kofi A.",
+    postId: "cp_me2",
+    postSnippet: "Has anyone experienced joint pain specifically in the hips...",
+    timestamp: _ago(92),
+    read: true,
   },
 ];
 

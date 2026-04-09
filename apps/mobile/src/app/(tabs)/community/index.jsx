@@ -41,6 +41,10 @@ export default function CommunityFeedScreen() {
   const toggleSave = useAppStore((s) => s.toggleSave);
   const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
   const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
+  const toggleFollowCategory = useAppStore((s) => s.toggleFollowCategory);
+  const pollVotes = useAppStore((s) => s.pollVotes);
+  const voteOnPoll = useAppStore((s) => s.voteOnPoll);
+  const notificationCount = useAppStore((s) => s.notificationCount);
 
   const filteredPosts = useMemo(() => {
     let posts = [...communityPosts];
@@ -119,7 +123,8 @@ export default function CommunityFeedScreen() {
         postCount={filteredPosts.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onNotifications={() => {}}
+        onNotifications={() => router.push("/community/notifications")}
+        notificationCount={notificationCount}
       />
       <FeedFilter active={activeFeed} onSelect={setActiveFeed} />
 
@@ -168,6 +173,11 @@ export default function CommunityFeedScreen() {
                 isSaved={savedPostIds.includes(item.id)}
                 onSave={() => toggleSave(item.id)}
                 onPress={() => router.push(`/community/${item.id}`)}
+                pollVotedOptionId={pollVotes[item.id] ?? null}
+                onVote={(optionId) => voteOnPoll(item.id, optionId)}
+                followedCategoryIds={followedCategoryIds}
+                blockedCategoryIds={blockedCategoryIds}
+                onFollowCategory={toggleFollowCategory}
               />
             )
           }

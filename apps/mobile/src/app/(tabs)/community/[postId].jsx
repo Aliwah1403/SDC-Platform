@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -9,15 +9,25 @@ import {
   Platform,
   Share,
   Image,
+  ImageBackground,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ArrowLeft, Heart, Share2, Send } from "lucide-react-native";
-import { CommentItem } from "@/components/Community/CommentItem";
-import { useAppStore } from "@/store/appStore";
-import { fonts } from "@/utils/fonts";
+import {
+  ArrowLeft,
+  Heart,
+  Share2,
+  Send,
+  UserCircle,
+  Bell,
+} from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { CommentItem } from "@/components/Community/CommentItem";
+import { PollBlock } from "@/components/Community/PollBlock";
+import { useAppStore } from "@/store/appStore";
+import { CATEGORY_MAP } from "@/data/communityCategories";
+import { fonts } from "@/utils/fonts";
 
 const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
 
@@ -36,12 +46,26 @@ function timeAgo(date) {
 }
 
 const CATEGORY_LABELS = {
-  wins: "Wins",
-  tips: "Tips",
+  wins: "Wins & Achievements",
+  daily: "Daily Life",
+  pain: "Pain & Crisis",
+  mental: "Mental Health & Emotions",
+  tips: "Tips & Advice",
+  medications: "Medications",
+  diet: "Diet & Nutrition",
+  exercise: "Exercise & Movement",
   questions: "Questions",
-  pain: "Pain & Treatment",
   new: "New to SCD",
-  research: "Research",
+  research: "Research & Clinical Trials",
+  support: "Support & Encouragement",
+};
+
+const FLAIR_CONFIG = {
+  advice: { label: "Asking for advice", color: "#3B82F6" },
+  story: { label: "Sharing my story", color: "#7C3AED" },
+  vent: { label: "Vent", color: "#F59E0B" },
+  win: { label: "Win 🏆", color: "#10B981" },
+  info: { label: "Research/Info", color: "#0D9488" },
 };
 
 export default function PostDetailScreen() {
@@ -51,8 +75,11 @@ export default function PostDetailScreen() {
 
   const likedPostIds = useAppStore((s) => s.likedPostIds);
   const toggleLike = useAppStore((s) => s.toggleLike);
-
   const communityPosts = useAppStore((s) => s.communityPosts);
+  const pollVotes = useAppStore((s) => s.pollVotes);
+  const voteOnPoll = useAppStore((s) => s.voteOnPoll);
+  const notificationCount = useAppStore((s) => s.notificationCount);
+
   const post = communityPosts.find((p) => p.id === postId);
   const [comments, setComments] = useState(post?.comments ?? []);
   const [inputText, setInputText] = useState("");
@@ -61,6 +88,10 @@ export default function PostDetailScreen() {
 
   const isLiked = likedPostIds.includes(post.id);
   const displayLikes = post.likes + (isLiked ? 1 : 0);
+  const systemCategory = post.isSystemPost
+    ? CATEGORY_MAP[post.systemCategory]
+    : null;
+  const flair = post.flair ? FLAIR_CONFIG[post.flair] : null;
 
   const handleSubmitComment = () => {
     const text = inputText.trim();
@@ -79,16 +110,14 @@ export default function PostDetailScreen() {
 
   const handleShare = async () => {
     try {
-      await Share.share({
-        message: `${post.author.name} on Hemo: "${post.content}"`,
-      });
+      const author = post.isAnonymous ? "Someone" : post.author.name;
+      await Share.share({ message: `${author} on Hemo: "${post.content}"` });
     } catch (_) {}
   };
 
   const ListHeader = (
     <View>
-      {/* Nav header */}
-
+      {/* Gradient header */}
       <LinearGradient
         colors={["#D09F9A", "#A9334D", "#781D11"]}
         start={{ x: 0, y: 0 }}
@@ -100,7 +129,6 @@ export default function PostDetailScreen() {
           overflow: "hidden",
         }}
       >
-        {/* Decorative circles */}
         <View
           style={{
             position: "absolute",
@@ -125,12 +153,11 @@ export default function PostDetailScreen() {
             left: -30,
           }}
         />
-
-        {/* Title row */}
         <View
           style={{
             flexDirection: "row",
             alignItems: "center",
+            justifyContent: "space-between",
             marginBottom: 14,
             gap: 12,
           }}
@@ -149,17 +176,43 @@ export default function PostDetailScreen() {
           >
             <ArrowLeft size={20} color="#F8E9E7" strokeWidth={2} />
           </TouchableOpacity>
-          <Text
-            style={{ fontFamily: fonts.bold, fontSize: 24, color: "#F8E9E7" }}
+          <TouchableOpacity
+            onPress={() => router.push("/community/notifications")}
+            style={{
+              backgroundColor: "rgba(255,255,255,0.2)",
+              borderRadius: 20,
+              width: 40,
+              height: 40,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            activeOpacity={0.7}
           >
-            Community
-          </Text>
+            <View style={{ position: "relative" }}>
+              <Bell size={20} color="#F8E9E7" strokeWidth={2} />
+              {notificationCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -3,
+                    right: -3,
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    backgroundColor: "#DC2626",
+                    borderWidth: 1.5,
+                    borderColor: "rgba(169,51,77,0.9)",
+                  }}
+                />
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
       </LinearGradient>
 
       {/* Post body */}
       <View style={{ backgroundColor: "#fff", padding: 20, marginBottom: 8 }}>
-        {/* Author */}
+        {/* Author row */}
         <View
           style={{
             flexDirection: "row",
@@ -167,42 +220,76 @@ export default function PostDetailScreen() {
             marginBottom: 14,
           }}
         >
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: avatarColor(post.author.name),
-              alignItems: "center",
-              justifyContent: "center",
-              marginRight: 12,
-            }}
-          >
-            <Text
-              style={{ fontFamily: fonts.bold, fontSize: 15, color: "#F8E9E7" }}
-            >
-              {post.author.avatarInitials}
-            </Text>
-          </View>
-          <View style={{ flex: 1 }}>
+          {post.isSystemPost && systemCategory ? (
+            <ImageBackground
+              source={{ uri: systemCategory.photo }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                overflow: "hidden",
+                marginRight: 12,
+              }}
+              imageStyle={{ borderRadius: 22 }}
+              resizeMode="cover"
+            />
+          ) : post.isAnonymous ? (
             <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: "#E5E0DD",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
+            >
+              <UserCircle size={24} color="#9C8D8A" strokeWidth={1.5} />
+            </View>
+          ) : (
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: avatarColor(post.author.name),
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 12,
+              }}
             >
               <Text
                 style={{
-                  fontFamily: fonts.semibold,
+                  fontFamily: fonts.bold,
                   fontSize: 15,
-                  color: "#09332C",
+                  color: "#F8E9E7",
                 }}
               >
-                {post.author.name}
+                {post.author.avatarInitials}
               </Text>
+            </View>
+          )}
+
+          <View style={{ flex: 1 }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 15,
+                color: "#09332C",
+              }}
+            >
+              {post.isAnonymous ? "Anonymous" : post.author.name}
+            </Text>
+            {!post.isSystemPost && !post.isAnonymous && post.author.scdType && (
               <View
                 style={{
+                  alignSelf: "flex-start",
                   backgroundColor: "#F8E9E7",
-                  borderRadius: 10,
-                  paddingHorizontal: 8,
+                  borderRadius: 8,
+                  paddingHorizontal: 7,
                   paddingVertical: 2,
+                  marginTop: 2,
                 }}
               >
                 <Text
@@ -215,35 +302,93 @@ export default function PostDetailScreen() {
                   {post.author.scdType}
                 </Text>
               </View>
-            </View>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 13,
-                color: "#6B7280",
-                marginTop: 2,
-              }}
-            >
-              {timeAgo(post.timestamp)}
-            </Text>
+            )}
+            {!post.isSystemPost && (
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 13,
+                  color: "#6B7280",
+                  marginTop: 2,
+                }}
+              >
+                {timeAgo(post.timestamp)}
+              </Text>
+            )}
           </View>
         </View>
 
-        {/* Full content */}
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 16,
-            color: "#09332C",
-            lineHeight: 24,
-            marginBottom: post.imageUrl ? 16 : 14,
-          }}
-        >
-          {post.content}
-        </Text>
+        {/* Content / discussion prompt */}
+        {post.isDiscussionPrompt ? (
+          <ImageBackground
+            source={{ uri: post.imageUrl }}
+            style={{
+              width: "100%",
+              height: 220,
+              borderRadius: 12,
+              overflow: "hidden",
+              marginBottom: 16,
+            }}
+            resizeMode="cover"
+          >
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.65)"]}
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 130,
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: 16,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 18,
+                  color: "#FFFFFF",
+                  lineHeight: 26,
+                }}
+              >
+                {post.content}
+              </Text>
+            </View>
+          </ImageBackground>
+        ) : (
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 16,
+              color: "#09332C",
+              lineHeight: 24,
+              marginBottom: post.poll ? 12 : post.imageUrl ? 16 : 14,
+            }}
+          >
+            {post.content}
+          </Text>
+        )}
+
+        {/* Poll */}
+        {post.poll && (
+          <View style={{ marginBottom: 12, marginHorizontal: -4 }}>
+            <PollBlock
+              poll={post.poll}
+              votedOptionId={pollVotes[post.id] ?? null}
+              onVote={(optionId) => voteOnPoll(post.id, optionId)}
+            />
+          </View>
+        )}
 
         {/* Photo */}
-        {post.imageUrl && (
+        {post.imageUrl && !post.isDiscussionPrompt && !post.poll && (
           <Image
             source={{ uri: post.imageUrl }}
             style={{
@@ -251,28 +396,58 @@ export default function PostDetailScreen() {
               height: 260,
               borderRadius: 12,
               marginBottom: 16,
-              
             }}
             resizeMode="cover"
           />
         )}
 
-        {/* Category chip */}
+        {/* Category + flair chips */}
         <View
           style={{
-            alignSelf: "flex-start",
-            backgroundColor: "#F8F4F0",
-            borderRadius: 10,
-            paddingHorizontal: 10,
-            paddingVertical: 4,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
             marginBottom: 14,
           }}
         >
-          <Text
-            style={{ fontFamily: fonts.medium, fontSize: 12, color: "#09332C" }}
+          <View
+            style={{
+              backgroundColor: "#F8F4F0",
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+            }}
           >
-            {CATEGORY_LABELS[post.category] ?? post.category}
-          </Text>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 12,
+                color: "#09332C",
+              }}
+            >
+              {CATEGORY_LABELS[post.category] ?? post.category}
+            </Text>
+          </View>
+          {flair && (
+            <View
+              style={{
+                backgroundColor: flair.color,
+                borderRadius: 10,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.medium,
+                  fontSize: 12,
+                  color: "#FFFFFF",
+                }}
+              >
+                {flair.label}
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Actions */}

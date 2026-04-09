@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Search, X } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
-export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNotifications }) {
+export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNotifications, notificationCount = 0 }) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -83,7 +83,24 @@ export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNoti
           }}
           activeOpacity={0.7}
         >
-          <Bell size={20} color="#F8E9E7" strokeWidth={2} />
+          <View style={{ position: "relative" }}>
+            <Bell size={20} color="#F8E9E7" strokeWidth={2} />
+            {notificationCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: -3,
+                  right: -3,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#DC2626",
+                  borderWidth: 1.5,
+                  borderColor: "rgba(169,51,77,0.9)",
+                }}
+              />
+            )}
+          </View>
         </TouchableOpacity>
       </View>
 

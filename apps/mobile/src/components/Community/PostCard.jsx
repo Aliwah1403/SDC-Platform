@@ -1,7 +1,23 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Share, Image } from "react-native";
-import { Bookmark, Heart, MessageCircle, Share2 } from "lucide-react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Share,
+  Image,
+  ImageBackground,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  Bookmark,
+  Heart,
+  MessageCircle,
+  Share2,
+  UserCircle,
+} from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { CATEGORY_MAP } from "@/data/communityCategories";
+import { PollBlock } from "@/components/Community/PollBlock";
 
 const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
 
@@ -34,16 +50,43 @@ const CATEGORY_LABELS = {
   support: "Support & Encouragement",
 };
 
-export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
+const FLAIR_CONFIG = {
+  advice: { label: "Asking for advice", color: "#3B82F6" },
+  story: { label: "Sharing my story", color: "#7C3AED" },
+  vent: { label: "Vent", color: "#F59E0B" },
+  win: { label: "Win 🏆", color: "#10B981" },
+  info: { label: "Research/Info", color: "#0D9488" },
+};
+
+export function PostCard({
+  post,
+  isLiked,
+  onLike,
+  isSaved,
+  onSave,
+  onPress,
+  pollVotedOptionId,
+  onVote,
+  followedCategoryIds = [],
+  blockedCategoryIds = [],
+  onFollowCategory,
+}) {
   const handleShare = async () => {
     try {
-      await Share.share({
-        message: `${post.author.name} on Hemo: "${post.content}"`,
-      });
+      const author = post.isAnonymous ? "Someone" : post.author.name;
+      await Share.share({ message: `${author} on Hemo: "${post.content}"` });
     } catch (_) {}
   };
 
   const displayLikes = post.likes + (isLiked ? 1 : 0);
+  const systemCategory = post.isSystemPost
+    ? CATEGORY_MAP[post.systemCategory]
+    : null;
+  const canFollow =
+    post.isSystemPost &&
+    !followedCategoryIds.includes(post.systemCategory) &&
+    !blockedCategoryIds.includes(post.systemCategory);
+  const flair = post.flair ? FLAIR_CONFIG[post.flair] : null;
 
   return (
     <TouchableOpacity
@@ -62,7 +105,7 @@ export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
         elevation: 2,
       }}
     >
-      {/* Author row */}
+      {/* ── Author row ─────────────────────────────────────────────────────── */}
       <View
         style={{
           flexDirection: "row",
@@ -71,23 +114,55 @@ export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
           paddingBottom: 10,
         }}
       >
-        <View
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: avatarColor(post.author.name),
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 10,
-          }}
-        >
-          <Text
-            style={{ fontFamily: fonts.bold, fontSize: 14, color: "#F8E9E7" }}
+        {post.isSystemPost && systemCategory ? (
+          // System post: circular category photo
+          <ImageBackground
+            source={{ uri: systemCategory.photo }}
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              overflow: "hidden",
+              marginRight: 10,
+            }}
+            imageStyle={{ borderRadius: 20 }}
+            resizeMode="cover"
+          />
+        ) : post.isAnonymous ? (
+          // Anonymous: grey circle with person icon
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: "#E5E0DD",
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 10,
+            }}
           >
-            {post.author.avatarInitials}
-          </Text>
-        </View>
+            <UserCircle size={22} color="#9C8D8A" strokeWidth={1.5} />
+          </View>
+        ) : (
+          // Regular: initials avatar
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: avatarColor(post.author.name),
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 10,
+            }}
+          >
+            <Text
+              style={{ fontFamily: fonts.bold, fontSize: 14, color: "#F8E9E7" }}
+            >
+              {post.author.avatarInitials}
+            </Text>
+          </View>
+        )}
 
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -98,71 +173,175 @@ export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
                 color: "#09332C",
               }}
             >
-              {post.author.name}
+              {post.isAnonymous ? "Anonymous" : post.author.name}
             </Text>
-            <View
-              style={{
-                backgroundColor: "#F8E9E7",
-                borderRadius: 10,
-                paddingHorizontal: 7,
-                paddingVertical: 2,
-              }}
-            ></View>
+
+            {/* Follow CTA on system posts */}
+            {canFollow && onFollowCategory && (
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation?.();
+                  onFollowCategory(post.systemCategory);
+                }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 13,
+                    color: "#A9334D",
+                  }}
+                >
+                  · Follow
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: "#6B7280",
-              marginTop: 1,
-            }}
-          >
-            {timeAgo(post.timestamp)}
-          </Text>
+
+          {!post.isSystemPost && (
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#6B7280",
+                marginTop: 1,
+              }}
+            >
+              {timeAgo(post.timestamp)}
+            </Text>
+          )}
         </View>
       </View>
 
-      {/* Content */}
-      <Text
-        numberOfLines={post.imageUrl ? 3 : 4}
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: 15,
-          color: "#09332C",
-          lineHeight: 22,
-          paddingHorizontal: 16,
-          marginBottom: 12,
-        }}
-      >
-        {post.content}
-      </Text>
-
-      {/* Photo */}
-      {post.imageUrl && (
-        <Image
+      {/* ── Content / Discussion prompt ─────────────────────────────────────── */}
+      {post.isDiscussionPrompt ? (
+        // Full-width banner with question overlaid
+        <ImageBackground
           source={{ uri: post.imageUrl }}
           style={{ width: "100%", height: 200 }}
           resizeMode="cover"
-        />
+        >
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.65)"]}
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 120,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 18,
+                color: "#FFFFFF",
+                lineHeight: 26,
+              }}
+            >
+              {post.content}
+            </Text>
+          </View>
+        </ImageBackground>
+      ) : (
+        <>
+          <Text
+            numberOfLines={post.imageUrl ? 3 : 4}
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 15,
+              color: "#09332C",
+              lineHeight: 22,
+              paddingHorizontal: 16,
+              marginBottom: post.poll ? 10 : 12,
+            }}
+          >
+            {post.content}
+          </Text>
+
+          {/* Poll block */}
+          {post.poll && (
+            <PollBlock
+              poll={post.poll}
+              votedOptionId={pollVotedOptionId ?? null}
+              onVote={(optionId) => onVote?.(optionId)}
+            />
+          )}
+
+          {/* Photo */}
+          {post.imageUrl && !post.poll && (
+            <Image
+              source={{ uri: post.imageUrl }}
+              style={{ width: "100%", height: 200 }}
+              resizeMode="cover"
+            />
+          )}
+        </>
       )}
 
-      {/* Category chip + action row */}
-      <View style={{ padding: 16, paddingTop: post.imageUrl ? 12 : 0 }}>
+      {/* ── Category chip + flair + actions ─────────────────────────────────── */}
+      <View
+        style={{
+          padding: 16,
+          paddingTop: post.isDiscussionPrompt || post.imageUrl ? 12 : 0,
+        }}
+      >
         <View
           style={{
-            alignSelf: "flex-start",
-            backgroundColor: "#F8F4F0",
-            borderRadius: 10,
-            paddingHorizontal: 10,
-            paddingVertical: 3,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
             marginBottom: 12,
           }}
         >
-          <Text
-            style={{ fontFamily: fonts.medium, fontSize: 11, color: "#09332C" }}
+          <View
+            style={{
+              backgroundColor: "#F8F4F0",
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+            }}
           >
-            {CATEGORY_LABELS[post.category] ?? post.category}
-          </Text>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 11,
+                color: "#09332C",
+              }}
+            >
+              {CATEGORY_LABELS[post.category] ?? post.category}
+            </Text>
+          </View>
+
+          {flair && (
+            <View
+              style={{
+                backgroundColor: flair.color,
+                borderRadius: 10,
+                paddingHorizontal: 10,
+                paddingVertical: 3,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.medium,
+                  fontSize: 11,
+                  color: "#FFFFFF",
+                }}
+              >
+                {flair.label}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View
@@ -176,7 +355,12 @@ export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
         >
           <TouchableOpacity
             onPress={onLike}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5, marginRight: 16 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              marginRight: 16,
+            }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Heart
@@ -198,7 +382,12 @@ export function PostCard({ post, isLiked, onLike, isSaved, onSave, onPress }) {
 
           <TouchableOpacity
             onPress={onPress}
-            style={{ flexDirection: "row", alignItems: "center", gap: 5, marginRight: 16 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 5,
+              marginRight: 16,
+            }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <MessageCircle size={18} color="#9CA3AF" strokeWidth={2} />
