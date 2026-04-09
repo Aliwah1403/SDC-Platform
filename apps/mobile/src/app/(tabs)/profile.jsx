@@ -11,11 +11,15 @@ import {
   TextInput,
   Keyboard,
   ActivityIndicator,
+  Modal,
+  Pressable,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ChevronRight,
+  Check,
   Dna,
   Calendar,
   Ruler,
@@ -287,6 +291,13 @@ export default function ProfileScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
+
+  // Edit sheet state
+  const [editingScd, setEditingScd] = useState(false);
+  const [editingDob, setEditingDob] = useState(false);
+  const [tempDay, setTempDay] = useState(1);
+  const [tempMonth, setTempMonth] = useState(0);
+  const [tempYear, setTempYear] = useState(2000);
   const searchInputRef = useRef(null);
   const feedbackOpenedRef = useRef(false);
 
@@ -347,6 +358,28 @@ export default function ProfileScreen() {
   const comingSoon = (feature) =>
     Alert.alert(feature, `${feature} is coming soon.`);
 
+  const openDobSheet = () => {
+    const dob = profile?.dob;
+    if (dob) {
+      const [y, m, d] = dob.split("-").map(Number);
+      setTempYear(y);
+      setTempMonth(m - 1);
+      setTempDay(d);
+    } else {
+      setTempYear(2000);
+      setTempMonth(0);
+      setTempDay(1);
+    }
+    setEditingDob(true);
+  };
+
+  const saveDob = () => {
+    const dob = `${tempYear}-${String(tempMonth + 1).padStart(2, "0")}-${String(tempDay).padStart(2, "0")}`;
+    updateProfile.mutate({ dob });
+    setEditingDob(false);
+  };
+
+
   const openSearch = () => {
     setSearchQuery("");
     setSearchVisible(true);
@@ -384,7 +417,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Dna,
         iconColor: "#A9334D",
-        onPress: () => comingSoon("SCD Type"),
+        onPress: () => setEditingScd(true),
       },
       {
         key: "dob",
@@ -392,7 +425,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Calendar,
         iconColor: "#781D11",
-        onPress: () => comingSoon("Date of Birth"),
+        onPress: openDobSheet,
       },
       {
         key: "height-weight",
@@ -400,7 +433,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Ruler,
         iconColor: "#059669",
-        onPress: () => comingSoon("Height & Weight"),
+        onPress: () => router.push("/edit-body-stats"),
       },
       {
         key: "medications",
@@ -817,33 +850,27 @@ export default function ProfileScreen() {
               label="SCD Type"
               value={scdType || "Not set"}
               rightElement="chevron"
-              onPress={() => comingSoon("SCD Type")}
+              onPress={() => setEditingScd(true)}
             />
             <SettingRow
               icon={Calendar}
               iconColor="#781D11"
               label="Date of Birth"
-              value={
-                onboardingData?.dob
-                  ? formatDob(onboardingData.dob)
-                  : age
-                    ? `Age ${age}`
-                    : "Not set"
-              }
+              value={profile?.dob ? formatDob(profile.dob) : age ? `Age ${age}` : "Not set"}
               rightElement="chevron"
-              onPress={() => comingSoon("Date of Birth")}
+              onPress={openDobSheet}
             />
             <SettingRow
               icon={Ruler}
               iconColor="#059669"
               label="Height & Weight"
               value={
-                onboardingData?.height || onboardingData?.weight
-                  ? `${formatHeight(onboardingData.height)} · ${formatWeight(onboardingData.weight)}`
+                profile?.height || profile?.weight
+                  ? `${formatHeight(profile.height)} · ${formatWeight(profile.weight)}`
                   : "Not set"
               }
               rightElement="chevron"
-              onPress={() => comingSoon("Height & Weight")}
+              onPress={() => router.push("/edit-body-stats")}
             />
           </SectionCard>
 
@@ -1003,6 +1030,157 @@ export default function ProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* ── SCD Type Sheet ── */}
+      <Modal
+        visible={editingScd}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingScd(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingScd(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingScd(false)} hitSlop={12}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+              SCD Type
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          {["HbSS", "HbSC", "HbS-β⁰", "HbS-β⁺", "HbSD", "HbSE", "Unsure"].map((opt, i, arr) => (
+            <React.Fragment key={opt}>
+              <Pressable
+                onPress={() => {
+                  updateProfile.mutate({ scdType: opt === "Unsure" ? null : opt });
+                  setEditingScd(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#09332C", flex: 1 }}>
+                  {opt}
+                </Text>
+                {scdType === opt || (!scdType && opt === "Unsure") ? (
+                  <Check size={18} color="#A9334D" />
+                ) : null}
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Date of Birth Sheet ── */}
+      <Modal
+        visible={editingDob}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingDob(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingDob(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingDob(false)} hitSlop={12}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+              Date of Birth
+            </Text>
+            <Pressable onPress={saveDob} hitSlop={12}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#A9334D" }}>
+                Done
+              </Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: "row", paddingHorizontal: 8 }}>
+            <Picker
+              selectedValue={tempDay}
+              onValueChange={setTempDay}
+              style={{ flex: 1, height: 200 }}
+              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+            >
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <Picker.Item key={d} label={String(d)} value={d} />
+              ))}
+            </Picker>
+            <Picker
+              selectedValue={tempMonth}
+              onValueChange={setTempMonth}
+              style={{ flex: 1.6, height: 200 }}
+              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+            >
+              {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
+                <Picker.Item key={m} label={m} value={i} />
+              ))}
+            </Picker>
+            <Picker
+              selectedValue={tempYear}
+              onValueChange={setTempYear}
+              style={{ flex: 1, height: 200 }}
+              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+            >
+              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                <Picker.Item key={y} label={String(y)} value={y} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
 
       {shouldPreloadFeedback ? (
         <View
