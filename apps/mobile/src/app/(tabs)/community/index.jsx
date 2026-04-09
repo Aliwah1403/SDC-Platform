@@ -9,6 +9,7 @@ import { CommunityHeader } from "@/components/Community/CommunityHeader";
 import { FeedFilter } from "@/components/Community/FeedFilter";
 import { PostCard } from "@/components/Community/PostCard";
 import { PostSkeleton } from "@/components/Community/PostSkeleton";
+import { CategoriesCarousel } from "@/components/Community/CategoriesCarousel";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 
@@ -21,6 +22,7 @@ const SKELETON_DATA = [
 const EMPTY_MESSAGES = {
   popular: "No posts yet. Be the first to share!",
   recent: "No posts yet.",
+  following: null, // handled separately
   mine: "You haven't posted yet.\nTap the button below to share.",
   saved: "No saved posts yet.\nTap the bookmark on any post to save it.",
 };
@@ -37,14 +39,21 @@ export default function CommunityFeedScreen() {
   const toggleLike = useAppStore((s) => s.toggleLike);
   const savedPostIds = useAppStore((s) => s.savedPostIds);
   const toggleSave = useAppStore((s) => s.toggleSave);
+  const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
+  const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
 
   const filteredPosts = useMemo(() => {
     let posts = [...communityPosts];
+
+    // Always exclude blocked categories
+    posts = posts.filter((p) => !blockedCategoryIds.includes(p.category));
 
     if (activeFeed === "popular") {
       posts.sort((a, b) => b.likes - a.likes);
     } else if (activeFeed === "recent") {
       posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    } else if (activeFeed === "following") {
+      posts = posts.filter((p) => followedCategoryIds.includes(p.category));
     } else if (activeFeed === "mine") {
       posts = posts.filter((p) => p.author.isCurrentUser);
     } else if (activeFeed === "saved") {
@@ -61,7 +70,7 @@ export default function CommunityFeedScreen() {
     }
 
     return posts;
-  }, [activeFeed, searchQuery, communityPosts, savedPostIds]);
+  }, [activeFeed, searchQuery, communityPosts, savedPostIds, followedCategoryIds, blockedCategoryIds]);
 
   const onRefresh = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -73,6 +82,34 @@ export default function CommunityFeedScreen() {
   const handleCompose = () => router.push("/community/create-post");
 
   const listData = refreshing ? SKELETON_DATA : filteredPosts;
+
+  const showCarousel = (activeFeed === "popular" || activeFeed === "recent") && !searchQuery;
+
+  function renderEmptyFollowing() {
+    return (
+      <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#09332C", marginBottom: 8 }}>
+          No communities followed yet
+        </Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 20 }}>
+          Follow communities to see their posts here.
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.push("/community/categories")}
+          style={{
+            backgroundColor: "#A9334D",
+            borderRadius: 12,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 14, color: "#F8E9E7" }}>
+            Browse communities
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
@@ -94,38 +131,30 @@ export default function CommunityFeedScreen() {
           showsVerticalScrollIndicator={false}
           onRefresh={onRefresh}
           refreshing={false}
+          ListHeaderComponent={
+            showCarousel ? (
+              <CategoriesCarousel
+                communityPosts={communityPosts}
+                followedCategoryIds={followedCategoryIds}
+              />
+            ) : null
+          }
           ListEmptyComponent={
             !refreshing ? (
-              <View
-                style={{
-                  alignItems: "center",
-                  paddingTop: 60,
-                  paddingHorizontal: 32,
-                }}
-              >
-                <Text
-                  style={{
-                    fontFamily: fonts.semibold,
-                    fontSize: 17,
-                    color: "#09332C",
-                    marginBottom: 8,
-                  }}
-                >
-                  Nothing here yet
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: fonts.regular,
-                    fontSize: 14,
-                    color: "#6B7280",
-                    textAlign: "center",
-                  }}
-                >
-                  {searchQuery
-                    ? `No results for "${searchQuery}"`
-                    : EMPTY_MESSAGES[activeFeed]}
-                </Text>
-              </View>
+              activeFeed === "following" ? (
+                renderEmptyFollowing()
+              ) : (
+                <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#09332C", marginBottom: 8 }}>
+                    Nothing here yet
+                  </Text>
+                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center" }}>
+                    {searchQuery
+                      ? `No results for "${searchQuery}"`
+                      : EMPTY_MESSAGES[activeFeed]}
+                  </Text>
+                </View>
+              )
             ) : null
           }
           renderItem={({ item }) =>

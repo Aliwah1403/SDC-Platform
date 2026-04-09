@@ -106,6 +106,30 @@ export const useAppStore = create((set) => ({
         : [...state.savedPostIds, postId],
     })),
 
+  followedCategoryIds: [],
+  toggleFollowCategory: (categoryId) =>
+    set((state) => ({
+      followedCategoryIds: state.followedCategoryIds.includes(categoryId)
+        ? state.followedCategoryIds.filter((id) => id !== categoryId)
+        : [...state.followedCategoryIds, categoryId],
+      // unblock when following
+      blockedCategoryIds: state.blockedCategoryIds.filter(
+        (id) => id !== categoryId
+      ),
+    })),
+
+  blockedCategoryIds: [],
+  toggleBlockCategory: (categoryId) =>
+    set((state) => ({
+      blockedCategoryIds: state.blockedCategoryIds.includes(categoryId)
+        ? state.blockedCategoryIds.filter((id) => id !== categoryId)
+        : [...state.blockedCategoryIds, categoryId],
+      // unfollow when blocking
+      followedCategoryIds: state.followedCategoryIds.filter(
+        (id) => id !== categoryId
+      ),
+    })),
+
   // ── Facility favourites ────────────────────────────────────────────────────
   favouriteHospitalIds: [],
   toggleFavouriteHospital: (id) =>

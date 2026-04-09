@@ -22,39 +22,10 @@ import {
   X as RemoveIcon,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
+import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
 const MAX_CHARS = 500;
-
-const CATEGORY_GROUPS = [
-  {
-    group: "My Journey",
-    categories: [
-      { id: "wins", label: "Wins & Achievements" },
-      { id: "daily", label: "Daily Life" },
-      { id: "pain", label: "Pain & Crisis" },
-      { id: "mental", label: "Mental Health & Emotions" },
-    ],
-  },
-  {
-    group: "Health & Wellness",
-    categories: [
-      { id: "tips", label: "Tips & Advice" },
-      { id: "medications", label: "Medications" },
-      { id: "diet", label: "Diet & Nutrition" },
-      { id: "exercise", label: "Exercise & Movement" },
-    ],
-  },
-  {
-    group: "Connect",
-    categories: [
-      { id: "questions", label: "Questions" },
-      { id: "new", label: "New to SCD" },
-      { id: "research", label: "Research & Clinical Trials" },
-      { id: "support", label: "Support & Encouragement" },
-    ],
-  },
-];
 
 const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
 function avatarColor(name = "") {
@@ -494,7 +465,7 @@ export default function CreatePostScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {CATEGORY_GROUPS.map((group, gi) => (
+        {COMMUNITY_CATEGORIES_DATA.map((group, gi) => (
           <View key={group.group}>
             {/* Group header */}
             <Text
