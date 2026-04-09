@@ -11,13 +11,13 @@ import {
 import { fonts } from "@/utils/fonts";
 
 export const COMMUNITY_CATEGORIES = [
-  { id: "all",      label: "All",              Icon: LayoutGrid },
-  { id: "wins",     label: "Wins",             Icon: Trophy },
-  { id: "tips",     label: "Tips",             Icon: Lightbulb },
-  { id: "questions",label: "Questions",        Icon: HelpCircle },
-  { id: "pain",     label: "Pain & Treatment", Icon: HeartPulse },
-  { id: "new",      label: "New to SCD",       Icon: BookOpen },
-  { id: "research", label: "Research",         Icon: FlaskConical },
+  { id: "all", label: "All", Icon: LayoutGrid },
+  { id: "wins", label: "Wins", Icon: Trophy },
+  { id: "tips", label: "Tips", Icon: Lightbulb },
+  { id: "questions", label: "Questions", Icon: HelpCircle },
+  { id: "pain", label: "Pain & Treatment", Icon: HeartPulse },
+  { id: "new", label: "New to SCD", Icon: BookOpen },
+  { id: "research", label: "Research", Icon: FlaskConical },
 ];
 
 export function CategoryFilter({ active, onSelect }) {
@@ -25,8 +25,13 @@ export function CategoryFilter({ active, onSelect }) {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", gap: 8 }}
-      style={{ backgroundColor: "#F8F4F0" }}
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        gap: 8,
+        alignItems: "center",
+      }}
+      style={{ backgroundColor: "#F8F4F0", flexGrow: 0 }}
     >
       {COMMUNITY_CATEGORIES.map((cat) => {
         const isActive = active === cat.id;
@@ -46,8 +51,6 @@ export function CategoryFilter({ active, onSelect }) {
               borderColor: isActive ? "#A9334D" : "#E2D9D6",
               paddingHorizontal: 13,
               height: 34,
-              overflow: "hidden",
-              marginTop: 10,
             }}
           >
             <Icon
