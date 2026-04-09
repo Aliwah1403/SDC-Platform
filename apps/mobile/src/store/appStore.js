@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { mockCommunityPosts } from "@/types";
+import { mockCommunityPosts, mockNotifications } from "@/types";
 
 export const useAppStore = create((set) => ({
   // ── Onboarding form state (ephemeral; written to Supabase on complete) ────────
@@ -128,6 +128,44 @@ export const useAppStore = create((set) => ({
       followedCategoryIds: state.followedCategoryIds.filter(
         (id) => id !== categoryId
       ),
+    })),
+
+  // ── Polls ──────────────────────────────────────────────────────────────────
+  pollVotes: {}, // { [postId]: optionId }
+  voteOnPoll: (postId, optionId) =>
+    set((state) => {
+      const prev = state.pollVotes[postId];
+      const updatedPosts = state.communityPosts.map((p) => {
+        if (p.id !== postId || !p.poll) return p;
+        return {
+          ...p,
+          poll: {
+            ...p.poll,
+            options: p.poll.options.map((o) => ({
+              ...o,
+              votes:
+                o.id === optionId
+                  ? o.votes + 1
+                  : o.id === prev
+                  ? Math.max(0, o.votes - 1)
+                  : o.votes,
+            })),
+          },
+        };
+      });
+      return {
+        pollVotes: { ...state.pollVotes, [postId]: optionId },
+        communityPosts: updatedPosts,
+      };
+    }),
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  notifications: mockNotifications,
+  notificationCount: mockNotifications.filter((n) => !n.read).length,
+  markAllNotificationsRead: () =>
+    set((state) => ({
+      notificationCount: 0,
+      notifications: state.notifications.map((n) => ({ ...n, read: true })),
     })),
 
   // ── Facility favourites ────────────────────────────────────────────────────

@@ -20,6 +20,10 @@ import {
   Camera,
   ImageIcon,
   X as RemoveIcon,
+  Lock,
+  UserCircle,
+  Plus,
+  BarChart2,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
@@ -33,6 +37,14 @@ function avatarColor(name = "") {
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + hash * 31;
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
 }
+
+const FLAIR_OPTIONS = [
+  { id: "advice", label: "Asking for advice", color: "#3B82F6" },
+  { id: "story", label: "Sharing my story", color: "#7C3AED" },
+  { id: "vent", label: "Vent", color: "#F59E0B" },
+  { id: "win", label: "Win 🏆", color: "#10B981" },
+  { id: "info", label: "Research/Info", color: "#0D9488" },
+];
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -53,10 +65,16 @@ export default function CreatePostScreen() {
   const [content, setContent] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [category, setCategory] = useState(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [flair, setFlair] = useState(null);
+  const [pollEnabled, setPollEnabled] = useState(false);
+  const [pollOptions, setPollOptions] = useState(["", ""]);
 
   const charsLeft = MAX_CHARS - content.length;
   const canAdvance = content.trim().length > 0;
-  const canPost = canAdvance && category !== null;
+  const pollValid =
+    !pollEnabled || pollOptions.filter((o) => o.trim().length > 0).length >= 2;
+  const canPost = canAdvance && category !== null && pollValid;
 
   async function pickFromLibrary() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -90,6 +108,21 @@ export default function CreatePostScreen() {
     if (!result.canceled) setImageUri(result.assets[0].uri);
   }
 
+  function addPollOption() {
+    if (pollOptions.length < 4) setPollOptions([...pollOptions, ""]);
+  }
+
+  function removePollOption(index) {
+    if (pollOptions.length <= 2) return;
+    setPollOptions(pollOptions.filter((_, i) => i !== index));
+  }
+
+  function updatePollOption(index, text) {
+    const updated = [...pollOptions];
+    updated[index] = text;
+    setPollOptions(updated);
+  }
+
   function handlePost() {
     if (!canPost) return;
     const newPost = {
@@ -103,10 +136,23 @@ export default function CreatePostScreen() {
       },
       content: content.trim(),
       category,
+      flair: flair ?? undefined,
+      isAnonymous: isAnonymous || undefined,
       likes: 0,
       timestamp: new Date().toISOString(),
       comments: [],
       imageUrl: imageUri ?? undefined,
+      poll: pollEnabled
+        ? {
+            options: pollOptions
+              .filter((o) => o.trim().length > 0)
+              .map((o, i) => ({
+                id: String.fromCharCode(97 + i),
+                text: o.trim(),
+                votes: 0,
+              })),
+          }
+        : undefined,
     };
     addCommunityPost(newPost);
     router.back();
@@ -193,29 +239,44 @@ export default function CreatePostScreen() {
               gap: 12,
               paddingHorizontal: 16,
               paddingTop: 20,
-              paddingBottom: 16,
+              paddingBottom: 8,
             }}
           >
-            <View
-              style={{
-                width: 46,
-                height: 46,
-                borderRadius: 23,
-                backgroundColor: avatarColor(nickname),
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text
+            {isAnonymous ? (
+              <View
                 style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 16,
-                  color: "#F8E9E7",
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor: "#E5E0DD",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {initials}
-              </Text>
-            </View>
+                <UserCircle size={26} color="#9C8D8A" strokeWidth={1.5} />
+              </View>
+            ) : (
+              <View
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: 23,
+                  backgroundColor: avatarColor(nickname),
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.bold,
+                    fontSize: 16,
+                    color: "#F8E9E7",
+                  }}
+                >
+                  {initials}
+                </Text>
+              </View>
+            )}
             <View style={{ gap: 2 }}>
               <Text
                 style={{
@@ -224,9 +285,9 @@ export default function CreatePostScreen() {
                   color: "#09332C",
                 }}
               >
-                {nickname}
+                {isAnonymous ? "Anonymous" : nickname}
               </Text>
-              {scdType && (
+              {!isAnonymous && scdType && (
                 <Text
                   style={{
                     fontFamily: fonts.regular,
@@ -239,6 +300,34 @@ export default function CreatePostScreen() {
               )}
             </View>
           </View>
+
+          {/* Anonymous toggle */}
+          <TouchableOpacity
+            onPress={() => setIsAnonymous((v) => !v)}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 16,
+              paddingBottom: 14,
+            }}
+          >
+            <Lock
+              size={13}
+              color={isAnonymous ? "#A9334D" : "#9C8D8A"}
+              strokeWidth={2}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 13,
+                color: isAnonymous ? "#A9334D" : "#9C8D8A",
+              }}
+            >
+              {isAnonymous ? "Posting anonymously" : "Post anonymously"}
+            </Text>
+          </TouchableOpacity>
 
           {/* Text input */}
           <TextInput
@@ -254,7 +343,7 @@ export default function CreatePostScreen() {
               color: "#09332C",
               lineHeight: 24,
               paddingHorizontal: 16,
-              minHeight: 140,
+              minHeight: 120,
               textAlignVertical: "top",
             }}
           />
@@ -309,7 +398,7 @@ export default function CreatePostScreen() {
           )}
 
           {/* Photo buttons */}
-          {!imageUri && (
+          {!imageUri && !pollEnabled && (
             <View
               style={{
                 flexDirection: "row",
@@ -406,6 +495,157 @@ export default function CreatePostScreen() {
               </Text>
             </TouchableOpacity>
           )}
+
+          {/* Poll toggle */}
+          <TouchableOpacity
+            onPress={() => {
+              setPollEnabled((v) => !v);
+              if (!pollEnabled) setImageUri(null);
+            }}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              marginHorizontal: 16,
+              marginTop: imageUri ? 10 : 12,
+              padding: 14,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: pollEnabled ? "#A9334D" : "#E2D9D6",
+              backgroundColor: pollEnabled ? "#FDF0F2" : "#FAFAFA",
+            }}
+          >
+            <BarChart2
+              size={18}
+              color={pollEnabled ? "#A9334D" : "#09332C"}
+              strokeWidth={1.5}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 14,
+                color: pollEnabled ? "#A9334D" : "#09332C",
+                flex: 1,
+              }}
+            >
+              {pollEnabled ? "Remove poll" : "Add a poll"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Poll options */}
+          {pollEnabled && (
+            <View style={{ marginHorizontal: 16, marginTop: 12, gap: 8 }}>
+              {pollOptions.map((opt, index) => (
+                <View
+                  key={index}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <TextInput
+                    value={opt}
+                    onChangeText={(t) => updatePollOption(index, t)}
+                    placeholder={`Option ${index + 1}`}
+                    placeholderTextColor="#C4B5B2"
+                    maxLength={80}
+                    style={{
+                      flex: 1,
+                      fontFamily: fonts.regular,
+                      fontSize: 14,
+                      color: "#09332C",
+                      backgroundColor: "#F8F4F0",
+                      borderRadius: 10,
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
+                      borderWidth: 1,
+                      borderColor: opt.trim() ? "#A9334D" : "#E2D9D6",
+                    }}
+                  />
+                  {pollOptions.length > 2 && (
+                    <TouchableOpacity
+                      onPress={() => removePollOption(index)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <X size={16} color="#9C8D8A" strokeWidth={2} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+
+              {pollOptions.length < 4 && (
+                <TouchableOpacity
+                  onPress={addPollOption}
+                  activeOpacity={0.7}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 6,
+                    paddingVertical: 8,
+                  }}
+                >
+                  <Plus size={14} color="#A9334D" strokeWidth={2} />
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      fontSize: 13,
+                      color: "#A9334D",
+                    }}
+                  >
+                    Add option
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Flair picker */}
+          <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 12,
+                color: "#9C8D8A",
+                marginBottom: 8,
+              }}
+            >
+              Flair (optional)
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
+              {FLAIR_OPTIONS.map((f) => {
+                const isActive = flair === f.id;
+                return (
+                  <TouchableOpacity
+                    key={f.id}
+                    onPress={() => setFlair(isActive ? null : f.id)}
+                    activeOpacity={0.75}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
+                      borderRadius: 20,
+                      backgroundColor: isActive ? f.color : "#F8F4F0",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 13,
+                        color: isActive ? "#FFFFFF" : "#09332C",
+                      }}
+                    >
+                      {f.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     );
@@ -456,7 +696,6 @@ export default function CreatePostScreen() {
           Choose category
         </Text>
 
-        {/* Spacer to balance the back button */}
         <View style={{ width: 36 }} />
       </View>
 
@@ -467,7 +706,6 @@ export default function CreatePostScreen() {
       >
         {COMMUNITY_CATEGORIES_DATA.map((group, gi) => (
           <View key={group.group}>
-            {/* Group header */}
             <Text
               style={{
                 fontFamily: fonts.semibold,
@@ -483,7 +721,6 @@ export default function CreatePostScreen() {
               {group.group}
             </Text>
 
-            {/* Category rows */}
             {group.categories.map((cat) => {
               const isSelected = category === cat.id;
               return (
