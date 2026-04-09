@@ -4,6 +4,7 @@ import { fonts } from "@/utils/fonts";
 export const FEED_FILTERS = [
   { id: "popular", label: "Popular" },
   { id: "recent", label: "Recent" },
+  { id: "following", label: "Following" },
   { id: "mine", label: "My Posts" },
   { id: "saved", label: "Saved" },
 ];
