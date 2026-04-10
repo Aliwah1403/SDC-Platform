@@ -26,6 +26,30 @@ export async function updateProfile(userId, fields) {
   if (error) throw error;
 }
 
+export async function uploadAvatar(userId, localUri) {
+  const result = await manipulateAsync(localUri, [{ resize: { width: 400 } }], {
+    format: SaveFormat.JPEG,
+    compress: 0.85,
+    base64: true,
+  });
+
+  const binaryStr = atob(result.base64);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) {
+    bytes[i] = binaryStr.charCodeAt(i);
+  }
+
+  const path = `${userId}/avatar.jpg`;
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  await updateProfile(userId, { avatarUrl: data.publicUrl });
+  return data.publicUrl;
+}
+
 /**
  * Batch write at onboarding completion:
  * - Updates profile fields

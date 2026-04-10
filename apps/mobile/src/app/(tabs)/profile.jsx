@@ -13,8 +13,10 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Image,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -39,6 +41,11 @@ import {
   Search,
   QrCode,
   Star,
+  Camera,
+  Palette,
+  Globe,
+  AtSign,
+  PenLine,
 } from "lucide-react-native";
 import { useAppStore } from "../../store/appStore";
 import {
@@ -49,9 +56,11 @@ import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAuthStore } from "@/utils/auth/store";
+import { useAppearanceStore } from "@/store/appearanceStore";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
 import { signOut } from "@/utils/auth/supabase";
+import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 
@@ -289,6 +298,7 @@ export default function ProfileScreen() {
   const { data: medications = [] } = useMedicationsQuery();
   const updateProfile = useUpdateProfileMutation();
   const { onboardingData } = useAppStore();
+  const { theme, setTheme } = useAppearanceStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     profile?.notificationsEnabled ??
@@ -302,11 +312,18 @@ export default function ProfileScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Edit sheet state
   const [editingScd, setEditingScd] = useState(false);
   const [editingDob, setEditingDob] = useState(false);
   const [editingFrequency, setEditingFrequency] = useState(false);
+  const [editingFullName, setEditingFullName] = useState(false);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [editingAppearance, setEditingAppearance] = useState(false);
+  const [editingLanguage, setEditingLanguage] = useState(false);
+  const [tempFullName, setTempFullName] = useState("");
+  const [tempNickname, setTempNickname] = useState("");
   const [tempDay, setTempDay] = useState(1);
   const [tempMonth, setTempMonth] = useState(0);
   const [tempYear, setTempYear] = useState(2000);
@@ -389,6 +406,59 @@ export default function ProfileScreen() {
     const dob = `${tempYear}-${String(tempMonth + 1).padStart(2, "0")}-${String(tempDay).padStart(2, "0")}`;
     updateProfile.mutate({ dob });
     setEditingDob(false);
+  };
+
+  const handlePickAvatar = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission needed",
+        "Allow photo access to change your profile picture.",
+      );
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    const userId = auth?.user?.id;
+    if (!userId) return;
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(userId, result.assets[0].uri);
+    } catch {
+      Alert.alert(
+        "Upload failed",
+        "Could not update profile photo. Try again.",
+      );
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const openFullNameSheet = () => {
+    setTempFullName(
+      profile?.fullName ?? auth?.user?.user_metadata?.full_name ?? "",
+    );
+    setEditingFullName(true);
+  };
+  const saveFullName = () => {
+    const name = tempFullName.trim();
+    if (name) updateProfile.mutate({ fullName: name });
+    setEditingFullName(false);
+  };
+
+  const openNicknameSheet = () => {
+    setTempNickname(profile?.nickname ?? "");
+    setEditingNickname(true);
+  };
+  const saveNickname = () => {
+    const nick = tempNickname.trim();
+    if (nick) updateProfile.mutate({ nickname: nick });
+    setEditingNickname(false);
   };
 
   const openSearch = () => {
@@ -503,12 +573,44 @@ export default function ProfileScreen() {
         onPress: () => comingSoon("Apple Health"),
       },
       {
-        key: "manage-profile",
-        label: "Manage Profile",
-        section: "Account",
+        key: "photo",
+        label: "Profile Photo",
+        section: "Profile",
+        icon: Camera,
+        iconColor: "#A9334D",
+        onPress: handlePickAvatar,
+      },
+      {
+        key: "full-name",
+        label: "Full Name",
+        section: "Profile",
         icon: User,
-        iconColor: "#09332C",
-        onPress: () => comingSoon("Manage Profile"),
+        iconColor: "#A9334D",
+        onPress: openFullNameSheet,
+      },
+      {
+        key: "nickname",
+        label: "Nickname",
+        section: "Profile",
+        icon: AtSign,
+        iconColor: "#A9334D",
+        onPress: openNicknameSheet,
+      },
+      {
+        key: "appearance",
+        label: "Appearance",
+        section: "Preferences",
+        icon: Palette,
+        iconColor: "#6B7280",
+        onPress: () => setEditingAppearance(true),
+      },
+      {
+        key: "language",
+        label: "Language",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => setEditingLanguage(true),
       },
       {
         key: "password",
@@ -786,27 +888,60 @@ export default function ProfileScreen() {
 
           {/* Centered avatar + identity */}
           <View style={{ alignItems: "center", marginBottom: 20 }}>
-            <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                backgroundColor: "#09332C",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 14,
-              }}
+            <TouchableOpacity
+              onPress={handlePickAvatar}
+              activeOpacity={0.8}
+              style={{ marginBottom: 14 }}
             >
-              <Text
+              <View
                 style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 32,
-                  color: "#F8E9E7",
+                  width: 96,
+                  height: 96,
+                  borderRadius: 48,
+                  backgroundColor: "#09332C",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {initials}
-              </Text>
-            </View>
+                {profile?.avatarUrl ? (
+                  <Image
+                    source={{ uri: profile.avatarUrl }}
+                    style={{ width: 96, height: 96, borderRadius: 48 }}
+                  />
+                ) : (
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 32,
+                      color: "#F8E9E7",
+                    }}
+                  >
+                    {initials}
+                  </Text>
+                )}
+              </View>
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: "#A9334D",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: "#ffffff",
+                }}
+              >
+                {uploadingAvatar ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Camera size={13} color="#ffffff" />
+                )}
+              </View>
+            </TouchableOpacity>
 
             <Text
               style={{
@@ -959,14 +1094,55 @@ export default function ProfileScreen() {
             />
           </SectionCard>
 
-          <SectionCard title="Account">
+          <SectionCard title="Profile">
             <SettingRow
               icon={User}
-              iconColor="#09332C"
-              label="Manage Profile"
+              iconColor="#A9334D"
+              label="Full Name"
+              value={
+                profile?.fullName ??
+                auth?.user?.user_metadata?.full_name ??
+                "Not set"
+              }
               rightElement="chevron"
-              onPress={() => comingSoon("Manage Profile")}
+              onPress={openFullNameSheet}
             />
+            <SettingRow
+              icon={AtSign}
+              iconColor="#A9334D"
+              label="Nickname"
+              value={profile?.nickname || "Not set"}
+              rightElement="chevron"
+              onPress={openNicknameSheet}
+            />
+          </SectionCard>
+
+          <SectionCard title="Preferences">
+            <SettingRow
+              icon={Palette}
+              iconColor="#6B7280"
+              label="Appearance"
+              value={
+                theme === "system"
+                  ? "System"
+                  : theme === "dark"
+                    ? "Dark"
+                    : "Light"
+              }
+              rightElement="chevron"
+              onPress={() => setEditingAppearance(true)}
+            />
+            <SettingRow
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Language"
+              value="English"
+              rightElement="chevron"
+              onPress={() => setEditingLanguage(true)}
+            />
+          </SectionCard>
+
+          <SectionCard title="Account">
             <SettingRow
               icon={Lock}
               iconColor="#6B7280"
@@ -1382,6 +1558,397 @@ export default function ProfileScreen() {
               )}
             </React.Fragment>
           ))}
+        </View>
+      </Modal>
+
+      {/* ── Full Name Sheet ── */}
+      <Modal
+        visible={editingFullName}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingFullName(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingFullName(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingFullName(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Full Name
+            </Text>
+            <Pressable onPress={saveFullName} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
+                Save
+              </Text>
+            </Pressable>
+          </View>
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
+          >
+            <TextInput
+              value={tempFullName}
+              onChangeText={setTempFullName}
+              placeholder="Your full name"
+              placeholderTextColor="#C4A8A4"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveFullName}
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 17,
+                color: "#09332C",
+                borderWidth: 1,
+                borderColor: "#F0E4E1",
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                backgroundColor: "#F8F4F0",
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Nickname Sheet ── */}
+      <Modal
+        visible={editingNickname}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingNickname(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingNickname(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingNickname(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Nickname
+            </Text>
+            <Pressable onPress={saveNickname} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
+                Save
+              </Text>
+            </Pressable>
+          </View>
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
+          >
+            <TextInput
+              value={tempNickname}
+              onChangeText={setTempNickname}
+              placeholder="e.g. Alex"
+              placeholderTextColor="#C4A8A4"
+              autoFocus
+              maxLength={20}
+              returnKeyType="done"
+              onSubmitEditing={saveNickname}
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 17,
+                color: "#09332C",
+                borderWidth: 1,
+                borderColor: "#F0E4E1",
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                backgroundColor: "#F8F4F0",
+              }}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#C4A8A4",
+                marginTop: 6,
+                textAlign: "right",
+              }}
+            >
+              {tempNickname.length}/20
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Appearance Sheet ── */}
+      <Modal
+        visible={editingAppearance}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingAppearance(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingAppearance(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingAppearance(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Appearance
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            Choose how Hemo looks on your device.
+          </Text>
+          {[
+            { label: "Light", value: "light" },
+            { label: "Dark", value: "dark" },
+            { label: "System Default", value: "system" },
+          ].map((opt, i, arr) => (
+            <React.Fragment key={opt.value}>
+              <Pressable
+                onPress={() => {
+                  setTheme(opt.value);
+                  setEditingAppearance(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {theme === opt.value && <Check size={18} color="#A9334D" />}
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Language Sheet ── */}
+      <Modal
+        visible={editingLanguage}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingLanguage(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingLanguage(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingLanguage(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Language
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            More languages coming soon.
+          </Text>
+          <Pressable
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+            })}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 16,
+                color: "#09332C",
+                flex: 1,
+              }}
+            >
+              English
+            </Text>
+            <Check size={18} color="#A9334D" />
+          </Pressable>
         </View>
       </Modal>
 
