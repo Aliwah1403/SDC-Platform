@@ -141,6 +141,7 @@ export default function FacilityDetailScreen() {
   const mock = mockFacilities.find((f) => f.id === id);
   const [facility, setFacility] = useState(cached ?? mock ?? null);
   const [loadingDetails, setLoadingDetails] = useState(!cached && !mock);
+  const [fetchError, setFetchError] = useState(null);
 
   const isFavourite = savedFacilities.some((f) => f.placeId === id);
 
@@ -161,14 +162,30 @@ export default function FacilityDetailScreen() {
         setFacility(data);
         setPlaceDetails(id, data);
       })
-      .catch(() => router.back())
+      .catch((err) => {
+        console.error("[facility-detail] getPlaceDetails failed:", err);
+        setFetchError("Couldn't load facility details. Please try again.");
+      })
       .finally(() => setLoadingDetails(false));
-  }, [id]);
+  }, [id, cached, mock, router, setPlaceDetails]);
 
   if (loadingDetails) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0" }}>
         <ActivityIndicator size="large" color="#A9334D" />
+      </View>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0", padding: 24 }}>
+        <Text style={{ color: "#09332C", fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
+          {fetchError}
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
+          <Text style={{ color: "#F8E9E7", fontFamily: "Geist-SemiBold", fontSize: 15 }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }

@@ -676,9 +676,9 @@ export default function FacilitiesScreen() {
   // Toggle save — optimistic update + background Supabase sync
   const handleToggleSave = useCallback(
     (facility) => {
+      const alreadySaved = savedFacilities.some((f) => f.placeId === facility.placeId);
       toggleSavedFacility(facility);
       if (!userId) return;
-      const alreadySaved = savedFacilities.some((f) => f.placeId === facility.placeId);
       if (alreadySaved) {
         unsaveFacility(userId, facility.placeId).catch(() => toggleSavedFacility(facility));
       } else {
@@ -758,7 +758,7 @@ export default function FacilitiesScreen() {
     try {
       const { facilities: more, nextPageToken: token } =
         await searchFacilitiesByText(
-          null,
+          searchQuery.trim() || null,
           userLocation.lat,
           userLocation.lng,
           nextPageToken,
@@ -774,7 +774,7 @@ export default function FacilitiesScreen() {
     } finally {
       setLoadingMore(false);
     }
-  }, [nextPageToken, loadingMore, userLocation, setPlaceDetails]);
+  }, [nextPageToken, loadingMore, userLocation, searchQuery, setPlaceDetails]);
 
   // ── Debounced search ─────────────────────────────────────────────────────────
   useEffect(() => {
