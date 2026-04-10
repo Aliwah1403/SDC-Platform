@@ -221,7 +221,6 @@ export default function SecurityScreen() {
 
   const provider = getProvider(user);
   const emailUser = isEmailUser(user);
-  const linkedProviders = user?.identities?.map((i) => i.provider) ?? [];
 
   const handleLink = async (providerName) => {
     setLinking(providerName);
