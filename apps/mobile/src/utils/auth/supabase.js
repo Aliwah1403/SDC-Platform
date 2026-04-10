@@ -38,3 +38,22 @@ export async function resetPassword(email) {
 export async function verifyOtp(email, token) {
   return supabase.auth.verifyOtp({ email, token, type: 'recovery' });
 }
+
+export async function changePassword(newPassword) {
+  return supabase.auth.updateUser({ password: newPassword });
+}
+
+export async function signOutAll() {
+  return supabase.auth.signOut({ scope: 'global' });
+}
+
+export async function linkProvider(provider, redirectTo) {
+  return supabase.auth.linkIdentity({
+    provider,
+    options: { redirectTo, skipBrowserRedirect: true },
+  });
+}
+
+export async function unlinkProvider(identity) {
+  return supabase.auth.unlinkIdentity(identity);
+}
