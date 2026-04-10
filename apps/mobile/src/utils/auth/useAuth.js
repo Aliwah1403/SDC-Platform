@@ -30,7 +30,7 @@ export const useAuth = () => {
 
     // Keep the store in sync reactively
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
         useAuthStore.setState({ auth: { session, user: session.user } });
       } else if (event === 'SIGNED_OUT') {
         useAuthStore.setState({ auth: null });

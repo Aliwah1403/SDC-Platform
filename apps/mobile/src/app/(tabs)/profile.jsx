@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import {
   View,
   Text,
-  ScrollView,
   FlatList,
   TouchableOpacity,
   Alert,
@@ -11,11 +10,27 @@ import {
   TextInput,
   Keyboard,
   ActivityIndicator,
+  Modal,
+  Pressable,
+  Image,
+  Platform,
+  StyleSheet,
 } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  interpolate,
+  Extrapolation,
+} from "react-native-reanimated";
+import { BlurView } from "expo-blur";
+import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ChevronRight,
+  Check,
   Dna,
   Calendar,
   Ruler,
@@ -35,19 +50,30 @@ import {
   Search,
   QrCode,
   Star,
+  Camera,
+  Palette,
+  Globe,
+  AtSign,
+  PenLine,
+  Images,
+  Trash2,
 } from "lucide-react-native";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useAppStore } from "../../store/appStore";
 import {
   useProfileQuery,
   useUpdateProfileMutation,
 } from "@/hooks/queries/useProfileQuery";
+import { useQueryClient } from "@tanstack/react-query";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAuthStore } from "@/utils/auth/store";
+import { useAppearanceStore } from "@/store/appearanceStore";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
-import { signOut } from "@/utils/auth/supabase";
+import { signOut, supabase } from "@/utils/auth/supabase";
+import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 
@@ -78,6 +104,17 @@ function formatDob(dob) {
     month: "long",
     year: "numeric",
   });
+}
+
+const FREQUENCY_OPTIONS = [
+  { label: "Twice a day", value: 2 },
+  { label: "3 times a day", value: 3 },
+  { label: "5 times a day", value: 5 },
+];
+
+function formatFrequency(val) {
+  if (!val) return "Not set";
+  return FREQUENCY_OPTIONS.find((o) => o.value === val)?.label ?? "Not set";
 }
 
 function formatAge(dob) {
@@ -273,7 +310,9 @@ export default function ProfileScreen() {
   const { data: emergencyContacts = [] } = useEmergencyContactsQuery();
   const { data: medications = [] } = useMedicationsQuery();
   const updateProfile = useUpdateProfileMutation();
+  const queryClient = useQueryClient();
   const { onboardingData } = useAppStore();
+  const { theme, setTheme } = useAppearanceStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     profile?.notificationsEnabled ??
@@ -287,17 +326,67 @@ export default function ProfileScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  // Edit sheet state
+  const [editingScd, setEditingScd] = useState(false);
+  const [editingDob, setEditingDob] = useState(false);
+  const [editingFrequency, setEditingFrequency] = useState(false);
+  const [editingFullName, setEditingFullName] = useState(false);
+  const [editingNickname, setEditingNickname] = useState(false);
+  const [editingAppearance, setEditingAppearance] = useState(false);
+  const [editingLanguage, setEditingLanguage] = useState(false);
+  const [tempFullName, setTempFullName] = useState("");
+  const [tempNickname, setTempNickname] = useState("");
+  const [tempDay, setTempDay] = useState(1);
+  const [tempMonth, setTempMonth] = useState(0);
+  const [tempYear, setTempYear] = useState(2000);
   const searchInputRef = useRef(null);
   const feedbackOpenedRef = useRef(false);
+  const photoSheetRef = useRef(null);
+
+  // ── Scroll-driven header animation ──────────────────────────────────────────
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
+
+  // Background + border fade in over first 80–120px of scroll
+  const headerBgStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [60, 110], [0, 1], Extrapolation.CLAMP),
+  }));
+
+  // Nickname rises up and fades in as the profile card's name disappears behind the header
+  const nicknameAnimStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(
+      scrollY.value,
+      [100, 150],
+      [0, 1],
+      Extrapolation.CLAMP,
+    ),
+    transform: [
+      {
+        translateY: interpolate(
+          scrollY.value,
+          [100, 150],
+          [10, 0],
+          Extrapolation.CLAMP,
+        ),
+      },
+    ],
+  }));
 
   const scdType = profile?.scdType;
   const age = formatAge(profile?.dob);
   const medicationsCount = medications.filter((m) => m.isActive).length;
   const emergencyCount = emergencyContacts.length;
-  const userName =
-    auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "—";
+  // Full name used only in official contexts (reports, health summary share, etc.)
+  const fullName =
+    profile?.fullName ?? auth?.user?.user_metadata?.full_name ?? "—";
+  // Nickname is the primary identity throughout the app
+  const displayNickname = profile?.nickname || "—";
   const userEmail = auth?.user?.email ?? "—";
-  const initials = getInitials(userName);
+  const initials = getInitials(profile?.nickname || fullName);
   const healthStreak = streak?.currentStreak ?? 0;
 
   const handleToggleNotifications = (val) => {
@@ -325,7 +414,7 @@ export default function ProfileScreen() {
   const handleShareSummary = async () => {
     try {
       const summary =
-        `Hemo — Health Summary\nPatient: ${userName}\nAge: ${age}\nSCD Type: ${scdType}\nHealth Streak: ${healthStreak} days\nDate: ${new Date().toLocaleDateString()}\n\nGenerated by Hemo.`.trim();
+        `Hemo — Health Summary\nPatient: ${fullName}\nAge: ${age}\nSCD Type: ${scdType}\nHealth Streak: ${healthStreak} days\nDate: ${new Date().toLocaleDateString()}\n\nGenerated by Hemo.`.trim();
       await Share.share({ message: summary, title: "Health Summary" });
     } catch {
       Alert.alert("Error", "Unable to share health summary");
@@ -346,6 +435,132 @@ export default function ProfileScreen() {
   };
   const comingSoon = (feature) =>
     Alert.alert(feature, `${feature} is coming soon.`);
+
+  const openDobSheet = () => {
+    const dob = profile?.dob;
+    if (dob) {
+      const [y, m, d] = dob.split("-").map(Number);
+      setTempYear(y);
+      setTempMonth(m - 1);
+      setTempDay(d);
+    } else {
+      setTempYear(2000);
+      setTempMonth(0);
+      setTempDay(1);
+    }
+    setEditingDob(true);
+  };
+
+  const saveDob = () => {
+    const candidate = new Date(tempYear, tempMonth, tempDay);
+    const isValidDate =
+      candidate.getFullYear() === tempYear &&
+      candidate.getMonth() === tempMonth &&
+      candidate.getDate() === tempDay;
+
+    if (!isValidDate || candidate > new Date()) {
+      Alert.alert("Invalid date", "Please choose a valid date of birth.");
+      return;
+    }
+
+    const dob = `${tempYear}-${String(tempMonth + 1).padStart(2, "0")}-${String(tempDay).padStart(2, "0")}`;
+    updateProfile.mutate({ dob });
+    setEditingDob(false);
+  };
+
+  const openPhotoSheet = () => photoSheetRef.current?.expand();
+
+  const doUpload = async (uri) => {
+    const userId = auth?.user?.id;
+    if (!userId) return;
+    setUploadingAvatar(true);
+    try {
+      await uploadAvatar(userId, uri);
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+    } catch {
+      Alert.alert("Upload failed", "Could not update profile photo. Try again.");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    photoSheetRef.current?.close();
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow camera access to take a photo.");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    await doUpload(result.assets[0].uri);
+  };
+
+  const handleChoosePhoto = async () => {
+    photoSheetRef.current?.close();
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission needed", "Allow photo access to change your profile picture.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.9,
+    });
+    if (result.canceled || !result.assets?.[0]) return;
+    await doUpload(result.assets[0].uri);
+  };
+
+  const handleRemovePhoto = () => {
+    photoSheetRef.current?.close();
+    Alert.alert("Remove photo", "Are you sure you want to remove your profile photo?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          const userId = auth?.user?.id;
+          if (!userId) return;
+          const { error } = await supabase.storage
+            .from("avatars")
+            .remove([`${userId}/avatar.jpg`]);
+          if (error) {
+            Alert.alert("Remove failed", "Could not delete photo. Try again.");
+            return;
+          }
+          updateProfile.mutate({ avatarUrl: null });
+        },
+      },
+    ]);
+  };
+
+  const openFullNameSheet = () => {
+    setTempFullName(
+      profile?.fullName ?? auth?.user?.user_metadata?.full_name ?? "",
+    );
+    setEditingFullName(true);
+  };
+  const saveFullName = () => {
+    const name = tempFullName.trim();
+    if (name) updateProfile.mutate({ fullName: name });
+    setEditingFullName(false);
+  };
+
+  const openNicknameSheet = () => {
+    setTempNickname(profile?.nickname ?? "");
+    setEditingNickname(true);
+  };
+  const saveNickname = () => {
+    const nick = tempNickname.trim();
+    if (nick) updateProfile.mutate({ nickname: nick });
+    setEditingNickname(false);
+  };
 
   const openSearch = () => {
     setSearchQuery("");
@@ -384,7 +599,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Dna,
         iconColor: "#A9334D",
-        onPress: () => comingSoon("SCD Type"),
+        onPress: () => setEditingScd(true),
       },
       {
         key: "dob",
@@ -392,7 +607,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Calendar,
         iconColor: "#781D11",
-        onPress: () => comingSoon("Date of Birth"),
+        onPress: openDobSheet,
       },
       {
         key: "height-weight",
@@ -400,7 +615,7 @@ export default function ProfileScreen() {
         section: "My Health",
         icon: Ruler,
         iconColor: "#059669",
-        onPress: () => comingSoon("Height & Weight"),
+        onPress: () => router.push("/edit-body-stats"),
       },
       {
         key: "medications",
@@ -420,11 +635,11 @@ export default function ProfileScreen() {
       },
       {
         key: "checkin",
-        label: "Daily Check-in Time",
+        label: "Daily Check-in Frequency",
         section: "Reminders",
         icon: Clock,
         iconColor: "#F0531C",
-        onPress: () => comingSoon("Check-in Time"),
+        onPress: () => setEditingFrequency(true),
       },
       {
         key: "notifications",
@@ -459,12 +674,44 @@ export default function ProfileScreen() {
         onPress: () => comingSoon("Apple Health"),
       },
       {
-        key: "manage-profile",
-        label: "Manage Profile",
-        section: "Account",
+        key: "photo",
+        label: "Profile Photo",
+        section: "Profile",
+        icon: Camera,
+        iconColor: "#A9334D",
+        onPress: openPhotoSheet,
+      },
+      {
+        key: "full-name",
+        label: "Full Name",
+        section: "Profile",
         icon: User,
-        iconColor: "#09332C",
-        onPress: () => comingSoon("Manage Profile"),
+        iconColor: "#A9334D",
+        onPress: openFullNameSheet,
+      },
+      {
+        key: "nickname",
+        label: "Nickname",
+        section: "Profile",
+        icon: AtSign,
+        iconColor: "#A9334D",
+        onPress: openNicknameSheet,
+      },
+      {
+        key: "appearance",
+        label: "Appearance",
+        section: "Preferences",
+        icon: Palette,
+        iconColor: "#6B7280",
+        onPress: () => setEditingAppearance(true),
+      },
+      {
+        key: "language",
+        label: "Language",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => setEditingLanguage(true),
       },
       {
         key: "password",
@@ -472,7 +719,7 @@ export default function ProfileScreen() {
         section: "Account",
         icon: Lock,
         iconColor: "#6B7280",
-        onPress: () => comingSoon("Password & Security"),
+        onPress: () => router.push("/security"),
       },
       {
         key: "biometrics",
@@ -683,86 +930,133 @@ export default function ProfileScreen() {
     <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
       <StatusBar style="dark" />
 
-      <ScrollView
+      {/* ── Sticky top bar ── */}
+      <View style={styles.header}>
+        {/* Blur fills in as you scroll — iOS frosted glass, Android solid white */}
+        <Animated.View
+          style={[StyleSheet.absoluteFill, headerBgStyle]}
+          pointerEvents="none"
+        >
+          {Platform.OS === "ios" ? (
+            <BlurView
+              intensity={80}
+              tint="systemChromeMaterial"
+              style={StyleSheet.absoluteFill}
+            />
+          ) : (
+            <View
+              style={[StyleSheet.absoluteFill, { backgroundColor: "#ffffff" }]}
+            />
+          )}
+          {/* Border fades in with the background */}
+          <View style={styles.headerBorder} />
+        </Animated.View>
+
+        <View
+          style={[
+            styles.headerContent,
+            { paddingTop: insets.top + 10, backgroundColor: "#ffffff" },
+          ]}
+        >
+          <TouchableOpacity
+            onPress={openSearch}
+            activeOpacity={0.6}
+            style={styles.headerBtn}
+          >
+            <Search size={20} color="#09332C" />
+          </TouchableOpacity>
+
+          <Animated.Text
+            style={[styles.headerNickname, nicknameAnimStyle]}
+            numberOfLines={1}
+          >
+            {displayNickname !== "—" ? displayNickname : "Profile"}
+          </Animated.Text>
+
+          <TouchableOpacity
+            onPress={() => router.push("/qr-code")}
+            activeOpacity={0.6}
+            style={styles.headerBtn}
+          >
+            <QrCode size={20} color="#09332C" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
-        {/* ── Profile Header ── */}
+        {/* ── Profile card ── */}
         <View
           style={{
             backgroundColor: "#ffffff",
-            paddingBottom: 20,
+            paddingBottom: 24,
+            paddingTop: 28,
             borderBottomWidth: 1,
             borderBottomColor: "#F0E4E1",
             marginBottom: 24,
           }}
         >
-          {/* Top bar: Search | QR */}
-          <View
-            style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingTop: insets.top + 12,
-              paddingHorizontal: 20,
-              marginBottom: 20,
-            }}
-          >
-            <TouchableOpacity
-              onPress={openSearch}
-              activeOpacity={0.6}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: "#F8F4F0",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Search size={20} color="#09332C" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => router.push("/qr-code")}
-              activeOpacity={0.6}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: "#F8F4F0",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <QrCode size={20} color="#09332C" />
-            </TouchableOpacity>
-          </View>
-
           {/* Centered avatar + identity */}
-          <View style={{ alignItems: "center", marginBottom: 20 }}>
-            <View
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 48,
-                backgroundColor: "#09332C",
-                alignItems: "center",
-                justifyContent: "center",
-                marginBottom: 14,
-              }}
+          <View style={{ alignItems: "center" }}>
+            <TouchableOpacity
+              onPress={openPhotoSheet}
+              activeOpacity={0.8}
+              style={{ marginBottom: 14 }}
             >
-              <Text
+              <View
                 style={{
-                  fontFamily: fonts.bold,
-                  fontSize: 32,
-                  color: "#F8E9E7",
+                  width: 96,
+                  height: 96,
+                  borderRadius: 48,
+                  backgroundColor: "#09332C",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {initials}
-              </Text>
-            </View>
+                {profile?.avatarUrl ? (
+                  <Image
+                    source={{ uri: profile.avatarUrl }}
+                    style={{ width: 96, height: 96, borderRadius: 48 }}
+                  />
+                ) : (
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 32,
+                      color: "#F8E9E7",
+                    }}
+                  >
+                    {initials}
+                  </Text>
+                )}
+              </View>
+              <View
+                style={{
+                  position: "absolute",
+                  bottom: 0,
+                  right: 0,
+                  width: 28,
+                  height: 28,
+                  borderRadius: 14,
+                  backgroundColor: "#A9334D",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 2,
+                  borderColor: "#ffffff",
+                }}
+              >
+                {uploadingAvatar ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Camera size={13} color="#ffffff" />
+                )}
+              </View>
+            </TouchableOpacity>
 
             <Text
               style={{
@@ -772,7 +1066,7 @@ export default function ProfileScreen() {
                 marginBottom: 4,
               }}
             >
-              {userName}
+              {displayNickname}
             </Text>
             <Text
               style={{
@@ -817,33 +1111,33 @@ export default function ProfileScreen() {
               label="SCD Type"
               value={scdType || "Not set"}
               rightElement="chevron"
-              onPress={() => comingSoon("SCD Type")}
+              onPress={() => setEditingScd(true)}
             />
             <SettingRow
               icon={Calendar}
               iconColor="#781D11"
               label="Date of Birth"
               value={
-                onboardingData?.dob
-                  ? formatDob(onboardingData.dob)
+                profile?.dob
+                  ? formatDob(profile.dob)
                   : age
                     ? `Age ${age}`
                     : "Not set"
               }
               rightElement="chevron"
-              onPress={() => comingSoon("Date of Birth")}
+              onPress={openDobSheet}
             />
             <SettingRow
               icon={Ruler}
               iconColor="#059669"
               label="Height & Weight"
               value={
-                onboardingData?.height || onboardingData?.weight
-                  ? `${formatHeight(onboardingData.height)} · ${formatWeight(onboardingData.weight)}`
+                profile?.height || profile?.weight
+                  ? `${formatHeight(profile.height)} · ${formatWeight(profile.weight)}`
                   : "Not set"
               }
               rightElement="chevron"
-              onPress={() => comingSoon("Height & Weight")}
+              onPress={() => router.push("/edit-body-stats")}
             />
           </SectionCard>
 
@@ -873,20 +1167,20 @@ export default function ProfileScreen() {
           </SectionCard>
 
           <SectionCard title="Reminders">
-            <SettingRow
-              icon={Clock}
-              iconColor="#F0531C"
-              label="Daily Check-in Time"
-              value={onboardingData?.checkInTime || "Not set"}
-              rightElement="chevron"
-              onPress={() => comingSoon("Check-in Time")}
-            />
             <SettingRowToggle
               icon={Bell}
               iconColor="#F0531C"
               label="Notifications"
               value={notificationsEnabled}
               onChange={handleToggleNotifications}
+            />
+            <SettingRow
+              icon={Clock}
+              iconColor="#F0531C"
+              label="Check-in Frequency"
+              value={formatFrequency(profile?.checkInFrequency)}
+              rightElement="chevron"
+              onPress={() => setEditingFrequency(true)}
             />
           </SectionCard>
 
@@ -915,20 +1209,61 @@ export default function ProfileScreen() {
             />
           </SectionCard>
 
-          <SectionCard title="Account">
+          <SectionCard title="Profile">
             <SettingRow
               icon={User}
-              iconColor="#09332C"
-              label="Manage Profile"
+              iconColor="#A9334D"
+              label="Full Name"
+              value={
+                profile?.fullName ??
+                auth?.user?.user_metadata?.full_name ??
+                "Not set"
+              }
               rightElement="chevron"
-              onPress={() => comingSoon("Manage Profile")}
+              onPress={openFullNameSheet}
             />
+            <SettingRow
+              icon={AtSign}
+              iconColor="#A9334D"
+              label="Nickname"
+              value={profile?.nickname || "Not set"}
+              rightElement="chevron"
+              onPress={openNicknameSheet}
+            />
+          </SectionCard>
+
+          <SectionCard title="Preferences">
+            <SettingRow
+              icon={Palette}
+              iconColor="#6B7280"
+              label="Appearance"
+              value={
+                theme === "system"
+                  ? "System"
+                  : theme === "dark"
+                    ? "Dark"
+                    : "Light"
+              }
+              rightElement="chevron"
+              onPress={() => setEditingAppearance(true)}
+            />
+            <SettingRow
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Language"
+              value="English"
+              rightElement="chevron"
+              onPress={() => setEditingLanguage(true)}
+            />
+          </SectionCard>
+
+          <SectionCard title="Account">
             <SettingRow
               icon={Lock}
               iconColor="#6B7280"
               label="Password & Security"
               rightElement="chevron"
-              onPress={() => comingSoon("Password & Security")}
+              onPress={() => router.push("/security")}
             />
             <SettingRowToggle
               icon={Fingerprint}
@@ -1002,7 +1337,874 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+
+      {/* ── SCD Type Sheet ── */}
+      <Modal
+        visible={editingScd}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingScd(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingScd(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingScd(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              SCD Type
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          {["HbSS", "HbSC", "HbS-β⁰", "HbS-β⁺", "HbSD", "HbSE", "Unsure"].map(
+            (opt, i, arr) => (
+              <React.Fragment key={opt}>
+                <Pressable
+                  onPress={() => {
+                    updateProfile.mutate({
+                      scdType: opt === "Unsure" ? null : opt,
+                    });
+                    setEditingScd(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      fontSize: 16,
+                      color: "#09332C",
+                      flex: 1,
+                    }}
+                  >
+                    {opt}
+                  </Text>
+                  {scdType === opt || (!scdType && opt === "Unsure") ? (
+                    <Check size={18} color="#A9334D" />
+                  ) : null}
+                </Pressable>
+                {i < arr.length - 1 && (
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: "#F0E4E1",
+                      marginLeft: 20,
+                    }}
+                  />
+                )}
+              </React.Fragment>
+            ),
+          )}
+        </View>
+      </Modal>
+
+      {/* ── Date of Birth Sheet ── */}
+      <Modal
+        visible={editingDob}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingDob(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingDob(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 8,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingDob(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Date of Birth
+            </Text>
+            <Pressable onPress={saveDob} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
+                Done
+              </Text>
+            </Pressable>
+          </View>
+          <View style={{ flexDirection: "row", paddingHorizontal: 8 }}>
+            <Picker
+              selectedValue={tempDay}
+              onValueChange={setTempDay}
+              style={{ flex: 1, height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
+            >
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <Picker.Item key={d} label={String(d)} value={d} />
+              ))}
+            </Picker>
+            <Picker
+              selectedValue={tempMonth}
+              onValueChange={setTempMonth}
+              style={{ flex: 1.6, height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
+            >
+              {[
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+              ].map((m, i) => (
+                <Picker.Item key={m} label={m} value={i} />
+              ))}
+            </Picker>
+            <Picker
+              selectedValue={tempYear}
+              onValueChange={setTempYear}
+              style={{ flex: 1, height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
+            >
+              {Array.from(
+                { length: 100 },
+                (_, i) => new Date().getFullYear() - i,
+              ).map((y) => (
+                <Picker.Item key={y} label={String(y)} value={y} />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Check-in Frequency Sheet ── */}
+      <Modal
+        visible={editingFrequency}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingFrequency(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingFrequency(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingFrequency(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Check-in Frequency
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            How many times per day would you like to log your symptoms?
+          </Text>
+          {FREQUENCY_OPTIONS.map((opt, i, arr) => (
+            <React.Fragment key={opt.value}>
+              <Pressable
+                onPress={() => {
+                  updateProfile.mutate({ checkInFrequency: opt.value });
+                  setEditingFrequency(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {profile?.checkInFrequency === opt.value && (
+                  <Check size={18} color="#A9334D" />
+                )}
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Full Name Sheet ── */}
+      <Modal
+        visible={editingFullName}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingFullName(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingFullName(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingFullName(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Full Name
+            </Text>
+            <Pressable onPress={saveFullName} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
+                Save
+              </Text>
+            </Pressable>
+          </View>
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
+          >
+            <TextInput
+              value={tempFullName}
+              onChangeText={setTempFullName}
+              placeholder="Your full name"
+              placeholderTextColor="#C4A8A4"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveFullName}
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 17,
+                color: "#09332C",
+                borderWidth: 1,
+                borderColor: "#F0E4E1",
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                backgroundColor: "#F8F4F0",
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Nickname Sheet ── */}
+      <Modal
+        visible={editingNickname}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingNickname(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingNickname(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingNickname(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Nickname
+            </Text>
+            <Pressable onPress={saveNickname} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
+                Save
+              </Text>
+            </Pressable>
+          </View>
+          <View
+            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
+          >
+            <TextInput
+              value={tempNickname}
+              onChangeText={setTempNickname}
+              placeholder="e.g. Alex"
+              placeholderTextColor="#C4A8A4"
+              autoFocus
+              maxLength={20}
+              returnKeyType="done"
+              onSubmitEditing={saveNickname}
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 17,
+                color: "#09332C",
+                borderWidth: 1,
+                borderColor: "#F0E4E1",
+                borderRadius: 12,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                backgroundColor: "#F8F4F0",
+              }}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#C4A8A4",
+                marginTop: 6,
+                textAlign: "right",
+              }}
+            >
+              {tempNickname.length}/20
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Appearance Sheet ── */}
+      <Modal
+        visible={editingAppearance}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingAppearance(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingAppearance(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingAppearance(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Appearance
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            Choose how Hemo looks on your device.
+          </Text>
+          {[
+            { label: "Light", value: "light" },
+            { label: "Dark", value: "dark" },
+            { label: "System Default", value: "system" },
+          ].map((opt, i, arr) => (
+            <React.Fragment key={opt.value}>
+              <Pressable
+                onPress={() => {
+                  setTheme(opt.value);
+                  setEditingAppearance(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {theme === opt.value && <Check size={18} color="#A9334D" />}
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Language Sheet ── */}
+      <Modal
+        visible={editingLanguage}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingLanguage(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingLanguage(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingLanguage(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Language
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            More languages coming soon.
+          </Text>
+          <Pressable
+            style={({ pressed }) => ({
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 14,
+              paddingHorizontal: 20,
+              backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+            })}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 16,
+                color: "#09332C",
+                flex: 1,
+              }}
+            >
+              English
+            </Text>
+            <Check size={18} color="#A9334D" />
+          </Pressable>
+        </View>
+      </Modal>
+
+      {/* ── Profile Photo Sheet ── */}
+      <BottomSheet
+        ref={photoSheetRef}
+        index={-1}
+        snapPoints={profile?.avatarUrl ? ["30%"] : ["22%"]}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: "#fff", borderRadius: 24 }}
+        handleIndicatorStyle={{ backgroundColor: "#D1D5DB", width: 36 }}
+      >
+        <BottomSheetView
+          style={{
+            paddingHorizontal: 24,
+            paddingTop: 4,
+            paddingBottom: insets.bottom + 16,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: fonts.semibold,
+              fontSize: 17,
+              color: "#09332C",
+              marginBottom: 16,
+            }}
+          >
+            Profile Photo
+          </Text>
+
+          {/* Take photo */}
+          <TouchableOpacity
+            onPress={handleTakePhoto}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 14,
+              paddingVertical: 13,
+              borderTopWidth: 1,
+              borderTopColor: "#F3F4F6",
+            }}
+            activeOpacity={0.6}
+          >
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: "#F8F4F0",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Camera size={18} color="#A9334D" />
+            </View>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Take photo
+            </Text>
+          </TouchableOpacity>
+
+          {/* Choose from library */}
+          <TouchableOpacity
+            onPress={handleChoosePhoto}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 14,
+              paddingVertical: 13,
+              borderTopWidth: 1,
+              borderTopColor: "#F3F4F6",
+            }}
+            activeOpacity={0.6}
+          >
+            <View
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 19,
+                backgroundColor: "#F8F4F0",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Images size={18} color="#A9334D" />
+            </View>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Choose from library
+            </Text>
+          </TouchableOpacity>
+
+          {/* Remove photo — only shown when one exists */}
+          {profile?.avatarUrl ? (
+            <TouchableOpacity
+              onPress={handleRemovePhoto}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+                paddingVertical: 13,
+                borderTopWidth: 1,
+                borderTopColor: "#F3F4F6",
+              }}
+              activeOpacity={0.6}
+            >
+              <View
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: "#FEF2F2",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Trash2 size={18} color="#DC2626" />
+              </View>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#DC2626",
+                }}
+              >
+                Remove photo
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </BottomSheetView>
+      </BottomSheet>
 
       {shouldPreloadFeedback ? (
         <View
@@ -1039,3 +2241,40 @@ export default function ProfileScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  // Sticky header — no background of its own, blur fills in on scroll
+  header: {
+    overflow: "hidden",
+  },
+  headerContent: {
+    paddingBottom: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerNickname: {
+    fontFamily: "Geist_700Bold",
+    fontSize: 17,
+    color: "#09332C",
+    flex: 1,
+    textAlign: "center",
+    marginHorizontal: 8,
+  },
+  headerBorder: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#D1C8C4",
+  },
+});
