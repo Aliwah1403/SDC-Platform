@@ -138,7 +138,7 @@ export function photoUrl(photoName, maxSize = 800) {
   if (!photoName || !API_KEY) return null;
   return (
     `${BASE}/${photoName}/media` +
-    `?maxHeightPx=${maxSize}&maxWidthPx=${maxSize}&key=${API_KEY}&skipHttpRedirect=true`
+    `?maxHeightPx=${maxSize}&maxWidthPx=${maxSize}&key=${API_KEY}`
   );
 }
 
