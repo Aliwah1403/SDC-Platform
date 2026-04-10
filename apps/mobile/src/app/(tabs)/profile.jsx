@@ -618,7 +618,7 @@ export default function ProfileScreen() {
         section: "Account",
         icon: Lock,
         iconColor: "#6B7280",
-        onPress: () => comingSoon("Password & Security"),
+        onPress: () => router.push("/security"),
       },
       {
         key: "biometrics",
@@ -1148,7 +1148,7 @@ export default function ProfileScreen() {
               iconColor="#6B7280"
               label="Password & Security"
               rightElement="chevron"
-              onPress={() => comingSoon("Password & Security")}
+              onPress={() => router.push("/security")}
             />
             <SettingRowToggle
               icon={Fingerprint}

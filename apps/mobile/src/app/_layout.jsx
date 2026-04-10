@@ -117,6 +117,10 @@ export default function RootLayout() {
             name="edit-body-stats"
             options={{ presentation: "modal" }}
           />
+          <Stack.Screen
+            name="security"
+            options={{ presentation: "card" }}
+          />
         </Stack>
       </GestureHandlerRootView>
     </QueryClientProvider>
