@@ -84,6 +84,17 @@ function formatDob(dob) {
   });
 }
 
+const FREQUENCY_OPTIONS = [
+  { label: "Twice a day", value: 2 },
+  { label: "3 times a day", value: 3 },
+  { label: "5 times a day", value: 5 },
+];
+
+function formatFrequency(val) {
+  if (!val) return "Not set";
+  return FREQUENCY_OPTIONS.find((o) => o.value === val)?.label ?? "Not set";
+}
+
 function formatAge(dob) {
   if (!dob) return null;
   return Math.floor(
@@ -295,6 +306,7 @@ export default function ProfileScreen() {
   // Edit sheet state
   const [editingScd, setEditingScd] = useState(false);
   const [editingDob, setEditingDob] = useState(false);
+  const [editingFrequency, setEditingFrequency] = useState(false);
   const [tempDay, setTempDay] = useState(1);
   const [tempMonth, setTempMonth] = useState(0);
   const [tempYear, setTempYear] = useState(2000);
@@ -379,7 +391,6 @@ export default function ProfileScreen() {
     setEditingDob(false);
   };
 
-
   const openSearch = () => {
     setSearchQuery("");
     setSearchVisible(true);
@@ -453,11 +464,11 @@ export default function ProfileScreen() {
       },
       {
         key: "checkin",
-        label: "Daily Check-in Time",
+        label: "Daily Check-in Frequency",
         section: "Reminders",
         icon: Clock,
         iconColor: "#F0531C",
-        onPress: () => comingSoon("Check-in Time"),
+        onPress: () => setEditingFrequency(true),
       },
       {
         key: "notifications",
@@ -856,7 +867,13 @@ export default function ProfileScreen() {
               icon={Calendar}
               iconColor="#781D11"
               label="Date of Birth"
-              value={profile?.dob ? formatDob(profile.dob) : age ? `Age ${age}` : "Not set"}
+              value={
+                profile?.dob
+                  ? formatDob(profile.dob)
+                  : age
+                    ? `Age ${age}`
+                    : "Not set"
+              }
               rightElement="chevron"
               onPress={openDobSheet}
             />
@@ -900,20 +917,20 @@ export default function ProfileScreen() {
           </SectionCard>
 
           <SectionCard title="Reminders">
-            <SettingRow
-              icon={Clock}
-              iconColor="#F0531C"
-              label="Daily Check-in Time"
-              value={onboardingData?.checkInTime || "Not set"}
-              rightElement="chevron"
-              onPress={() => comingSoon("Check-in Time")}
-            />
             <SettingRowToggle
               icon={Bell}
               iconColor="#F0531C"
               label="Notifications"
               value={notificationsEnabled}
               onChange={handleToggleNotifications}
+            />
+            <SettingRow
+              icon={Clock}
+              iconColor="#F0531C"
+              label="Check-in Frequency"
+              value={formatFrequency(profile?.checkInFrequency)}
+              rightElement="chevron"
+              onPress={() => setEditingFrequency(true)}
             />
           </SectionCard>
 
@@ -1063,42 +1080,71 @@ export default function ProfileScreen() {
             }}
           >
             <Pressable onPress={() => setEditingScd(false)} hitSlop={12}>
-              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
                 Cancel
               </Text>
             </Pressable>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
               SCD Type
             </Text>
             <View style={{ width: 60 }} />
           </View>
-          {["HbSS", "HbSC", "HbS-β⁰", "HbS-β⁺", "HbSD", "HbSE", "Unsure"].map((opt, i, arr) => (
-            <React.Fragment key={opt}>
-              <Pressable
-                onPress={() => {
-                  updateProfile.mutate({ scdType: opt === "Unsure" ? null : opt });
-                  setEditingScd(false);
-                }}
-                style={({ pressed }) => ({
-                  flexDirection: "row",
-                  alignItems: "center",
-                  paddingVertical: 14,
-                  paddingHorizontal: 20,
-                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
-                })}
-              >
-                <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#09332C", flex: 1 }}>
-                  {opt}
-                </Text>
-                {scdType === opt || (!scdType && opt === "Unsure") ? (
-                  <Check size={18} color="#A9334D" />
-                ) : null}
-              </Pressable>
-              {i < arr.length - 1 && (
-                <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
-              )}
-            </React.Fragment>
-          ))}
+          {["HbSS", "HbSC", "HbS-β⁰", "HbS-β⁺", "HbSD", "HbSE", "Unsure"].map(
+            (opt, i, arr) => (
+              <React.Fragment key={opt}>
+                <Pressable
+                  onPress={() => {
+                    updateProfile.mutate({
+                      scdType: opt === "Unsure" ? null : opt,
+                    });
+                    setEditingScd(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  })}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.medium,
+                      fontSize: 16,
+                      color: "#09332C",
+                      flex: 1,
+                    }}
+                  >
+                    {opt}
+                  </Text>
+                  {scdType === opt || (!scdType && opt === "Unsure") ? (
+                    <Check size={18} color="#A9334D" />
+                  ) : null}
+                </Pressable>
+                {i < arr.length - 1 && (
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: "#F0E4E1",
+                      marginLeft: 20,
+                    }}
+                  />
+                )}
+              </React.Fragment>
+            ),
+          )}
         </View>
       </Modal>
 
@@ -1134,15 +1180,33 @@ export default function ProfileScreen() {
             }}
           >
             <Pressable onPress={() => setEditingDob(false)} hitSlop={12}>
-              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
                 Cancel
               </Text>
             </Pressable>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
               Date of Birth
             </Text>
             <Pressable onPress={saveDob} hitSlop={12}>
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#A9334D" }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#A9334D",
+                }}
+              >
                 Done
               </Text>
             </Pressable>
@@ -1152,7 +1216,12 @@ export default function ProfileScreen() {
               selectedValue={tempDay}
               onValueChange={setTempDay}
               style={{ flex: 1, height: 200 }}
-              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
             >
               {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                 <Picker.Item key={d} label={String(d)} value={d} />
@@ -1162,9 +1231,27 @@ export default function ProfileScreen() {
               selectedValue={tempMonth}
               onValueChange={setTempMonth}
               style={{ flex: 1.6, height: 200 }}
-              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
             >
-              {["January","February","March","April","May","June","July","August","September","October","November","December"].map((m, i) => (
+              {[
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+              ].map((m, i) => (
                 <Picker.Item key={m} label={m} value={i} />
               ))}
             </Picker>
@@ -1172,13 +1259,129 @@ export default function ProfileScreen() {
               selectedValue={tempYear}
               onValueChange={setTempYear}
               style={{ flex: 1, height: 200 }}
-              itemStyle={{ fontFamily: fonts.regular, fontSize: 18, color: "#09332C", height: 200 }}
+              itemStyle={{
+                fontFamily: fonts.regular,
+                fontSize: 18,
+                color: "#09332C",
+                height: 200,
+              }}
             >
-              {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+              {Array.from(
+                { length: 100 },
+                (_, i) => new Date().getFullYear() - i,
+              ).map((y) => (
                 <Picker.Item key={y} label={String(y)} value={y} />
               ))}
             </Picker>
           </View>
+        </View>
+      </Modal>
+
+      {/* ── Check-in Frequency Sheet ── */}
+      <Modal
+        visible={editingFrequency}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingFrequency(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingFrequency(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "#F0E4E1",
+            }}
+          >
+            <Pressable onPress={() => setEditingFrequency(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "#9CA3AF",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Check-in Frequency
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 12,
+              paddingBottom: 4,
+            }}
+          >
+            How many times per day would you like to log your symptoms?
+          </Text>
+          {FREQUENCY_OPTIONS.map((opt, i, arr) => (
+            <React.Fragment key={opt.value}>
+              <Pressable
+                onPress={() => {
+                  updateProfile.mutate({ checkInFrequency: opt.value });
+                  setEditingFrequency(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {opt.label}
+                </Text>
+                {profile?.checkInFrequency === opt.value && (
+                  <Check size={18} color="#A9334D" />
+                )}
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
         </View>
       </Modal>
 
