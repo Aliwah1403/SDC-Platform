@@ -12,7 +12,7 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "xyz.create.CreateExpoEnvironment"
+      "bundleIdentifier": "com.hemoscd.hemo"
     },
     "android": {
       "adaptiveIcon": {
@@ -25,7 +25,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "package": "xyz.create.CreateExpoEnvironment"
+      "package": "com.hemoscd.hemo"
     },
     "plugins": [
       [

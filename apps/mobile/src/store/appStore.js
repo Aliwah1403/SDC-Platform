@@ -168,13 +168,32 @@ export const useAppStore = create((set) => ({
       notifications: state.notifications.map((n) => ({ ...n, read: true })),
     })),
 
-  // ── Facility favourites ────────────────────────────────────────────────────
-  favouriteHospitalIds: [],
-  toggleFavouriteHospital: (id) =>
+  // ── Saved facilities ───────────────────────────────────────────────────────
+  // Full facility objects persisted to Supabase. Optimistically updated locally.
+  savedFacilities: [],
+  setSavedFacilities: (facilities) => set({ savedFacilities: facilities }),
+  toggleSavedFacility: (facility) =>
+    set((state) => {
+      const exists = state.savedFacilities.some((f) => f.placeId === facility.placeId);
+      return {
+        savedFacilities: exists
+          ? state.savedFacilities.filter((f) => f.placeId !== facility.placeId)
+          : [...state.savedFacilities, facility],
+      };
+    }),
+
+  // ── Facility search caches ─────────────────────────────────────────────────
+  // facilitiesCache: keyed by "lat,lng" — stores list results + nextPageToken + timestamp
+  // placeDetailsCache: keyed by placeId — stores individual normalized facility objects
+  facilitiesCache: {},
+  placeDetailsCache: {},
+  setFacilitiesCache: (key, payload) =>
     set((state) => ({
-      favouriteHospitalIds: state.favouriteHospitalIds.includes(id)
-        ? state.favouriteHospitalIds.filter((fid) => fid !== id)
-        : [...state.favouriteHospitalIds, id],
+      facilitiesCache: { ...state.facilitiesCache, [key]: { ...payload, ts: Date.now() } },
+    })),
+  setPlaceDetails: (id, data) =>
+    set((state) => ({
+      placeDetailsCache: { ...state.placeDetailsCache, [id]: data },
     })),
 
   // ── Chat state (local AI session) ──────────────────────────────────────────

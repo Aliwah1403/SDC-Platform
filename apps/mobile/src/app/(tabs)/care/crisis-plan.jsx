@@ -11,11 +11,16 @@ import {
   Users,
   Pill,
   Phone,
+  Building2,
+  MapPin,
 } from "lucide-react-native";
+import { useAppStore } from "@/store/appStore";
 
 export default function CrisisPlanScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { savedFacilities } = useAppStore();
+  const preferredHospital = savedFacilities[0] ?? null;
 
   const SectionCard = ({ title, icon: Icon, iconColor, iconBg, children }) => (
     <View
