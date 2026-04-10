@@ -452,6 +452,17 @@ export default function ProfileScreen() {
   };
 
   const saveDob = () => {
+    const candidate = new Date(tempYear, tempMonth, tempDay);
+    const isValidDate =
+      candidate.getFullYear() === tempYear &&
+      candidate.getMonth() === tempMonth &&
+      candidate.getDate() === tempDay;
+
+    if (!isValidDate || candidate > new Date()) {
+      Alert.alert("Invalid date", "Please choose a valid date of birth.");
+      return;
+    }
+
     const dob = `${tempYear}-${String(tempMonth + 1).padStart(2, "0")}-${String(tempDay).padStart(2, "0")}`;
     updateProfile.mutate({ dob });
     setEditingDob(false);
