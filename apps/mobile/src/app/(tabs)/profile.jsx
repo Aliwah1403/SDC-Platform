@@ -72,7 +72,7 @@ import { useAuthStore } from "@/utils/auth/store";
 import { useAppearanceStore } from "@/store/appearanceStore";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
-import { signOut } from "@/utils/auth/supabase";
+import { signOut, supabase } from "@/utils/auth/supabase";
 import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
@@ -524,7 +524,18 @@ export default function ProfileScreen() {
       {
         text: "Remove",
         style: "destructive",
-        onPress: () => updateProfile.mutate({ avatarUrl: null }),
+        onPress: async () => {
+          const userId = auth?.user?.id;
+          if (!userId) return;
+          const { error } = await supabase.storage
+            .from("avatars")
+            .remove([`${userId}/avatar.jpg`]);
+          if (error) {
+            Alert.alert("Remove failed", "Could not delete photo. Try again.");
+            return;
+          }
+          updateProfile.mutate({ avatarUrl: null });
+        },
       },
     ]);
   };
