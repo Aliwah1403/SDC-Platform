@@ -5,6 +5,7 @@ import {
   Calendar,
   MessageCircle,
   Users,
+  HeartHandshake,
 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
@@ -39,7 +40,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="track"
         options={{
-          title: "Track",
+          title: "Activity",
           tabBarIcon: ({ color }) => <Activity color={color} size={20} />,
         }}
       />
@@ -54,7 +55,7 @@ export default function TabLayout() {
         name="care"
         options={{
           title: "Care",
-          tabBarIcon: ({ color }) => <Calendar color={color} size={20} />,
+          tabBarIcon: ({ color }) => <HeartHandshake color={color} size={20} />,
         }}
       />
       <Tabs.Screen
