@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
   useFonts,
   Geist_400Regular,
@@ -63,6 +64,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
@@ -122,6 +124,7 @@ export default function RootLayout() {
             options={{ presentation: "card" }}
           />
         </Stack>
+        </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
   );

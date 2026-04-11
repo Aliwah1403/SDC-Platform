@@ -9,7 +9,9 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Svg, { Path } from "react-native-svg";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -609,6 +611,7 @@ export default function SecurityScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={closePasswordSheet}
         />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View
           style={{
             backgroundColor: "#ffffff",
@@ -794,6 +797,7 @@ export default function SecurityScreen() {
             </View>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

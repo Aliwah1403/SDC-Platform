@@ -16,6 +16,7 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
   useSharedValue,
   useAnimatedScrollHandler,
@@ -1687,6 +1688,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={() => setEditingFullName(false)}
         />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View
           style={{
             backgroundColor: "#ffffff",
@@ -1764,6 +1766,7 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Nickname Sheet ── */}
@@ -1777,6 +1780,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={() => setEditingNickname(false)}
         />
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View
           style={{
             backgroundColor: "#ffffff",
@@ -1866,6 +1870,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Appearance Sheet ── */}
