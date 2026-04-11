@@ -1,59 +1,74 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MotiView } from "moti";
-import { ArrowLeft, MapPin, Cross } from "lucide-react-native";
-import * as Location from "expo-location";
+import { ArrowLeft, Bell } from "lucide-react-native";
+import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TOTAL_STEPS } from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
 
-function MapIllustration() {
+function PhoneMockup({ name }) {
   return (
     <MotiView
-      from={{ opacity: 0, scale: 0.9, translateY: 12 }}
+      from={{ opacity: 0, scale: 0.94, translateY: 12 }}
       animate={{ opacity: 1, scale: 1, translateY: 0 }}
       transition={{ type: "spring", damping: 16, stiffness: 80, delay: 80 }}
-      style={styles.mapContainer}
+      style={styles.phoneMockup}
     >
-      {/* Pulsing rings behind pin */}
-      <MotiView
-        from={{ scale: 0.7, opacity: 0.5 }}
-        animate={{ scale: 1.6, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true }}
-        style={styles.pulseRing}
-      />
-      <MotiView
-        from={{ scale: 0.7, opacity: 0.4 }}
-        animate={{ scale: 1.3, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true, delay: 500 }}
-        style={styles.pulseRing}
-      />
-
-      {/* Mock map grid */}
-      <View style={styles.mapGrid}>
-        {/* Road lines */}
-        <View style={styles.roadH} />
-        <View style={[styles.roadH, { top: "65%" }]} />
-        <View style={styles.roadV} />
-        <View style={[styles.roadV, { left: "68%" }]} />
-
-        {/* Hospital markers */}
-        <View style={[styles.hospitalMarker, { top: "22%", left: "18%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
-        <View style={[styles.hospitalMarker, { top: "55%", left: "70%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
-        <View style={[styles.hospitalMarker, { top: "75%", left: "28%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
-
-        {/* User location pin (centre) */}
-        <View style={styles.pinWrapper}>
-          <View style={styles.pinCircle}>
-            <MapPin size={22} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
+      {/* Status bar */}
+      <View style={styles.statusBar}>
+        <Text style={styles.statusTime}>9:41</Text>
+        <View style={styles.statusIcons}>
+          {[4, 6, 8, 10].map((h, i) => (
+            <View key={i} style={[styles.signalBar, { height: h }]} />
+          ))}
+          <View style={styles.battery}>
+            <View style={styles.batteryFill} />
           </View>
-          <View style={styles.pinTail} />
+        </View>
+      </View>
+
+      {/* Notification card */}
+      <MotiView
+        from={{ opacity: 0, translateY: -8 }}
+        animate={{ opacity: 1, translateY: 0 }}
+        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 220 }}
+        style={styles.mockNotifCard}
+      >
+        <View style={styles.mockNotifAppIcon}>
+          <Bell size={13} color="#FFFFFF" strokeWidth={2.2} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={styles.mockNotifTopRow}>
+            <Text style={styles.mockNotifApp}>Hemo</Text>
+            <Text style={styles.mockNotifTime}>now</Text>
+          </View>
+          <Text style={styles.mockNotifTitle}>Daily check-in</Text>
+          <Text style={styles.mockNotifBody} numberOfLines={1}>
+            {`How are you feeling today${name !== "you" ? `, ${name}` : ""}?`}
+          </Text>
+        </View>
+      </MotiView>
+
+      {/* App icon placeholders */}
+      <View style={styles.appGrid}>
+        {[0, 1].map((row) => (
+          <View key={row} style={styles.appRow}>
+            {[0, 1, 2, 3].map((col) => (
+              <View
+                key={col}
+                style={[styles.appIcon, { opacity: row === 1 ? 0.45 : 0.75 }]}
+              />
+            ))}
+          </View>
+        ))}
+        <View style={styles.appRow}>
+          {[0, 1, 2, 3].map((col) => (
+            <View
+              key={col}
+              style={[styles.appIcon, { opacity: 0.22, borderRadius: 22 }]}
+            />
+          ))}
         </View>
       </View>
     </MotiView>
@@ -61,29 +76,31 @@ function MapIllustration() {
 }
 
 export default function Step8() {
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, onboardingData } = useAppStore();
   const insets = useSafeAreaInsets();
+  const name = onboardingData.nickname || "you";
 
-  const handleRequestLocation = async () => {
+  const handleRequestPermission = async () => {
     try {
-      const { status: current } =
-        await Location.getForegroundPermissionsAsync();
+      const { status: current } = await Notifications.getPermissionsAsync();
       if (current === "granted") {
-        setOnboardingField("locationEnabled", true);
+        setOnboardingField("notificationsEnabled", true);
         router.push("/(onboarding)/step-9");
         return;
       }
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setOnboardingField("locationEnabled", status === "granted");
+      const { status } = await Notifications.requestPermissionsAsync({
+        ios: { allowAlert: true, allowBadge: true, allowSound: true },
+      });
+      setOnboardingField("notificationsEnabled", status === "granted");
       router.push("/(onboarding)/step-9");
     } catch {
-      setOnboardingField("locationEnabled", false);
+      setOnboardingField("notificationsEnabled", false);
       router.push("/(onboarding)/step-9");
     }
   };
 
   const handleSkip = () => {
-    setOnboardingField("locationEnabled", false);
+    setOnboardingField("notificationsEnabled", false);
     router.push("/(onboarding)/step-9");
   };
 
@@ -120,9 +137,9 @@ export default function Step8() {
         </Pressable>
       </View>
 
-      {/* Middle: map illustration + heading */}
+      {/* Middle: phone + heading, vertically centered */}
       <View style={styles.middle}>
-        <MapIllustration />
+        <PhoneMockup name={name} />
 
         <MotiView
           from={{ opacity: 0, translateY: 16 }}
@@ -130,15 +147,14 @@ export default function Step8() {
           transition={{ type: "spring", damping: 16, stiffness: 80, delay: 320 }}
           style={styles.headingBlock}
         >
-          <Text style={styles.title}>Find care near you</Text>
+          <Text style={styles.title}>Never miss a moment</Text>
           <Text style={styles.subtitle}>
-            We use your location to surface nearby hospitals and specialist
-            centres when you need them.
+            Daily reminders, streak alerts, and health nudges — all in one place.
           </Text>
         </MotiView>
       </View>
 
-      {/* Bottom: CTA + skip */}
+      {/* Bottom: full-width CTA + skip link */}
       <MotiView
         from={{ opacity: 0, translateY: 20 }}
         animate={{ opacity: 1, translateY: 0 }}
@@ -147,9 +163,9 @@ export default function Step8() {
       >
         <Pressable
           style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.85 }]}
-          onPress={handleRequestLocation}
+          onPress={handleRequestPermission}
         >
-          <Text style={styles.ctaBtnText}>Enable Location</Text>
+          <Text style={styles.ctaBtnText}>Turn on Notifications</Text>
         </Pressable>
         <Pressable onPress={handleSkip} hitSlop={12}>
           <Text style={styles.notNowText}>Not right now</Text>
@@ -218,93 +234,48 @@ const styles = StyleSheet.create({
   ctaBtnText: { fontFamily: "Geist_700Bold", fontSize: 17, color: "#FFFFFF", letterSpacing: 0.2 },
   notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: "rgba(9,51,44,0.4)" },
 
-  // Map illustration
-  mapContainer: {
+  // Phone mockup
+  phoneMockup: {
     alignSelf: "center",
     width: "100%",
-    height: 220,
     backgroundColor: "rgba(9,51,44,0.035)",
     borderRadius: 26,
     borderWidth: 1.5,
     borderColor: "rgba(9,51,44,0.07)",
-    overflow: "hidden",
+    padding: 16,
+    gap: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.07,
     shadowRadius: 20,
     elevation: 5,
   },
-  mapGrid: { flex: 1, position: "relative" },
-  roadH: {
-    position: "absolute",
-    top: "40%",
-    left: 0,
-    right: 0,
-    height: 6,
-    backgroundColor: "rgba(9,51,44,0.06)",
-  },
-  roadV: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: "42%",
-    width: 6,
-    backgroundColor: "rgba(9,51,44,0.06)",
-  },
-  hospitalMarker: {
-    position: "absolute",
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    backgroundColor: "#09332C",
+  statusBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
+  statusTime: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "rgba(9,51,44,0.55)" },
+  statusIcons: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
+  signalBar: { width: 3, backgroundColor: "rgba(9,51,44,0.45)", borderRadius: 1 },
+  battery: { width: 20, height: 10, borderRadius: 2.5, borderWidth: 1.5, borderColor: "rgba(9,51,44,0.4)", justifyContent: "center", paddingHorizontal: 2, marginLeft: 4 },
+  batteryFill: { height: 5, width: "75%", backgroundColor: "rgba(9,51,44,0.4)", borderRadius: 1 },
+  mockNotifCard: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    opacity: 0.55,
+    gap: 10,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderRadius: 14,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  pulseRing: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    width: 60,
-    height: 60,
-    marginTop: -30,
-    marginLeft: -30,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "#A9334D",
-    zIndex: 1,
-  },
-  pinWrapper: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
-    alignItems: "center",
-    marginTop: -38,
-    marginLeft: -20,
-    zIndex: 2,
-  },
-  pinCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#A9334D",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#A9334D",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  pinTail: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 10,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: "#A9334D",
-    marginTop: -2,
-  },
+  mockNotifAppIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center" },
+  mockNotifTopRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
+  mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: "rgba(9,51,44,0.45)" },
+  mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: "rgba(9,51,44,0.3)" },
+  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#09332C" },
+  mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: "rgba(9,51,44,0.5)", marginTop: 1 },
+  appGrid: { gap: 8, paddingTop: 4 },
+  appRow: { flexDirection: "row", gap: 8, justifyContent: "space-between" },
+  appIcon: { flex: 1, height: 70, width: 70, borderRadius: 12, backgroundColor: "rgba(9,51,44,0.07)" },
 });
