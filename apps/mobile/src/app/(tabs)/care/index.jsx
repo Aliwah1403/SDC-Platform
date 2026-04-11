@@ -1,20 +1,21 @@
-import React from "react";
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import { fonts } from "@/utils/fonts";
 
 const HEMO_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 import {
   Pill,
   Calendar,
-  AlertCircle,
   Users,
   FileText,
   MapPin,
   Phone,
   Heart,
+  Bell,
+  User,
 } from "lucide-react-native";
 
 export default function CareMenuScreen() {
@@ -85,12 +86,95 @@ export default function CareMenuScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
+
+      {/* Header */}
+      <LinearGradient
+        colors={HEMO_GRADIENT}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={{
+          paddingTop: insets.top + 12,
+          paddingBottom: 16,
+          paddingHorizontal: 20,
+          overflow: "hidden",
+        }}
+      >
+        {/* Decorative circles */}
+        <View
+          style={{
+            position: "absolute",
+            width: 180,
+            height: 180,
+            borderRadius: 999,
+            backgroundColor: "#D09F9A",
+            opacity: 0.15,
+            top: -60,
+            right: -40,
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            width: 120,
+            height: 120,
+            borderRadius: 999,
+            backgroundColor: "#781D11",
+            opacity: 0.15,
+            bottom: -20,
+            left: -30,
+          }}
+        />
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text
+            style={{ fontFamily: fonts.bold, fontSize: 24, color: "#F8E9E7" }}
+          >
+            Care
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/notifications")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <Bell size={20} color="#F8E9E7" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/profile")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <User size={20} color="#F8E9E7" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingTop: insets.top + 20,
+          paddingTop: 20,
           paddingHorizontal: 20,
           paddingBottom: insets.bottom + 100,
         }}
@@ -153,13 +237,42 @@ export default function CareMenuScreen() {
             colors={HEMO_GRADIENT}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={{ padding: 20, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+            style={{
+              padding: 20,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
           >
             {/* Decorative shapes */}
-            <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -40, right: 40 }} />
-            <View style={{ position: "absolute", width: 80, height: 80, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -20 }} />
+            <View
+              style={{
+                position: "absolute",
+                width: 120,
+                height: 120,
+                borderRadius: 999,
+                backgroundColor: "#D09F9A",
+                opacity: 0.15,
+                top: -40,
+                right: 40,
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                width: 80,
+                height: 80,
+                borderRadius: 999,
+                backgroundColor: "#781D11",
+                opacity: 0.15,
+                bottom: -20,
+                left: -20,
+              }}
+            />
 
-            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
               <View
                 style={{
                   width: 48,
