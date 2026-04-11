@@ -13,6 +13,8 @@ export default function OnboardingLayout() {
       <Stack.Screen name="step-7" />
       <Stack.Screen name="step-8" />
       <Stack.Screen name="step-9" />
+      <Stack.Screen name="step-10" />
+      <Stack.Screen name="step-11" />
       <Stack.Screen name="complete" options={{ animation: 'fade' }} />
     </Stack>
   );
