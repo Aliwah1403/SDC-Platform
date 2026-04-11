@@ -1,6 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Image,
   Linking,
   Platform,
   ScrollView,
@@ -13,7 +15,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Building2,
-  ChevronLeft,
   Clock,
   ExternalLink,
   Heart,
@@ -26,6 +27,7 @@ import {
 import * as Haptics from "expo-haptics";
 import { useAppStore } from "@/store/appStore";
 import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
+import { getPlaceDetails, photoUrl } from "@/utils/hospitalSearch";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const C = {
@@ -131,15 +133,62 @@ export default function FacilityDetailScreen() {
   const { id, userLat, userLng } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { favouriteHospitalIds, toggleFavouriteHospital } = useAppStore();
+  const { savedFacilities, toggleSavedFacility, placeDetailsCache, setPlaceDetails } =
+    useAppStore();
 
-  const facility = mockFacilities.find((f) => f.id === id);
-  const isFavourite = favouriteHospitalIds.includes(id);
+  // Resolve facility: cache → mock fallback → API fetch
+  const cached = placeDetailsCache[id];
+  const mock = mockFacilities.find((f) => f.id === id);
+  const [facility, setFacility] = useState(cached ?? mock ?? null);
+  const [loadingDetails, setLoadingDetails] = useState(!cached && !mock);
+  const [fetchError, setFetchError] = useState(null);
 
-  // Guard against bad id
+  const isFavourite = savedFacilities.some((f) => f.placeId === id);
+
   useEffect(() => {
-    if (!facility) router.back();
-  }, [facility]);
+    if (cached) {
+      setFacility(cached);
+      return;
+    }
+    if (mock) {
+      setFacility(mock);
+      return;
+    }
+    // Not in cache and not a mock — fetch from API (e.g. deep-linked or stale cache)
+    if (!id) { router.back(); return; }
+    setLoadingDetails(true);
+    getPlaceDetails(id)
+      .then((data) => {
+        setFacility(data);
+        setPlaceDetails(id, data);
+      })
+      .catch((err) => {
+        console.error("[facility-detail] getPlaceDetails failed:", err);
+        setFetchError("Couldn't load facility details. Please try again.");
+      })
+      .finally(() => setLoadingDetails(false));
+  }, [id, cached, mock, router, setPlaceDetails]);
+
+  if (loadingDetails) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0" }}>
+        <ActivityIndicator size="large" color="#A9334D" />
+      </View>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0", padding: 24 }}>
+        <Text style={{ color: "#09332C", fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
+          {fetchError}
+        </Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
+          <Text style={{ color: "#F8E9E7", fontFamily: "Geist-SemiBold", fontSize: 15 }}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   if (!facility) return null;
 
@@ -159,7 +208,7 @@ export default function FacilityDetailScreen() {
 
   const handleToggleFavourite = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleFavouriteHospital(facility.id);
+    toggleSavedFacility(facility);
   };
 
   const handleCall = () => Linking.openURL(`tel:${facility.phone}`);
@@ -181,13 +230,30 @@ export default function FacilityDetailScreen() {
 
   const todayHours = sortedHours.find((h) => h.day === today);
 
+  const heroPhotoUrl = photoUrl(facility.photoName);
+
   return (
     <View style={styles.screen}>
       {/* ── Hero ── */}
       <LinearGradient colors={gradient} style={styles.hero}>
-        {/* Decorative circles */}
-        <View style={styles.deco1} />
-        <View style={styles.deco2} />
+        {/* Real photo overlay when available */}
+        {heroPhotoUrl && (
+          <Image
+            source={{ uri: heroPhotoUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+        )}
+        {/* Scrim so text stays readable over the photo */}
+        {heroPhotoUrl && (
+          <LinearGradient
+            colors={["transparent", "rgba(0,0,0,0.55)"]}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
+        {/* Decorative circles (only shown without photo) */}
+        {!heroPhotoUrl && <View style={styles.deco1} />}
+        {!heroPhotoUrl && <View style={styles.deco2} />}
 
         {/* Top bar */}
         <View style={[styles.heroTopBar, { paddingTop: insets.top + 12 }]}>
