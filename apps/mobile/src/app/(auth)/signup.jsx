@@ -2,16 +2,14 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   ActivityIndicator,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react-native';
@@ -102,8 +100,7 @@ export default function SignUpScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView
+      <KeyboardAwareScrollView
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -289,8 +286,7 @@ export default function SignUpScreen() {
               </Text>
             </Pressable>
           </MotiView>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     </View>
   );
 }
