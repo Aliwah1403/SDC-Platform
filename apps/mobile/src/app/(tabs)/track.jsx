@@ -16,6 +16,8 @@ import Animated, {
 import { MotiView } from "moti";
 import {
   Plus,
+  Bell,
+  User,
   Pill,
   Zap,
   Droplets,
@@ -787,21 +789,36 @@ export default function TrackScreen() {
           <Text style={{ fontFamily: fonts.bold, fontSize: 24, color: "#fff" }}>
             Health Tracker
           </Text>
-          <TouchableOpacity
-            onPress={() => router.push("/log-symptoms")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
-              backgroundColor: "rgba(255,255,255,0.2)",
-              borderRadius: 20,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-            }}
-          >
-            <Plus color="#fff" size={15} strokeWidth={2.5} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Log</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/notifications")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <Bell size={20} color="#fff" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/profile")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <User size={20} color="#fff" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ExpandableCalendar
