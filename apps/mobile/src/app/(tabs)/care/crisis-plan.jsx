@@ -16,15 +16,9 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import {
   ChevronLeft,
   Edit3,
-  AlertTriangle,
-  Heart,
   Phone,
-  Building2,
-  Pill,
-  Droplets,
   X,
-  ChevronRight,
-  Activity,
+  ChevronDown,
   ShieldAlert,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
@@ -50,7 +44,7 @@ const ESCALATION_TIERS = [
     label: "MILD",
     painRange: "Pain 1–4",
     color: "#A9334D",
-    bg: "rgba(248,233,231,0.6)",
+    bg: "rgba(169,51,77,0.05)",
     border: "#A9334D",
     actions: [
       "Rest in a comfortable, warm position",
@@ -65,9 +59,9 @@ const ESCALATION_TIERS = [
     step: 2,
     label: "MODERATE",
     painRange: "Pain 5–7",
-    color: "#A9334D",
-    bg: "rgba(169,51,77,0.07)",
-    border: "#A9334D",
+    color: "#781D11",
+    bg: "rgba(120,29,17,0.05)",
+    border: "#781D11",
     actions: [
       "Proceed to your preferred hospital or A&E",
       "Request IV fluids and IV pain management",
@@ -82,7 +76,7 @@ const ESCALATION_TIERS = [
     label: "SEVERE",
     painRange: "Pain 8–10+",
     color: "#DC2626",
-    bg: "rgba(220,38,38,0.07)",
+    bg: "rgba(220,38,38,0.05)",
     border: "#DC2626",
     actions: [
       "Call 999 / 911 immediately",
@@ -95,32 +89,18 @@ const ESCALATION_TIERS = [
   },
 ];
 
-const CARD_SHADOW = {
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 8,
-  elevation: 3,
-};
-
 const BLOOD_TYPES = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "I don't know"];
 const PRESET_ALLERGIES = ["Penicillin", "NSAIDs", "Aspirin", "Latex", "Codeine", "Sulfa drugs"];
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
+// ── Section heading ─────────────────────────────────────────────────────────────
 
-function SectionCard({ icon: Icon, iconColor, title, children }) {
+function SectionLabel({ label }) {
   return (
-    <View style={[styles.card, CARD_SHADOW]}>
-      <View style={styles.cardHeader}>
-        <View style={[styles.cardIconBg, { backgroundColor: `${iconColor}15` }]}>
-          <Icon size={18} color={iconColor} strokeWidth={2} />
-        </View>
-        <Text style={styles.cardTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
+    <Text style={styles.sectionLabel}>{label}</Text>
   );
 }
+
+// ── Tier row ────────────────────────────────────────────────────────────────────
 
 function TierRow({ tier }) {
   const [expanded, setExpanded] = useState(false);
@@ -130,20 +110,19 @@ function TierRow({ tier }) {
       style={[styles.tierRow, { borderLeftColor: tier.border, backgroundColor: tier.bg }]}
     >
       <View style={styles.tierHeader}>
-        <View style={{ flex: 1 }}>
-          <View style={styles.tierLabelRow}>
-            <View style={[styles.tierBadge, { backgroundColor: tier.color }]}>
-              <Text style={styles.tierBadgeText}>STEP {tier.step}</Text>
-            </View>
-            <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.label}</Text>
-            <Text style={styles.tierPainRange}>{tier.painRange}</Text>
-          </View>
+        <View style={[styles.tierStepPill, { backgroundColor: tier.color }]}>
+          <Text style={styles.tierStepText}>STEP {tier.step}</Text>
         </View>
-        <ChevronRight
-          size={16}
+        <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.label}</Text>
+        <Text style={styles.tierPainRange}>{tier.painRange}</Text>
+        <ChevronDown
+          size={15}
           color={tier.color}
-          strokeWidth={2}
-          style={{ transform: [{ rotate: expanded ? "90deg" : "0deg" }] }}
+          strokeWidth={2.5}
+          style={{
+            marginLeft: "auto",
+            transform: [{ rotate: expanded ? "180deg" : "0deg" }],
+          }}
         />
       </View>
       {expanded && (
@@ -177,7 +156,6 @@ export default function CrisisPlanScreen() {
   const { data: contacts = [] } = useEmergencyContactsQuery();
   const { data: medications = [] } = useMedicationsQuery();
 
-  // Filter pain-relevant medications (Supportive category or opioids/analgesics)
   const crisisMeds = medications.filter(
     (m) =>
       m.isActive !== false &&
@@ -221,7 +199,6 @@ export default function CrisisPlanScreen() {
   };
 
   const openSheet = () => {
-    // Re-sync edit state from store before opening
     setEditBloodType(crisisPlan.bloodType);
     setEditPresets(crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)));
     setEditCustom(crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)));
@@ -232,7 +209,7 @@ export default function CrisisPlanScreen() {
   const allAllergies = [...crisisPlan.allergies];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <StatusBar style="light" />
 
       {/* Header */}
@@ -248,7 +225,7 @@ export default function CrisisPlanScreen() {
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
           >
             <ChevronLeft size={22} color="#F8E9E7" strokeWidth={2.5} />
           </Pressable>
@@ -260,7 +237,7 @@ export default function CrisisPlanScreen() {
           </View>
           <Pressable
             onPress={openSheet}
-            style={({ pressed }) => [styles.editHeaderBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
           >
             <Edit3 size={18} color="#F8E9E7" strokeWidth={2} />
           </Pressable>
@@ -269,199 +246,206 @@ export default function CrisisPlanScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Crisis Mode CTA */}
-        <Pressable
-          onPress={() => router.push("/crisis-mode")}
-          style={({ pressed }) => [
-            styles.crisisCta,
-            crisisMode.isActive ? styles.crisisCtaActive : styles.crisisCtaDefault,
-            pressed && { opacity: 0.9 },
-          ]}
-        >
-          <ShieldAlert
-            size={24}
-            color="#FFFFFF"
-            strokeWidth={2}
-            style={{ marginRight: 14 }}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.crisisCtaTitle}>
-              {crisisMode.isActive ? "Crisis Mode Active" : "Activate Crisis Mode"}
-            </Text>
-            <Text style={styles.crisisCtaSubtitle}>
-              {crisisMode.isActive
-                ? "Tap to view your active crisis protocol"
-                : "Step-by-step guidance + care team alerts"}
-            </Text>
-          </View>
-          <ChevronRight size={20} color="#FFFFFF" strokeWidth={2.5} />
-        </Pressable>
-
-        {/* Medical Info */}
-        <SectionCard icon={Droplets} iconColor="#A9334D" title="Medical Information">
-          <View style={styles.infoGrid}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>SCD Type</Text>
-              <Text style={styles.infoValue}>
-                {scdType ? (SCD_TYPE_LABELS[scdType] ?? scdType) : "Not set"}
+        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+          <Pressable
+            onPress={() => router.push("/crisis-mode")}
+            style={({ pressed }) => [
+              styles.crisisCta,
+              crisisMode.isActive ? { backgroundColor: "#DC2626" } : { backgroundColor: "#A9334D" },
+              pressed && { opacity: 0.9 },
+            ]}
+          >
+            <ShieldAlert size={22} color="#FFFFFF" strokeWidth={2} style={{ marginRight: 14 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.crisisCtaTitle}>
+                {crisisMode.isActive ? "Crisis Mode Active" : "Activate Crisis Mode"}
+              </Text>
+              <Text style={styles.crisisCtaSubtitle}>
+                {crisisMode.isActive
+                  ? "Tap to view your active crisis protocol"
+                  : "Step-by-step guidance + care team alerts"}
               </Text>
             </View>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Blood Type</Text>
-              <Text style={[styles.infoValue, !crisisPlan.bloodType && styles.infoValueEmpty]}>
-                {crisisPlan.bloodType ?? "Not set — tap Edit to add"}
-              </Text>
-            </View>
-            {allAllergies.length > 0 && (
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Known Allergies</Text>
-                <View style={styles.allergyChips}>
-                  {allAllergies.map((a) => (
-                    <View key={a} style={styles.allergyTag}>
-                      <Text style={styles.allergyTagText}>{a}</Text>
-                    </View>
-                  ))}
-                </View>
+          </Pressable>
+        </View>
+
+        {/* ── Medical Information ──────────────────────────────────── */}
+        <View style={styles.section}>
+          <SectionLabel label="MEDICAL INFORMATION" />
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>SCD Type</Text>
+            <Text style={styles.infoVal}>
+              {scdType ? (SCD_TYPE_LABELS[scdType] ?? scdType) : "Not set"}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Blood Type</Text>
+            <Text style={[styles.infoVal, !crisisPlan.bloodType && styles.infoValEmpty]}>
+              {crisisPlan.bloodType ?? "Not set"}
+            </Text>
+          </View>
+          <View style={styles.divider} />
+
+          <View style={[styles.infoRow, { alignItems: "flex-start" }]}>
+            <Text style={styles.infoKey}>Allergies</Text>
+            {allAllergies.length > 0 ? (
+              <View style={styles.allergyChips}>
+                {allAllergies.map((a) => (
+                  <View key={a} style={styles.allergyTag}>
+                    <Text style={styles.allergyTagText}>{a}</Text>
+                  </View>
+                ))}
               </View>
-            )}
-            {allAllergies.length === 0 && (
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Known Allergies</Text>
-                <Text style={styles.infoValueEmpty}>None recorded — tap Edit to add</Text>
-              </View>
+            ) : (
+              <Text style={styles.infoValEmpty}>None recorded</Text>
             )}
           </View>
-        </SectionCard>
+        </View>
 
-        {/* Warning Signs */}
-        <SectionCard icon={AlertTriangle} iconColor="#DC2626" title="Warning Signs">
-          <Text style={styles.cardSubtext}>
-            Recognise these early signs that a crisis may be developing:
+        <View style={styles.sectionDivider} />
+
+        {/* ── Warning Signs ─────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <SectionLabel label="WARNING SIGNS" />
+          <Text style={styles.sectionHint}>
+            Recognise these early signs that a crisis may be developing.
           </Text>
-          <View style={{ gap: 8, marginTop: 8 }}>
+          <View style={{ gap: 10, marginTop: 12 }}>
             {crisisPlan.warningSigns.map((sign, i) => (
               <View key={i} style={styles.bulletRow}>
-                <View style={[styles.bulletDot, { backgroundColor: "#DC2626" }]} />
+                <View style={styles.bulletDot} />
                 <Text style={styles.bulletText}>{sign}</Text>
               </View>
             ))}
           </View>
-        </SectionCard>
+        </View>
 
-        {/* Escalation Protocol */}
-        <SectionCard icon={Activity} iconColor="#09332C" title="Escalation Protocol">
-          <Text style={styles.cardSubtext}>
-            Tap each step to see what actions to take. Follow the protocol from Step 1, escalating only if needed.
+        <View style={styles.sectionDivider} />
+
+        {/* ── Escalation Protocol ───────────────────────────────────── */}
+        <View style={styles.section}>
+          <SectionLabel label="ESCALATION PROTOCOL" />
+          <Text style={styles.sectionHint}>
+            Start at Step 1 and only escalate if your condition worsens.
           </Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {ESCALATION_TIERS.map((tier) => (
               <TierRow key={tier.step} tier={tier} />
             ))}
           </View>
-        </SectionCard>
+        </View>
 
-        {/* Emergency Contacts */}
-        <SectionCard icon={Phone} iconColor="#A9334D" title="Emergency Contacts">
+        <View style={styles.sectionDivider} />
+
+        {/* ── Emergency Contacts ─────────────────────────────────────── */}
+        <View style={styles.section}>
+          <SectionLabel label="EMERGENCY CONTACTS" />
           {contacts.length === 0 ? (
-            <Pressable
-              onPress={() => router.push("/(tabs)/care/care-team")}
-              style={styles.emptyState}
-            >
+            <Pressable onPress={() => router.push("/(tabs)/care/care-team")} style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No contacts added yet</Text>
               <Text style={styles.emptyStateLink}>Add contacts in Care Team →</Text>
             </Pressable>
           ) : (
-            <View style={{ gap: 10, marginTop: 4 }}>
-              {contacts.map((contact) => (
-                <Pressable
-                  key={contact.id}
-                  onPress={() => Linking.openURL(`tel:${contact.phone}`)}
-                  style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.75 }]}
-                >
-                  <View style={styles.contactInitials}>
-                    <Text style={styles.contactInitialsText}>
-                      {contact.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.contactName}>{contact.name}</Text>
-                    {contact.relationship ? (
-                      <Text style={styles.contactRel}>{contact.relationship}</Text>
-                    ) : null}
-                  </View>
-                  <Text style={styles.contactPhone}>{contact.phone}</Text>
-                  <Phone size={14} color="#A9334D" strokeWidth={2} style={{ marginLeft: 6 }} />
-                </Pressable>
+            <View style={{ gap: 0 }}>
+              {contacts.map((contact, idx) => (
+                <View key={contact.id}>
+                  <Pressable
+                    onPress={() => Linking.openURL(`tel:${contact.phone}`)}
+                    style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.contactAvatar}>
+                      <Text style={styles.contactAvatarText}>
+                        {contact.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.contactName}>{contact.name}</Text>
+                      {contact.relationship ? (
+                        <Text style={styles.contactRel}>{contact.relationship}</Text>
+                      ) : null}
+                    </View>
+                    <View style={styles.callPill}>
+                      <Phone size={12} color="#A9334D" strokeWidth={2.5} />
+                      <Text style={styles.callPillText}>{contact.phone}</Text>
+                    </View>
+                  </Pressable>
+                  {idx < contacts.length - 1 && <View style={styles.divider} />}
+                </View>
               ))}
             </View>
           )}
-        </SectionCard>
+        </View>
 
-        {/* Preferred Hospital */}
-        <SectionCard icon={Building2} iconColor="#09332C" title="Preferred Hospital">
+        <View style={styles.sectionDivider} />
+
+        {/* ── Preferred Hospital ─────────────────────────────────────── */}
+        <View style={styles.section}>
+          <SectionLabel label="PREFERRED HOSPITAL" />
           {preferredHospital ? (
-            <View style={{ gap: 10, marginTop: 4 }}>
-              <View style={styles.hospitalRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.hospitalName}>{preferredHospital.name}</Text>
-                  {preferredHospital.address ? (
-                    <Text style={styles.hospitalAddress}>{preferredHospital.address}</Text>
-                  ) : null}
-                </View>
-              </View>
+            <View style={{ gap: 8 }}>
+              <Text style={styles.hospitalName}>{preferredHospital.name}</Text>
+              {preferredHospital.address ? (
+                <Text style={styles.hospitalAddress}>{preferredHospital.address}</Text>
+              ) : null}
               {preferredHospital.phone ? (
                 <Pressable
                   onPress={() => Linking.openURL(`tel:${preferredHospital.phone}`)}
-                  style={({ pressed }) => [styles.hospitalCallBtn, pressed && { opacity: 0.8 }]}
+                  style={({ pressed }) => [styles.callPillLarge, pressed && { opacity: 0.8 }]}
                 >
-                  <Phone size={14} color="#A9334D" strokeWidth={2} />
-                  <Text style={styles.hospitalCallText}>Call {preferredHospital.phone}</Text>
+                  <Phone size={13} color="#A9334D" strokeWidth={2.5} />
+                  <Text style={styles.callPillLargeText}>Call {preferredHospital.phone}</Text>
                 </Pressable>
               ) : null}
             </View>
           ) : (
-            <Pressable
-              onPress={() => router.push("/(tabs)/care/facilities")}
-              style={styles.emptyState}
-            >
+            <Pressable onPress={() => router.push("/(tabs)/care/facilities")} style={styles.emptyState}>
               <Text style={styles.emptyStateText}>No hospital saved</Text>
               <Text style={styles.emptyStateLink}>Find nearby facilities →</Text>
             </Pressable>
           )}
-        </SectionCard>
+        </View>
 
-        {/* Crisis Medications */}
+        {/* ── Crisis Medications ─────────────────────────────────────── */}
         {crisisMeds.length > 0 && (
-          <SectionCard icon={Pill} iconColor="#A9334D" title="Crisis Medications">
-            <Text style={styles.cardSubtext}>
-              Medications that may help manage a pain crisis:
-            </Text>
-            <View style={{ gap: 8, marginTop: 8 }}>
-              {crisisMeds.map((med) => (
-                <View key={med.id} style={styles.medRow}>
-                  <View style={styles.medIconWrap}>
-                    <Pill size={14} color="#A9334D" strokeWidth={2} />
+          <>
+            <View style={styles.sectionDivider} />
+            <View style={styles.section}>
+              <SectionLabel label="CRISIS MEDICATIONS" />
+              <View style={{ gap: 0 }}>
+                {crisisMeds.map((med, idx) => (
+                  <View key={med.id}>
+                    <View style={styles.medRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.medName}>{med.name}</Text>
+                        {med.dosage ? (
+                          <Text style={styles.medDosage}>{med.dosage} · {med.frequency}</Text>
+                        ) : null}
+                      </View>
+                    </View>
+                    {idx < crisisMeds.length - 1 && <View style={styles.divider} />}
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.medName}>{med.name}</Text>
-                    {med.dosage ? (
-                      <Text style={styles.medDosage}>{med.dosage} · {med.frequency}</Text>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
+                ))}
+              </View>
             </View>
-          </SectionCard>
+          </>
         )}
 
-        {/* ER Notes */}
+        {/* ── ER Notes ────────────────────────────────────────────────── */}
         {crisisPlan.erNotes ? (
-          <SectionCard icon={Heart} iconColor="#781D11" title="Notes for ER Staff">
-            <Text style={styles.erNotesText}>{crisisPlan.erNotes}</Text>
-          </SectionCard>
+          <>
+            <View style={styles.sectionDivider} />
+            <View style={styles.section}>
+              <SectionLabel label="NOTES FOR ER STAFF" />
+              <Text style={styles.erNotesText}>{crisisPlan.erNotes}</Text>
+            </View>
+          </>
         ) : null}
       </ScrollView>
 
@@ -480,7 +464,6 @@ export default function CrisisPlanScreen() {
         >
           <Text style={styles.sheetTitle}>Edit Crisis Plan</Text>
 
-          {/* Blood Type */}
           <Text style={styles.sheetLabel}>Blood Type</Text>
           <View style={styles.sheetChipRow}>
             {BLOOD_TYPES.map((bt) => {
@@ -497,7 +480,6 @@ export default function CrisisPlanScreen() {
             })}
           </View>
 
-          {/* Allergies */}
           <Text style={[styles.sheetLabel, { marginTop: 20 }]}>Known Allergies</Text>
           <View style={styles.sheetChipRow}>
             {PRESET_ALLERGIES.map((p) => {
@@ -542,7 +524,6 @@ export default function CrisisPlanScreen() {
             )}
           </View>
 
-          {/* ER Notes */}
           <Text style={[styles.sheetLabel, { marginTop: 20 }]}>Notes for ER Staff</Text>
           <Text style={styles.sheetHint}>
             Any information that could help emergency staff treat you quickly — e.g. past reactions, preferred pain protocols.
@@ -571,15 +552,7 @@ export default function CrisisPlanScreen() {
 }
 
 const styles = StyleSheet.create({
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  editHeaderBtn: {
+  headerBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
@@ -590,111 +563,112 @@ const styles = StyleSheet.create({
   crisisCta: {
     flexDirection: "row",
     alignItems: "center",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: 16,
+    padding: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  crisisCtaDefault: {
-    backgroundColor: "#A9334D",
-  },
-  crisisCtaActive: {
-    backgroundColor: "#DC2626",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
   },
   crisisCtaTitle: {
     fontFamily: fonts.bold,
-    fontSize: 17,
+    fontSize: 16,
     color: "#FFFFFF",
     marginBottom: 2,
   },
   crisisCtaSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
+    color: "rgba(255,255,255,0.8)",
   },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
+  // ── Sections ──────────────────────────────────────────────────────
+  section: {
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 14,
-  },
-  cardIconBg: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 10,
-  },
-  cardTitle: {
+  sectionLabel: {
     fontFamily: fonts.bold,
-    fontSize: 16,
-    color: "#09332C",
+    fontSize: 11,
+    color: "rgba(9,51,44,0.4)",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    marginBottom: 14,
   },
-  cardSubtext: {
+  sectionHint: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(9,51,44,0.6)",
+    color: "rgba(9,51,44,0.55)",
     lineHeight: 19,
+    marginTop: -6,
+    marginBottom: 4,
   },
-  infoGrid: {
-    gap: 12,
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "rgba(9,51,44,0.07)",
+    marginHorizontal: 20,
   },
-  infoItem: {
-    gap: 4,
+  // ── Info rows ──────────────────────────────────────────────────────
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    gap: 16,
   },
-  infoLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: "rgba(9,51,44,0.5)",
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  infoValue: {
+  infoKey: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: "#09332C",
+    color: "rgba(9,51,44,0.55)",
+    flexShrink: 0,
   },
-  infoValueEmpty: {
-    color: "rgba(9,51,44,0.4)",
+  infoVal: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    color: "#09332C",
+    textAlign: "right",
+    flex: 1,
+  },
+  infoValEmpty: {
     fontFamily: fonts.regular,
+    color: "rgba(9,51,44,0.35)",
+    textAlign: "right",
+    flex: 1,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "rgba(9,51,44,0.06)",
   },
   allergyChips: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 6,
-    marginTop: 4,
+    flex: 1,
+    justifyContent: "flex-end",
   },
   allergyTag: {
-    backgroundColor: "rgba(169,51,77,0.1)",
+    backgroundColor: "rgba(169,51,77,0.08)",
     borderRadius: 20,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   allergyTagText: {
     fontFamily: fonts.medium,
     fontSize: 12,
     color: "#A9334D",
   },
+  // ── Warning signs ──────────────────────────────────────────────────
   bulletRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
   },
   bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginTop: 7,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: "#A9334D",
+    marginTop: 8,
     flexShrink: 0,
   },
   bulletText: {
@@ -704,28 +678,23 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 20,
   },
+  // ── Escalation tiers ───────────────────────────────────────────────
   tierRow: {
     borderLeftWidth: 3,
     borderRadius: 10,
-    padding: 12,
-    overflow: "hidden",
+    padding: 14,
   },
   tierHeader: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  tierLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
     gap: 8,
-    flexWrap: "wrap",
   },
-  tierBadge: {
+  tierStepPill: {
     borderRadius: 6,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
-  tierBadgeText: {
+  tierStepText: {
     fontFamily: fonts.bold,
     fontSize: 10,
     color: "#FFFFFF",
@@ -738,7 +707,7 @@ const styles = StyleSheet.create({
   tierPainRange: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(9,51,44,0.5)",
+    color: "rgba(9,51,44,0.45)",
   },
   tierActions: {
     marginTop: 12,
@@ -766,23 +735,22 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 19,
   },
+  // ── Contacts ────────────────────────────────────────────────────────
   contactRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F4F0",
-    borderRadius: 12,
-    padding: 12,
+    paddingVertical: 12,
+    gap: 12,
   },
-  contactInitials: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+  contactAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: "#09332C",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 12,
   },
-  contactInitialsText: {
+  contactAvatarText: {
     fontFamily: fonts.bold,
     fontSize: 13,
     color: "#F8E9E7",
@@ -798,57 +766,51 @@ const styles = StyleSheet.create({
     color: "rgba(9,51,44,0.5)",
     marginTop: 1,
   },
-  contactPhone: {
+  callPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    backgroundColor: "rgba(169,51,77,0.08)",
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  callPillText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: "#A9334D",
   },
-  hospitalRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
+  // ── Hospital ────────────────────────────────────────────────────────
   hospitalName: {
     fontFamily: fonts.semibold,
-    fontSize: 14,
+    fontSize: 15,
     color: "#09332C",
   },
   hospitalAddress: {
     fontFamily: fonts.regular,
-    fontSize: 12,
+    fontSize: 13,
     color: "rgba(9,51,44,0.55)",
-    marginTop: 2,
-    lineHeight: 17,
+    lineHeight: 18,
   },
-  hospitalCallBtn: {
+  callPillLarge: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     backgroundColor: "rgba(169,51,77,0.08)",
     borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     alignSelf: "flex-start",
+    marginTop: 4,
   },
-  hospitalCallText: {
+  callPillLargeText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 14,
     color: "#A9334D",
   },
+  // ── Medications ────────────────────────────────────────────────────
   medRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8F4F0",
-    borderRadius: 10,
-    padding: 12,
-    gap: 10,
-  },
-  medIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: "rgba(169,51,77,0.1)",
-    alignItems: "center",
-    justifyContent: "center",
+    paddingVertical: 10,
   },
   medName: {
     fontFamily: fonts.semibold,
@@ -859,17 +821,18 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     color: "rgba(9,51,44,0.5)",
-    marginTop: 1,
+    marginTop: 2,
   },
+  // ── ER Notes ───────────────────────────────────────────────────────
   erNotesText: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: "rgba(9,51,44,0.75)",
-    lineHeight: 21,
+    lineHeight: 22,
   },
+  // ── Empty states ───────────────────────────────────────────────────
   emptyState: {
-    alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 8,
     gap: 4,
   },
   emptyStateText: {
@@ -882,7 +845,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#A9334D",
   },
-  // Sheet styles
+  // ── Bottom sheet ───────────────────────────────────────────────────
   sheetBg: {
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
@@ -996,7 +959,7 @@ const styles = StyleSheet.create({
   },
   sheetSaveBtn: {
     backgroundColor: "#A9334D",
-    borderRadius: 16,
+    borderRadius: 14,
     paddingVertical: 16,
     alignItems: "center",
     marginTop: 24,
