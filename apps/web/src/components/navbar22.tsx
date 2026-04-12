@@ -1,5 +1,3 @@
-"use client";
-
 import { Menu } from "lucide-react";
 import { useState } from "react";
 
@@ -14,30 +12,17 @@ import { cn } from "@/lib/utils";
 
 interface Navbar22Props {
   className?: string;
-  onContactClick?: () => void;
   onJoinWaitlistClick?: () => void;
 }
 
-const Navbar22 = ({
-  className,
-  onContactClick,
-  onJoinWaitlistClick,
-}: Navbar22Props) => {
+const navLinks = [
+  { name: "Features", href: "#features" },
+  { name: "Why Hemo", href: "#impact" },
+  { name: "Stories", href: "#testimonials" },
+];
+
+const Navbar22 = ({ className, onJoinWaitlistClick }: Navbar22Props) => {
   const [isOpen, setIsOpen] = useState(false);
-
-  const navLinks = [
-    { name: "Features", href: "#features" },
-    { name: "Impact", href: "#impact" },
-    { name: "Stories", href: "#testimonials" },
-  ];
-
-  const handleContactClick = () => {
-    onContactClick?.();
-  };
-
-  const handleJoinClick = () => {
-    onJoinWaitlistClick?.();
-  };
 
   return (
     <section className={cn("py-4", className)}>
@@ -45,14 +30,18 @@ const Navbar22 = ({
         <nav className="w-full">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="size-8 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold">
+
+              {/* Logo */}
+              <a href="/" className="flex items-center gap-2">
+                <div className="size-8 rounded-full bg-primary/15 text-primary flex items-center justify-center font-semibold text-sm">
                   H
                 </div>
                 <span className="text-lg font-semibold tracking-tighter">
                   Hemo
                 </span>
-              </div>
+              </a>
+
+              {/* Desktop nav links */}
               <div className="hidden items-center gap-8 md:flex">
                 {navLinks.map((link) => (
                   <a
@@ -63,18 +52,21 @@ const Navbar22 = ({
                     <span className="block transition-transform duration-300 group-hover:-translate-y-full">
                       {link.name}
                     </span>
-                    <span className="absolute left-0 block w-full border-border border-primary transition-transform duration-300 group-hover:translate-y-[-100%] group-hover:border-b">
+                    <span className="absolute left-0 block w-full border-primary transition-transform duration-300 group-hover:translate-y-[-100%] group-hover:border-b">
                       {link.name}
                     </span>
                   </a>
                 ))}
               </div>
-              <div className="hidden items-center gap-2 lg:flex">
-                <Button variant="outline" onClick={handleContactClick}>
-                  Contact Us
+
+              {/* Desktop CTA */}
+              <div className="hidden items-center lg:flex">
+                <Button onClick={onJoinWaitlistClick}>
+                  Join the Waitlist
                 </Button>
-                <Button onClick={handleJoinClick}>Join Waitlist</Button>
               </div>
+
+              {/* Mobile menu */}
               <div className="md:hidden">
                 <Sheet open={isOpen} onOpenChange={setIsOpen}>
                   <SheetTrigger
@@ -92,20 +84,19 @@ const Navbar22 = ({
                   <SheetContent side="top" className="h-screen">
                     <SheetTitle className="sr-only">Navigation</SheetTitle>
                     <div className="m-4 flex flex-col gap-6">
-                      <div className="ml-3">
-                        <a
-                          href="/"
-                          className="flex items-center justify-start gap-2 text-2xl font-bold text-foreground"
-                          onClick={() => setIsOpen(false)}
-                        >
-                          <div className="size-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-semibold">
-                            H
-                          </div>
-                          <span className="text-lg font-semibold tracking-tighter">
-                            Hemo
-                          </span>
-                        </a>
-                      </div>
+                      <a
+                        href="/"
+                        className="ml-3 flex items-center gap-2"
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <div className="size-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-semibold">
+                          H
+                        </div>
+                        <span className="text-lg font-semibold tracking-tighter">
+                          Hemo
+                        </span>
+                      </a>
+
                       <div className="flex flex-col gap-4">
                         {navLinks.map((link) => (
                           <a
@@ -118,29 +109,23 @@ const Navbar22 = ({
                           </a>
                         ))}
                       </div>
-                      <div className="border-t border-border pt-6 flex flex-col gap-3">
+
+                      <div className="border-t border-border pt-6">
                         <Button
-                          variant="outline"
+                          className="w-full"
                           onClick={() => {
                             setIsOpen(false);
-                            handleContactClick();
+                            onJoinWaitlistClick?.();
                           }}
                         >
-                          Contact Us
-                        </Button>
-                        <Button
-                          onClick={() => {
-                            setIsOpen(false);
-                            handleJoinClick();
-                          }}
-                        >
-                          Join Waitlist
+                          Join the Waitlist
                         </Button>
                       </div>
                     </div>
                   </SheetContent>
                 </Sheet>
               </div>
+
             </div>
           </div>
         </nav>
