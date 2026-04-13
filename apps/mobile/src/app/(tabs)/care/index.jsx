@@ -9,6 +9,7 @@ import { useAppStore } from "@/store/appStore";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
+import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 import {
   Pill,
   Calendar,
@@ -274,7 +275,7 @@ export default function CareMenuScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
-  const savedFacilities = useAppStore((s) => s.savedFacilities);
+  const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
   const { data: medications = [] } = useMedicationsQuery();
   const { data: appointments = [] } = useAppointmentsQuery();
   const { data: contacts = [] } = useEmergencyContactsQuery();

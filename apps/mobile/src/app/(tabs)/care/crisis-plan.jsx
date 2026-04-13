@@ -24,6 +24,7 @@ import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useUpdateProfileMutation } from "@/hooks/queries/useProfileQuery";
+import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
@@ -172,7 +173,7 @@ export default function CrisisPlanScreen() {
   const crisisMode = useAppStore((s) => s.crisisMode);
   const updateCrisisPlan = useAppStore((s) => s.updateCrisisPlan);
   // const scdType = useAppStore((s) => s.onboardingData?.scdType);
-  const savedFacilities = useAppStore((s) => s.savedFacilities);
+  const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
   const preferredHospital = savedFacilities[0] ?? null;
 
   const { data: contacts = [] } = useEmergencyContactsQuery();
