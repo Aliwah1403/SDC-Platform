@@ -29,7 +29,7 @@ import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 
-const HEADER_GRADIENT = ["#781D11", "#A9334D", "#09332C"];
+const HEADER_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
 const SCD_TYPE_LABELS = {
   HbSS: "HbSS — Sickle Cell Anaemia",

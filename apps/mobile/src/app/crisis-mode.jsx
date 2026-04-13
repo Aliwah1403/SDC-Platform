@@ -36,8 +36,8 @@ const ESCALATION_STEPS = {
   1: {
     label: "MILD",
     painRange: "Pain 1–4",
-    color: "#09332C",
-    bg: "rgba(9,51,44,0.12)",
+    color: "#A9334D",
+    border: "#A9334D",
     description:
       "You're in the early stages of a crisis. Follow these steps carefully before pain escalates.",
     actions: [
@@ -52,8 +52,8 @@ const ESCALATION_STEPS = {
   2: {
     label: "MODERATE",
     painRange: "Pain 5–7",
-    color: "#A9334D",
-    bg: "rgba(169,51,77,0.12)",
+    color: "#781D11",
+    border: "#781D11",
     description:
       "Pain is increasing. You should be heading to hospital now — do not wait.",
     actions: [
@@ -69,7 +69,7 @@ const ESCALATION_STEPS = {
     label: "SEVERE",
     painRange: "Pain 8–10+",
     color: "#DC2626",
-    bg: "rgba(220,38,38,0.12)",
+    border: "#DC2626",
     description:
       "This is a medical emergency. Call 999 / 911 now. Your care team is being alerted.",
     actions: [
@@ -107,45 +107,6 @@ function useElapsedTimer(startedAt) {
   return `${s}s`;
 }
 
-// ── Sub-components ─────────────────────────────────────────────────────────────
-
-function StepCard({ step, stepData }) {
-  return (
-    <MotiView
-      key={step}
-      from={{ opacity: 0, translateY: 12 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "spring", damping: 18, stiffness: 80 }}
-      style={[styles.stepCard, { backgroundColor: stepData.bg, borderColor: stepData.color }]}
-    >
-      <View style={styles.stepBadgeRow}>
-        <View style={[styles.stepBadge, { backgroundColor: stepData.color }]}>
-          <Text style={styles.stepBadgeText}>STEP {step}</Text>
-        </View>
-        <Text style={[styles.stepLabel, { color: stepData.color }]}>{stepData.label}</Text>
-        <Text style={styles.stepPainRange}>{stepData.painRange}</Text>
-      </View>
-      <Text style={styles.stepDescription}>{stepData.description}</Text>
-    </MotiView>
-  );
-}
-
-function ActionsList({ actions, stepColor }) {
-  return (
-    <View style={styles.actionsCard}>
-      <Text style={styles.actionsTitle}>What to do now</Text>
-      {actions.map((action, i) => (
-        <View key={i} style={styles.actionRow}>
-          <View style={[styles.actionNumber, { backgroundColor: stepColor }]}>
-            <Text style={styles.actionNumberText}>{i + 1}</Text>
-          </View>
-          <Text style={styles.actionText}>{action}</Text>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 // ── Main Screen ─────────────────────────────────────────────────────────────────
 
 export default function CrisisModeScreen() {
@@ -166,14 +127,12 @@ export default function CrisisModeScreen() {
   const alertedRef = useRef(false);
   const elapsed = useElapsedTimer(crisisMode.startedAt);
 
-  // Initialise crisis mode if arriving fresh (not yet active)
   useEffect(() => {
     if (!crisisMode.isActive) {
-      startCrisisMode(0); // default pain 0 → step 1; crisis-plan passes painLevel if available
+      startCrisisMode(0);
     }
   }, []);
 
-  // Schedule check-in notifications on first open (only once)
   useEffect(() => {
     if (crisisMode.isActive && crisisMode.scheduledNotificationIds.length === 0) {
       scheduleCrisisCheckIns(30).then((ids) => {
@@ -182,7 +141,6 @@ export default function CrisisModeScreen() {
     }
   }, [crisisMode.isActive]);
 
-  // Auto-alert care team when crisis escalates to step 3
   useEffect(() => {
     if (crisisMode.currentStep === 3 && !alertedRef.current && contacts.length > 0) {
       alertedRef.current = true;
@@ -200,7 +158,6 @@ export default function CrisisModeScreen() {
     async (response) => {
       const prevStep = crisisMode.currentStep;
       recordCrisisCheckIn(response);
-      // If "worse" would push to a new step, fire an escalation notification
       if (response === "worse" && prevStep < 3) {
         await scheduleEscalationAlert(prevStep + 1);
       }
@@ -254,8 +211,23 @@ export default function CrisisModeScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Current step card */}
-        <StepCard step={crisisMode.currentStep} stepData={stepData} />
+        {/* Step card */}
+        <MotiView
+          key={crisisMode.currentStep}
+          from={{ opacity: 0, translateY: 12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{ type: "spring", damping: 18, stiffness: 80 }}
+          style={[styles.stepCard, { borderLeftColor: stepData.border }]}
+        >
+          <View style={styles.stepBadgeRow}>
+            <View style={[styles.stepBadge, { backgroundColor: stepData.color }]}>
+              <Text style={styles.stepBadgeText}>STEP {crisisMode.currentStep}</Text>
+            </View>
+            <Text style={[styles.stepLabel, { color: stepData.color }]}>{stepData.label}</Text>
+            <Text style={styles.stepPainRange}>{stepData.painRange}</Text>
+          </View>
+          <Text style={styles.stepDescription}>{stepData.description}</Text>
+        </MotiView>
 
         {/* Step 3 auto-alert banner */}
         {crisisMode.currentStep === 3 && (
@@ -265,7 +237,7 @@ export default function CrisisModeScreen() {
             transition={{ type: "spring", damping: 16, stiffness: 80 }}
             style={styles.alertBanner}
           >
-            <CheckCircle2 size={16} color="#F8E9E7" strokeWidth={2.5} />
+            <CheckCircle2 size={16} color="#DC2626" strokeWidth={2.5} />
             <Text style={styles.alertBannerText}>
               Care team alerted via SMS. Emergency services should be called now.
             </Text>
@@ -273,7 +245,17 @@ export default function CrisisModeScreen() {
         )}
 
         {/* Actions list */}
-        <ActionsList actions={stepData.actions} stepColor={stepData.color} />
+        <View style={styles.actionsCard}>
+          <Text style={styles.actionsTitle}>What to do now</Text>
+          {stepData.actions.map((action, i) => (
+            <View key={i} style={styles.actionRow}>
+              <View style={[styles.actionNumber, { backgroundColor: stepData.color }]}>
+                <Text style={styles.actionNumberText}>{i + 1}</Text>
+              </View>
+              <Text style={styles.actionText}>{action}</Text>
+            </View>
+          ))}
+        </View>
 
         {/* Check-in */}
         <View style={styles.checkInCard}>
@@ -281,7 +263,7 @@ export default function CrisisModeScreen() {
           {lastCheckIn && (
             <Text style={styles.checkInLast}>
               Last update:{" "}
-              <Text style={{ color: "#F8E9E7" }}>
+              <Text style={{ color: "#09332C", fontFamily: fonts.medium }}>
                 {lastCheckIn.response === "better"
                   ? "Feeling better"
                   : lastCheckIn.response === "same"
@@ -293,35 +275,23 @@ export default function CrisisModeScreen() {
           <View style={styles.checkInButtons}>
             <Pressable
               onPress={() => handleCheckIn("better")}
-              style={({ pressed }) => [
-                styles.checkInBtn,
-                styles.checkInBtnBetter,
-                pressed && { opacity: 0.8 },
-              ]}
+              style={({ pressed }) => [styles.checkInBtn, styles.checkInBtnBetter, pressed && { opacity: 0.8 }]}
             >
-              <ThumbsUp size={18} color="#FFFFFF" strokeWidth={2} />
-              <Text style={styles.checkInBtnText}>Better</Text>
+              <ThumbsUp size={16} color="#09332C" strokeWidth={2} />
+              <Text style={[styles.checkInBtnText, { color: "#09332C" }]}>Better</Text>
             </Pressable>
             <Pressable
               onPress={() => handleCheckIn("same")}
-              style={({ pressed }) => [
-                styles.checkInBtn,
-                styles.checkInBtnSame,
-                pressed && { opacity: 0.8 },
-              ]}
+              style={({ pressed }) => [styles.checkInBtn, styles.checkInBtnSame, pressed && { opacity: 0.8 }]}
             >
-              <Minus size={18} color="#09332C" strokeWidth={2.5} />
-              <Text style={[styles.checkInBtnText, { color: "#09332C" }]}>Same</Text>
+              <Minus size={16} color="rgba(9,51,44,0.6)" strokeWidth={2.5} />
+              <Text style={[styles.checkInBtnText, { color: "rgba(9,51,44,0.6)" }]}>Same</Text>
             </Pressable>
             <Pressable
               onPress={() => handleCheckIn("worse")}
-              style={({ pressed }) => [
-                styles.checkInBtn,
-                styles.checkInBtnWorse,
-                pressed && { opacity: 0.8 },
-              ]}
+              style={({ pressed }) => [styles.checkInBtn, styles.checkInBtnWorse, pressed && { opacity: 0.8 }]}
             >
-              <TrendingUp size={18} color="#FFFFFF" strokeWidth={2} />
+              <TrendingUp size={16} color="#FFFFFF" strokeWidth={2} />
               <Text style={styles.checkInBtnText}>Worse</Text>
             </Pressable>
           </View>
@@ -347,7 +317,7 @@ export default function CrisisModeScreen() {
         )}
 
         {contacts.length === 0 && (
-          <View style={[styles.alertTeamBtn, { opacity: 0.5 }]}>
+          <View style={[styles.alertTeamBtn, { backgroundColor: "rgba(169,51,77,0.4)" }]}>
             <AlertTriangle size={18} color="#F8E9E7" strokeWidth={2} />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.alertTeamTitle}>No contacts added</Text>
@@ -382,7 +352,7 @@ export default function CrisisModeScreen() {
           onPress={handleEndCrisis}
           style={({ pressed }) => [styles.endBtn, pressed && { opacity: 0.75 }]}
         >
-          <XCircle size={18} color="#F8E9E7" strokeWidth={2} />
+          <XCircle size={18} color="rgba(248,233,231,0.6)" strokeWidth={2} />
           <Text style={styles.endBtnText}>I'm feeling better — End Crisis</Text>
         </Pressable>
       </ScrollView>
@@ -393,7 +363,7 @@ export default function CrisisModeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#09332C",
+    backgroundColor: "#781D11",
   },
   header: {
     flexDirection: "row",
@@ -419,10 +389,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
   timerBadge: {
-    backgroundColor: "rgba(248,233,231,0.12)",
+    backgroundColor: "rgba(248,233,231,0.1)",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(248,233,231,0.15)",
   },
   timerText: {
     fontFamily: fonts.semibold,
@@ -432,12 +404,14 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    gap: 14,
+    gap: 12,
   },
+  // ── Step card ──────────────────────────────────────────────────────
   stepCard: {
+    backgroundColor: "#F8E9E7",
     borderRadius: 18,
     padding: 18,
-    borderWidth: 1.5,
+    borderLeftWidth: 4,
     gap: 10,
   },
   stepBadgeRow: {
@@ -465,46 +439,46 @@ const styles = StyleSheet.create({
   stepPainRange: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(248,233,231,0.6)",
+    color: "rgba(9,51,44,0.5)",
   },
   stepDescription: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(248,233,231,0.85)",
+    color: "rgba(9,51,44,0.75)",
     lineHeight: 20,
   },
+  // ── Alert banner ───────────────────────────────────────────────────
   alertBanner: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 10,
-    backgroundColor: "rgba(248,233,231,0.08)",
+    backgroundColor: "#F8E9E7",
     borderRadius: 12,
     padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(248,233,231,0.2)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#DC2626",
   },
   alertBannerText: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    color: "#F8E9E7",
+    color: "#09332C",
     flex: 1,
     lineHeight: 19,
   },
+  // ── Actions card ───────────────────────────────────────────────────
   actionsCard: {
-    backgroundColor: "rgba(248,233,231,0.06)",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 18,
     gap: 12,
-    borderWidth: 1,
-    borderColor: "rgba(248,233,231,0.1)",
   },
   actionsTitle: {
     fontFamily: fonts.bold,
-    fontSize: 14,
-    color: "rgba(248,233,231,0.55)",
+    fontSize: 11,
+    color: "rgba(9,51,44,0.4)",
     textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 4,
+    letterSpacing: 1,
+    marginBottom: 2,
   },
   actionRow: {
     flexDirection: "row",
@@ -528,27 +502,26 @@ const styles = StyleSheet.create({
   actionText: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "#F8E9E7",
+    color: "#09332C",
     flex: 1,
     lineHeight: 20,
   },
+  // ── Check-in card ──────────────────────────────────────────────────
   checkInCard: {
-    backgroundColor: "rgba(248,233,231,0.06)",
+    backgroundColor: "#FFFFFF",
     borderRadius: 18,
     padding: 18,
-    borderWidth: 1,
-    borderColor: "rgba(248,233,231,0.1)",
     gap: 12,
   },
   checkInTitle: {
     fontFamily: fonts.bold,
     fontSize: 16,
-    color: "#F8E9E7",
+    color: "#09332C",
   },
   checkInLast: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(248,233,231,0.5)",
+    color: "rgba(9,51,44,0.45)",
     marginTop: -4,
   },
   checkInButtons: {
@@ -561,14 +534,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 14,
+    paddingVertical: 13,
     borderRadius: 14,
   },
   checkInBtnBetter: {
-    backgroundColor: "#09332C",
+    backgroundColor: "#F8E9E7",
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.15)",
   },
   checkInBtnSame: {
-    backgroundColor: "rgba(248,233,231,0.85)",
+    backgroundColor: "#F8F4F0",
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.1)",
   },
   checkInBtnWorse: {
     backgroundColor: "#DC2626",
@@ -578,6 +555,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#FFFFFF",
   },
+  // ── Alert team button ──────────────────────────────────────────────
   alertTeamBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -601,32 +579,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "rgba(248,233,231,0.7)",
   },
+  // ── Medical info card ──────────────────────────────────────────────
   medInfoCard: {
-    backgroundColor: "rgba(248,233,231,0.06)",
+    backgroundColor: "#FFFFFF",
     borderRadius: 14,
-    padding: 14,
+    padding: 16,
     gap: 6,
-    borderWidth: 1,
-    borderColor: "rgba(248,233,231,0.1)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#A9334D",
   },
   medInfoTitle: {
     fontFamily: fonts.semibold,
-    fontSize: 12,
-    color: "rgba(248,233,231,0.5)",
+    fontSize: 11,
+    color: "rgba(9,51,44,0.45)",
     textTransform: "uppercase",
-    letterSpacing: 0.6,
+    letterSpacing: 0.8,
     marginBottom: 4,
   },
   medInfoLine: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(248,233,231,0.65)",
+    color: "rgba(9,51,44,0.65)",
     lineHeight: 20,
   },
   medInfoValue: {
     fontFamily: fonts.semibold,
-    color: "#F8E9E7",
+    color: "#09332C",
   },
+  // ── End button ─────────────────────────────────────────────────────
   endBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -641,6 +621,6 @@ const styles = StyleSheet.create({
   endBtnText: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: "rgba(248,233,231,0.75)",
+    color: "rgba(248,233,231,0.7)",
   },
 });
