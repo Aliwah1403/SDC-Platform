@@ -47,12 +47,10 @@ import {
   searchNearbyFacilities,
   searchFacilitiesByText,
 } from "@/utils/hospitalSearch";
-import {
-  fetchSavedFacilities,
-  saveFacility,
-  unsaveFacility,
-} from "@/services/supabaseQueries";
+import { saveFacility, unsaveFacility } from "@/services/supabaseQueries";
 import { useAuthStore } from "@/utils/auth/store";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -618,8 +616,6 @@ export default function FacilitiesScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const {
-    savedFacilities,
-    setSavedFacilities,
     toggleSavedFacility,
     facilitiesCache,
     setFacilitiesCache,
@@ -627,6 +623,8 @@ export default function FacilitiesScreen() {
   } = useAppStore();
   const { auth } = useAuthStore();
   const userId = auth?.user?.id ?? null;
+  const queryClient = useQueryClient();
+  const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
 
   const [view, setView] = useState("list"); // "map" | "list"
   const [activeFilter, setActiveFilter] = useState("All");
@@ -665,14 +663,6 @@ export default function FacilitiesScreen() {
     }
   }, [view]);
 
-  // Load saved facilities from Supabase on mount
-  useEffect(() => {
-    if (!userId) return;
-    fetchSavedFacilities(userId)
-      .then(setSavedFacilities)
-      .catch(() => {});
-  }, [userId]);
-
   // Toggle save — optimistic update + background Supabase sync
   const handleToggleSave = useCallback(
     (facility) => {
@@ -680,12 +670,16 @@ export default function FacilitiesScreen() {
       toggleSavedFacility(facility);
       if (!userId) return;
       if (alreadySaved) {
-        unsaveFacility(userId, facility.placeId).catch(() => toggleSavedFacility(facility));
+        unsaveFacility(userId, facility.placeId)
+          .then(() => queryClient.invalidateQueries({ queryKey: ['savedFacilities', userId] }))
+          .catch(() => toggleSavedFacility(facility));
       } else {
-        saveFacility(userId, facility).catch(() => toggleSavedFacility(facility));
+        saveFacility(userId, facility)
+          .then(() => queryClient.invalidateQueries({ queryKey: ['savedFacilities', userId] }))
+          .catch(() => toggleSavedFacility(facility));
       }
     },
-    [userId, savedFacilities, toggleSavedFacility]
+    [userId, savedFacilities, toggleSavedFacility, queryClient]
   );
 
   const isSearchMode = searchQuery.trim().length > 0;
