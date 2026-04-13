@@ -17,13 +17,14 @@ import {
   ChevronLeft,
   Edit3,
   Phone,
-  X,
   ChevronDown,
   ShieldAlert,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useUpdateProfileMutation } from "@/hooks/queries/useProfileQuery";
+import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 
@@ -176,6 +177,7 @@ export default function CrisisPlanScreen() {
 
   const { data: contacts = [] } = useEmergencyContactsQuery();
   const { data: medications = [] } = useMedicationsQuery();
+  const updateProfileMutation = useUpdateProfileMutation();
   const { data: profile = [] } = useProfileQuery();
 
   const scdType = profile?.scdType || null;
@@ -220,11 +222,13 @@ export default function CrisisPlanScreen() {
   };
 
   const handleSaveEdit = () => {
+    const allergies = [...editPresets, ...editCustom];
     updateCrisisPlan({
       bloodType: editBloodType,
-      allergies: [...editPresets, ...editCustom],
+      allergies,
       erNotes: editNotes,
     });
+    updateProfileMutation.mutate({ bloodType: editBloodType, allergies });
     sheetRef.current?.close();
   };
 
@@ -587,77 +591,40 @@ export default function CrisisPlanScreen() {
           <Text style={styles.sheetTitle}>Edit Crisis Plan</Text>
 
           <Text style={styles.sheetLabel}>Blood Type</Text>
-          <View style={styles.sheetChipRow}>
-            {BLOOD_TYPES.map((bt) => {
-              const sel = editBloodType === bt;
-              return (
-                <Pressable
-                  key={bt}
-                  onPress={() =>
-                    setEditBloodType(bt === editBloodType ? null : bt)
-                  }
-                  style={[styles.sheetChip, sel && styles.sheetChipSel]}
-                >
-                  <Text
-                    style={[
-                      styles.sheetChipText,
-                      sel && styles.sheetChipTextSel,
-                    ]}
-                  >
-                    {bt}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.chipWrap}>
+            {BLOOD_TYPES.map((bt) => (
+              <CheckboxChip
+                key={bt}
+                label={bt}
+                checked={editBloodType === bt}
+                onPress={() =>
+                  setEditBloodType(editBloodType === bt ? null : bt)
+                }
+              />
+            ))}
           </View>
 
-          <Text style={[styles.sheetLabel, { marginTop: 20 }]}>
+          <Text style={[styles.sheetLabel, { marginTop: 24 }]}>
             Known Allergies
           </Text>
-          <View style={styles.sheetChipRow}>
-            {PRESET_ALLERGIES.map((p) => {
-              const sel = editPresets.includes(p);
-              return (
-                <Pressable
-                  key={p}
-                  onPress={() => toggleEditPreset(p)}
-                  style={[styles.sheetAllergyChip, sel && styles.sheetChipSel]}
-                >
-                  <Text
-                    style={[
-                      styles.sheetChipText,
-                      sel && styles.sheetChipTextSel,
-                    ]}
-                  >
-                    {p}
-                  </Text>
-                  {sel && (
-                    <X
-                      size={11}
-                      color="#FFFFFF"
-                      strokeWidth={2.5}
-                      style={{ marginLeft: 4 }}
-                    />
-                  )}
-                </Pressable>
-              );
-            })}
+          <View style={styles.chipWrap}>
+            {PRESET_ALLERGIES.map((p) => (
+              <CheckboxChip
+                key={p}
+                label={p}
+                checked={editPresets.includes(p)}
+                onPress={() => toggleEditPreset(p)}
+              />
+            ))}
             {editCustom.map((c) => (
-              <Pressable
+              <CheckboxChip
                 key={c}
+                label={c}
+                checked
                 onPress={() =>
                   setEditCustom((prev) => prev.filter((x) => x !== c))
                 }
-                style={[styles.sheetAllergyChip, styles.sheetChipSel]}
-              >
-                <Text style={styles.sheetChipTextSel}>{c}</Text>
-                <X
-                  size={11}
-                  color="#FFFFFF"
-                  strokeWidth={2.5}
-                  style={{ marginLeft: 4 }}
-                />
-              </Pressable>
+              />
             ))}
           </View>
           <View style={styles.sheetInputRow}>
@@ -1041,42 +1008,10 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     marginTop: -6,
   },
-  sheetChipRow: {
+  chipWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-  },
-  sheetChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
-    backgroundColor: "#F8F4F0",
-  },
-  sheetAllergyChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
-    backgroundColor: "#F8F4F0",
-  },
-  sheetChipSel: {
-    backgroundColor: "#A9334D",
-    borderColor: "#A9334D",
-  },
-  sheetChipText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: "#09332C",
-  },
-  sheetChipTextSel: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: "#FFFFFF",
+    gap: 10,
   },
   sheetInputRow: {
     flexDirection: "row",
