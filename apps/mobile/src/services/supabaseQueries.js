@@ -68,6 +68,8 @@ export async function completeOnboarding(userId, onboardingData) {
     notificationsEnabled,
     biometricsEnabled,
     preferredHospital,
+    bloodType,
+    allergies = [],
     emergencyContacts = [],
     medications = [],
   } = onboardingData;
@@ -85,6 +87,8 @@ export async function completeOnboarding(userId, onboardingData) {
       notifications_enabled: notificationsEnabled ?? false,
       biometrics_enabled: biometricsEnabled ?? false,
       preferred_hospital: preferredHospital || null,
+      blood_type: bloodType || null,
+      allergies: allergies.length > 0 ? allergies : [],
       onboarding_complete: true,
       updated_at: new Date().toISOString(),
     })
