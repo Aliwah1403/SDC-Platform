@@ -24,6 +24,7 @@ import {
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 
 const HEADER_GRADIENT = ["#781D11", "#A9334D", "#09332C"];
@@ -89,15 +90,30 @@ const ESCALATION_TIERS = [
   },
 ];
 
-const BLOOD_TYPES = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "I don't know"];
-const PRESET_ALLERGIES = ["Penicillin", "NSAIDs", "Aspirin", "Latex", "Codeine", "Sulfa drugs"];
+const BLOOD_TYPES = [
+  "A+",
+  "A−",
+  "B+",
+  "B−",
+  "AB+",
+  "AB−",
+  "O+",
+  "O−",
+  "I don't know",
+];
+const PRESET_ALLERGIES = [
+  "Penicillin",
+  "NSAIDs",
+  "Aspirin",
+  "Latex",
+  "Codeine",
+  "Sulfa drugs",
+];
 
 // ── Section heading ─────────────────────────────────────────────────────────────
 
 function SectionLabel({ label }) {
-  return (
-    <Text style={styles.sectionLabel}>{label}</Text>
-  );
+  return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
 // ── Tier row ────────────────────────────────────────────────────────────────────
@@ -107,13 +123,18 @@ function TierRow({ tier }) {
   return (
     <Pressable
       onPress={() => setExpanded((v) => !v)}
-      style={[styles.tierRow, { borderLeftColor: tier.border, backgroundColor: tier.bg }]}
+      style={[
+        styles.tierRow,
+        { borderLeftColor: tier.border, backgroundColor: tier.bg },
+      ]}
     >
       <View style={styles.tierHeader}>
         <View style={[styles.tierStepPill, { backgroundColor: tier.color }]}>
           <Text style={styles.tierStepText}>STEP {tier.step}</Text>
         </View>
-        <Text style={[styles.tierLabel, { color: tier.color }]}>{tier.label}</Text>
+        <Text style={[styles.tierLabel, { color: tier.color }]}>
+          {tier.label}
+        </Text>
         <Text style={styles.tierPainRange}>{tier.painRange}</Text>
         <ChevronDown
           size={15}
@@ -149,41 +170,50 @@ export default function CrisisPlanScreen() {
   const crisisPlan = useAppStore((s) => s.crisisPlan);
   const crisisMode = useAppStore((s) => s.crisisMode);
   const updateCrisisPlan = useAppStore((s) => s.updateCrisisPlan);
-  const scdType = useAppStore((s) => s.onboardingData?.scdType);
+  // const scdType = useAppStore((s) => s.onboardingData?.scdType);
   const savedFacilities = useAppStore((s) => s.savedFacilities);
   const preferredHospital = savedFacilities[0] ?? null;
 
   const { data: contacts = [] } = useEmergencyContactsQuery();
   const { data: medications = [] } = useMedicationsQuery();
+  const { data: profile = [] } = useProfileQuery();
+
+  const scdType = profile?.scdType || null;
+  const bloodType = crisisPlan?.bloodType || null;
+  const allergies = crisisPlan?.allergies || [];
 
   const crisisMeds = medications.filter(
     (m) =>
       m.isActive !== false &&
       (m.category === "Supportive" ||
         ["opioid", "analgesic", "nsaid", "pain"].some((kw) =>
-          m.name?.toLowerCase().includes(kw)
-        ))
+          m.name?.toLowerCase().includes(kw),
+        )),
   );
 
   // ── Edit sheet state ─────────────────────────────────────────────
   const [editBloodType, setEditBloodType] = useState(crisisPlan.bloodType);
   const [editPresets, setEditPresets] = useState(
-    crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a))
+    crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
   );
   const [editCustom, setEditCustom] = useState(
-    crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a))
+    crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
   );
   const [editAllergyInput, setEditAllergyInput] = useState("");
   const [editNotes, setEditNotes] = useState(crisisPlan.erNotes);
 
   const toggleEditPreset = (p) =>
     setEditPresets((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
+      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p],
     );
 
   const addEditCustom = () => {
     const trimmed = editAllergyInput.trim();
-    if (trimmed && !editCustom.includes(trimmed) && !editPresets.includes(trimmed)) {
+    if (
+      trimmed &&
+      !editCustom.includes(trimmed) &&
+      !editPresets.includes(trimmed)
+    ) {
       setEditCustom((prev) => [...prev, trimmed]);
     }
     setEditAllergyInput("");
@@ -200,13 +230,17 @@ export default function CrisisPlanScreen() {
 
   const openSheet = () => {
     setEditBloodType(crisisPlan.bloodType);
-    setEditPresets(crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)));
-    setEditCustom(crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)));
+    setEditPresets(
+      crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
+    );
+    setEditCustom(
+      crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
+    );
     setEditNotes(crisisPlan.erNotes);
     sheetRef.current?.expand();
   };
 
-  const allAllergies = [...crisisPlan.allergies];
+  const allAllergies = [...allergies];
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -217,27 +251,71 @@ export default function CrisisPlanScreen() {
         colors={HEADER_GRADIENT}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 12, paddingBottom: 24, paddingHorizontal: 20, overflow: "hidden" }}
+        style={{
+          paddingTop: insets.top + 12,
+          paddingBottom: 24,
+          paddingHorizontal: 20,
+          overflow: "hidden",
+        }}
       >
-        <View style={{ position: "absolute", width: 160, height: 160, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.3, top: -50, right: -30 }} />
-        <View style={{ position: "absolute", width: 100, height: 100, borderRadius: 999, backgroundColor: "#09332C", opacity: 0.4, bottom: -20, left: -20 }} />
+        <View
+          style={{
+            position: "absolute",
+            width: 160,
+            height: 160,
+            borderRadius: 999,
+            backgroundColor: "#781D11",
+            opacity: 0.3,
+            top: -50,
+            right: -30,
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            width: 100,
+            height: 100,
+            borderRadius: 999,
+            backgroundColor: "#09332C",
+            opacity: 0.4,
+            bottom: -20,
+            left: -20,
+          }}
+        />
 
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Pressable
             onPress={() => router.back()}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [
+              styles.headerBtn,
+              pressed && { opacity: 0.7 },
+            ]}
           >
             <ChevronLeft size={22} color="#F8E9E7" strokeWidth={2.5} />
           </Pressable>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 24, color: "#F8E9E7" }}>Crisis Plan</Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "rgba(248,233,231,0.65)", marginTop: 2 }}>
+            <Text
+              style={{ fontFamily: fonts.bold, fontSize: 24, color: "#F8E9E7" }}
+            >
+              Crisis Plan
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 13,
+                color: "rgba(248,233,231,0.65)",
+                marginTop: 2,
+              }}
+            >
               Your personalised SCD emergency guide
             </Text>
           </View>
           <Pressable
             onPress={openSheet}
-            style={({ pressed }) => [styles.headerBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [
+              styles.headerBtn,
+              pressed && { opacity: 0.7 },
+            ]}
           >
             <Edit3 size={18} color="#F8E9E7" strokeWidth={2} />
           </Pressable>
@@ -250,19 +328,30 @@ export default function CrisisPlanScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Crisis Mode CTA */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}>
+        <View
+          style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 }}
+        >
           <Pressable
             onPress={() => router.push("/crisis-mode")}
             style={({ pressed }) => [
               styles.crisisCta,
-              crisisMode.isActive ? { backgroundColor: "#DC2626" } : { backgroundColor: "#A9334D" },
+              crisisMode.isActive
+                ? { backgroundColor: "#DC2626" }
+                : { backgroundColor: "#A9334D" },
               pressed && { opacity: 0.9 },
             ]}
           >
-            <ShieldAlert size={22} color="#FFFFFF" strokeWidth={2} style={{ marginRight: 14 }} />
+            <ShieldAlert
+              size={22}
+              color="#FFFFFF"
+              strokeWidth={2}
+              style={{ marginRight: 14 }}
+            />
             <View style={{ flex: 1 }}>
               <Text style={styles.crisisCtaTitle}>
-                {crisisMode.isActive ? "Crisis Mode Active" : "Activate Crisis Mode"}
+                {crisisMode.isActive
+                  ? "Crisis Mode Active"
+                  : "Activate Crisis Mode"}
               </Text>
               <Text style={styles.crisisCtaSubtitle}>
                 {crisisMode.isActive
@@ -287,8 +376,8 @@ export default function CrisisPlanScreen() {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoKey}>Blood Type</Text>
-            <Text style={[styles.infoVal, !crisisPlan.bloodType && styles.infoValEmpty]}>
-              {crisisPlan.bloodType ?? "Not set"}
+            <Text style={[styles.infoVal, !bloodType && styles.infoValEmpty]}>
+              {bloodType ?? "Not set"}
             </Text>
           </View>
           <View style={styles.divider} />
@@ -348,9 +437,14 @@ export default function CrisisPlanScreen() {
         <View style={styles.section}>
           <SectionLabel label="EMERGENCY CONTACTS" />
           {contacts.length === 0 ? (
-            <Pressable onPress={() => router.push("/(tabs)/care/care-team")} style={styles.emptyState}>
+            <Pressable
+              onPress={() => router.push("/(tabs)/care/care-team")}
+              style={styles.emptyState}
+            >
               <Text style={styles.emptyStateText}>No contacts added yet</Text>
-              <Text style={styles.emptyStateLink}>Add contacts in Care Team →</Text>
+              <Text style={styles.emptyStateLink}>
+                Add contacts in Care Team →
+              </Text>
             </Pressable>
           ) : (
             <View style={{ gap: 0 }}>
@@ -358,17 +452,27 @@ export default function CrisisPlanScreen() {
                 <View key={contact.id}>
                   <Pressable
                     onPress={() => Linking.openURL(`tel:${contact.phone}`)}
-                    style={({ pressed }) => [styles.contactRow, pressed && { opacity: 0.7 }]}
+                    style={({ pressed }) => [
+                      styles.contactRow,
+                      pressed && { opacity: 0.7 },
+                    ]}
                   >
                     <View style={styles.contactAvatar}>
                       <Text style={styles.contactAvatarText}>
-                        {contact.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                        {contact.name
+                          ?.split(" ")
+                          .map((w) => w[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </Text>
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.contactName}>{contact.name}</Text>
                       {contact.relationship ? (
-                        <Text style={styles.contactRel}>{contact.relationship}</Text>
+                        <Text style={styles.contactRel}>
+                          {contact.relationship}
+                        </Text>
                       ) : null}
                     </View>
                     <View style={styles.callPill}>
@@ -392,22 +496,36 @@ export default function CrisisPlanScreen() {
             <View style={{ gap: 8 }}>
               <Text style={styles.hospitalName}>{preferredHospital.name}</Text>
               {preferredHospital.address ? (
-                <Text style={styles.hospitalAddress}>{preferredHospital.address}</Text>
+                <Text style={styles.hospitalAddress}>
+                  {preferredHospital.address}
+                </Text>
               ) : null}
               {preferredHospital.phone ? (
                 <Pressable
-                  onPress={() => Linking.openURL(`tel:${preferredHospital.phone}`)}
-                  style={({ pressed }) => [styles.callPillLarge, pressed && { opacity: 0.8 }]}
+                  onPress={() =>
+                    Linking.openURL(`tel:${preferredHospital.phone}`)
+                  }
+                  style={({ pressed }) => [
+                    styles.callPillLarge,
+                    pressed && { opacity: 0.8 },
+                  ]}
                 >
                   <Phone size={13} color="#A9334D" strokeWidth={2.5} />
-                  <Text style={styles.callPillLargeText}>Call {preferredHospital.phone}</Text>
+                  <Text style={styles.callPillLargeText}>
+                    Call {preferredHospital.phone}
+                  </Text>
                 </Pressable>
               ) : null}
             </View>
           ) : (
-            <Pressable onPress={() => router.push("/(tabs)/care/facilities")} style={styles.emptyState}>
+            <Pressable
+              onPress={() => router.push("/(tabs)/care/facilities")}
+              style={styles.emptyState}
+            >
               <Text style={styles.emptyStateText}>No hospital saved</Text>
-              <Text style={styles.emptyStateLink}>Find nearby facilities →</Text>
+              <Text style={styles.emptyStateLink}>
+                Find nearby facilities →
+              </Text>
             </Pressable>
           )}
         </View>
@@ -425,11 +543,15 @@ export default function CrisisPlanScreen() {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.medName}>{med.name}</Text>
                         {med.dosage ? (
-                          <Text style={styles.medDosage}>{med.dosage} · {med.frequency}</Text>
+                          <Text style={styles.medDosage}>
+                            {med.dosage} · {med.frequency}
+                          </Text>
                         ) : null}
                       </View>
                     </View>
-                    {idx < crisisMeds.length - 1 && <View style={styles.divider} />}
+                    {idx < crisisMeds.length - 1 && (
+                      <View style={styles.divider} />
+                    )}
                   </View>
                 ))}
               </View>
@@ -471,16 +593,27 @@ export default function CrisisPlanScreen() {
               return (
                 <Pressable
                   key={bt}
-                  onPress={() => setEditBloodType(bt === editBloodType ? null : bt)}
+                  onPress={() =>
+                    setEditBloodType(bt === editBloodType ? null : bt)
+                  }
                   style={[styles.sheetChip, sel && styles.sheetChipSel]}
                 >
-                  <Text style={[styles.sheetChipText, sel && styles.sheetChipTextSel]}>{bt}</Text>
+                  <Text
+                    style={[
+                      styles.sheetChipText,
+                      sel && styles.sheetChipTextSel,
+                    ]}
+                  >
+                    {bt}
+                  </Text>
                 </Pressable>
               );
             })}
           </View>
 
-          <Text style={[styles.sheetLabel, { marginTop: 20 }]}>Known Allergies</Text>
+          <Text style={[styles.sheetLabel, { marginTop: 20 }]}>
+            Known Allergies
+          </Text>
           <View style={styles.sheetChipRow}>
             {PRESET_ALLERGIES.map((p) => {
               const sel = editPresets.includes(p);
@@ -490,19 +623,40 @@ export default function CrisisPlanScreen() {
                   onPress={() => toggleEditPreset(p)}
                   style={[styles.sheetAllergyChip, sel && styles.sheetChipSel]}
                 >
-                  <Text style={[styles.sheetChipText, sel && styles.sheetChipTextSel]}>{p}</Text>
-                  {sel && <X size={11} color="#FFFFFF" strokeWidth={2.5} style={{ marginLeft: 4 }} />}
+                  <Text
+                    style={[
+                      styles.sheetChipText,
+                      sel && styles.sheetChipTextSel,
+                    ]}
+                  >
+                    {p}
+                  </Text>
+                  {sel && (
+                    <X
+                      size={11}
+                      color="#FFFFFF"
+                      strokeWidth={2.5}
+                      style={{ marginLeft: 4 }}
+                    />
+                  )}
                 </Pressable>
               );
             })}
             {editCustom.map((c) => (
               <Pressable
                 key={c}
-                onPress={() => setEditCustom((prev) => prev.filter((x) => x !== c))}
+                onPress={() =>
+                  setEditCustom((prev) => prev.filter((x) => x !== c))
+                }
                 style={[styles.sheetAllergyChip, styles.sheetChipSel]}
               >
                 <Text style={styles.sheetChipTextSel}>{c}</Text>
-                <X size={11} color="#FFFFFF" strokeWidth={2.5} style={{ marginLeft: 4 }} />
+                <X
+                  size={11}
+                  color="#FFFFFF"
+                  strokeWidth={2.5}
+                  style={{ marginLeft: 4 }}
+                />
               </Pressable>
             ))}
           </View>
@@ -524,9 +678,12 @@ export default function CrisisPlanScreen() {
             )}
           </View>
 
-          <Text style={[styles.sheetLabel, { marginTop: 20 }]}>Notes for ER Staff</Text>
+          <Text style={[styles.sheetLabel, { marginTop: 20 }]}>
+            Notes for ER Staff
+          </Text>
           <Text style={styles.sheetHint}>
-            Any information that could help emergency staff treat you quickly — e.g. past reactions, preferred pain protocols.
+            Any information that could help emergency staff treat you quickly —
+            e.g. past reactions, preferred pain protocols.
           </Text>
           <TextInput
             style={styles.sheetTextarea}
@@ -541,7 +698,10 @@ export default function CrisisPlanScreen() {
 
           <Pressable
             onPress={handleSaveEdit}
-            style={({ pressed }) => [styles.sheetSaveBtn, pressed && { opacity: 0.85 }]}
+            style={({ pressed }) => [
+              styles.sheetSaveBtn,
+              pressed && { opacity: 0.85 },
+            ]}
           >
             <Text style={styles.sheetSaveBtnText}>Save Changes</Text>
           </Pressable>
@@ -655,6 +815,7 @@ const styles = StyleSheet.create({
   allergyTagText: {
     fontFamily: fonts.medium,
     fontSize: 12,
+    textTransform: "capitalize",
     color: "#A9334D",
   },
   // ── Warning signs ──────────────────────────────────────────────────
@@ -815,6 +976,7 @@ const styles = StyleSheet.create({
   medName: {
     fontFamily: fonts.semibold,
     fontSize: 14,
+    textTransform: "capitalize",
     color: "#09332C",
   },
   medDosage: {
