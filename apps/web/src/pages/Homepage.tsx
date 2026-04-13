@@ -1,32 +1,23 @@
-import { useMemo, useState } from "react";
-
-import HeroSection from "./components/sections/HeroSection";
-import TrustStrip from "./components/sections/TrustStrip";
-import WhyHemo from "./components/sections/WhyHemo";
 import AppFeatures from "./components/sections/AppFeatures";
+import HabitRewards from "./components/sections/HabitRewards";
+import HeroSection from "./components/sections/HeroSection";
+import HowItWorks from "./components/sections/HowItWorks";
 import TestimonialsSection from "./components/sections/TestimonialsSection";
+import TrustStrip from "./components/sections/TrustStrip";
 import WaitlistCTA from "./components/sections/cta-with-waitlist";
+import WhyHemo from "./components/sections/WhyHemo";
 
 const Homepage = () => {
   return (
     <>
-      {/* Hero Section */}
       <HeroSection />
-
-      {/* ── TRUST STRIP ── */}
       <TrustStrip />
-
-      {/* ── WHY CHOOSE HEMO ── */}
+      <HowItWorks />
       <WhyHemo />
-
-      {/* ── TOP FEATURES (center phone spotlight) ── */}
       <AppFeatures />
-
-      {/* ── TESTIMONIALS ── */}
+      <HabitRewards />
       <TestimonialsSection />
-
-      {/* ── WAITLIST CTA ── */}
-      <WaitlistCTA />
+      <WaitlistCTA source="home-page" />
     </>
   );
 };

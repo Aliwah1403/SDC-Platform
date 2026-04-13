@@ -1,99 +1,70 @@
-import { HeartPulse, Globe, TrendingUp } from "lucide-react";
+import { HeartPulse, ShieldPlus, TrendingUp } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-const whyCards = [
-  {
-    icon: Globe,
-    title: "Always Within Reach",
-    description:
-      "One-tap emergency SOS and instant access to your care contacts wherever you are.",
-  },
+const cards = [
   {
     icon: HeartPulse,
-    title: "Built For Real Impact",
+    title: "Built for real-life SCD management",
     description:
-      "Daily check-ins that drive better, more informed clinic conversations.",
+      "Logging is designed to be quick even on difficult days, so consistency is realistic.",
   },
   {
     icon: TrendingUp,
-    title: "Insights That Help You Grow",
+    title: "Data that improves appointments",
     description:
-      "Spot patterns in your pain, mood, sleep, and hydration over time.",
+      "90 days of structured logs give clinicians clearer patterns than memory alone.",
+  },
+  {
+    icon: ShieldPlus,
+    title: "Support beyond symptom tracking",
+    description:
+      "Care Hub and SOS features keep practical care details ready when timing matters.",
   },
 ];
 
 const WhyHemo = () => {
   return (
-    <section
-      id="impact"
-      className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28"
-    >
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16 items-start">
-        {/* Left */}
-        <div className="flex flex-col gap-5">
-          <Badge variant="secondary" className="w-fit">
-            Why Choose Hemo
-          </Badge>
-          <h2 className="text-4xl font-bold leading-tight sm:text-5xl">
-            Empowering Lives,
-            <br />
-            Creating Better
-            <br />
-            Health Futures
+    <section id="impact" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+      <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
+        <div className="space-y-5">
+          <Badge variant="secondary" className="w-fit">Why Hemo</Badge>
+          <h2 className="text-balance text-4xl font-bold leading-tight sm:text-5xl">
+            Not Just A Tracker. A Daily Companion For Better Care Decisions.
           </h2>
-          <p className="text-muted-foreground max-w-md">
-            Gain deep visibility into your day-to-day health so you can
-            understand what matters most and communicate it clearly to your care
-            team.
+          <p className="max-w-xl text-muted-foreground">
+            SCD management can feel fragmented across symptoms, meds, appointments,
+            and emergencies. Hemo brings it together so people can make clearer,
+            calmer decisions day by day.
           </p>
-          <Button
-            variant="outline"
-            className="w-fit rounded-full px-6"
-            onClick={() => jumpTo("features")}
-          >
-            Learn More
-          </Button>
-        </div>
-
-        {/* Right — stats */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="flex flex-col gap-1">
-            <p className="text-7xl font-bold tracking-tighter text-foreground">
-              90+
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Days of trend visibility from your symptom logs
-            </p>
-          </div>
-          <div className="flex flex-col gap-1">
-            <p className="text-7xl font-bold tracking-tighter text-foreground">
-              7
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Care tools in one unified experience
-            </p>
+          <div className="grid grid-cols-2 gap-6 pt-2">
+            <div>
+              <p className="text-5xl font-bold tracking-tight">90</p>
+              <p className="text-sm text-muted-foreground">days of health history ready for clinic</p>
+            </div>
+            <div>
+              <p className="text-5xl font-bold tracking-tight">7</p>
+              <p className="text-sm text-muted-foreground">core metrics logged in one quick flow</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Feature cards */}
-      <div className="mt-14 grid gap-4 sm:grid-cols-3">
-        {whyCards.map((card) => (
-          <Card key={card.title} className="border rounded-2xl p-1">
-            <CardContent className="flex flex-col gap-3 pt-5 pb-5 px-5">
-              <div className="size-9 rounded-xl bg-secondary flex items-center justify-center">
-                <card.icon className="size-4 text-secondary-foreground" />
-              </div>
-              <p className="font-semibold text-foreground">{card.title}</p>
-              <p className="text-sm text-muted-foreground">
-                {card.description}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        <div className="grid gap-4">
+          {cards.map((card) => (
+            <Card key={card.title} className="rounded-2xl border">
+              <CardContent className="flex gap-4 px-5 py-5">
+                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                  <card.icon className="size-4" />
+                </div>
+                <div>
+                  <h3 className="font-semibold">{card.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{card.description}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </section>
   );
