@@ -94,6 +94,11 @@ export const useAppStore = create((set) => ({
   addCommunityPost: (post) =>
     set((state) => ({ communityPosts: [post, ...state.communityPosts] })),
 
+  deletePost: (postId) =>
+    set((state) => ({
+      communityPosts: state.communityPosts.filter((p) => p.id !== postId),
+    })),
+
   likedPostIds: [],
   toggleLike: (postId) =>
     set((state) => ({
@@ -132,6 +137,53 @@ export const useAppStore = create((set) => ({
       followedCategoryIds: state.followedCategoryIds.filter(
         (id) => id !== categoryId
       ),
+    })),
+
+  // ── Reporting & hiding ─────────────────────────────────────────────────────
+  reportedPostIds: [],   // posts this user has reported (prevents re-reporting)
+  hiddenPostIds: [],     // posts hidden from feed (reported or manually hidden)
+  postReportCounts: {},  // { [postId]: number } — simulates server-side tally
+
+  reportPost: (postId, reason) =>
+    set((state) => {
+      const newCount = (state.postReportCounts[postId] ?? 0) + 1;
+      const post = state.communityPosts.find((p) => p.id === postId);
+
+      // Simulate threshold notification: when a post hits 3 reports it is
+      // auto-actioned. In production this fires from the backend.
+      const thresholdReached = newCount >= 3 && post;
+      const notification = thresholdReached
+        ? {
+            id: `report_action_${postId}_${Date.now()}`,
+            type: "post_actioned",
+            action: "removed",
+            reason,
+            postSnippet: post.content.slice(0, 60),
+            timestamp: new Date(),
+            read: false,
+          }
+        : null;
+
+      return {
+        reportedPostIds: [...state.reportedPostIds, postId],
+        hiddenPostIds: state.hiddenPostIds.includes(postId)
+          ? state.hiddenPostIds
+          : [...state.hiddenPostIds, postId],
+        postReportCounts: { ...state.postReportCounts, [postId]: newCount },
+        ...(notification
+          ? {
+              notifications: [notification, ...state.notifications],
+              notificationCount: state.notificationCount + 1,
+            }
+          : {}),
+      };
+    }),
+
+  hidePost: (postId) =>
+    set((state) => ({
+      hiddenPostIds: state.hiddenPostIds.includes(postId)
+        ? state.hiddenPostIds
+        : [...state.hiddenPostIds, postId],
     })),
 
   // ── Polls ──────────────────────────────────────────────────────────────────

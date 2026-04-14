@@ -417,7 +417,10 @@ export const mockCommunityPosts = [
     likes: 47,
     timestamp: _ago(1.5),
     comments: [
-      { id: "cc1a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is huge!! I remember when you mentioned your goal in January. So proud of you!", timestamp: _ago(1.2) },
+      { id: "cc1a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is huge!! I remember when you mentioned your goal in January. So proud of you!", timestamp: _ago(1.2), replies: [
+        { id: "r_cc1a_1", author: { name: "Priya N.", avatarInitials: "PN" }, replyingToName: "Marcus T.", content: "Same!! I've been quietly rooting for her too. Actual tears 🥹", timestamp: _ago(1.0) },
+        { id: "r_cc1a_2", author: { name: "Amara D.", avatarInitials: "AD" }, replyingToName: "Marcus T.", content: "This whole thread is making my day honestly.", timestamp: _ago(0.9) },
+      ]},
       { id: "cc1b", author: { name: "Priya N.", avatarInitials: "PN" }, content: "This literally made me tear up. You're an inspiration 🥹", timestamp: _ago(0.8) },
       { id: "cc1c", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "55 mins for a 5K WITH stops is actually great! Keep going ❤️", timestamp: _ago(0.5) },
     ],
@@ -446,7 +449,9 @@ export const mockCommunityPosts = [
     likes: 112,
     timestamp: _ago(11),
     comments: [
-      { id: "cc3a", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "The laminated sheet idea is genius. I always forget what I'm supposed to do when I'm in pain.", timestamp: _ago(10) },
+      { id: "cc3a", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "The laminated sheet idea is genius. I always forget what I'm supposed to do when I'm in pain.", timestamp: _ago(10), replies: [
+        { id: "r_cc3a_1", author: { name: "Sasha K.", avatarInitials: "SK" }, replyingToName: "Fatima R.", content: "Yes! My plan has: 1) take meds 2) heat 3) call this number if no improvement in 2hrs. Simple but I can barely read at a pain level 7.", timestamp: _ago(9.5) },
+      ]},
       { id: "cc3b", author: { name: "Noah B.", avatarInitials: "NB" }, content: "I do something similar but the pre-measured meds is something I haven't thought of. Adding that now!", timestamp: _ago(9) },
       { id: "cc3c", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "@Fatima yes! My pain plan has: 1) take meds 2) heat 3) call this number if no improvement in 2hrs. Simple but I can barely read when I'm at a 7.", timestamp: _ago(8) },
     ],
@@ -460,7 +465,10 @@ export const mockCommunityPosts = [
     timestamp: _ago(18),
     comments: [
       { id: "cc4a", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Completely normal. You're grieving the version of your life where you didn't have this knowledge — and the years of confusion before diagnosis. It's a lot to process.", timestamp: _ago(17) },
-      { id: "cc4b", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Welcome to the community 💙 Late diagnosis is actually really common. Give yourself time to grieve AND celebrate — at least now you have answers.", timestamp: _ago(16) },
+      { id: "cc4b", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Welcome to the community 💙 Late diagnosis is actually really common. Give yourself time to grieve AND celebrate — at least now you have answers.", timestamp: _ago(16), replies: [
+        { id: "r_cc4b_1", author: { name: "Tobias M.", avatarInitials: "TM" }, replyingToName: "Amara D.", content: "Thank you Amara, that reframe really helps. Grief AND celebrate — I'll hold onto that.", timestamp: _ago(15.5) },
+        { id: "r_cc4b_2", author: { name: "Jordan L.", avatarInitials: "JL" }, replyingToName: "Amara D.", content: "Really well put. The late diagnosis grief is its own thing that people don't talk about enough.", timestamp: _ago(15) },
+      ]},
       { id: "cc4c", author: { name: "Dr. Lee (Community Mod)", avatarInitials: "DL" }, content: "Very normal. Many people describe a period of mourning followed by relief. If feelings feel overwhelming, please consider speaking to a counsellor who has experience with chronic illness.", timestamp: _ago(14) },
       { id: "cc4d", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "I was diagnosed at 26 and I cried for a week. Then I joined communities like this one and everything started making sense. You're not alone ❤️", timestamp: _ago(12) },
       { id: "cc4e", author: { name: "Tobias M.", avatarInitials: "TM" }, content: "Thank you all so much. I genuinely didn't expect this response. Already feeling less alone.", timestamp: _ago(10) },

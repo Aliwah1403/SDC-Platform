@@ -3,7 +3,7 @@ import { View, Text, FlatList, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Heart, MessageCircle, Bell } from "lucide-react-native";
+import { ChevronLeft, Heart, MessageCircle, Bell, ShieldAlert } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 
@@ -20,12 +20,15 @@ const ICON_CONFIG = {
   comment: { Component: MessageCircle, color: "#3B82F6", fill: false },
   category_post: { Component: Bell, color: "#09332C", fill: false },
   system_poll: { Component: Bell, color: "#A9334D", fill: false },
+  post_actioned: { Component: ShieldAlert, color: "#781D11", fill: false },
 };
 
 function buildText(n) {
   if (n.type === "like") return { bold: n.actorName, rest: " liked your post" };
   if (n.type === "comment") return { bold: n.actorName, rest: " commented on your post" };
   if (n.type === "category_post") return { bold: n.categoryName, rest: " posted in this community" };
+  if (n.type === "post_actioned")
+    return { bold: "Your post was removed", rest: ` · ${n.reason}` };
   return { bold: n.categoryName, rest: " started a new poll" };
 }
 
