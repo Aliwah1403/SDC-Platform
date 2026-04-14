@@ -280,6 +280,13 @@ export const useAppStore = create((set) => ({
         currentStep: Math.min(state.crisisMode.currentStep + 1, 3),
       },
     })),
+  deescalateCrisis: () =>
+    set((state) => ({
+      crisisMode: {
+        ...state.crisisMode,
+        currentStep: Math.max(state.crisisMode.currentStep - 1, 1),
+      },
+    })),
   addCrisisAlert: (contactId) =>
     set((state) => ({
       crisisMode: {

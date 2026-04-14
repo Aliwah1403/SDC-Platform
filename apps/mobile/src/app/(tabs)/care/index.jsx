@@ -16,7 +16,7 @@ import {
   Users,
   FileText,
   MapPin,
-  Phone,
+  ShieldAlert,
   Bell,
   User,
   ChevronRight,
@@ -47,7 +47,7 @@ function formatApptDate(dateStr) {
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function EmergencyButton({ onPress }) {
+function EmergencyButton({ onPress, isActive }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -56,14 +56,14 @@ function EmergencyButton({ onPress }) {
         borderRadius: 20,
         marginBottom: 16,
         overflow: "visible",
-        shadowColor: "#DC2626",
+        shadowColor: isActive ? "#DC2626" : "#A9334D",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.35,
         shadowRadius: 16,
         elevation: 8,
       }}
     >
-      {/* Outer pulse ring */}
+      {/* Pulse rings */}
       <MotiView
         from={{ scale: 1, opacity: 0.22 }}
         animate={{ scale: 1.06, opacity: 0 }}
@@ -72,10 +72,9 @@ function EmergencyButton({ onPress }) {
           position: "absolute",
           top: -6, bottom: -6, left: -6, right: -6,
           borderRadius: 26,
-          backgroundColor: "#DC2626",
+          backgroundColor: isActive ? "#DC2626" : "#A9334D",
         }}
       />
-      {/* Inner pulse ring */}
       <MotiView
         from={{ scale: 1, opacity: 0.16 }}
         animate={{ scale: 1.03, opacity: 0 }}
@@ -84,29 +83,29 @@ function EmergencyButton({ onPress }) {
           position: "absolute",
           top: -3, bottom: -3, left: -3, right: -3,
           borderRadius: 23,
-          backgroundColor: "#A9334D",
+          backgroundColor: "#781D11",
         }}
       />
 
       <LinearGradient
-        colors={["#DC2626", "#A9334D", "#781D11"]}
+        colors={isActive ? ["#DC2626", "#A9334D", "#781D11"] : ["#A9334D", "#781D11", "#0D0D0D"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ borderRadius: 20, padding: 20, overflow: "hidden" }}
       >
-        <View style={{ position: "absolute", width: 130, height: 130, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -40, right: 30 }} />
+        <View style={{ position: "absolute", width: 130, height: 130, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.12, top: -40, right: 30 }} />
         <View style={{ position: "absolute", width: 80, height: 80, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.2, bottom: -24, left: -20 }} />
 
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(255,255,255,0.22)", alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-            <Phone size={26} color="#FFFFFF" strokeWidth={2.5} />
+          <View style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: "rgba(255,255,255,0.18)", alignItems: "center", justifyContent: "center", marginRight: 16 }}>
+            <ShieldAlert size={26} color="#FFFFFF" strokeWidth={2.5} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontFamily: fonts.extrabold, fontSize: 20, color: "#FFFFFF", marginBottom: 3 }}>
-              Emergency Help
+              {isActive ? "Crisis Mode Active" : "Activate Crisis Mode"}
             </Text>
             <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 18 }}>
-              Tap to access SOS & emergency contacts
+              {isActive ? "Tap to view your active crisis protocol" : "Step-by-step SCD crisis guidance"}
             </Text>
           </View>
           <View style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center", marginLeft: 12 }}>
@@ -275,6 +274,8 @@ export default function CareMenuScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
+  const crisisMode = useAppStore((s) => s.crisisMode);
+
   const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
   const { data: medications = [] } = useMedicationsQuery();
   const { data: appointments = [] } = useAppointmentsQuery();
@@ -346,7 +347,7 @@ export default function CareMenuScreen() {
         contentContainerStyle={{ paddingTop: 20, paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
       >
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 0 }}>
-          <EmergencyButton onPress={() => router.push("/(tabs)/care/emergency")} />
+          <EmergencyButton onPress={() => router.push("/crisis-mode")} isActive={crisisMode.isActive} />
         </MotiView>
 
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 80 }}>
