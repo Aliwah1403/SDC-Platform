@@ -10,6 +10,7 @@ import { FeedFilter } from "@/components/Community/FeedFilter";
 import { PostCard } from "@/components/Community/PostCard";
 import { PostSkeleton } from "@/components/Community/PostSkeleton";
 import { CategoriesCarousel } from "@/components/Community/CategoriesCarousel";
+import { PostActionsSheet } from "@/components/Community/PostActionsSheet";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
 
@@ -34,6 +35,8 @@ export default function CommunityFeedScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
+  const [actionsPost, setActionsPost] = useState(null); // { id, isOwnPost }
+
   const communityPosts = useAppStore((s) => s.communityPosts);
   const likedPostIds = useAppStore((s) => s.likedPostIds);
   const toggleLike = useAppStore((s) => s.toggleLike);
@@ -41,6 +44,7 @@ export default function CommunityFeedScreen() {
   const toggleSave = useAppStore((s) => s.toggleSave);
   const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
   const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
+  const hiddenPostIds = useAppStore((s) => s.hiddenPostIds);
   const toggleFollowCategory = useAppStore((s) => s.toggleFollowCategory);
   const pollVotes = useAppStore((s) => s.pollVotes);
   const voteOnPoll = useAppStore((s) => s.voteOnPoll);
@@ -49,8 +53,12 @@ export default function CommunityFeedScreen() {
   const filteredPosts = useMemo(() => {
     let posts = [...communityPosts];
 
-    // Always exclude blocked categories
-    posts = posts.filter((p) => !blockedCategoryIds.includes(p.category));
+    // Always exclude blocked categories and hidden posts
+    posts = posts.filter(
+      (p) =>
+        !blockedCategoryIds.includes(p.category) &&
+        !hiddenPostIds.includes(p.id),
+    );
 
     if (activeFeed === "popular") {
       posts.sort((a, b) => b.likes - a.likes);
@@ -74,7 +82,7 @@ export default function CommunityFeedScreen() {
     }
 
     return posts;
-  }, [activeFeed, searchQuery, communityPosts, savedPostIds, followedCategoryIds, blockedCategoryIds]);
+  }, [activeFeed, searchQuery, communityPosts, savedPostIds, followedCategoryIds, blockedCategoryIds, hiddenPostIds]);
 
   const onRefresh = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -174,6 +182,12 @@ export default function CommunityFeedScreen() {
                 isSaved={savedPostIds.includes(item.id)}
                 onSave={() => toggleSave(item.id)}
                 onPress={() => router.push(`/community/${item.id}`)}
+                onMorePress={() =>
+                  setActionsPost({
+                    id: item.id,
+                    isOwnPost: !!item.author?.isCurrentUser,
+                  })
+                }
                 pollVotedOptionId={pollVotes[item.id] ?? null}
                 onVote={(optionId) => voteOnPoll(item.id, optionId)}
                 followedCategoryIds={followedCategoryIds}
@@ -215,6 +229,13 @@ export default function CommunityFeedScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <PostActionsSheet
+        isVisible={actionsPost !== null}
+        postId={actionsPost?.id}
+        isOwnPost={actionsPost?.isOwnPost ?? false}
+        onClose={() => setActionsPost(null)}
+      />
     </View>
   );
 }

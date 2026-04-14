@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -16,14 +16,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
-  Heart,
-  Share2,
-  Send,
-  UserCircle,
   Bell,
+  Heart,
+  MoreHorizontal,
+  Send,
+  Share2,
+  UserCircle,
+  X,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { CommentItem } from "@/components/Community/CommentItem";
+import { PostActionsSheet } from "@/components/Community/PostActionsSheet";
 import { PollBlock } from "@/components/Community/PollBlock";
 import { useAppStore } from "@/store/appStore";
 import { CATEGORY_MAP } from "@/data/communityCategories";
@@ -83,6 +86,10 @@ export default function PostDetailScreen() {
   const post = communityPosts.find((p) => p.id === postId);
   const [comments, setComments] = useState(post?.comments ?? []);
   const [inputText, setInputText] = useState("");
+  const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
+  // { commentId: string, authorName: string } | null
+  const [replyingTo, setReplyingTo] = useState(null);
+  const inputRef = useRef(null);
 
   if (!post) return null;
 
@@ -93,18 +100,43 @@ export default function PostDetailScreen() {
     : null;
   const flair = post.flair ? FLAIR_CONFIG[post.flair] : null;
 
+  const handleReply = (commentId, authorName) => {
+    setReplyingTo({ commentId, authorName });
+    inputRef.current?.focus();
+  };
+
   const handleSubmitComment = () => {
     const text = inputText.trim();
     if (!text) return;
-    setComments((prev) => [
-      ...prev,
-      {
-        id: `new-${Date.now()}`,
+
+    if (replyingTo) {
+      const newReply = {
+        id: `r-${Date.now()}`,
         author: { name: "You", avatarInitials: "ME" },
+        replyingToName: replyingTo.authorName,
         content: text,
         timestamp: new Date(),
-      },
-    ]);
+      };
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === replyingTo.commentId
+            ? { ...c, replies: [...(c.replies ?? []), newReply] }
+            : c,
+        ),
+      );
+      setReplyingTo(null);
+    } else {
+      setComments((prev) => [
+        ...prev,
+        {
+          id: `new-${Date.now()}`,
+          author: { name: "You", avatarInitials: "ME" },
+          content: text,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+
     setInputText("");
   };
 
@@ -176,6 +208,7 @@ export default function PostDetailScreen() {
           >
             <ArrowLeft size={20} color="#F8E9E7" strokeWidth={2} />
           </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <TouchableOpacity
             onPress={() => router.push("/community/notifications")}
             style={{
@@ -207,6 +240,25 @@ export default function PostDetailScreen() {
               )}
             </View>
           </TouchableOpacity>
+
+          {!post.isSystemPost && (
+            <TouchableOpacity
+              onPress={() => setActionsSheetOpen(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <MoreHorizontal size={20} color="#F8E9E7" strokeWidth={2} />
+            </TouchableOpacity>
+          )}
+          </View>
         </View>
       </LinearGradient>
 
@@ -528,7 +580,7 @@ export default function PostDetailScreen() {
           ListHeaderComponent={ListHeader}
           renderItem={({ item }) => (
             <View style={{ paddingHorizontal: 20 }}>
-              <CommentItem comment={item} />
+              <CommentItem comment={item} onReply={handleReply} />
             </View>
           )}
           contentContainerStyle={{ paddingBottom: 16 }}
@@ -541,15 +593,53 @@ export default function PostDetailScreen() {
             backgroundColor: "#fff",
             borderTopWidth: 1,
             borderTopColor: "#F0EAE8",
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            paddingBottom: Math.max(insets.bottom, 16),
-            flexDirection: "row",
-            alignItems: "flex-end",
-            gap: 10,
           }}
         >
+          {/* Replying-to chip */}
+          {replyingTo && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 16,
+                paddingTop: 8,
+                paddingBottom: 4,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 13,
+                  color: "#6B7280",
+                }}
+              >
+                Replying to{" "}
+                <Text style={{ fontFamily: fonts.semibold, color: "#A9334D" }}>
+                  @{replyingTo.authorName}
+                </Text>
+              </Text>
+              <TouchableOpacity
+                onPress={() => setReplyingTo(null)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <X size={14} color="#9CA3AF" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <View
+            style={{
+              paddingHorizontal: 16,
+              paddingTop: replyingTo ? 4 : 12,
+              paddingBottom: Math.max(insets.bottom, 16),
+              flexDirection: "row",
+              alignItems: "flex-end",
+              gap: 10,
+            }}
+          >
           <TextInput
+            ref={inputRef}
             style={{
               flex: 1,
               fontFamily: fonts.regular,
@@ -561,7 +651,7 @@ export default function PostDetailScreen() {
               paddingVertical: 10,
               maxHeight: 100,
             }}
-            placeholder="Add a comment..."
+            placeholder={replyingTo ? `Reply to @${replyingTo.authorName}…` : "Add a comment…"}
             placeholderTextColor="#9CA3AF"
             multiline
             value={inputText}
@@ -582,8 +672,16 @@ export default function PostDetailScreen() {
           >
             <Send size={18} color="#fff" strokeWidth={2} />
           </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
+
+      <PostActionsSheet
+        isVisible={actionsSheetOpen}
+        postId={post.id}
+        isOwnPost={!!post.author?.isCurrentUser}
+        onClose={() => setActionsSheetOpen(false)}
+      />
     </View>
   );
 }

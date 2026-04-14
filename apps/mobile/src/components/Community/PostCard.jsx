@@ -12,6 +12,7 @@ import {
   Bookmark,
   Heart,
   MessageCircle,
+  MoreHorizontal,
   Share2,
   UserCircle,
 } from "lucide-react-native";
@@ -65,6 +66,7 @@ export function PostCard({
   isSaved,
   onSave,
   onPress,
+  onMorePress,
   pollVotedOptionId,
   onVote,
   followedCategoryIds = [],
@@ -211,6 +213,20 @@ export function PostCard({
             </Text>
           )}
         </View>
+
+        {/* ⋯ more options — hidden on system posts */}
+        {!post.isSystemPost && onMorePress && (
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation?.();
+              onMorePress();
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={{ padding: 4 }}
+          >
+            <MoreHorizontal size={18} color="#9CA3AF" strokeWidth={2} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* ── Content / Discussion prompt ─────────────────────────────────────── */}
