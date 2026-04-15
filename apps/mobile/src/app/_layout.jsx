@@ -1,9 +1,11 @@
 import { useAuth } from "@/utils/auth/useAuth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
+import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
   useFonts,
   Geist_400Regular,
@@ -31,6 +33,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
+  const router = useRouter();
   const [splashDone, setSplashDone] = useState(false);
   const startTime = useRef(Date.now());
 
@@ -45,6 +48,17 @@ export default function RootLayout() {
   useEffect(() => {
     return initiate(); // returns onAuthStateChange unsubscribe
   }, [initiate]);
+
+  // Route to crisis-mode screen when user taps a crisis check-in notification
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const { type } = response.notification.request.content.data ?? {};
+      if (type === "crisis_checkin" || type === "crisis_escalation") {
+        router.push("/crisis-mode");
+      }
+    });
+    return () => sub.remove();
+  }, [router]);
 
   useEffect(() => {
     if (isReady && (fontsLoaded || fontError)) {
@@ -63,6 +77,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
+        <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
@@ -121,7 +136,12 @@ export default function RootLayout() {
             name="security"
             options={{ presentation: "card" }}
           />
+          <Stack.Screen
+            name="crisis-mode"
+            options={{ presentation: "modal", gestureEnabled: false }}
+          />
         </Stack>
+        </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
   );
