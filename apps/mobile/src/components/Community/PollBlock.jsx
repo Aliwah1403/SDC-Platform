@@ -15,21 +15,18 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
             ? Math.round((option.votes / totalVotes) * 100)
             : 0;
 
-        return (
-          <TouchableOpacity
-            key={option.id}
-            onPress={() => onVote(option.id)}
-            activeOpacity={0.7}
-            style={{
-              borderRadius: 10,
-              borderWidth: 1.5,
-              borderColor: isSelected ? "#A9334D" : "#E2D9D6",
-              backgroundColor: isSelected ? "#FDF0F2" : "#FAFAFA",
-              overflow: "hidden",
-            }}
-          >
-            {/* Progress bar fill (behind content, only after voting) */}
-            {hasVoted && (
+        if (hasVoted) {
+          return (
+            <View
+              key={option.id}
+              style={{
+                borderRadius: 10,
+
+                backgroundColor: isSelected ? "#FDF0F2" : "#F8F4F0",
+                overflow: "hidden",
+              }}
+            >
+              {/* Proportional fill bar behind the text */}
               <View
                 style={{
                   position: "absolute",
@@ -38,54 +35,82 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   bottom: 0,
                   width: `${percentage}%`,
                   backgroundColor: isSelected
-                    ? "rgba(169,51,77,0.1)"
-                    : "rgba(9,51,44,0.05)",
+                    ? "rgba(169,51,77,0.18)"
+                    : "rgba(9,51,44,0.07)",
                 }}
               />
-            )}
 
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                padding: 12,
-                paddingRight: 14,
-              }}
-            >
-              <Text
+              <View
                 style={{
-                  flex: 1,
-                  fontFamily: isSelected ? fonts.semibold : fonts.regular,
-                  fontSize: 14,
-                  color: isSelected ? "#A9334D" : "#09332C",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 15,
+                  paddingHorizontal: 14,
                 }}
               >
-                {option.text}
-              </Text>
-
-              {hasVoted ? (
                 <Text
                   style={{
-                    fontFamily: fonts.semibold,
+                    flex: 1,
+                    fontFamily: isSelected ? fonts.semibold : fonts.regular,
+                    fontSize: 14,
+                    color: isSelected ? "#A9334D" : "#09332C",
+                  }}
+                >
+                  {option.text}
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fonts.bold,
                     fontSize: 13,
                     color: isSelected ? "#A9334D" : "#6B7280",
-                    minWidth: 36,
+                    minWidth: 38,
                     textAlign: "right",
                   }}
                 >
                   {percentage}%
                 </Text>
-              ) : (
-                <View
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 9,
-                    borderWidth: 1.5,
-                    borderColor: "#D1C9C6",
-                  }}
-                />
-              )}
+              </View>
+            </View>
+          );
+        }
+
+        return (
+          <TouchableOpacity
+            key={option.id}
+            onPress={() => onVote(option.id)}
+            activeOpacity={0.7}
+            style={{
+              borderRadius: 10,
+              backgroundColor: "#FAFAFA",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingVertical: 15,
+                paddingHorizontal: 14,
+              }}
+            >
+              <Text
+                style={{
+                  flex: 1,
+                  fontFamily: fonts.regular,
+                  fontSize: 14,
+                  color: "#09332C",
+                }}
+              >
+                {option.text}
+              </Text>
+              <View
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 1.5,
+                  borderColor: "#C4BAB7",
+                }}
+              />
             </View>
           </TouchableOpacity>
         );

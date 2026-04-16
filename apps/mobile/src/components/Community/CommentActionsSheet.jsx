@@ -1,13 +1,12 @@
 import { useCallback, useRef, useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import BottomSheet, { BottomSheetView, BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Flag, EyeOff, Trash2, ChevronRight, CheckCircle2, X } from "lucide-react-native";
+import { Flag, Trash2, ChevronRight, CheckCircle2, X } from "lucide-react-native";
 import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
-import { useAppStore } from "@/store/appStore";
 import {
-  useReportPostMutation,
-  useDeletePostMutation,
+  useReportCommentMutation,
+  useDeleteCommentMutation,
 } from "@/hooks/queries/useCommunityMutations";
 import { fonts } from "@/utils/fonts";
 
@@ -18,11 +17,6 @@ const REPORT_REASONS = [
     description: "False claims about treatments, dosages, or cures",
   },
   {
-    id: "spam",
-    label: "Spam or self-promotion",
-    description: "Repetitive posts, advertising, or off-topic links",
-  },
-  {
     id: "harassment",
     label: "Harassment or bullying",
     description: "Targeting, personal attacks, or name-calling",
@@ -31,6 +25,11 @@ const REPORT_REASONS = [
     id: "offensive",
     label: "Inappropriate or offensive content",
     description: "Hate speech or explicit material",
+  },
+  {
+    id: "spam",
+    label: "Spam or off-topic",
+    description: "Repetitive or irrelevant content",
   },
   {
     id: "private_info",
@@ -45,18 +44,17 @@ const REPORT_REASONS = [
 ];
 
 // step: "actions" → "report" → "done"
-export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
+export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isOwnComment }) {
   const bottomSheetRef = useRef(null);
   const [step, setStep] = useState("actions");
   const [selectedReason, setSelectedReason] = useState(null);
   const [extraNote, setExtraNote] = useState("");
 
-  const hidePost = useAppStore((s) => s.hidePost);
-  const { mutate: reportPost } = useReportPostMutation();
-  const { mutate: deletePost } = useDeletePostMutation();
+  const { mutate: reportComment } = useReportCommentMutation();
+  const { mutate: deleteComment } = useDeleteCommentMutation();
 
   const snapPoints =
-    step === "actions" ? ["35%"] : step === "report" ? ["70%"] : ["45%"];
+    step === "actions" ? ["28%"] : step === "report" ? ["70%"] : ["42%"];
 
   useEffect(() => {
     if (isVisible) {
@@ -66,7 +64,6 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
     }
   }, [isVisible]);
 
-  // Reset internal state whenever the sheet re-opens
   useEffect(() => {
     if (isVisible) {
       setStep("actions");
@@ -80,25 +77,19 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
     onClose();
   }, [onClose]);
 
-  const handleHide = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    hidePost(postId);
-    handleClose();
-  }, [postId, hidePost, handleClose]);
-
   const handleDelete = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    deletePost(postId);
+    deleteComment({ commentId, postId });
     handleClose();
-  }, [postId, deletePost, handleClose]);
+  }, [commentId, postId, deleteComment, handleClose]);
 
   const handleSubmitReport = useCallback(() => {
     if (!selectedReason) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const reasonLabel = REPORT_REASONS.find((r) => r.id === selectedReason)?.label ?? selectedReason;
-    reportPost({ postId, reason: reasonLabel, description: extraNote || undefined });
+    reportComment({ commentId, reason: reasonLabel, description: extraNote || undefined });
     setStep("done");
-  }, [postId, selectedReason, extraNote, reportPost]);
+  }, [commentId, selectedReason, extraNote, reportComment]);
 
   return (
     <BottomSheet
@@ -112,27 +103,21 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
       handleIndicatorStyle={{ backgroundColor: "#D1C9C7", width: 36 }}
     >
       {step === "actions" && (
-        <BottomSheetView style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 }}>
-          {!isOwnPost ? (
-            <>
-              <ActionRow
-                icon={<Flag size={20} color="#A9334D" strokeWidth={2} />}
-                label="Report post"
-                onPress={() => setStep("report")}
-                destructive
-              />
-              <ActionRow
-                icon={<EyeOff size={20} color="#6B7280" strokeWidth={2} />}
-                label="Hide post"
-                sublabel="Remove from your feed"
-                onPress={handleHide}
-              />
-            </>
-          ) : (
+        <BottomSheetView
+          style={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 28 }}
+        >
+          {isOwnComment ? (
             <ActionRow
               icon={<Trash2 size={20} color="#DC2626" strokeWidth={2} />}
-              label="Delete post"
+              label="Delete comment"
               onPress={handleDelete}
+              destructive
+            />
+          ) : (
+            <ActionRow
+              icon={<Flag size={20} color="#A9334D" strokeWidth={2} />}
+              label="Report comment"
+              onPress={() => setStep("report")}
               destructive
             />
           )}
@@ -147,7 +132,13 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
               backgroundColor: "#F8F4F0",
             }}
           >
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#6B7280" }}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 15,
+                color: "#6B7280",
+              }}
+            >
               Cancel
             </Text>
           </TouchableOpacity>
@@ -156,9 +147,12 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
 
       {step === "report" && (
         <BottomSheetScrollView
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 36 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingTop: 8,
+            paddingBottom: 36,
+          }}
         >
-          {/* Header */}
           <View
             style={{
               flexDirection: "row",
@@ -173,8 +167,10 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             >
               <X size={20} color="#6B7280" strokeWidth={2} />
             </TouchableOpacity>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}>
-              Report post
+            <Text
+              style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}
+            >
+              Report comment
             </Text>
           </View>
 
@@ -190,7 +186,6 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             Help us understand what's wrong. Your report is anonymous.
           </Text>
 
-          {/* Reason list */}
           {REPORT_REASONS.map((reason) => {
             const isSelected = selectedReason === reason.id;
             return (
@@ -210,7 +205,6 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
                   borderColor: isSelected ? "#A9334D" : "transparent",
                 }}
               >
-                {/* Radio dot */}
                 <View
                   style={{
                     width: 20,
@@ -263,7 +257,6 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             );
           })}
 
-          {/* Optional extra note */}
           <TextInput
             value={extraNote}
             onChangeText={setExtraNote}
@@ -286,7 +279,6 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             }}
           />
 
-          {/* Submit */}
           <TouchableOpacity
             onPress={handleSubmitReport}
             disabled={!selectedReason}
@@ -326,7 +318,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             transition={{ type: "spring", damping: 14, stiffness: 160 }}
             style={{ marginBottom: 16, marginTop: 8 }}
           >
-            <CheckCircle2 size={52} color="#09332C" strokeWidth={1.5} />
+            <CheckCircle2 size={52} color="#A9334D" strokeWidth={1.5} />
           </MotiView>
 
           <MotiView
@@ -338,7 +330,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 18,
-                color: "#09332C",
+                color: "#A9334D",
                 textAlign: "center",
                 marginBottom: 8,
               }}
@@ -355,8 +347,8 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
                 marginBottom: 28,
               }}
             >
-              We've hidden this post from your feed and will review it. The Hemo
-              community is safer because of you.
+              We'll review this comment. The Hemo community is safer because of
+              you.
             </Text>
           </MotiView>
 
@@ -364,13 +356,15 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             onPress={handleClose}
             activeOpacity={0.85}
             style={{
-              backgroundColor: "#09332C",
+              backgroundColor: "#A9334D",
               borderRadius: 14,
               paddingVertical: 14,
               paddingHorizontal: 40,
             }}
           >
-            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#F8E9E7" }}>
+            <Text
+              style={{ fontFamily: fonts.bold, fontSize: 15, color: "#F8E9E7" }}
+            >
               Done
             </Text>
           </TouchableOpacity>

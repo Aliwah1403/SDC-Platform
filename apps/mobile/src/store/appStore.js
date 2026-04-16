@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { mockCommunityPosts, mockNotifications } from "@/types";
 
 export const useAppStore = create((set) => ({
   // ── Onboarding form state (ephemeral; written to Supabase on complete) ────────
@@ -89,139 +88,13 @@ export const useAppStore = create((set) => ({
   activeTab: "dashboard",
   setActiveTab: (tab) => set({ activeTab: tab }),
 
-  // ── Community state ────────────────────────────────────────────────────────
-  communityPosts: mockCommunityPosts,
-  addCommunityPost: (post) =>
-    set((state) => ({ communityPosts: [post, ...state.communityPosts] })),
-
-  deletePost: (postId) =>
-    set((state) => ({
-      communityPosts: state.communityPosts.filter((p) => p.id !== postId),
-    })),
-
-  likedPostIds: [],
-  toggleLike: (postId) =>
-    set((state) => ({
-      likedPostIds: state.likedPostIds.includes(postId)
-        ? state.likedPostIds.filter((id) => id !== postId)
-        : [...state.likedPostIds, postId],
-    })),
-
-  savedPostIds: [],
-  toggleSave: (postId) =>
-    set((state) => ({
-      savedPostIds: state.savedPostIds.includes(postId)
-        ? state.savedPostIds.filter((id) => id !== postId)
-        : [...state.savedPostIds, postId],
-    })),
-
-  followedCategoryIds: [],
-  toggleFollowCategory: (categoryId) =>
-    set((state) => ({
-      followedCategoryIds: state.followedCategoryIds.includes(categoryId)
-        ? state.followedCategoryIds.filter((id) => id !== categoryId)
-        : [...state.followedCategoryIds, categoryId],
-      // unblock when following
-      blockedCategoryIds: state.blockedCategoryIds.filter(
-        (id) => id !== categoryId
-      ),
-    })),
-
-  blockedCategoryIds: [],
-  toggleBlockCategory: (categoryId) =>
-    set((state) => ({
-      blockedCategoryIds: state.blockedCategoryIds.includes(categoryId)
-        ? state.blockedCategoryIds.filter((id) => id !== categoryId)
-        : [...state.blockedCategoryIds, categoryId],
-      // unfollow when blocking
-      followedCategoryIds: state.followedCategoryIds.filter(
-        (id) => id !== categoryId
-      ),
-    })),
-
-  // ── Reporting & hiding ─────────────────────────────────────────────────────
-  reportedPostIds: [],   // posts this user has reported (prevents re-reporting)
-  hiddenPostIds: [],     // posts hidden from feed (reported or manually hidden)
-  postReportCounts: {},  // { [postId]: number } — simulates server-side tally
-
-  reportPost: (postId, reason) =>
-    set((state) => {
-      const newCount = (state.postReportCounts[postId] ?? 0) + 1;
-      const post = state.communityPosts.find((p) => p.id === postId);
-
-      // Simulate threshold notification: when a post hits 3 reports it is
-      // auto-actioned. In production this fires from the backend.
-      const thresholdReached = newCount >= 3 && post;
-      const notification = thresholdReached
-        ? {
-            id: `report_action_${postId}_${Date.now()}`,
-            type: "post_actioned",
-            action: "removed",
-            reason,
-            postSnippet: post.content.slice(0, 60),
-            timestamp: new Date(),
-            read: false,
-          }
-        : null;
-
-      return {
-        reportedPostIds: [...state.reportedPostIds, postId],
-        hiddenPostIds: state.hiddenPostIds.includes(postId)
-          ? state.hiddenPostIds
-          : [...state.hiddenPostIds, postId],
-        postReportCounts: { ...state.postReportCounts, [postId]: newCount },
-        ...(notification
-          ? {
-              notifications: [notification, ...state.notifications],
-              notificationCount: state.notificationCount + 1,
-            }
-          : {}),
-      };
-    }),
-
+  // ── Community — device-local only (hide is not synced to server) ───────────
+  hiddenPostIds: [],
   hidePost: (postId) =>
     set((state) => ({
       hiddenPostIds: state.hiddenPostIds.includes(postId)
         ? state.hiddenPostIds
         : [...state.hiddenPostIds, postId],
-    })),
-
-  // ── Polls ──────────────────────────────────────────────────────────────────
-  pollVotes: {}, // { [postId]: optionId }
-  voteOnPoll: (postId, optionId) =>
-    set((state) => {
-      const prev = state.pollVotes[postId];
-      const updatedPosts = state.communityPosts.map((p) => {
-        if (p.id !== postId || !p.poll) return p;
-        return {
-          ...p,
-          poll: {
-            ...p.poll,
-            options: p.poll.options.map((o) => ({
-              ...o,
-              votes:
-                o.id === optionId
-                  ? o.votes + 1
-                  : o.id === prev
-                  ? Math.max(0, o.votes - 1)
-                  : o.votes,
-            })),
-          },
-        };
-      });
-      return {
-        pollVotes: { ...state.pollVotes, [postId]: optionId },
-        communityPosts: updatedPosts,
-      };
-    }),
-
-  // ── Notifications ──────────────────────────────────────────────────────────
-  notifications: mockNotifications,
-  notificationCount: mockNotifications.filter((n) => !n.read).length,
-  markAllNotificationsRead: () =>
-    set((state) => ({
-      notificationCount: 0,
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
     })),
 
   // ── Saved facilities ───────────────────────────────────────────────────────

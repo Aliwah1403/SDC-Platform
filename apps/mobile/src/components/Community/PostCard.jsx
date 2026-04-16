@@ -175,7 +175,11 @@ export function PostCard({
                 color: "#09332C",
               }}
             >
-              {post.isAnonymous ? "Anonymous" : post.author.name}
+              {post.isSystemPost && systemCategory
+                ? systemCategory.label
+                : post.isAnonymous
+                ? "Anonymous"
+                : post.author.name}
             </Text>
 
             {/* Follow CTA on system posts */}
@@ -230,7 +234,28 @@ export function PostCard({
       </View>
 
       {/* ── Content / Discussion prompt ─────────────────────────────────────── */}
-      {post.isDiscussionPrompt ? (
+      {post.poll ? (
+        // Poll post: bold question + poll options (no photo, no banner)
+        <>
+          <Text
+            style={{
+              fontFamily: fonts.bold,
+              fontSize: 17,
+              color: "#09332C",
+              lineHeight: 25,
+              paddingHorizontal: 16,
+              marginBottom: 14,
+            }}
+          >
+            {post.content}
+          </Text>
+          <PollBlock
+            poll={post.poll}
+            votedOptionId={pollVotedOptionId ?? null}
+            onVote={(optionId) => onVote?.(optionId)}
+          />
+        </>
+      ) : post.isDiscussionPrompt ? (
         // Full-width banner with question overlaid
         <ImageBackground
           source={{ uri: post.imageUrl }}
@@ -278,23 +303,14 @@ export function PostCard({
               color: "#09332C",
               lineHeight: 22,
               paddingHorizontal: 16,
-              marginBottom: post.poll ? 10 : 12,
+              marginBottom: 12,
             }}
           >
             {post.content}
           </Text>
 
-          {/* Poll block */}
-          {post.poll && (
-            <PollBlock
-              poll={post.poll}
-              votedOptionId={pollVotedOptionId ?? null}
-              onVote={(optionId) => onVote?.(optionId)}
-            />
-          )}
-
           {/* Photo */}
-          {post.imageUrl && !post.poll && (
+          {post.imageUrl && (
             <Image
               source={{ uri: post.imageUrl }}
               style={{ width: "100%", height: 200 }}
@@ -308,7 +324,7 @@ export function PostCard({
       <View
         style={{
           padding: 16,
-          paddingTop: post.isDiscussionPrompt || post.imageUrl ? 12 : 0,
+          paddingTop: post.poll || post.isDiscussionPrompt || post.imageUrl ? 12 : 0,
         }}
       >
         <View
@@ -414,7 +430,7 @@ export function PostCard({
                 color: "#6B7280",
               }}
             >
-              {post.comments.length}
+              {post.commentCount ?? 0}
             </Text>
           </TouchableOpacity>
 

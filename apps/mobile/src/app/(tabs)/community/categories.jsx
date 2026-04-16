@@ -10,7 +10,12 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Check, Ban } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import {
+  useCategoryPrefsQuery,
+  useFollowCategoryMutation,
+  useBlockCategoryMutation,
+  useRemoveCategoryPrefMutation,
+} from "@/hooks/queries/useCategoryPrefsQuery";
 import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
@@ -25,14 +30,28 @@ export default function CategoriesScreen() {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState("all");
 
-  const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
-  const toggleFollowCategory = useAppStore((s) => s.toggleFollowCategory);
-  const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
-  const toggleBlockCategory = useAppStore((s) => s.toggleBlockCategory);
-  const communityPosts = useAppStore((s) => s.communityPosts);
+  const { data: prefs } = useCategoryPrefsQuery();
+  const followedCategoryIds = prefs?.followedCategoryIds ?? [];
+  const blockedCategoryIds = prefs?.blockedCategoryIds ?? [];
 
-  function postCountFor(categoryId) {
-    return communityPosts.filter((p) => p.category === categoryId).length;
+  const { mutate: followCategory } = useFollowCategoryMutation();
+  const { mutate: blockCategory } = useBlockCategoryMutation();
+  const { mutate: removeCategoryPref } = useRemoveCategoryPrefMutation();
+
+  function toggleFollowCategory(categoryId) {
+    if (followedCategoryIds.includes(categoryId)) {
+      removeCategoryPref(categoryId);
+    } else {
+      followCategory(categoryId);
+    }
+  }
+
+  function toggleBlockCategory(categoryId) {
+    if (blockedCategoryIds.includes(categoryId)) {
+      removeCategoryPref(categoryId);
+    } else {
+      blockCategory(categoryId);
+    }
   }
 
   const visibleGroups = useMemo(() => {
@@ -242,7 +261,7 @@ export default function CategoriesScreen() {
                           color: "#9C8D8A",
                         }}
                       >
-                        {postCountFor(cat.id)} posts
+                        Community
                       </Text>
                     </View>
 

@@ -23,7 +23,8 @@ export function useHomeData() {
 
   // Get data for selected date
   const selectedDateStr = selectedDate.toISOString().split("T")[0];
-  const selectedDateData = healthData.find((d) => d.date === selectedDateStr) ?? null;
+  const selectedDateData =
+    healthData.find((d) => d.date === selectedDateStr) ?? null;
   const hasLoggedData =
     selectedDateData &&
     (selectedDateData.painLevel > 0 ||

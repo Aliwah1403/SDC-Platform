@@ -12,6 +12,17 @@ import { PostSkeleton } from "@/components/Community/PostSkeleton";
 import { CategoriesCarousel } from "@/components/Community/CategoriesCarousel";
 import { PostActionsSheet } from "@/components/Community/PostActionsSheet";
 import { useAppStore } from "@/store/appStore";
+import { useCommunityFeedQuery } from "@/hooks/queries/useCommunityFeedQuery";
+import {
+  useLikeMutation,
+  useSaveMutation,
+  useVoteMutation,
+} from "@/hooks/queries/useCommunityMutations";
+import {
+  useCategoryPrefsQuery,
+  useFollowCategoryMutation,
+} from "@/hooks/queries/useCategoryPrefsQuery";
+import { useCommunityNotificationsQuery } from "@/hooks/queries/useCommunityNotificationsQuery";
 import { fonts } from "@/utils/fonts";
 
 const SKELETON_DATA = [
@@ -37,63 +48,46 @@ export default function CommunityFeedScreen() {
 
   const [actionsPost, setActionsPost] = useState(null); // { id, isOwnPost }
 
-  const communityPosts = useAppStore((s) => s.communityPosts);
-  const likedPostIds = useAppStore((s) => s.likedPostIds);
-  const toggleLike = useAppStore((s) => s.toggleLike);
-  const savedPostIds = useAppStore((s) => s.savedPostIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
-  const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
   const hiddenPostIds = useAppStore((s) => s.hiddenPostIds);
-  const toggleFollowCategory = useAppStore((s) => s.toggleFollowCategory);
-  const pollVotes = useAppStore((s) => s.pollVotes);
-  const voteOnPoll = useAppStore((s) => s.voteOnPoll);
-  const notificationCount = useAppStore((s) => s.notificationCount);
+
+  const { data: feedData = [], isLoading, refetch } = useCommunityFeedQuery(activeFeed);
+  const { data: prefs } = useCategoryPrefsQuery();
+  const followedCategoryIds = prefs?.followedCategoryIds ?? [];
+  const blockedCategoryIds = prefs?.blockedCategoryIds ?? [];
+
+  const { data: notificationsData = [] } = useCommunityNotificationsQuery();
+  const notificationCount = notificationsData.filter((n) => !n.read).length;
+
+  const { mutate: likePost } = useLikeMutation();
+  const { mutate: savePost } = useSaveMutation();
+  const { mutate: voteOnPoll } = useVoteMutation();
+  const { mutate: followCategory } = useFollowCategoryMutation();
 
   const filteredPosts = useMemo(() => {
-    let posts = [...communityPosts];
-
-    // Always exclude blocked categories and hidden posts
-    posts = posts.filter(
-      (p) =>
-        !blockedCategoryIds.includes(p.category) &&
-        !hiddenPostIds.includes(p.id),
-    );
-
-    if (activeFeed === "popular") {
-      posts.sort((a, b) => b.likes - a.likes);
-    } else if (activeFeed === "recent") {
-      posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    } else if (activeFeed === "following") {
-      posts = posts.filter((p) => followedCategoryIds.includes(p.category));
-    } else if (activeFeed === "mine") {
-      posts = posts.filter((p) => p.author.isCurrentUser);
-    } else if (activeFeed === "saved") {
-      posts = posts.filter((p) => savedPostIds.includes(p.id));
-    }
+    let posts = feedData.filter((p) => !hiddenPostIds.includes(p.id));
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       posts = posts.filter(
         (p) =>
           p.content.toLowerCase().includes(q) ||
-          p.author.name.toLowerCase().includes(q),
+          (p.author?.name ?? "").toLowerCase().includes(q),
       );
     }
 
     return posts;
-  }, [activeFeed, searchQuery, communityPosts, savedPostIds, followedCategoryIds, blockedCategoryIds, hiddenPostIds]);
+  }, [feedData, hiddenPostIds, searchQuery]);
 
   const onRefresh = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    await refetch();
     setRefreshing(false);
-  }, []);
+  }, [refetch]);
 
   const handleCompose = () => router.push("/community/create-post");
 
-  const listData = refreshing ? SKELETON_DATA : filteredPosts;
+  const listData = isLoading || refreshing ? SKELETON_DATA : filteredPosts;
 
   const showCarousel = (activeFeed === "popular" || activeFeed === "recent") && !searchQuery;
 
@@ -148,7 +142,7 @@ export default function CommunityFeedScreen() {
           ListHeaderComponent={
             showCarousel ? (
               <CategoriesCarousel
-                communityPosts={communityPosts}
+                communityPosts={feedData}
                 followedCategoryIds={followedCategoryIds}
               />
             ) : null
@@ -177,10 +171,10 @@ export default function CommunityFeedScreen() {
             ) : (
               <PostCard
                 post={item}
-                isLiked={likedPostIds.includes(item.id)}
-                onLike={() => toggleLike(item.id)}
-                isSaved={savedPostIds.includes(item.id)}
-                onSave={() => toggleSave(item.id)}
+                isLiked={item.isLiked ?? false}
+                onLike={() => likePost({ postId: item.id, isLiked: item.isLiked ?? false })}
+                isSaved={item.isSaved ?? false}
+                onSave={() => savePost({ postId: item.id, isSaved: item.isSaved ?? false })}
                 onPress={() => router.push(`/community/${item.id}`)}
                 onMorePress={() =>
                   setActionsPost({
@@ -188,11 +182,17 @@ export default function CommunityFeedScreen() {
                     isOwnPost: !!item.author?.isCurrentUser,
                   })
                 }
-                pollVotedOptionId={pollVotes[item.id] ?? null}
-                onVote={(optionId) => voteOnPoll(item.id, optionId)}
+                pollVotedOptionId={item.poll?.votedOptionId ?? null}
+                onVote={(optionId) =>
+                  voteOnPoll({
+                    postId: item.id,
+                    optionId,
+                    previousOptionId: item.poll?.votedOptionId ?? undefined,
+                  })
+                }
                 followedCategoryIds={followedCategoryIds}
                 blockedCategoryIds={blockedCategoryIds}
-                onFollowCategory={toggleFollowCategory}
+                onFollowCategory={(categoryId) => followCategory(categoryId)}
               />
             )
           }

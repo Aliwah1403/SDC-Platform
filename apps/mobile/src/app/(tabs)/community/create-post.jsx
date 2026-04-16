@@ -29,6 +29,7 @@ import {
   BarChart2,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
+import { useCreatePostMutation } from "@/hooks/queries/useCommunityMutations";
 import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
@@ -54,7 +55,7 @@ export default function CreatePostScreen() {
   const insets = useSafeAreaInsets();
 
   const onboardingData = useAppStore((s) => s.onboardingData);
-  const addCommunityPost = useAppStore((s) => s.addCommunityPost);
+  const { mutate: createPost, isPending } = useCreatePostMutation();
 
   const nickname = onboardingData.nickname ?? "You";
   const scdType = onboardingData.scdType ?? null;
@@ -127,38 +128,25 @@ export default function CreatePostScreen() {
   }
 
   function handlePost() {
-    if (!canPost) return;
-    const newPost = {
-      id: `cp_${Date.now()}`,
-      author: {
-        id: "me",
-        name: nickname,
-        avatarInitials: initials,
-        scdType: scdType ?? undefined,
-        isCurrentUser: true,
+    if (!canPost || isPending) return;
+    createPost(
+      {
+        content: content.trim(),
+        imageUrl: imageUri ?? undefined,
+        category,
+        flair: flair ?? undefined,
+        isAnonymous,
+        pollOptions: pollEnabled
+          ? pollOptions.filter((o) => o.trim().length > 0).map((o) => o.trim())
+          : undefined,
       },
-      content: content.trim(),
-      category,
-      flair: flair ?? undefined,
-      isAnonymous: isAnonymous || undefined,
-      likes: 0,
-      timestamp: new Date().toISOString(),
-      comments: [],
-      imageUrl: imageUri ?? undefined,
-      poll: pollEnabled
-        ? {
-            options: pollOptions
-              .filter((o) => o.trim().length > 0)
-              .map((o, i) => ({
-                id: String.fromCharCode(97 + i),
-                text: o.trim(),
-                votes: 0,
-              })),
-          }
-        : undefined,
-    };
-    addCommunityPost(newPost);
-    router.back();
+      {
+        onSuccess: () => router.back(),
+        onError: (err) => {
+          Alert.alert("Couldn't post", err?.message ?? "Something went wrong. Please try again.");
+        },
+      },
+    );
   }
 
   // ── Step 1: Content + Photo ────────────────────────────────────────────────
@@ -773,10 +761,10 @@ export default function CreatePostScreen() {
       >
         <TouchableOpacity
           onPress={handlePost}
-          disabled={!canPost}
+          disabled={!canPost || isPending}
           activeOpacity={0.85}
           style={{
-            backgroundColor: canPost ? "#A9334D" : "#E2D9D6",
+            backgroundColor: canPost && !isPending ? "#A9334D" : "#E2D9D6",
             borderRadius: 14,
             height: 52,
             alignItems: "center",
@@ -787,10 +775,10 @@ export default function CreatePostScreen() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 16,
-              color: canPost ? "#F8E9E7" : "#B0A0A0",
+              color: canPost && !isPending ? "#F8E9E7" : "#B0A0A0",
             }}
           >
-            Post
+            {isPending ? "Posting…" : "Post"}
           </Text>
         </TouchableOpacity>
       </View>

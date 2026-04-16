@@ -1,10 +1,13 @@
 import { useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Heart, MessageCircle, Bell, ShieldAlert } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import {
+  useCommunityNotificationsQuery,
+  useMarkAllReadMutation,
+} from "@/hooks/queries/useCommunityNotificationsQuery";
 import { fonts } from "@/utils/fonts";
 
 function timeAgo(date) {
@@ -116,9 +119,10 @@ function NotificationRow({ item }) {
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const notifications = useAppStore((s) => s.notifications);
-  const notificationCount = useAppStore((s) => s.notificationCount);
-  const markAllNotificationsRead = useAppStore((s) => s.markAllNotificationsRead);
+  const { data: notifications = [], isLoading } = useCommunityNotificationsQuery();
+  const { mutate: markAllRead } = useMarkAllReadMutation();
+
+  const notificationCount = notifications.filter((n) => !n.read).length;
 
   // Group by Today / Yesterday / Earlier
   const sections = useMemo(() => {
@@ -128,7 +132,7 @@ export default function NotificationsScreen() {
 
     const groups = { Today: [], Yesterday: [], Earlier: [] };
     notifications.forEach((n) => {
-      const d = new Date(n.timestamp);
+      const d = new Date(n.createdAt ?? n.timestamp);
       if (d.toDateString() === today.toDateString()) groups.Today.push(n);
       else if (d.toDateString() === yesterday.toDateString()) groups.Yesterday.push(n);
       else groups.Earlier.push(n);
@@ -189,7 +193,7 @@ export default function NotificationsScreen() {
 
         {notificationCount > 0 ? (
           <TouchableOpacity
-            onPress={markAllNotificationsRead}
+            onPress={() => markAllRead()}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
@@ -207,8 +211,14 @@ export default function NotificationsScreen() {
         )}
       </View>
 
+      {isLoading && (
+        <ActivityIndicator
+          style={{ marginTop: 40 }}
+          color="#A9334D"
+        />
+      )}
       <FlatList
-        data={sections}
+        data={isLoading ? [] : sections}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
