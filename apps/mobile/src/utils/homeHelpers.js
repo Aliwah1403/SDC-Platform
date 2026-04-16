@@ -10,7 +10,7 @@ export function getDynamicMessage(
   const today = new Date();
   const isToday = selectedDate.toDateString() === today.toDateString();
   const firstName =
-    currentUser?.nickname || currentUser?.fullName.split(" ")[0];
+    currentUser?.nickname || currentUser?.fullName?.split(" ")[0] || " ";
   const hour = today.getHours();
   const timeGreeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";

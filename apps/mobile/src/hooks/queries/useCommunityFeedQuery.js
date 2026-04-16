@@ -27,3 +27,20 @@ export function useCommunityFeedQuery(filter = 'popular') {
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }
+
+/**
+ * Fetches posts for a single category page, scoped to categoryId on the server.
+ * Unlike useCommunityFeedQuery, this does NOT apply follow/block filtering —
+ * you're browsing a specific category explicitly.
+ */
+export function useCategoryFeedQuery(categoryId) {
+  const userId = useUserId();
+
+  return useQuery({
+    queryKey: ['community_feed', userId, 'category', categoryId],
+    queryFn: () =>
+      fetchCommunityFeed({ userId, filter: 'category', categoryId }),
+    enabled: !!userId && !!categoryId,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+  });
+}

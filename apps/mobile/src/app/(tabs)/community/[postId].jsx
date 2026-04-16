@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   FlatList,
+  Animated,
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -83,12 +84,93 @@ const FLAIR_CONFIG = {
   info: { label: "Research/Info", color: "#0D9488" },
 };
 
+function SkeletonBox({ opacity, style }) {
+  return (
+    <Animated.View
+      style={[{ backgroundColor: "#E8E0DC", borderRadius: 6, opacity }, style]}
+    />
+  );
+}
+
+function PostDetailSkeleton({ insets }) {
+  const pulse = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, [pulse]);
+
+  return (
+    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+      <StatusBar style="light" />
+      {/* Gradient header placeholder */}
+      <View
+        style={{
+          backgroundColor: "#A9334D",
+          paddingTop: insets.top + 12,
+          paddingBottom: 16,
+          paddingHorizontal: 20,
+        }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <SkeletonBox opacity={pulse} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.25)" }} />
+          <SkeletonBox opacity={pulse} style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.25)" }} />
+        </View>
+      </View>
+
+      {/* Post body placeholder */}
+      <View style={{ paddingHorizontal: 16, paddingVertical: 20 }}>
+        {/* Author row */}
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+          <SkeletonBox opacity={pulse} style={{ width: 44, height: 44, borderRadius: 22, marginRight: 12 }} />
+          <View style={{ gap: 8 }}>
+            <SkeletonBox opacity={pulse} style={{ width: 120, height: 13 }} />
+            <SkeletonBox opacity={pulse} style={{ width: 72, height: 11 }} />
+          </View>
+        </View>
+
+        {/* Content lines */}
+        <SkeletonBox opacity={pulse} style={{ height: 14, marginBottom: 10 }} />
+        <SkeletonBox opacity={pulse} style={{ height: 14, marginBottom: 10, width: "90%" }} />
+        <SkeletonBox opacity={pulse} style={{ height: 14, marginBottom: 10, width: "75%" }} />
+        <SkeletonBox opacity={pulse} style={{ height: 14, marginBottom: 10, width: "82%" }} />
+
+        {/* Actions row */}
+        <View style={{ flexDirection: "row", gap: 20, marginTop: 20 }}>
+          <SkeletonBox opacity={pulse} style={{ width: 56, height: 12 }} />
+          <SkeletonBox opacity={pulse} style={{ width: 56, height: 12 }} />
+          <SkeletonBox opacity={pulse} style={{ width: 40, height: 12 }} />
+        </View>
+      </View>
+
+      {/* Divider */}
+      <View style={{ height: 1, backgroundColor: "#F0EAE7", marginHorizontal: 16 }} />
+
+      {/* Comment placeholders */}
+      {[0, 1, 2].map((i) => (
+        <View key={i} style={{ flexDirection: "row", paddingHorizontal: 16, paddingVertical: 14, gap: 12 }}>
+          <SkeletonBox opacity={pulse} style={{ width: 36, height: 36, borderRadius: 18, flexShrink: 0 }} />
+          <View style={{ flex: 1, gap: 8, paddingTop: 2 }}>
+            <SkeletonBox opacity={pulse} style={{ width: 100, height: 12 }} />
+            <SkeletonBox opacity={pulse} style={{ height: 12 }} />
+            <SkeletonBox opacity={pulse} style={{ height: 12, width: `${70 + i * 7}%` }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 export default function PostDetailScreen() {
   const { postId } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: post, isLoading } = usePostDetailQuery(postId);
+  const { data: post, isLoading, isError } = usePostDetailQuery(postId);
   const { data: notificationsData = [] } = useCommunityNotificationsQuery();
   const notificationCount = notificationsData.filter((n) => !n.read).length;
 
@@ -107,7 +189,29 @@ export default function PostDetailScreen() {
   const [replyingTo, setReplyingTo] = useState(null);
   const inputRef = useRef(null);
 
-  if (isLoading || !post) return null;
+  if (isLoading) {
+    return <PostDetailSkeleton insets={insets} />;
+  }
+
+  if (isError || !post) {
+    return (
+      <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
+        <StatusBar style="dark" />
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#09332C", marginBottom: 8, textAlign: "center" }}>
+          Post not found
+        </Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B6B6B", textAlign: "center", marginBottom: 24 }}>
+          This post may have been removed or is no longer available.
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ backgroundColor: "#A9334D", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 }}
+        >
+          <Text style={{ fontFamily: fonts.semiBold, fontSize: 14, color: "#fff" }}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const isLiked = post.isLiked ?? false;
   const displayLikes = post.likes;
