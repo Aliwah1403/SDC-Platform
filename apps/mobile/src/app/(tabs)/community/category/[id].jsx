@@ -1,18 +1,31 @@
 import { useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, ImageBackground } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ImageBackground,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft, Check, Ban } from "lucide-react-native";
-import { useAppStore } from "@/store/appStore";
+import { useCommunityFeedQuery } from "@/hooks/queries/useCommunityFeedQuery";
+import {
+  useLikeMutation,
+  useSaveMutation,
+} from "@/hooks/queries/useCommunityMutations";
+import {
+  useCategoryPrefsQuery,
+  useFollowCategoryMutation,
+  useBlockCategoryMutation,
+  useRemoveCategoryPrefMutation,
+} from "@/hooks/queries/useCategoryPrefsQuery";
 import { PostCard } from "@/components/Community/PostCard";
 import { PostSkeleton } from "@/components/Community/PostSkeleton";
 import { CategoryCard } from "@/components/Community/CategoryCard";
-import {
-  CATEGORY_MAP,
-  getRelatedCategories,
-} from "@/data/communityCategories";
+import { CATEGORY_MAP, getRelatedCategories } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
 const RELATED_INSERT_AFTER = 2; // inject "You may also like" after this post index
@@ -24,24 +37,33 @@ export default function CategoryDetailScreen() {
 
   const category = CATEGORY_MAP[id];
 
-  const communityPosts = useAppStore((s) => s.communityPosts);
-  const likedPostIds = useAppStore((s) => s.likedPostIds);
-  const toggleLike = useAppStore((s) => s.toggleLike);
-  const savedPostIds = useAppStore((s) => s.savedPostIds);
-  const toggleSave = useAppStore((s) => s.toggleSave);
-  const followedCategoryIds = useAppStore((s) => s.followedCategoryIds);
-  const toggleFollowCategory = useAppStore((s) => s.toggleFollowCategory);
-  const blockedCategoryIds = useAppStore((s) => s.blockedCategoryIds);
-  const toggleBlockCategory = useAppStore((s) => s.toggleBlockCategory);
+  const { data: allPosts = [] } = useCommunityFeedQuery("popular");
+  const { data: prefs } = useCategoryPrefsQuery();
+  const followedCategoryIds = prefs?.followedCategoryIds ?? [];
+  const blockedCategoryIds = prefs?.blockedCategoryIds ?? [];
+
+  const { mutate: likePost } = useLikeMutation();
+  const { mutate: savePost } = useSaveMutation();
+  const { mutate: followCategory } = useFollowCategoryMutation();
+  const { mutate: blockCategory } = useBlockCategoryMutation();
+  const { mutate: removeCategoryPref } = useRemoveCategoryPrefMutation();
 
   const isFollowing = followedCategoryIds.includes(id);
   const isBlocked = blockedCategoryIds.includes(id);
 
+  function toggleFollowCategory() {
+    isFollowing ? removeCategoryPref(id) : followCategory(id);
+  }
+
+  function toggleBlockCategory() {
+    isBlocked ? removeCategoryPref(id) : blockCategory(id);
+  }
+
   const relatedCategories = useMemo(() => getRelatedCategories(id), [id]);
 
   const categoryPosts = useMemo(
-    () => communityPosts.filter((p) => p.category === id),
-    [communityPosts, id]
+    () => allPosts.filter((p) => p.category === id),
+    [allPosts, id],
   );
 
   // Inject the "You may also like" block after RELATED_INSERT_AFTER posts
@@ -71,7 +93,6 @@ export default function CategoryDetailScreen() {
         <RelatedSection
           relatedCategories={relatedCategories}
           followedCategoryIds={followedCategoryIds}
-          communityPosts={communityPosts}
           router={router}
         />
       );
@@ -79,10 +100,14 @@ export default function CategoryDetailScreen() {
     return (
       <PostCard
         post={item}
-        isLiked={likedPostIds.includes(item.id)}
-        onLike={() => toggleLike(item.id)}
-        isSaved={savedPostIds.includes(item.id)}
-        onSave={() => toggleSave(item.id)}
+        isLiked={item.isLiked ?? false}
+        onLike={() =>
+          likePost({ postId: item.id, isLiked: item.isLiked ?? false })
+        }
+        isSaved={item.isSaved ?? false}
+        onSave={() =>
+          savePost({ postId: item.id, isSaved: item.isSaved ?? false })
+        }
         onPress={() => router.push(`/community/${item.id}`)}
       />
     );
@@ -105,8 +130,8 @@ export default function CategoryDetailScreen() {
             insets={insets}
             postCount={categoryPosts.length}
             onBack={() => router.back()}
-            onFollow={() => toggleFollowCategory(id)}
-            onBlock={() => toggleBlockCategory(id)}
+            onFollow={toggleFollowCategory}
+            onBlock={toggleBlockCategory}
           />
         }
         ListEmptyComponent={
@@ -160,7 +185,7 @@ function CategoryHeader({
   return (
     <ImageBackground
       source={{ uri: category.photo }}
-      style={{ minHeight: 320 }}
+      style={{ minHeight: 320, marginBottom: 20 }}
       resizeMode="cover"
     >
       {/* Dark scrim — fades from semi-dark at top to darker at bottom for legibility */}
@@ -196,7 +221,9 @@ function CategoryHeader({
         </View>
 
         {/* Bottom content */}
-        <View style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 40 }}>
+        <View
+          style={{ paddingHorizontal: 20, paddingBottom: 24, paddingTop: 40 }}
+        >
           <Text
             style={{
               fontFamily: fonts.bold,
@@ -230,7 +257,9 @@ function CategoryHeader({
                 flex: 1,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: isFollowing ? "rgba(255,255,255,0.2)" : "#FFFFFF",
+                backgroundColor: isFollowing
+                  ? "rgba(255,255,255,0.2)"
+                  : "#FFFFFF",
                 alignItems: "center",
                 justifyContent: "center",
                 flexDirection: "row",
@@ -261,7 +290,9 @@ function CategoryHeader({
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: isBlocked ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.18)",
+                backgroundColor: isBlocked
+                  ? "rgba(0,0,0,0.35)"
+                  : "rgba(255,255,255,0.18)",
                 borderWidth: 1,
                 borderColor: "rgba(255,255,255,0.4)",
                 alignItems: "center",
@@ -281,17 +312,8 @@ function CategoryHeader({
   );
 }
 
-function RelatedSection({
-  relatedCategories,
-  followedCategoryIds,
-  communityPosts,
-  router,
-}) {
+function RelatedSection({ relatedCategories, followedCategoryIds, router }) {
   if (relatedCategories.length === 0) return null;
-
-  function postCountFor(categoryId) {
-    return communityPosts.filter((p) => p.category === categoryId).length;
-  }
 
   return (
     <View style={{ paddingVertical: 20 }}>
@@ -328,7 +350,6 @@ function RelatedSection({
         renderItem={({ item }) => (
           <CategoryCard
             category={item}
-            postCount={postCountFor(item.id)}
             isFollowing={followedCategoryIds.includes(item.id)}
             onPress={() => router.push(`/community/category/${item.id}`)}
           />

@@ -27,8 +27,20 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { CommentItem } from "@/components/Community/CommentItem";
 import { PostActionsSheet } from "@/components/Community/PostActionsSheet";
+import { CommentActionsSheet } from "@/components/Community/CommentActionsSheet";
 import { PollBlock } from "@/components/Community/PollBlock";
-import { useAppStore } from "@/store/appStore";
+import { usePostDetailQuery } from "@/hooks/queries/usePostDetailQuery";
+import {
+  useLikeMutation,
+  useAddCommentMutation,
+  useAddReplyMutation,
+  useVoteMutation,
+} from "@/hooks/queries/useCommunityMutations";
+import { useCommunityNotificationsQuery } from "@/hooks/queries/useCommunityNotificationsQuery";
+import {
+  useCategoryPrefsQuery,
+  useFollowCategoryMutation,
+} from "@/hooks/queries/useCategoryPrefsQuery";
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
@@ -76,25 +88,30 @@ export default function PostDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const likedPostIds = useAppStore((s) => s.likedPostIds);
-  const toggleLike = useAppStore((s) => s.toggleLike);
-  const communityPosts = useAppStore((s) => s.communityPosts);
-  const pollVotes = useAppStore((s) => s.pollVotes);
-  const voteOnPoll = useAppStore((s) => s.voteOnPoll);
-  const notificationCount = useAppStore((s) => s.notificationCount);
+  const { data: post, isLoading } = usePostDetailQuery(postId);
+  const { data: notificationsData = [] } = useCommunityNotificationsQuery();
+  const notificationCount = notificationsData.filter((n) => !n.read).length;
 
-  const post = communityPosts.find((p) => p.id === postId);
-  const [comments, setComments] = useState(post?.comments ?? []);
+  const { mutate: likePost } = useLikeMutation();
+  const { mutate: addComment } = useAddCommentMutation();
+  const { mutate: addReply } = useAddReplyMutation();
+  const { mutate: voteOnPoll } = useVoteMutation();
+  const { data: prefs } = useCategoryPrefsQuery();
+  const { mutate: followCategory } = useFollowCategoryMutation();
+  const followedCategoryIds = prefs?.followedCategoryIds ?? [];
+
   const [inputText, setInputText] = useState("");
   const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
+  const [actionsComment, setActionsComment] = useState(null); // { id, isOwnComment }
   // { commentId: string, authorName: string } | null
   const [replyingTo, setReplyingTo] = useState(null);
   const inputRef = useRef(null);
 
-  if (!post) return null;
+  if (isLoading || !post) return null;
 
-  const isLiked = likedPostIds.includes(post.id);
-  const displayLikes = post.likes + (isLiked ? 1 : 0);
+  const isLiked = post.isLiked ?? false;
+  const displayLikes = post.likes;
+  const comments = post.comments ?? [];
   const systemCategory = post.isSystemPost
     ? CATEGORY_MAP[post.systemCategory]
     : null;
@@ -110,31 +127,15 @@ export default function PostDetailScreen() {
     if (!text) return;
 
     if (replyingTo) {
-      const newReply = {
-        id: `r-${Date.now()}`,
-        author: { name: "You", avatarInitials: "ME" },
+      addReply({
+        postId,
+        parentCommentId: replyingTo.commentId,
         replyingToName: replyingTo.authorName,
         content: text,
-        timestamp: new Date(),
-      };
-      setComments((prev) =>
-        prev.map((c) =>
-          c.id === replyingTo.commentId
-            ? { ...c, replies: [...(c.replies ?? []), newReply] }
-            : c,
-        ),
-      );
+      });
       setReplyingTo(null);
     } else {
-      setComments((prev) => [
-        ...prev,
-        {
-          id: `new-${Date.now()}`,
-          author: { name: "You", avatarInitials: "ME" },
-          content: text,
-          timestamp: new Date(),
-        },
-      ]);
+      addComment({ postId, content: text });
     }
 
     setInputText("");
@@ -263,7 +264,7 @@ export default function PostDetailScreen() {
       </LinearGradient>
 
       {/* Post body */}
-      <View style={{ backgroundColor: "#fff", padding: 20, marginBottom: 8 }}>
+      <View style={{ backgroundColor: "#fff", paddingHorizontal: 8, paddingVertical: 20, marginBottom: 8 }}>
         {/* Author row */}
         <View
           style={{
@@ -324,16 +325,40 @@ export default function PostDetailScreen() {
           )}
 
           <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontFamily: fonts.semibold,
-                fontSize: 15,
-                color: "#09332C",
-              }}
-            >
-              {post.isAnonymous ? "Anonymous" : post.author.name}
-            </Text>
-            {!post.isSystemPost && !post.isAnonymous && post.author.scdType && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 15,
+                  color: "#09332C",
+                }}
+              >
+                {post.isSystemPost && systemCategory
+                  ? systemCategory.label
+                  : post.isAnonymous
+                  ? "Anonymous"
+                  : post.author.name}
+              </Text>
+              {post.isSystemPost &&
+                post.systemCategory &&
+                !followedCategoryIds.includes(post.systemCategory) && (
+                  <TouchableOpacity
+                    onPress={() => followCategory(post.systemCategory)}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 13,
+                        color: "#A9334D",
+                      }}
+                    >
+                      · Follow
+                    </Text>
+                  </TouchableOpacity>
+                )}
+            </View>
+            {/* {!post.isSystemPost && !post.isAnonymous && post.author.scdType && (
               <View
                 style={{
                   alignSelf: "flex-start",
@@ -354,7 +379,7 @@ export default function PostDetailScreen() {
                   {post.author.scdType}
                 </Text>
               </View>
-            )}
+            )} */}
             {!post.isSystemPost && (
               <Text
                 style={{
@@ -371,7 +396,19 @@ export default function PostDetailScreen() {
         </View>
 
         {/* Content / discussion prompt */}
-        {post.isDiscussionPrompt ? (
+        {post.poll ? (
+          <Text
+            style={{
+              fontFamily: fonts.bold,
+              fontSize: 22,
+              color: "#09332C",
+              lineHeight: 30,
+              marginBottom: 14,
+            }}
+          >
+            {post.content}
+          </Text>
+        ) : post.isDiscussionPrompt ? (
           <ImageBackground
             source={{ uri: post.imageUrl }}
             style={{
@@ -433,20 +470,25 @@ export default function PostDetailScreen() {
           <View style={{ marginBottom: 12, marginHorizontal: -4 }}>
             <PollBlock
               poll={post.poll}
-              votedOptionId={pollVotes[post.id] ?? null}
-              onVote={(optionId) => voteOnPoll(post.id, optionId)}
+              votedOptionId={post.poll?.votedOptionId ?? null}
+              onVote={(optionId) =>
+                voteOnPoll({
+                  postId: post.id,
+                  optionId,
+                  previousOptionId: post.poll?.votedOptionId ?? undefined,
+                })
+              }
             />
           </View>
         )}
 
-        {/* Photo */}
+        {/* Photo — full width, breaks out of horizontal padding */}
         {post.imageUrl && !post.isDiscussionPrompt && !post.poll && (
           <Image
             source={{ uri: post.imageUrl }}
             style={{
-              width: "100%",
-              height: 260,
-              borderRadius: 12,
+              marginHorizontal: -16,
+              height: 280,
               marginBottom: 16,
             }}
             resizeMode="cover"
@@ -514,7 +556,7 @@ export default function PostDetailScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => toggleLike(post.id)}
+            onPress={() => likePost({ postId: post.id, isLiked })}
             style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
           >
             <Heart
@@ -580,7 +622,13 @@ export default function PostDetailScreen() {
           ListHeaderComponent={ListHeader}
           renderItem={({ item }) => (
             <View style={{ paddingHorizontal: 20 }}>
-              <CommentItem comment={item} onReply={handleReply} />
+              <CommentItem
+                comment={item}
+                onReply={handleReply}
+                onLongPress={(commentId, isOwnComment) =>
+                  setActionsComment({ id: commentId, isOwnComment })
+                }
+              />
             </View>
           )}
           contentContainerStyle={{ paddingBottom: 16 }}
@@ -681,6 +729,14 @@ export default function PostDetailScreen() {
         postId={post.id}
         isOwnPost={!!post.author?.isCurrentUser}
         onClose={() => setActionsSheetOpen(false)}
+      />
+
+      <CommentActionsSheet
+        isVisible={actionsComment !== null}
+        commentId={actionsComment?.id}
+        postId={post.id}
+        isOwnComment={actionsComment?.isOwnComment ?? false}
+        onClose={() => setActionsComment(null)}
       />
     </View>
   );

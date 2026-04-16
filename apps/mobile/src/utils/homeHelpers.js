@@ -1,9 +1,4 @@
-import {
-  CheckCircle2,
-  Plus,
-  TrendingUp,
-  Droplets,
-} from "lucide-react-native";
+import { CheckCircle2, Plus, TrendingUp, Droplets } from "lucide-react-native";
 import { StreakFireIcon } from "@/utils/streakFire";
 
 export function getDynamicMessage(
@@ -14,7 +9,8 @@ export function getDynamicMessage(
 ) {
   const today = new Date();
   const isToday = selectedDate.toDateString() === today.toDateString();
-  const firstName = currentUser?.name?.split(" ")[0] || "Curtis";
+  const firstName =
+    currentUser?.nickname || currentUser?.fullName.split(" ")[0];
   const hour = today.getHours();
   const timeGreeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
