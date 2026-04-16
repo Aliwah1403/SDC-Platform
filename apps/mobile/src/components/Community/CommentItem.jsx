@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { MotiView } from "moti";
+import * as Haptics from "expo-haptics";
 import { fonts } from "@/utils/fonts";
 
 const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
@@ -45,9 +46,19 @@ function Avatar({ name, initials, size = 34 }) {
   );
 }
 
-function ReplyRow({ reply, onReply }) {
+function ReplyRow({ reply, onReply, onLongPress }) {
+  const handleLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLongPress?.(reply.id, reply.isCurrentUser);
+  };
+
   return (
-    <View style={{ flexDirection: "row", marginBottom: 12 }}>
+    <TouchableOpacity
+      onLongPress={handleLongPress}
+      delayLongPress={400}
+      activeOpacity={1}
+      style={{ flexDirection: "row", marginBottom: 12 }}
+    >
       <Avatar
         name={reply.author.name}
         initials={reply.author.avatarInitials}
@@ -84,29 +95,33 @@ function ReplyRow({ reply, onReply }) {
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={{ marginTop: 5 }}
         >
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 12,
-              color: "#9CA3AF",
-            }}
-          >
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#9CA3AF" }}>
             Reply
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-export function CommentItem({ comment, onReply }) {
+export function CommentItem({ comment, onReply, onLongPress }) {
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const replyCount = comment.replies?.length ?? 0;
+
+  const handleLongPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onLongPress?.(comment.id, comment.isCurrentUser);
+  };
 
   return (
     <View style={{ marginBottom: 16 }}>
       {/* ── Main comment ──────────────────────────────────────────────────────── */}
-      <View style={{ flexDirection: "row" }}>
+      <TouchableOpacity
+        onLongPress={handleLongPress}
+        delayLongPress={400}
+        activeOpacity={1}
+        style={{ flexDirection: "row" }}
+      >
         <View style={{ marginTop: 2, marginRight: 10 }}>
           <Avatar name={comment.author.name} initials={comment.author.avatarInitials} />
         </View>
@@ -146,19 +161,13 @@ export function CommentItem({ comment, onReply }) {
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               style={{ marginTop: 6 }}
             >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 12,
-                  color: "#9CA3AF",
-                }}
-              >
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#9CA3AF" }}>
                 Reply
               </Text>
             </TouchableOpacity>
           )}
         </View>
-      </View>
+      </TouchableOpacity>
 
       {/* ── Replies section ───────────────────────────────────────────────────── */}
       {replyCount > 0 && (
@@ -215,9 +224,8 @@ export function CommentItem({ comment, onReply }) {
                   <ReplyRow
                     key={reply.id}
                     reply={reply}
-                    // replying to a reply targets the parent comment,
-                    // but @-mentions the reply's author
                     onReply={() => onReply?.(comment.id, reply.author.name)}
+                    onLongPress={onLongPress}
                   />
                 ))}
               </View>
