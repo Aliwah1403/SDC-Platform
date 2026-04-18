@@ -20,6 +20,8 @@ android/
 *.mobileprovision
 *.orig
 
+
+
 # Environment variables
 .env
 .env.local

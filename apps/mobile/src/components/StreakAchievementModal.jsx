@@ -21,18 +21,18 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 // ── Badge images ─────────────────────────────────────────────────────────────
 
 const BADGE_MAP = {
-  "streak-1":   require("../../assets/images/badges/badge-2.svg"),
-  "streak-3":   require("../../assets/images/badges/badge-3.svg"),
-  "streak-7":   require("../../assets/images/badges/badge-4.svg"),
-  "streak-14":  require("../../assets/images/badges/badge-5.svg"),
-  "streak-30":  require("../../assets/images/badges/badge-6.svg"),
-  "streak-60":  require("../../assets/images/badges/badge-7.svg"),
-  "streak-100": require("../../assets/images/badges/badge-7.svg"),
-  days:         require("../../assets/images/badges/badge-4.svg"),
-  symptoms:     require("../../assets/images/badges/badge-11.svg"),
-  hydration:    require("../../assets/images/badges/badge-8.svg"),
-  care:         require("../../assets/images/badges/badge-9.svg"),
-  learning:     require("../../assets/images/badges/badge-10.svg"),
+  "streak-1":   require("../../assets/images/badges/first-streak.svg"),
+  "streak-3":   require("../../assets/images/badges/on-track.svg"),
+  "streak-7":   require("../../assets/images/badges/habit-builder.png"),
+  "streak-14":  require("../../assets/images/badges/fortnight-fighter.svg"),
+  "streak-30":  require("../../assets/images/badges/monthly-monster.svg"),
+  "streak-60":  require("../../assets/images/badges/dedicated-tracker.svg"),
+  "streak-100": require("../../assets/images/badges/dedicated-tracker.svg"),
+  days:         require("../../assets/images/badges/habit-builder.png"),
+  symptoms:     require("../../assets/images/badges/pattern-seeker.svg"),
+  hydration:    require("../../assets/images/badges/hydration-junkie.png"),
+  care:         require("../../assets/images/badges/self-care.svg"),
+  learning:     require("../../assets/images/badges/knowledge-seeker.svg"),
 };
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
