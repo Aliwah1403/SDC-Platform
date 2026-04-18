@@ -330,6 +330,7 @@ export default function ProfileScreen() {
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
+  const { healthKitConnected: appleHealthConnected } = useAppStore();
 
   // Edit sheet state
   const [editingScd, setEditingScd] = useState(false);
@@ -674,7 +675,10 @@ export default function ProfileScreen() {
         section: "Data & Reports",
         icon: Heart,
         iconColor: "#EF4444",
-        onPress: () => setAppleHealthModalVisible(true),
+        onPress: () =>
+          appleHealthConnected
+            ? router.push("/apple-health-settings")
+            : setAppleHealthModalVisible(true),
       },
       {
         key: "photo",
@@ -1205,10 +1209,14 @@ export default function ProfileScreen() {
             <SettingRow
               icon={Heart}
               iconColor="#EF4444"
-              label="Connect Apple Health"
-              value="Not connected"
+              label="Apple Health"
+              value={appleHealthConnected ? "Connected" : "Not connected"}
               rightElement="chevron"
-              onPress={() => setAppleHealthModalVisible(true)}
+              onPress={() =>
+                appleHealthConnected
+                  ? router.push("/apple-health-settings")
+                  : setAppleHealthModalVisible(true)
+              }
             />
           </SectionCard>
 

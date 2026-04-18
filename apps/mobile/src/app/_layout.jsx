@@ -4,6 +4,8 @@ import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import { useEffect, useRef, useState } from "react";
+import { useAppStore } from "@/store/appStore";
+import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
@@ -34,6 +36,7 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
   const router = useRouter();
+  const { healthKitConnected, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay } = useAppStore();
   const [splashDone, setSplashDone] = useState(false);
   const startTime = useRef(Date.now());
 
@@ -49,12 +52,27 @@ export default function RootLayout() {
     return initiate(); // returns onAuthStateChange unsubscribe
   }, [initiate]);
 
+  // On every launch: check native HealthKit auth status to restore connected state.
+  // This fixes the "shows not connected after reload" bug — the Zustand store is
+  // in-memory only, so we ask iOS directly rather than storing a boolean ourselves.
+  useEffect(() => {
+    checkExistingHKAuthorization().then(async (wasConnected) => {
+      if (!wasConnected) return;
+      setHealthKitConnected(true);
+      const rangeData = await fetchHealthKitRange(30);
+      setHealthKitRange(rangeData);
+      setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics));
+    });
+  }, []);
+
   // Route to crisis-mode screen when user taps a crisis check-in notification
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const { type } = response.notification.request.content.data ?? {};
-      if (type === "crisis_checkin" || type === "crisis_escalation") {
+      const data = response.notification.request.content.data ?? {};
+      if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
+      } else if (data.screen === "metric-detail" && data.metric) {
+        router.push(`/metric-detail?metric=${data.metric}`);
       }
     });
     return () => sub.remove();
@@ -102,6 +120,10 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="metric-detail"
+            options={{ presentation: "card" }}
+          />
+          <Stack.Screen
+            name="apple-health-settings"
             options={{ presentation: "card" }}
           />
           <Stack.Screen

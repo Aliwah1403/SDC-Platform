@@ -226,4 +226,67 @@ export const useAppStore = create((set) => ({
     set((state) => ({
       crisisMode: { ...state.crisisMode, scheduledNotificationIds: ids },
     })),
+
+  // ── Apple Health / HealthKit ────────────────────────────────────────────────
+  // healthKitData: keyed by "YYYY-MM-DD"; merged into healthData for display.
+  // Values silently override steps/heartRate/sleepHours from manual logs.
+  // New fields (spO2, temperature, respiratoryRate) are additive.
+  healthKitConnected: false,
+  healthKitData: {},
+  healthKitAlerts: [],
+  healthKitPreferences: {
+    readSteps: true,
+    readHeartRate: true,
+    readSpO2: true,
+    readTemperature: true,
+    readRespiratoryRate: true,
+    readSleep: true,
+    writeHydration: true,
+    writeSymptoms: true,
+    writeMood: true,
+  },
+
+  healthKitBaselines: null,
+  computedAlertState: null,
+
+  setHealthKitConnected: (val) => set({ healthKitConnected: val }),
+  setHealthKitBaselines: (b) => set({ healthKitBaselines: b }),
+  setComputedAlertState: (s) => set({ computedAlertState: s }),
+
+  setHealthKitPreference: (key, value) =>
+    set((state) => ({
+      healthKitPreferences: { ...state.healthKitPreferences, [key]: value },
+    })),
+
+  mergeHealthKitDay: (date, metrics) =>
+    set((state) => ({
+      healthKitData: {
+        ...state.healthKitData,
+        [date]: { ...(state.healthKitData[date] ?? {}), ...metrics },
+      },
+    })),
+
+  setHealthKitRange: (rangeMap) =>
+    set((state) => {
+      const merged = { ...state.healthKitData };
+      for (const [date, metrics] of Object.entries(rangeMap)) {
+        merged[date] = { ...(merged[date] ?? {}), ...metrics };
+      }
+      return { healthKitData: merged };
+    }),
+
+  addHealthKitAlert: (alert) =>
+    set((state) => ({
+      healthKitAlerts: [
+        ...state.healthKitAlerts.filter((a) => a.id !== alert.id),
+        alert,
+      ],
+    })),
+
+  dismissHealthKitAlert: (id) =>
+    set((state) => ({
+      healthKitAlerts: state.healthKitAlerts.map((a) =>
+        a.id === id ? { ...a, dismissed: true } : a
+      ),
+    })),
 }));
