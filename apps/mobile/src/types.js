@@ -203,44 +203,24 @@ export const mockArticles = [
   },
 ];
 
-// Badge image assets
-const BADGE_IMAGES = {
-  1:  require("../assets/images/badges/badge-1.svg"),
-  2:  require("../assets/images/badges/badge-2.svg"),
-  3:  require("../assets/images/badges/badge-3.svg"),
-  4:  require("../assets/images/badges/badge-4.svg"),
-  5:  require("../assets/images/badges/badge-5.svg"),
-  6:  require("../assets/images/badges/badge-6.svg"),
-  7:  require("../assets/images/badges/badge-7.svg"),
-  8:  require("../assets/images/badges/badge-8.svg"),
-  9:  require("../assets/images/badges/badge-9.svg"),
-  10: require("../assets/images/badges/badge-10.svg"),
-  11: require("../assets/images/badges/badge-11.svg"),
-  12: require("../assets/images/badges/badge-12.svg"),
-  13: require("../assets/images/badges/badge-13.svg"),
-  14: require("../assets/images/badges/badge-14.svg"),
-  15: require("../assets/images/badges/badge-15.svg"),
-  16: require("../assets/images/badges/badge-16.svg"),
-};
-
 // Mock badges — all 16 from design spec
 export const mockBadges = [
-  { id: "onboarding-done", name: "Getting Started",   description: "Completed your Hemo setup",              image: BADGE_IMAGES[1],  category: "milestone",  unlockedAt: new Date("2024-10-10") },
-  { id: "streak-1",        name: "First Streak",      description: "Logged your first day",                  image: BADGE_IMAGES[2],  category: "streak",     unlockedAt: new Date("2024-10-11") },
-  { id: "streak-3",        name: "On Track",          description: "3-day logging streak",                   image: BADGE_IMAGES[3],  category: "streak",     unlockedAt: null },
-  { id: "streak-7",        name: "Habit Builder",     description: "7-day logging streak",                   image: BADGE_IMAGES[4],  category: "streak",     unlockedAt: null },
-  { id: "streak-14",       name: "Fortnight Fighter", description: "14-day logging streak",                  image: BADGE_IMAGES[5],  category: "streak",     unlockedAt: null },
-  { id: "streak-30",       name: "Monthly Monster",   description: "30-day logging streak",                  image: BADGE_IMAGES[6],  category: "streak",     unlockedAt: null },
-  { id: "streak-60",       name: "Dedicated Tracker", description: "60-day logging streak",                  image: BADGE_IMAGES[7],  category: "streak",     unlockedAt: null },
-  { id: "hydration-7",     name: "Hydration Junkie",  description: "Hit your water goal 7 days in a row",   image: BADGE_IMAGES[8],  category: "health",     unlockedAt: null },
-  { id: "care-10",         name: "Self-Care",         description: "Read 10 care articles",                  image: BADGE_IMAGES[9],  category: "learning",   unlockedAt: null },
-  { id: "learning-5",      name: "Knowledge Seeker",  description: "Explored 5 learning articles",           image: BADGE_IMAGES[10], category: "learning",   unlockedAt: null },
-  { id: "symptoms-10",     name: "Pattern Seeker",    description: "Logged symptoms 10 times",               image: BADGE_IMAGES[11], category: "milestone",  unlockedAt: null },
-  { id: "repair-1",        name: "Back on Track",     description: "Used a streak repair",                   image: BADGE_IMAGES[12], category: "streak",     unlockedAt: null },
-  { id: "restart-1",       name: "Resilient Restart", description: "Rebuilt your streak after a break",      image: BADGE_IMAGES[13], category: "streak",     unlockedAt: null },
-  { id: "meds-streak-7",   name: "On-Time Hero",      description: "Logged meds on time 7 days in a row",   image: BADGE_IMAGES[14], category: "medication", unlockedAt: null },
-  { id: "meds-first",      name: "Dose One",          description: "Logged your first medication dose",      image: BADGE_IMAGES[15], category: "medication", unlockedAt: null },
-  { id: "week-perfect",    name: "Perfect Week",      description: "Logged every day for a full week",       image: BADGE_IMAGES[16], category: "milestone",  unlockedAt: null },
+  { id: "onboarding-done", name: "Getting Started",   description: "Completed your Hemo setup",              image: require("../assets/images/badges/getting-started.svg"),   category: "milestone",  unlockedAt: new Date("2024-10-10") },
+  { id: "streak-1",        name: "First Streak",      description: "Logged your first day",                  image: require("../assets/images/badges/first-streak.svg"),       category: "streak",     unlockedAt: new Date("2024-10-11") },
+  { id: "streak-3",        name: "On Track",          description: "3-day logging streak",                   image: require("../assets/images/badges/on-track.svg"),           category: "streak",     unlockedAt: null },
+  { id: "streak-7",        name: "Habit Builder",     description: "7-day logging streak",                   image: require("../assets/images/badges/habit-builder.png"),      category: "streak",     unlockedAt: null },
+  { id: "streak-14",       name: "Fortnight Fighter", description: "14-day logging streak",                  image: require("../assets/images/badges/fortnight-fighter.svg"),  category: "streak",     unlockedAt: null },
+  { id: "streak-30",       name: "Monthly Monster",   description: "30-day logging streak",                  image: require("../assets/images/badges/monthly-monster.svg"),    category: "streak",     unlockedAt: null },
+  { id: "streak-60",       name: "Dedicated Tracker", description: "60-day logging streak",                  image: require("../assets/images/badges/dedicated-tracker.svg"),  category: "streak",     unlockedAt: null },
+  { id: "hydration-7",     name: "Hydration Junkie",  description: "Hit your water goal 7 days in a row",   image: require("../assets/images/badges/hydration-junkie.png"),   category: "health",     unlockedAt: null },
+  { id: "care-10",         name: "Self-Care",         description: "Read 10 care articles",                  image: require("../assets/images/badges/self-care.svg"),          category: "learning",   unlockedAt: null },
+  { id: "learning-5",      name: "Knowledge Seeker",  description: "Explored 5 learning articles",           image: require("../assets/images/badges/knowledge-seeker.svg"),   category: "learning",   unlockedAt: null },
+  { id: "symptoms-10",     name: "Pattern Seeker",    description: "Logged symptoms 10 times",               image: require("../assets/images/badges/pattern-seeker.svg"),     category: "milestone",  unlockedAt: null },
+  { id: "repair-1",        name: "Back on Track",     description: "Used a streak repair",                   image: require("../assets/images/badges/back-on-track.svg"),      category: "streak",     unlockedAt: null },
+  { id: "restart-1",       name: "Resilient Restart", description: "Rebuilt your streak after a break",      image: require("../assets/images/badges/resilient-restart.svg"),  category: "streak",     unlockedAt: null },
+  { id: "meds-streak-7",   name: "On-Time Hero",      description: "Logged meds on time 7 days in a row",   image: require("../assets/images/badges/on-time.svg"),            category: "medication", unlockedAt: null },
+  { id: "meds-first",      name: "Dose One",          description: "Logged your first medication dose",      image: require("../assets/images/badges/dose-one.svg"),           category: "medication", unlockedAt: null },
+  { id: "week-perfect",    name: "Perfect Week",      description: "Logged every day for a full week",       image: require("../assets/images/badges/perfect-week.svg"),       category: "milestone",  unlockedAt: null },
 ];
 
 // Mock challenges

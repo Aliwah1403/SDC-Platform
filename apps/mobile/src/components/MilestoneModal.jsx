@@ -37,15 +37,15 @@ const MILESTONE_ICONS = {
 };
 
 const MILESTONE_BADGE_IMAGES = {
-  days:        require("../../assets/images/badges/badge-4.svg"),
-  streak:      require("../../assets/images/badges/badge-2.svg"),
-  symptoms:    require("../../assets/images/badges/badge-11.svg"),
-  hydration:   require("../../assets/images/badges/badge-8.svg"),
-  care:        require("../../assets/images/badges/badge-9.svg"),
-  learning:    require("../../assets/images/badges/badge-10.svg"),
-  repair:      require("../../assets/images/badges/badge-12.svg"),
-  restart:     require("../../assets/images/badges/badge-13.svg"),
-  medications: require("../../assets/images/badges/badge-14.svg"),
+  days:        require("../../assets/images/badges/getting-started.svg"),
+  streak:      require("../../assets/images/badges/first-streak.svg"),
+  symptoms:    require("../../assets/images/badges/pattern-seeker.svg"),
+  hydration:   require("../../assets/images/badges/hydration-junkie.png"),
+  care:        require("../../assets/images/badges/self-care.svg"),
+  learning:    require("../../assets/images/badges/knowledge-seeker.svg"),
+  repair:      require("../../assets/images/badges/back-on-track.svg"),
+  restart:     require("../../assets/images/badges/resilient-restart.svg"),
+  medications: require("../../assets/images/badges/on-time.svg"),
 };
 
 const MILESTONE_COLORS = {
