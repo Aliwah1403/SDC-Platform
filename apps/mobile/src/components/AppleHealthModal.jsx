@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Image,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -18,6 +19,8 @@ import Animated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Upload, Watch } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { requestHKAuthorization, fetchHealthKitRange, setupBackgroundDelivery } from "@/services/healthKitService";
+import { useAppStore } from "@/store/appStore";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -25,6 +28,8 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const SLIDE_SPRING = { damping: 15, stiffness: 170, mass: 0.95 };
 
 export default function AppleHealthModal({ visible, onClose, onContinue }) {
+  const [connecting, setConnecting] = useState(false);
+  const { setHealthKitConnected, setHealthKitRange, mergeHealthKitDay } = useAppStore();
   const insets = useSafeAreaInsets();
 
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -99,9 +104,26 @@ export default function AppleHealthModal({ visible, onClose, onContinue }) {
           <TouchableOpacity
             style={styles.button}
             activeOpacity={0.82}
-            onPress={onContinue ?? onClose}
+            disabled={connecting}
+            onPress={async () => {
+              setConnecting(true);
+              try {
+                const granted = await requestHKAuthorization();
+                if (granted) {
+                  setHealthKitConnected(true);
+                  const rangeData = await fetchHealthKitRange(30);
+                  setHealthKitRange(rangeData);
+                  await setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics));
+                }
+              } catch {}
+              setConnecting(false);
+              onContinue ? onContinue() : onClose();
+            }}
           >
-            <Text style={styles.buttonText}>Continue</Text>
+            {connecting
+              ? <ActivityIndicator color="#ffffff" />
+              : <Text style={styles.buttonText}>Continue</Text>
+            }
           </TouchableOpacity>
         </Animated.View>
       </View>
