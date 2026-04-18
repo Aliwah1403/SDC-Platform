@@ -9,6 +9,7 @@ import Animated, {
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
+import LostStreakModal from "@/components/LostStreakModal";
 import StreakAchievementModal from "@/components/StreakAchievementModal";
 import { useAppStore } from "@/store/appStore";
 import {
@@ -152,6 +153,9 @@ export default function HomeScreen() {
     hasLoggedData,
     repairVisible,
     setRepairVisible,
+    lostStreakVisible,
+    setLostStreakVisible,
+    streakLost,
   } = useHomeData();
 
   const pendingMilestone = useAppStore((s) => s.pendingMilestone);
@@ -360,6 +364,12 @@ export default function HomeScreen() {
           isVisible={repairVisible}
           onClose={() => setRepairVisible(false)}
         />
+
+      <LostStreakModal
+        visible={lostStreakVisible}
+        lostStreak={streakLost?.lostStreak ?? 0}
+        onClose={() => setLostStreakVisible(false)}
+      />
       </View>
 
       <StreakAchievementModal

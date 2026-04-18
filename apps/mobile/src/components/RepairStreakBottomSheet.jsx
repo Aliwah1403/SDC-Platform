@@ -12,7 +12,8 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
   const missedDay = useMissedDay();
   const { data: streak } = useStreakQuery();
   const repairsAvailable = streak?.repairsAvailable ?? 0;
-  const healthStreak = streak?.currentStreak ?? 0;
+  // previousStreak is the streak count before it broke (currentStreak is already 0 by now)
+  const healthStreak = streak?.previousStreak ?? streak?.currentStreak ?? 0;
   const repairMutation = useStreakRepairMutation();
 
   const [isRepairing, setIsRepairing] = useState(false);
