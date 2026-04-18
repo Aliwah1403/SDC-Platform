@@ -77,6 +77,7 @@ import { signOut, supabase } from "@/utils/auth/supabase";
 import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
+import AppleHealthModal from "@/components/AppleHealthModal";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -328,6 +329,7 @@ export default function ProfileScreen() {
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
 
   // Edit sheet state
   const [editingScd, setEditingScd] = useState(false);
@@ -672,7 +674,7 @@ export default function ProfileScreen() {
         section: "Data & Reports",
         icon: Heart,
         iconColor: "#EF4444",
-        onPress: () => comingSoon("Apple Health"),
+        onPress: () => setAppleHealthModalVisible(true),
       },
       {
         key: "photo",
@@ -1206,7 +1208,7 @@ export default function ProfileScreen() {
               label="Connect Apple Health"
               value="Not connected"
               rightElement="chevron"
-              onPress={() => comingSoon("Apple Health")}
+              onPress={() => setAppleHealthModalVisible(true)}
             />
           </SectionCard>
 
@@ -2210,6 +2212,12 @@ export default function ProfileScreen() {
           ) : null}
         </BottomSheetView>
       </BottomSheet>
+
+      <AppleHealthModal
+        visible={appleHealthModalVisible}
+        onClose={() => setAppleHealthModalVisible(false)}
+        onContinue={() => setAppleHealthModalVisible(false)}
+      />
 
       {shouldPreloadFeedback ? (
         <View
