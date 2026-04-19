@@ -522,7 +522,7 @@ function SummaryStep({ log, onSubmit }) {
 
 export default function LogSymptomsScreen() {
   const router = useRouter();
-  const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected } = useAppStore();
+  const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected, healthKitPreferences } = useAppStore();
   const submitLogMutation = useSubmitLogMutation();
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -591,9 +591,10 @@ export default function LogSymptomsScreen() {
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
         resetSymptomLog();
-        // Mirror to Apple Health if connected — runs fire-and-forget, errors are swallowed
-        if (healthKitConnected) {
-          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel });
+        // Mirror to Apple Health on the first log of the day only — re-logs would
+        // append duplicate DietaryWater and symptom samples to HealthKit.
+        if (healthKitConnected && !hasLoggedToday) {
+          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthKitPreferences });
         }
         router.back();
       },

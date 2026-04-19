@@ -3,11 +3,25 @@ import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Heart, MessageCircle, Bell, ShieldAlert } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Heart,
+  MessageCircle,
+  Bell,
+  ShieldAlert,
+  Pill,
+  Flame,
+  Calendar,
+  AlertTriangle,
+} from "lucide-react-native";
 import {
   useCommunityNotificationsQuery,
   useMarkAllReadMutation,
 } from "@/hooks/queries/useCommunityNotificationsQuery";
+import {
+  useSystemNotificationsQuery,
+  useMarkAllSystemReadMutation,
+} from "@/hooks/queries/useSystemNotificationsQuery";
 import { fonts } from "@/utils/fonts";
 
 function timeAgo(date) {
@@ -19,14 +33,24 @@ function timeAgo(date) {
 }
 
 const ICON_CONFIG = {
+  // Community types
   like: { Component: Heart, color: "#A9334D", fill: true },
   comment: { Component: MessageCircle, color: "#3B82F6", fill: false },
   category_post: { Component: Bell, color: "#09332C", fill: false },
   system_poll: { Component: Bell, color: "#A9334D", fill: false },
   post_actioned: { Component: ShieldAlert, color: "#781D11", fill: false },
+  // System types
+  checkin: { Component: Bell, color: "#09332C", fill: false },
+  medication: { Component: Pill, color: "#A9334D", fill: false },
+  streak: { Component: Flame, color: "#F0531C", fill: false },
+  appointment: { Component: Calendar, color: "#09332C", fill: false },
+  health_alert: { Component: AlertTriangle, color: "#DC2626", fill: false },
 };
 
 function buildText(n) {
+  // System notifications have explicit title + body
+  if (n._source === "system") return { bold: n.title, rest: n.body ? `\n${n.body}` : "" };
+
   if (n.type === "like") return { bold: n.actorName, rest: " liked your post" };
   if (n.type === "comment") return { bold: n.actorName, rest: " commented on your post" };
   if (n.type === "category_post") return { bold: n.categoryName, rest: " posted in this community" };
@@ -47,12 +71,11 @@ function NotificationRow({ item }) {
         padding: 16,
         backgroundColor: item.read ? "#FFFFFF" : "#FDF8F7",
         borderLeftWidth: item.read ? 0 : 3,
-        borderLeftColor: "#A9334D",
+        borderLeftColor: item._source === "system" ? "#F0531C" : "#A9334D",
         borderBottomWidth: 1,
         borderBottomColor: "#F5F0EE",
       }}
     >
-      {/* Icon circle */}
       <View
         style={{
           width: 36,
@@ -73,7 +96,6 @@ function NotificationRow({ item }) {
         />
       </View>
 
-      {/* Text */}
       <View style={{ flex: 1 }}>
         <Text
           style={{
@@ -84,10 +106,24 @@ function NotificationRow({ item }) {
           }}
         >
           <Text style={{ fontFamily: fonts.semibold }}>{bold}</Text>
-          {rest}
+          {rest && item._source !== "system" ? rest : null}
         </Text>
 
-        {item.postSnippet && (
+        {item._source === "system" && rest ? (
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#3D3D3D",
+              marginTop: 2,
+              lineHeight: 18,
+            }}
+          >
+            {item.body}
+          </Text>
+        ) : null}
+
+        {item._source === "community" && item.postSnippet ? (
           <Text
             numberOfLines={1}
             style={{
@@ -99,7 +135,7 @@ function NotificationRow({ item }) {
           >
             "{item.postSnippet}"
           </Text>
-        )}
+        ) : null}
 
         <Text
           style={{
@@ -109,7 +145,7 @@ function NotificationRow({ item }) {
             marginTop: 4,
           }}
         >
-          {timeAgo(item.timestamp)}
+          {timeAgo(item.createdAt ?? item.timestamp)}
         </Text>
       </View>
     </View>
@@ -119,10 +155,34 @@ function NotificationRow({ item }) {
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data: notifications = [], isLoading } = useCommunityNotificationsQuery();
-  const { mutate: markAllRead } = useMarkAllReadMutation();
 
-  const notificationCount = notifications.filter((n) => !n.read).length;
+  const { data: communityNotifs = [], isLoading: communityLoading } =
+    useCommunityNotificationsQuery();
+  const { data: systemNotifs = [], isLoading: systemLoading } =
+    useSystemNotificationsQuery();
+  const { mutate: markCommunityRead } = useMarkAllReadMutation();
+  const { mutate: markSystemRead } = useMarkAllSystemReadMutation();
+
+  const isLoading = communityLoading || systemLoading;
+
+  // Merge, tag source, sort newest-first
+  const allNotifications = useMemo(() => {
+    const tagged = [
+      ...communityNotifs.map((n) => ({ ...n, _source: "community" })),
+      ...systemNotifs.map((n) => ({ ...n, _source: "system" })),
+    ];
+    return tagged.sort(
+      (a, b) =>
+        new Date(b.createdAt ?? b.timestamp) - new Date(a.createdAt ?? a.timestamp),
+    );
+  }, [communityNotifs, systemNotifs]);
+
+  const unreadCount = allNotifications.filter((n) => !n.read).length;
+
+  function handleMarkAllRead() {
+    markCommunityRead();
+    markSystemRead();
+  }
 
   // Group by Today / Yesterday / Earlier
   const sections = useMemo(() => {
@@ -131,7 +191,7 @@ export default function NotificationsScreen() {
     yesterday.setDate(yesterday.getDate() - 1);
 
     const groups = { Today: [], Yesterday: [], Earlier: [] };
-    notifications.forEach((n) => {
+    allNotifications.forEach((n) => {
       const d = new Date(n.createdAt ?? n.timestamp);
       if (d.toDateString() === today.toDateString()) groups.Today.push(n);
       else if (d.toDateString() === yesterday.toDateString()) groups.Yesterday.push(n);
@@ -145,13 +205,12 @@ export default function NotificationsScreen() {
       rows.forEach((r) => items.push(r));
     }
     return items;
-  }, [notifications]);
+  }, [allNotifications]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
       <StatusBar style="dark" />
 
-      {/* Header */}
       <View
         style={{
           paddingTop: insets.top + 8,
@@ -191,9 +250,9 @@ export default function NotificationsScreen() {
           Notifications
         </Text>
 
-        {notificationCount > 0 ? (
+        {unreadCount > 0 ? (
           <TouchableOpacity
-            onPress={() => markAllRead()}
+            onPress={handleMarkAllRead}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
@@ -212,10 +271,7 @@ export default function NotificationsScreen() {
       </View>
 
       {isLoading && (
-        <ActivityIndicator
-          style={{ marginTop: 40 }}
-          color="#A9334D"
-        />
+        <ActivityIndicator style={{ marginTop: 40 }} color="#A9334D" />
       )}
       <FlatList
         data={isLoading ? [] : sections}
@@ -245,9 +301,7 @@ export default function NotificationsScreen() {
           return <NotificationRow item={item} />;
         }}
         ListEmptyComponent={
-          <View
-            style={{ alignItems: "center", paddingTop: 80, paddingHorizontal: 32 }}
-          >
+          <View style={{ alignItems: "center", paddingTop: 80, paddingHorizontal: 32 }}>
             <Text
               style={{
                 fontFamily: fonts.semibold,
@@ -266,7 +320,7 @@ export default function NotificationsScreen() {
                 textAlign: "center",
               }}
             >
-              Activity from your posts and followed communities will appear here.
+              Health reminders and community activity will appear here.
             </Text>
           </View>
         }

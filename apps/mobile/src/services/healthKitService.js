@@ -6,6 +6,7 @@ import {
   getRequestStatusForAuthorization,
   queryStatisticsCollectionForQuantity,
   queryCategorySamples,
+  queryWorkoutSamples,
   saveQuantitySample,
   saveCategorySample,
   enableBackgroundDelivery,
@@ -44,10 +45,12 @@ const CT = {
   CHEST_TIGHTNESS: "HKCategoryTypeIdentifierChestTightnessOrPain",
 };
 
+const WORKOUT_TYPE = "HKWorkoutTypeIdentifier";
+
 const READ_TYPES = [
   QT.STEPS, QT.RESTING_HR, QT.HEART_RATE,
   QT.SPO2, QT.TEMPERATURE, QT.RESP_RATE,
-  CT.SLEEP,
+  CT.SLEEP, WORKOUT_TYPE,
 ];
 
 const WRITE_TYPES = [
@@ -142,8 +145,11 @@ export async function requestHKAuthorization() {
 
 // Fetch all HealthKit metrics for the last `daysBack` days.
 // Returns { "YYYY-MM-DD": { steps, heartRate, sleepHours, spO2, temperature, respiratoryRate } }
-export async function fetchHealthKitRange(daysBack = 30) {
+export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
   if (!isHKAvailable()) return {};
+
+  const p = { readSteps: true, readHeartRate: true, readSpO2: true,
+               readTemperature: true, readRespiratoryRate: true, readSleep: true, ...prefs };
 
   const today = new Date();
   const from = startOfDay(new Date(today.getTime() - daysBack * 86400000));
@@ -156,120 +162,223 @@ export async function fetchHealthKitRange(daysBack = 30) {
     result[key] = { ...(result[key] ?? {}), ...data };
   };
 
-  // Steps (sum per day)
-  try {
-    const col = await queryStatisticsCollectionForQuantity(
-      QT.STEPS, ["cumulativeSum"], anchorDate, interval, { from, to, unit: "count" }
-    );
-    for (const item of col) {
-      if (item.sumQuantity?.quantity != null && item.startDate) {
-        merge(dateStr(item.startDate), { steps: Math.round(item.sumQuantity.quantity) });
+  if (p.readSteps) {
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.STEPS, ["cumulativeSum"], anchorDate, interval, { from, to, unit: "count" }
+      );
+      for (const item of col) {
+        if (item.sumQuantity?.quantity != null && item.startDate)
+          merge(dateStr(item.startDate), { steps: Math.round(item.sumQuantity.quantity) });
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // Resting Heart Rate (avg per day, bpm)
-  try {
-    const col = await queryStatisticsCollectionForQuantity(
-      QT.RESTING_HR, ["discreteAverage"], anchorDate, interval, { from, to, unit: "count/min" }
-    );
-    for (const item of col) {
-      if (item.averageQuantity?.quantity != null && item.startDate) {
-        merge(dateStr(item.startDate), { heartRate: Math.round(item.averageQuantity.quantity) });
+  if (p.readHeartRate) {
+    // Prefer RestingHeartRate (Watch-computed, most clinically relevant for SCD).
+    // Fall back to daily average HeartRate for any dates where resting HR is missing
+    // — covers iPhone-only users and days before Apple Watch computes the nightly value.
+    const datesWithRestingHR = new Set();
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.RESTING_HR, ["discreteAverage"], anchorDate, interval, { from, to, unit: "count/min" }
+      );
+      for (const item of col) {
+        if (item.averageQuantity?.quantity != null && item.startDate) {
+          const key = dateStr(item.startDate);
+          merge(key, { heartRate: Math.round(item.averageQuantity.quantity) });
+          datesWithRestingHR.add(key);
+        }
       }
-    }
-  } catch {}
-
-  // SpO2 (avg per day, %)
-  try {
-    const col = await queryStatisticsCollectionForQuantity(
-      QT.SPO2, ["discreteAverage"], anchorDate, interval, { from, to, unit: "%" }
-    );
-    for (const item of col) {
-      const raw = item.averageQuantity?.quantity;
-      if (raw != null && item.startDate) {
-        merge(dateStr(item.startDate), { spO2: normaliseSpO2(raw) });
+    } catch {}
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.HEART_RATE, ["discreteAverage"], anchorDate, interval, { from, to, unit: "count/min" }
+      );
+      for (const item of col) {
+        if (item.averageQuantity?.quantity != null && item.startDate) {
+          const key = dateStr(item.startDate);
+          if (!datesWithRestingHR.has(key))
+            merge(key, { heartRate: Math.round(item.averageQuantity.quantity) });
+        }
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // Body Temperature (avg per day, °C)
-  try {
-    const col = await queryStatisticsCollectionForQuantity(
-      QT.TEMPERATURE, ["discreteAverage"], anchorDate, interval, { from, to, unit: "degC" }
-    );
-    for (const item of col) {
-      if (item.averageQuantity?.quantity != null && item.startDate) {
-        merge(dateStr(item.startDate), { temperature: Math.round(item.averageQuantity.quantity * 10) / 10 });
+  if (p.readSpO2) {
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.SPO2, ["discreteAverage"], anchorDate, interval, { from, to, unit: "%" }
+      );
+      for (const item of col) {
+        const raw = item.averageQuantity?.quantity;
+        if (raw != null && item.startDate)
+          merge(dateStr(item.startDate), { spO2: normaliseSpO2(raw) });
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // Respiratory Rate (avg per day, breaths/min)
-  try {
-    const col = await queryStatisticsCollectionForQuantity(
-      QT.RESP_RATE, ["discreteAverage"], anchorDate, interval, { from, to, unit: "count/min" }
-    );
-    for (const item of col) {
-      if (item.averageQuantity?.quantity != null && item.startDate) {
-        merge(dateStr(item.startDate), { respiratoryRate: Math.round(item.averageQuantity.quantity * 10) / 10 });
+  if (p.readTemperature) {
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.TEMPERATURE, ["discreteAverage"], anchorDate, interval, { from, to, unit: "degC" }
+      );
+      for (const item of col) {
+        if (item.averageQuantity?.quantity != null && item.startDate)
+          merge(dateStr(item.startDate), { temperature: Math.round(item.averageQuantity.quantity * 10) / 10 });
       }
-    }
-  } catch {}
+    } catch {}
+  }
 
-  // Sleep (sum of asleep intervals per day)
-  try {
-    const samples = await queryCategorySamples(CT.SLEEP, { from, to, ascending: true });
-    const sleepByDate = {};
-    for (const s of samples) {
-      if (!ASLEEP_VALUES.has(s.value)) continue;
-      const key = dateStr(s.startDate);
-      const hours = (new Date(s.endDate) - new Date(s.startDate)) / 3600000;
-      sleepByDate[key] = (sleepByDate[key] ?? 0) + hours;
-    }
-    for (const [key, hours] of Object.entries(sleepByDate)) {
-      merge(key, { sleepHours: Math.round(hours * 10) / 10 });
-    }
-  } catch {}
+  if (p.readRespiratoryRate) {
+    try {
+      const col = await queryStatisticsCollectionForQuantity(
+        QT.RESP_RATE, ["discreteAverage"], anchorDate, interval, { from, to, unit: "count/min" }
+      );
+      for (const item of col) {
+        if (item.averageQuantity?.quantity != null && item.startDate)
+          merge(dateStr(item.startDate), { respiratoryRate: Math.round(item.averageQuantity.quantity * 10) / 10 });
+      }
+    } catch {}
+  }
+
+  if (p.readSleep) {
+    try {
+      // Extend the lower bound by 1 day so overnight sessions that start just
+      // before the range window (e.g. sleep beginning 11 PM on day -31) are included.
+      const sleepFrom = new Date(from.getTime() - 86400000);
+      const samples = await queryCategorySamples(CT.SLEEP, {
+        filter: { date: { startDate: sleepFrom, endDate: to } },
+        limit: -1,
+        ascending: true,
+      });
+      const sleepByDate = {};
+      for (const s of samples) {
+        if (!ASLEEP_VALUES.has(s.value)) continue;
+        // Attribute sleep to the wake-up date (endDate) — matches Apple Health's
+        // convention. A session starting 11 PM Tue / ending 7 AM Wed belongs to Wed.
+        const key = dateStr(s.endDate);
+        const hours = (new Date(s.endDate) - new Date(s.startDate)) / 3600000;
+        sleepByDate[key] = (sleepByDate[key] ?? 0) + hours;
+      }
+      for (const [key, hours] of Object.entries(sleepByDate)) {
+        merge(key, { sleepHours: Math.round(hours * 10) / 10 });
+      }
+    } catch {}
+  }
 
   return result;
 }
 
 // Write a completed symptom log entry back to Apple Health.
 // Called after a successful Supabase save so HealthKit always mirrors real data.
-export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLevel = 0 }) {
+export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLevel = 0, prefs = {} }) {
   if (!isHKAvailable()) return;
+
+  const p = { writeHydration: true, writeSymptoms: true, writeMood: true, ...prefs };
 
   const now = new Date();
   const start = new Date(now.getTime() - 60000); // 1 min duration
 
-  // Hydration: 1 glass = 237 mL
-  if (hydration > 0) {
+  if (p.writeHydration && hydration > 0) {
     try {
       await saveQuantitySample(QT.WATER, "mL", hydration * 237, start, now);
     } catch {}
   }
 
-  // Symptoms: map pain level to HealthKit severity
-  const severity =
-    painLevel <= 3 ? CategoryValueSeverity.mild
-    : painLevel <= 6 ? CategoryValueSeverity.moderate
-    : CategoryValueSeverity.severe;
+  if (p.writeSymptoms && symptoms.length > 0) {
+    const severity =
+      painLevel <= 3 ? CategoryValueSeverity.mild
+      : painLevel <= 6 ? CategoryValueSeverity.moderate
+      : CategoryValueSeverity.severe;
 
-  for (const symptom of symptoms) {
-    const identifier = SYMPTOM_TO_HK[symptom];
-    if (identifier) {
-      try {
-        await saveCategorySample(identifier, severity, start, now);
-      } catch {}
+    for (const symptom of symptoms) {
+      const identifier = SYMPTOM_TO_HK[symptom];
+      if (identifier) {
+        try {
+          await saveCategorySample(identifier, severity, start, now);
+        } catch {}
+      }
     }
   }
 
-  // Mood: record as a mindful session (1 min) — closest HealthKit type for wellbeing
-  if (mood) {
+  if (p.writeMood && mood) {
     try {
       await saveCategorySample(CT.MINDFUL, CategoryValue.notApplicable, start, now);
     } catch {}
+  }
+}
+
+// ─── Workout fetch ────────────────────────────────────────────────────────────
+// Returns real workout sessions for a given date, normalised for the UI.
+// Each item: { id, activityType, label, startDate, endDate, timeLabel,
+//             durationMins, calories, distanceKm }
+
+// Maps the most common WorkoutActivityType values to human-readable labels.
+// Unmapped types fall back to "Workout".
+const WORKOUT_LABELS = {
+  13: "Cycling",
+  14: "Dance",
+  16: "Elliptical",
+  20: "Strength Training",
+  24: "Hiking",
+  29: "Mind & Body",
+  30: "Cardio Training",
+  33: "Recovery",
+  37: "Running",
+  39: "Skating",
+  44: "Stair Climbing",
+  46: "Swimming",
+  50: "Strength Training",
+  52: "Walking",
+  57: "Yoga",
+  58: "Barre",
+  59: "Core Training",
+};
+
+function fmtWorkoutTime(date) {
+  const d = new Date(date);
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, "0");
+  const hh = h % 12 || 12;
+  return `${hh}:${m} ${h < 12 ? "AM" : "PM"}`;
+}
+
+export async function fetchWorkoutsForDate(date) {
+  if (!isHKAvailable()) return [];
+  try {
+    const samples = await queryWorkoutSamples({
+      filter: { date: { startDate: startOfDay(date), endDate: endOfDay(date) } },
+      limit: 20,
+      ascending: true,
+    });
+
+    return samples.map((w) => {
+      const activityType = w.workoutActivityType;
+      const label = WORKOUT_LABELS[activityType] ?? "Workout";
+      const durationMins = Math.round((w.duration?.quantity ?? 0) / 60);
+      const calories = w.totalEnergyBurned?.quantity
+        ? Math.round(w.totalEnergyBurned.quantity)
+        : null;
+      // totalDistance is in meters from HealthKit
+      const distanceKm = w.totalDistance?.quantity
+        ? Math.round(w.totalDistance.quantity / 100) / 10
+        : null;
+
+      return {
+        id: w.uuid,
+        activityType,
+        label,
+        startDate: w.startDate,
+        endDate: w.endDate,
+        timeLabel: `${fmtWorkoutTime(w.startDate)} – ${fmtWorkoutTime(w.endDate)}`,
+        durationMins,
+        calories,
+        distanceKm,
+      };
+    });
+  } catch {
+    return [];
   }
 }
 
@@ -439,10 +548,16 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
 // `onNewData(dateKey, metrics)` — caller should call store.mergeHealthKitDay
 // Critical alerts fire push notifications immediately.
 
-export async function setupBackgroundDelivery(onNewData) {
+export async function setupBackgroundDelivery(onNewData, prefs = {}) {
   if (!isHKAvailable()) return;
 
-  const watchTypes = [QT.SPO2, QT.TEMPERATURE, QT.RESTING_HR];
+  const p = { readSpO2: true, readTemperature: true, readHeartRate: true, ...prefs };
+
+  const watchTypes = [
+    p.readSpO2        && QT.SPO2,
+    p.readTemperature && QT.TEMPERATURE,
+    p.readHeartRate   && QT.RESTING_HR,
+  ].filter(Boolean);
 
   for (const type of watchTypes) {
     try {

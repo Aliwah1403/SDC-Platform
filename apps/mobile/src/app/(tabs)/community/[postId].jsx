@@ -193,7 +193,7 @@ export default function PostDetailScreen() {
     return <PostDetailSkeleton insets={insets} />;
   }
 
-  if (isError || !post) {
+  if (isError || (!isLoading && !post)) {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
         <StatusBar style="dark" />

@@ -1160,6 +1160,26 @@ export async function markAllCommunityNotificationsRead(userId) {
   if (error) throw error;
 }
 
+export async function fetchSystemNotifications(userId) {
+  const { data, error } = await supabase
+    .from('system_notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []).map(toCamelCase);
+}
+
+export async function markAllSystemNotificationsRead(userId) {
+  const { error } = await supabase
+    .from('system_notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .eq('read', false);
+  if (error) throw error;
+}
+
 // ── Normalisation helpers ─────────────────────────────────────────────────
 
 function normaliseCommunityPost(row, currentUserId) {

@@ -37,7 +37,10 @@ export function useDeletePostMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (postId) => deleteCommunityPost(postId, userId),
+    mutationFn: (postId) => {
+      if (!userId) return Promise.reject(new Error("Not authenticated"));
+      return deleteCommunityPost(postId, userId);
+    },
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['community_feed', userId] });
       // Optimistically remove from all cached feed variants
