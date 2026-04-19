@@ -36,7 +36,7 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
   const router = useRouter();
-  const { healthKitConnected, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay } = useAppStore();
+  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay } = useAppStore();
   const [splashDone, setSplashDone] = useState(false);
   const startTime = useRef(Date.now());
 
@@ -59,9 +59,9 @@ export default function RootLayout() {
     checkExistingHKAuthorization().then(async (wasConnected) => {
       if (!wasConnected) return;
       setHealthKitConnected(true);
-      const rangeData = await fetchHealthKitRange(30);
+      const rangeData = await fetchHealthKitRange(30, healthKitPreferences);
       setHealthKitRange(rangeData);
-      setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics));
+      setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics), healthKitPreferences);
     });
   }, []);
 

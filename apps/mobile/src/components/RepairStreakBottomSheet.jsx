@@ -55,7 +55,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         onError: () => setIsRepairing(false),
       });
     });
-  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity]);
+  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity, healthStreak]);
 
   const handleClose = useCallback(() => {
     setIsRepairing(false);
