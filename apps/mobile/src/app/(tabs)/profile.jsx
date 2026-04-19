@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import * as Notifications from "expo-notifications";
 import {
   View,
   Text,
@@ -15,6 +16,7 @@ import {
   Image,
   Platform,
   StyleSheet,
+  Linking,
 } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import Animated, {
@@ -393,7 +395,28 @@ export default function ProfileScreen() {
   const initials = getInitials(profile?.nickname || fullName);
   const healthStreak = streak?.currentStreak ?? 0;
 
-  const handleToggleNotifications = (val) => {
+  const handleToggleNotifications = async (val) => {
+    if (val) {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === "denied") {
+        // iOS won't re-prompt after denial — send user to Settings
+        Alert.alert(
+          "Enable Notifications",
+          "Notifications are blocked. Open Settings to turn them on for Hemo.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      if (status !== "granted") {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync({
+          ios: { allowAlert: true, allowBadge: true, allowSound: true },
+        });
+        if (newStatus !== "granted") return;
+      }
+    }
     setNotificationsEnabled(val);
     updateProfile.mutate({ notificationsEnabled: val });
   };

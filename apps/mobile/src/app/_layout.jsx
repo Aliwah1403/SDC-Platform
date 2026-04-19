@@ -1,10 +1,13 @@
 import { useAuth } from "@/utils/auth/useAuth";
+import { useAuthStore } from "@/utils/auth/store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
+import { registerPushToken } from "@/services/novuService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
@@ -19,6 +22,15 @@ import {
 import SplashAnimation from "@/components/SplashAnimation";
 
 SplashScreen.preventAutoHideAsync();
+
+// Required for notifications to display when the app is in the foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 const MIN_SPLASH_MS = 2000;
 
@@ -36,7 +48,8 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
   const router = useRouter();
-  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay } = useAppStore();
+  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken } = useAppStore();
+  const userId = useAuthStore((s) => s.auth?.user?.id);
   const [splashDone, setSplashDone] = useState(false);
   const startTime = useRef(Date.now());
 
@@ -65,12 +78,31 @@ export default function RootLayout() {
     });
   }, []);
 
-  // Route to crisis-mode screen when user taps a crisis check-in notification
+  // Register Expo push token with Novu whenever the user is authenticated
+  useEffect(() => {
+    if (!userId) return;
+    Notifications.getExpoPushTokenAsync({ projectId: "97edca88-53f4-4fd5-89ae-800ddc9d7381" })
+      .then(({ data: token }) => {
+        setExpoPushToken(token);
+        registerPushToken(token, Platform.OS);
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  // Route to the correct screen when user taps a remote or local notification
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
       if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
+      } else if (data.type === "checkin") {
+        router.push("/log-symptoms");
+      } else if (data.type === "medication") {
+        router.push("/(tabs)/care/medications");
+      } else if (data.type === "streak") {
+        router.push("/(tabs)/home");
+      } else if (data.type === "appointment") {
+        router.push("/(tabs)/care/appointments");
       } else if (data.screen === "metric-detail" && data.metric) {
         router.push(`/metric-detail?metric=${data.metric}`);
       }

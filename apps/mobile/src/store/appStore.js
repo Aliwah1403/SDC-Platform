@@ -289,4 +289,8 @@ export const useAppStore = create((set) => ({
         a.id === id ? { ...a, dismissed: true } : a
       ),
     })),
+
+  // ── Push notifications ─────────────────────────────────────────────────────
+  expoPushToken: null,
+  setExpoPushToken: (token) => set({ expoPushToken: token }),
 }));
