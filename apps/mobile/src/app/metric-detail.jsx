@@ -22,10 +22,15 @@ import {
   Activity,
   Moon,
   Heart,
+  Thermometer,
+  Waves,
+  Wind,
+  AlertTriangle,
 } from "lucide-react-native";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
+import { useAppStore } from "@/store/appStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // scrollview pad 20*2 + card pad 20*2 + yAxisLabelWidth 24 - marginLeft offset 8 = 96
@@ -118,14 +123,59 @@ const METRIC_META = {
     color: "#EF4444",
     max: 120,
     rangeMin: 40,
-    rangeMax: 120,
+    rangeMax: 130,
     chartType: "line",
     dataField: "heartRate",
     hasGoal: false,
     lowerIsBetter: false,
     aboutTitle: "How hard your heart is working each day",
-    about: "Heart rate data from Apple Health reflects your cardiovascular activity throughout the day. People with SCD often have a higher resting heart rate due to anaemia — the heart works harder to compensate for reduced oxygen-carrying capacity. Sudden spikes may correlate with pain episodes or illness.",
+    about: "Heart rate from Apple Health reflects your cardiovascular activity. People with SCD typically have a higher resting heart rate (80–100 bpm) due to chronic anaemia — the heart works harder to compensate for reduced oxygen-carrying capacity. Readings above 110 bpm warrant rest; above 120 bpm contact your care team.",
     unit: "bpm",
+  },
+  spo2: {
+    label: "Blood Oxygen",
+    icon: Waves,
+    color: "#0EA5E9",
+    max: 100,
+    rangeMin: 88,
+    rangeMax: 100,
+    chartType: "line",
+    dataField: "spO2",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Oxygen saturation — the most critical SCD metric",
+    about: "Blood oxygen (SpO2) measures the percentage of haemoglobin carrying oxygen. For SCD patients (HbSS), a normal baseline is 94–98% — lower than the 95–100% seen in healthy individuals. A reading below 92% is a red flag for Acute Chest Syndrome, one of the most serious SCD complications. Requires Apple Watch Series 6 or later.",
+    unit: "%",
+  },
+  temperature: {
+    label: "Temperature",
+    icon: Thermometer,
+    color: "#F59E0B",
+    max: 42,
+    rangeMin: 35,
+    rangeMax: 42,
+    chartType: "line",
+    dataField: "temperature",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Fever is a medical emergency for SCD patients",
+    about: "SCD patients have functional asplenia — the spleen cannot fight infections effectively. A fever of 38°C or above requires immediate medical evaluation because sepsis can develop rapidly. Even a mild fever should never be managed at home without care team guidance.",
+    unit: "°C",
+  },
+  resprate: {
+    label: "Resp. Rate",
+    icon: Wind,
+    color: "#8B5CF6",
+    max: 30,
+    rangeMin: 8,
+    rangeMax: 30,
+    chartType: "line",
+    dataField: "respiratoryRate",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Breathing rate as an early warning sign",
+    about: "Normal respiratory rate is 12–20 breaths per minute. An elevated rate (above 20/min) can be an early indicator of Acute Chest Syndrome (ACS) — a life-threatening complication of SCD that begins with chest pain, fever, and difficulty breathing. ACS requires emergency care. Requires Apple Watch.",
+    unit: "/min",
   },
 };
 
@@ -176,12 +226,88 @@ function getStatus(metricKey, value) {
       if (value >= 6) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
     case "heartrate":
-      if (value >= 60 && value <= 100) return { label: "Normal", color: "#059669" };
-      if (value > 100) return { label: "Elevated", color: "#DC2626" };
+      // SCD resting HR baseline 80–100 bpm due to chronic anaemia
+      if (value >= 60 && value <= 110) return { label: "Normal", color: "#059669" };
+      if (value > 110) return { label: "Elevated", color: "#DC2626" };
+      return { label: "Low", color: "#F59E0B" };
+    case "spo2":
+      if (value >= 94) return { label: "Normal", color: "#059669" };
+      if (value >= 92) return { label: "Warning", color: "#F59E0B" };
+      return { label: "Critical", color: "#DC2626" };
+    case "temperature":
+      if (value >= 36.5 && value < 38.0) return { label: "Normal", color: "#059669" };
+      if (value >= 38.0) return { label: "Fever ⚠", color: "#DC2626" };
+      return { label: "Low", color: "#F59E0B" };
+    case "resprate":
+      if (value >= 12 && value <= 20) return { label: "Normal", color: "#059669" };
+      if (value > 20 && value <= 25) return { label: "Elevated", color: "#F59E0B" };
+      if (value > 25) return { label: "Critical", color: "#DC2626" };
       return { label: "Low", color: "#F59E0B" };
     default:
       return null;
   }
+}
+
+// ─── SCD Alert Banner ─────────────────────────────────────────────────────────
+// Shown at the top of a metric detail screen when the reading crosses an
+// SCD-specific threshold. Uses safe, non-diagnostic language per the spec.
+// Also surfaces whether this metric contributed to the composite alert state.
+
+function ScdAlertBanner({ metric, value, status, compositeAlert }) {
+  if (!value || !status) return null;
+  const isNormal = ["Normal", "Good", "Great"].includes(status.label);
+  if (isNormal) return null;
+
+  const isCritical = ["Critical", "Fever ⚠"].includes(status.label);
+
+  // Safe language per spec — never "diagnosis", "abnormal", "crisis"
+  let message = null;
+  if (metric === "spo2" && value < 94) {
+    message = value < 92
+      ? "Your blood oxygen has shifted outside a safe range. This is worth contacting your care team about right away."
+      : "Your blood oxygen is different from the usual SCD range. This may be worth watching — check in on how you're feeling.";
+  } else if (metric === "temperature" && value >= 38.0) {
+    message = "A temperature at this level is important for SCD. Combined with your condition, this warrants prompt medical evaluation.";
+  } else if (metric === "heartrate" && value > 110) {
+    message = value > 120
+      ? "Your heart rate has moved significantly from your usual pattern. Rest and contact your care team."
+      : "Your heart rate is higher than your usual range. This may be worth watching alongside your other readings.";
+  } else if (metric === "resprate" && value > 20) {
+    message = value > 25
+      ? "Your breathing rate has shifted significantly. Combined with SCD, this pattern can be important — seek care if you feel unwell."
+      : "Your respiratory rate is above your usual range. Monitor for any chest discomfort or breathing changes.";
+  }
+
+  if (!message) return null;
+
+  // If this metric is part of a broader composite alert, note that context
+  const compositeNote = compositeAlert?.triggers?.find((t) => t.type === metric)
+    ? "This reading is part of a wider pattern Hemo has flagged today."
+    : null;
+
+  return (
+    <View style={{
+      backgroundColor: isCritical ? "#FEF2F2" : "#FFFBEB",
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: isCritical ? "#FECACA" : "#FDE68A",
+      gap: 6,
+    }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+        <AlertTriangle size={16} color={isCritical ? "#DC2626" : "#D97706"} style={{ marginTop: 1 }} />
+        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: isCritical ? "#991B1B" : "#92400E", flex: 1, lineHeight: 19 }}>
+          {message}
+        </Text>
+      </View>
+      {compositeNote && (
+        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: isCritical ? "#B91C1C" : "#B45309", paddingLeft: 26, lineHeight: 17 }}>
+          {compositeNote}
+        </Text>
+      )}
+    </View>
+  );
 }
 
 // ─── Dot Range Indicator ─────────────────────────────────────────────────────
@@ -532,14 +658,25 @@ export default function MetricDetailScreen() {
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
 
+  const { healthKitData, computedAlertState } = useAppStore();
+
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
   const [range, setRange] = useState(30);
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
+  // Merge HealthKit data into healthData before computing chart data
+  const mergedHealthData = useMemo(() => {
+    if (!healthKitData || Object.keys(healthKitData).length === 0) return healthData;
+    return healthData.map((entry) => {
+      const hkDay = healthKitData[entry.date];
+      return hkDay ? { ...entry, ...hkDay } : entry;
+    });
+  }, [healthData, healthKitData]);
+
   const data = useMemo(
-    () => getLastNDays(healthData, meta.dataField, range),
-    [healthData, meta.dataField, range]
+    () => getLastNDays(mergedHealthData, meta.dataField, range),
+    [mergedHealthData, meta.dataField, range]
   );
 
   const latestEntry = [...data].reverse().find((d) => d.value > 0);
@@ -622,6 +759,9 @@ export default function MetricDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
       >
+        {/* ── SCD Alert Banner (shown when value crosses clinical threshold) ── */}
+        <ScdAlertBanner metric={metric} value={currentValue} status={status} compositeAlert={computedAlertState} />
+
         {/* ── Value Section ──────────────────────────────── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}

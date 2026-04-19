@@ -796,6 +796,7 @@ export async function deleteEmergencyContact(userId, id) {
 export async function fetchCommunityFeed({
   userId,
   filter = 'popular',
+  categoryId = null,
   followedCategoryIds = [],
   blockedCategoryIds = [],
   limit = 30,
@@ -847,6 +848,10 @@ export async function fetchCommunityFeed({
     const savedIds = saves.map((s) => s.post_id);
     if (savedIds.length === 0) return [];
     query = query.in('id', savedIds).order('created_at', { ascending: false });
+  } else if (filter === 'category') {
+    query = query
+      .eq('category', categoryId)
+      .order('created_at', { ascending: false });
   }
 
   const { data, error } = await query;
@@ -982,11 +987,12 @@ export async function createCommunityPost({
   return post.id;
 }
 
-export async function deleteCommunityPost(postId) {
+export async function deleteCommunityPost(postId, userId) {
   const { error } = await supabase
     .from('community_posts')
     .delete()
-    .eq('id', postId);
+    .eq('id', postId)
+    .eq('user_id', userId);
   if (error) throw error;
 }
 

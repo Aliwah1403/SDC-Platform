@@ -21,9 +21,9 @@ export function useStreakQuery() {
       const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
       // Streak is still alive if logged today or yesterday
       if (daysSince <= 1) return data;
-      // Broken streak — show 0 without touching the DB
+      // Broken streak — zero out currentStreak but preserve previousStreak for display
       // (submitHealthLog will reset to 1 on the next real log)
-      return { ...data, currentStreak: 0 };
+      return { ...data, currentStreak: 0, previousStreak: data.currentStreak };
     },
   });
 }
@@ -46,7 +46,11 @@ export function useMissedDay() {
   const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
 
   if (daysSince <= 1) return null; // logged yesterday or today — streak alive
-  if (daysSince > 3) return null;  // gap too large — streak is dead, start fresh
+  if (daysSince > 3) return null;  // gap too large — show lost streak screen instead
+
+  // Only offer repair if the user had a streak worth saving
+  const previousStreak = streak.previousStreak ?? 0;
+  if (previousStreak < 3) return null;
 
   const missedDate = new Date(lastLog);
   missedDate.setDate(missedDate.getDate() + 1);
@@ -61,6 +65,28 @@ export function useMissedDay() {
     }),
     daysAgo: daysSince - 1,
   };
+}
+
+/**
+ * Detects a fully lost streak (gap > 3 days, had a meaningful streak).
+ * Used to show the "You lost your streak" screen instead of the repair sheet.
+ */
+export function useStreakLost() {
+  const { data: streak } = useStreakQuery();
+
+  if (!streak?.lastLogDate) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const lastLog = new Date(streak.lastLogDate);
+  lastLog.setHours(0, 0, 0, 0);
+  const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
+
+  if (daysSince <= 3) return null; // still in repair window or alive
+  const previousStreak = streak.previousStreak ?? 0;
+  if (previousStreak < 3) return null; // not meaningful enough to mourn
+
+  return { lostStreak: previousStreak };
 }
 
 export function useStreakRepairMutation() {

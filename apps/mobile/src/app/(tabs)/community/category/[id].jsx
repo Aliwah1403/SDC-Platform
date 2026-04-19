@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronLeft, Check, Ban } from "lucide-react-native";
-import { useCommunityFeedQuery } from "@/hooks/queries/useCommunityFeedQuery";
+import { useCategoryFeedQuery } from "@/hooks/queries/useCommunityFeedQuery";
 import {
   useLikeMutation,
   useSaveMutation,
@@ -29,6 +29,7 @@ import { CATEGORY_MAP, getRelatedCategories } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
 const RELATED_INSERT_AFTER = 2; // inject "You may also like" after this post index
+const SKELETON_DATA = Array.from({ length: 4 }, (_, i) => ({ id: `_sk_${i}`, _type: "skeleton" }));
 
 export default function CategoryDetailScreen() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function CategoryDetailScreen() {
 
   const category = CATEGORY_MAP[id];
 
-  const { data: allPosts = [] } = useCommunityFeedQuery("popular");
+  const { data: categoryPosts = [], isLoading } = useCategoryFeedQuery(id);
   const { data: prefs } = useCategoryPrefsQuery();
   const followedCategoryIds = prefs?.followedCategoryIds ?? [];
   const blockedCategoryIds = prefs?.blockedCategoryIds ?? [];
@@ -61,11 +62,6 @@ export default function CategoryDetailScreen() {
 
   const relatedCategories = useMemo(() => getRelatedCategories(id), [id]);
 
-  const categoryPosts = useMemo(
-    () => allPosts.filter((p) => p.category === id),
-    [allPosts, id],
-  );
-
   // Inject the "You may also like" block after RELATED_INSERT_AFTER posts
   const listData = useMemo(() => {
     if (categoryPosts.length === 0) return categoryPosts;
@@ -88,6 +84,9 @@ export default function CategoryDetailScreen() {
   }
 
   function renderItem({ item }) {
+    if (item._type === "skeleton") {
+      return <PostSkeleton />;
+    }
     if (item._type === "related") {
       return (
         <RelatedSection
@@ -118,7 +117,7 @@ export default function CategoryDetailScreen() {
       <StatusBar style="light" />
 
       <FlatList
-        data={listData}
+        data={isLoading ? SKELETON_DATA : listData}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -134,7 +133,7 @@ export default function CategoryDetailScreen() {
             onBlock={toggleBlockCategory}
           />
         }
-        ListEmptyComponent={
+        ListEmptyComponent={isLoading ? null : (
           <View
             style={{
               alignItems: "center",
@@ -163,7 +162,7 @@ export default function CategoryDetailScreen() {
               Be the first to post in this community.
             </Text>
           </View>
-        }
+        )}
         renderItem={renderItem}
       />
     </View>

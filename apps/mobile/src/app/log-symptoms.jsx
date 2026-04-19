@@ -18,6 +18,7 @@ import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
 import { useAppStore } from "@/store/appStore";
+import { writeDailyLog } from "@/services/healthKitService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
@@ -521,7 +522,7 @@ function SummaryStep({ log, onSubmit }) {
 
 export default function LogSymptomsScreen() {
   const router = useRouter();
-  const { currentSymptomLog, updateSymptomLog, resetSymptomLog } = useAppStore();
+  const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected } = useAppStore();
   const submitLogMutation = useSubmitLogMutation();
 
   const todayStr = new Date().toISOString().split("T")[0];
@@ -590,6 +591,10 @@ export default function LogSymptomsScreen() {
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
         resetSymptomLog();
+        // Mirror to Apple Health if connected — runs fire-and-forget, errors are swallowed
+        if (healthKitConnected) {
+          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel });
+        }
         router.back();
       },
     });
