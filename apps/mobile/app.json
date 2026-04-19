@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSHealthShareUsageDescription": "Hemo reads your steps, resting heart rate, blood oxygen (SpO2), body temperature, respiratory rate, and sleep from Apple Health to help monitor your sickle cell disease. Low SpO2 and fever are medical emergencies for SCD patients and will trigger urgent alerts.",
+        "NSHealthShareUsageDescription": "Hemo reads your steps, resting heart rate, blood oxygen (SpO2), body temperature, respiratory rate, sleep, and workout sessions from Apple Health to help monitor your sickle cell disease. Low SpO2 and fever are medical emergencies for SCD patients and will trigger urgent alerts.",
         "NSHealthUpdateUsageDescription": "Hemo saves your daily water intake, logged symptoms (fatigue, shortness of breath, fever, and others), and mood check-ins to Apple Health so your care team has a complete picture of your health."
       },
       "bundleIdentifier": "com.hemoscd.hemo"

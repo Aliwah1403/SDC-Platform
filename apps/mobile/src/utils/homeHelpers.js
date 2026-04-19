@@ -10,14 +10,14 @@ export function getDynamicMessage(
   const today = new Date();
   const isToday = selectedDate.toDateString() === today.toDateString();
   const firstName =
-    currentUser?.nickname || currentUser?.fullName?.split(" ")[0] || " ";
+    currentUser?.nickname || currentUser?.fullName?.split(" ")[0] || "";
   const hour = today.getHours();
   const timeGreeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
   if (hasLoggedData && healthStreak > 1) {
     return {
-      title: `Well done, ${firstName}!`,
+      title: `Well done${firstName ? `, ${firstName}` : ""}!`,
       subtitle: `${healthStreak} day streak`,
     };
   } else if (hasLoggedData && healthStreak === 1) {
@@ -27,7 +27,7 @@ export function getDynamicMessage(
     };
   } else if (isToday) {
     return {
-      title: `${timeGreeting}, ${firstName}`,
+      title: `${timeGreeting}${firstName ? `, ${firstName}` : ""}`,
       subtitle: "How are you feeling?",
     };
   } else {

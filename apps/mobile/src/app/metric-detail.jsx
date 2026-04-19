@@ -665,13 +665,19 @@ export default function MetricDetailScreen() {
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
-  // Merge HealthKit data into healthData before computing chart data
+  // Merge HealthKit data into healthData before computing chart data.
+  // Also includes HealthKit-only dates (e.g. spO2/temperature days with no manual log).
   const mergedHealthData = useMemo(() => {
     if (!healthKitData || Object.keys(healthKitData).length === 0) return healthData;
-    return healthData.map((entry) => {
+    const base = healthData.map((entry) => {
       const hkDay = healthKitData[entry.date];
       return hkDay ? { ...entry, ...hkDay } : entry;
     });
+    const coveredDates = new Set(healthData.map((e) => e.date));
+    const hkOnlyEntries = Object.entries(healthKitData)
+      .filter(([date]) => !coveredDates.has(date))
+      .map(([date, hkDay]) => ({ date, ...hkDay }));
+    return [...base, ...hkOnlyEntries];
   }, [healthData, healthKitData]);
 
   const data = useMemo(
