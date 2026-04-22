@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
-import { signUp } from '@/utils/auth/supabase';
+import { signUp, signInWithGoogle, signInWithApple } from '@/utils/auth/supabase';
 import { useAuthStore } from '@/utils/auth/store';
 
 function GoogleIcon() {
@@ -69,6 +69,38 @@ export default function SignUpScreen() {
 
   const strengthIndex = getPasswordStrength(password);
   const strength = strengthIndex >= 0 ? STRENGTH_LEVELS[strengthIndex] : null;
+
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithGoogle();
+      if (authError) { setError(authError.message || 'Google sign-in failed.'); return; }
+      setAuth(data.session, data.user);
+      setIsNewUser(true);
+      router.replace('/(onboarding)/step-1');
+    } catch (e) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') setError('Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignUp = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithApple();
+      if (authError) { setError(authError.message || 'Apple sign-in failed.'); return; }
+      setAuth(data.session, data.user);
+      setIsNewUser(true);
+      router.replace('/(onboarding)/step-1');
+    } catch (e) {
+      if (e.code !== 'ERR_CANCELED') setError('Apple sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignUp = async () => {
     if (!fullName.trim()) { setError('Please enter your full name.'); return; }
@@ -261,19 +293,23 @@ export default function SignUpScreen() {
             {/* Social auth buttons */}
             <View style={styles.socialRow}>
               <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Google sign-in is coming soon.')}
+                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                onPress={handleGoogleSignUp}
+                disabled={loading}
               >
                 <GoogleIcon />
                 <Text style={styles.socialBtnText}>Google</Text>
               </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Apple sign-in is coming soon.')}
-              >
-                <AppleIcon />
-                <Text style={styles.socialBtnText}>Apple</Text>
-              </Pressable>
+              {Platform.OS === 'ios' && (
+                <Pressable
+                  style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                  onPress={handleAppleSignUp}
+                  disabled={loading}
+                >
+                  <AppleIcon />
+                  <Text style={styles.socialBtnText}>Apple</Text>
+                </Pressable>
+              )}
             </View>
 
             {/* Sign In link */}

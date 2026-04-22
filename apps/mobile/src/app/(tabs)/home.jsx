@@ -162,7 +162,7 @@ export default function HomeScreen() {
   const setPendingMilestone = useAppStore((s) => s.setPendingMilestone);
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
 
-  const { data: streak } = useStreakQuery();
+  const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
   const claimedBadges = streak?.claimedBadges ?? [];
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
@@ -177,6 +177,7 @@ export default function HomeScreen() {
   );
 
   useEffect(() => {
+    if (!streakLoaded) return;
     if (!healthData.length && !healthStreak) return;
     if (pendingMilestone) return;
 
@@ -201,7 +202,7 @@ export default function HomeScreen() {
         streakCount: newBadge.type === "streak" ? healthStreak : null,
       });
     }
-  }, [healthData, healthStreak, pendingMilestone, claimedBadges]);
+  }, [streakLoaded, healthData, healthStreak, pendingMilestone, claimedBadges, totalEntries, symptomsLogged, hydrationDays]);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 

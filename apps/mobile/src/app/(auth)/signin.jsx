@@ -1,7 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -16,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
-import { signIn } from '@/utils/auth/supabase';
+import { signIn, signInWithGoogle, signInWithApple } from '@/utils/auth/supabase';
 import { useAuthStore } from '@/utils/auth/store';
 
 function GoogleIcon() {
@@ -48,6 +47,36 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState(null);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithGoogle();
+      if (authError) { setError(authError.message || 'Google sign-in failed.'); return; }
+      setAuth(data.session, data.user);
+      router.replace('/');
+    } catch (e) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') setError('Google sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithApple();
+      if (authError) { setError(authError.message || 'Apple sign-in failed.'); return; }
+      setAuth(data.session, data.user);
+      router.replace('/');
+    } catch (e) {
+      if (e.code !== 'ERR_CANCELED') setError('Apple sign-in failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSignIn = async () => {
     if (!email.trim() || !password) {
@@ -185,19 +214,23 @@ export default function SignInScreen() {
             {/* Social auth buttons */}
             <View style={styles.socialRow}>
               <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Google sign-in is coming soon.')}
+                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                onPress={handleGoogleSignIn}
+                disabled={loading}
               >
                 <GoogleIcon />
                 <Text style={styles.socialBtnText}>Google</Text>
               </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Apple sign-in is coming soon.')}
-              >
-                <AppleIcon />
-                <Text style={styles.socialBtnText}>Apple</Text>
-              </Pressable>
+              {Platform.OS === 'ios' && (
+                <Pressable
+                  style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                  onPress={handleAppleSignIn}
+                  disabled={loading}
+                >
+                  <AppleIcon />
+                  <Text style={styles.socialBtnText}>Apple</Text>
+                </Pressable>
+              )}
             </View>
 
             {/* Sign Up link */}

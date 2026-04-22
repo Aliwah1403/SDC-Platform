@@ -63,14 +63,9 @@ const MILESTONE_BADGE = {
   "meds-streak-7":   require("../../assets/images/badges/on-time.svg"),
   "meds-first":      require("../../assets/images/badges/dose-one.svg"),
   "week-perfect":    require("../../assets/images/badges/perfect-week.svg"),
-  // Legacy keys
-  "days-5":          require("../../assets/images/badges/getting-started.svg"),
-  "days-10":         require("../../assets/images/badges/habit-builder.png"),
-  "days-25":         require("../../assets/images/badges/dedicated-tracker.svg"),
   "days-1":          require("../../assets/images/badges/first-streak.svg"),
-  "days-50":         require("../../assets/images/badges/monthly-monster.svg"),
-  "days-100":        require("../../assets/images/badges/dedicated-tracker.svg"),
-  "symptoms-25":     require("../../assets/images/badges/pattern-seeker.svg"),
+  "days-5":          require("../../assets/images/badges/getting-started.svg"),
+  // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
 };
 
 export default function StreakModal() {
@@ -415,7 +410,7 @@ export default function StreakModal() {
       (milestone.current / milestone.target) * 100,
       100,
     );
-    const badgeSource = MILESTONE_BADGE[milestone.id] ?? BADGE_IMAGES.a;
+    const badgeSource = MILESTONE_BADGE[milestone.id] ?? null;
 
     const MilestoneIcon = {
       days: Trophy,
@@ -459,16 +454,23 @@ export default function StreakModal() {
       >
         {/* Badge image with overlay */}
         <View style={{ width: "100%", aspectRatio: 1, marginBottom: 16 }}>
-          <Image
-            source={badgeSource}
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: 12,
-              opacity: isUnlocked ? 1 : 0.4,
-            }}
-            contentFit="cover"
-          />
+          {badgeSource ? (
+            <Image
+              source={badgeSource}
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 12,
+                opacity: isUnlocked ? 1 : 0.4,
+              }}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={{ width: "100%", height: "100%", borderRadius: 12, backgroundColor: "#A9334D", opacity: isUnlocked ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 10, color: "#F8E9E7", letterSpacing: 1, textTransform: "uppercase" }}>No Image</Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 9, color: "rgba(248,233,231,0.6)", marginTop: 2 }}>{milestone.id}</Text>
+            </View>
+          )}
           {isUnlocked ? (
             <View
               style={{

@@ -43,10 +43,18 @@ export function useDeletePostMutation() {
     },
     onMutate: async (postId) => {
       await queryClient.cancelQueries({ queryKey: ['community_feed', userId] });
-      // Optimistically remove from all cached feed variants
+      const previousFeed = queryClient.getQueriesData({ queryKey: ['community_feed', userId] });
       queryClient.setQueriesData({ queryKey: ['community_feed', userId] }, (old) =>
         Array.isArray(old) ? old.filter((p) => p.id !== postId) : old,
       );
+      return { previousFeed };
+    },
+    onError: (_err, _postId, context) => {
+      if (context?.previousFeed) {
+        context.previousFeed.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });

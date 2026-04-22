@@ -2,6 +2,7 @@
   "expo": {
     "name": "Hemo SCD",
     "slug": "hemo",
+    "scheme": "hemoscd",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -63,6 +64,7 @@
           "supportsPictureInPicture": true
         }
       ],
+      "expo-apple-authentication",
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",

@@ -293,4 +293,15 @@ export const useAppStore = create((set) => ({
   // ── Push notifications ─────────────────────────────────────────────────────
   expoPushToken: null,
   setExpoPushToken: (token) => set({ expoPushToken: token }),
+
+  // ── Apple Health manual baselines ──────────────────────────────────────────
+  // Overrides the rolling-average baseline for users with chronic atypical values.
+  healthKitManualBaselines: {
+    spO2: null,       // e.g. 93 (%) — user's known chronic SpO2
+    heartRate: null,  // e.g. 88 (bpm) — user's known resting HR
+  },
+  setHealthKitManualBaseline: (metric, value) =>
+    set((state) => ({
+      healthKitManualBaselines: { ...state.healthKitManualBaselines, [metric]: value },
+    })),
 }));
