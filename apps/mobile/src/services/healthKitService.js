@@ -20,6 +20,7 @@ import {
   UpdateFrequency,
   AuthorizationRequestStatus,
 } from "@kingstinct/react-native-healthkit";
+import { supabase } from "@/utils/auth/supabase";
 
 // ─── Identifier constants ─────────────────────────────────────────────────────
 
@@ -601,6 +602,22 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
               },
               trigger: null,
             });
+
+            // Write to system_notifications so the alert appears in the unified feed
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from("system_notifications").insert({
+                  user_id: user.id,
+                  type: "health_alert",
+                  title: "Health Alert",
+                  body: urgentMsg,
+                  data: { screen: "metric-detail", metric: metricKey },
+                });
+              }
+            } catch (err) {
+              console.error("[HealthKit] system_notifications insert failed:", err);
+            }
           }
         } catch {}
       });

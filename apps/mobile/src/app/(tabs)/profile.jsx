@@ -61,6 +61,7 @@ import {
   Images,
   Trash2,
 } from "lucide-react-native";
+import Svg, { Path } from "react-native-svg";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { useAppStore } from "../../store/appStore";
 import {
@@ -75,7 +76,13 @@ import { useAuthStore } from "@/utils/auth/store";
 import { useAppearanceStore } from "@/store/appearanceStore";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
-import { signOut, supabase } from "@/utils/auth/supabase";
+import {
+  signOut,
+  supabase,
+  linkGoogle,
+  linkApple,
+  unlinkProvider,
+} from "@/utils/auth/supabase";
 import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
@@ -332,7 +339,23 @@ export default function ProfileScreen() {
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
+  const [linkingProvider, setLinkingProvider] = useState(null);
   const { healthKitConnected: appleHealthConnected } = useAppStore();
+
+  const identities = auth?.user?.identities ?? [];
+  const linkedProviders = identities.map((i) => i.provider);
+  const isGoogleLinked = linkedProviders.includes("google");
+  const isAppleLinked = linkedProviders.includes("apple");
+  const canUnlink = identities.length > 1;
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        const currentSession = useAuthStore.getState().auth?.session;
+        useAuthStore.getState().setAuth(currentSession, user);
+      }
+    });
+  }, []);
 
   // Edit sheet state
   const [editingScd, setEditingScd] = useState(false);
@@ -411,9 +434,10 @@ export default function ProfileScreen() {
         return;
       }
       if (status !== "granted") {
-        const { status: newStatus } = await Notifications.requestPermissionsAsync({
-          ios: { allowAlert: true, allowBadge: true, allowSound: true },
-        });
+        const { status: newStatus } =
+          await Notifications.requestPermissionsAsync({
+            ios: { allowAlert: true, allowBadge: true, allowSound: true },
+          });
         if (newStatus !== "granted") return;
       }
     }
@@ -447,6 +471,80 @@ export default function ProfileScreen() {
       Alert.alert("Error", "Unable to share health summary");
     }
   };
+  const refreshIdentities = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const currentSession = useAuthStore.getState().auth?.session;
+      useAuthStore.getState().setAuth(currentSession, user);
+    }
+  };
+
+  const handleLinkGoogle = async () => {
+    setLinkingProvider("google");
+    try {
+      const { error } = await linkGoogle();
+      if (error) throw error;
+      await refreshIdentities();
+    } catch (e) {
+      if (e.code !== "ERR_REQUEST_CANCELED")
+        Alert.alert("Error", "Could not connect Google account.");
+    } finally {
+      setLinkingProvider(null);
+    }
+  };
+
+  const handleLinkApple = async () => {
+    setLinkingProvider("apple");
+    try {
+      const { error } = await linkApple();
+      if (error) throw error;
+      await refreshIdentities();
+    } catch (e) {
+      if (e.code !== "ERR_CANCELED")
+        Alert.alert("Error", "Could not connect Apple account.");
+    } finally {
+      setLinkingProvider(null);
+    }
+  };
+
+  const handleUnlink = (provider) => {
+    if (!canUnlink) {
+      Alert.alert(
+        "Cannot unlink",
+        "You need at least one login method. Add another before removing this one.",
+      );
+      return;
+    }
+    const identity = identities.find((i) => i.provider === provider);
+    if (!identity) return;
+    Alert.alert(
+      `Disconnect ${provider === "google" ? "Google" : "Apple"}`,
+      "You will no longer be able to sign in with this account.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Disconnect",
+          style: "destructive",
+          onPress: async () => {
+            setLinkingProvider(provider);
+            try {
+              const { error } = await unlinkProvider(identity);
+              if (error) throw error;
+              await refreshIdentities();
+            } catch {
+              Alert.alert(
+                "Error",
+                `Could not disconnect ${provider === "google" ? "Google" : "Apple"} account.`,
+              );
+            } finally {
+              setLinkingProvider(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleSignOut = () => {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
       { text: "Cancel", style: "cancel" },
@@ -505,7 +603,10 @@ export default function ProfileScreen() {
       await uploadAvatar(userId, uri);
       queryClient.invalidateQueries({ queryKey: ["profile", userId] });
     } catch {
-      Alert.alert("Upload failed", "Could not update profile photo. Try again.");
+      Alert.alert(
+        "Upload failed",
+        "Could not update profile photo. Try again.",
+      );
     } finally {
       setUploadingAvatar(false);
     }
@@ -531,7 +632,10 @@ export default function ProfileScreen() {
     photoSheetRef.current?.close();
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission needed", "Allow photo access to change your profile picture.");
+      Alert.alert(
+        "Permission needed",
+        "Allow photo access to change your profile picture.",
+      );
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -546,25 +650,32 @@ export default function ProfileScreen() {
 
   const handleRemovePhoto = () => {
     photoSheetRef.current?.close();
-    Alert.alert("Remove photo", "Are you sure you want to remove your profile photo?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Remove",
-        style: "destructive",
-        onPress: async () => {
-          const userId = auth?.user?.id;
-          if (!userId) return;
-          const { error } = await supabase.storage
-            .from("avatars")
-            .remove([`${userId}/avatar.jpg`]);
-          if (error) {
-            Alert.alert("Remove failed", "Could not delete photo. Try again.");
-            return;
-          }
-          updateProfile.mutate({ avatarUrl: null });
+    Alert.alert(
+      "Remove photo",
+      "Are you sure you want to remove your profile photo?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            const userId = auth?.user?.id;
+            if (!userId) return;
+            const { error } = await supabase.storage
+              .from("avatars")
+              .remove([`${userId}/avatar.jpg`]);
+            if (error) {
+              Alert.alert(
+                "Remove failed",
+                "Could not delete photo. Try again.",
+              );
+              return;
+            }
+            updateProfile.mutate({ avatarUrl: null });
+          },
         },
-      },
-    ]);
+      ],
+    );
   };
 
   const openFullNameSheet = () => {
@@ -1308,6 +1419,119 @@ export default function ProfileScreen() {
             />
           </SectionCard>
 
+          <SectionCard title="Connected Accounts">
+            <SettingRow
+              icon={() => (
+                <Svg width={18} height={18} viewBox="0 0 24 24">
+                  <Path
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                    fill="#4285F4"
+                  />
+                  <Path
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                    fill="#34A853"
+                  />
+                  <Path
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                    fill="#FBBC05"
+                  />
+                  <Path
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                    fill="#EA4335"
+                  />
+                </Svg>
+              )}
+              iconColor="#4285F4"
+              label="Google"
+              // value={isGoogleLinked && "Connected"}
+              rightElement={
+                linkingProvider === "google" ? (
+                  <ActivityIndicator size="small" color="#A9334D" />
+                ) : isGoogleLinked ? (
+                  <TouchableOpacity
+                    onPress={() => handleUnlink("google")}
+                    hitSlop={8}
+                    disabled={!canUnlink}
+                    style={!canUnlink ? { opacity: 0.4 } : undefined}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 13,
+                        color: "#DC2626",
+                      }}
+                    >
+                      Disconnect
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity onPress={handleLinkGoogle} hitSlop={8}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 13,
+                        color: "#A9334D",
+                      }}
+                    >
+                      Connect
+                    </Text>
+                  </TouchableOpacity>
+                )
+              }
+            />
+            {Platform.OS === "ios" && (
+              <SettingRow
+                icon={() => (
+                  <Svg
+                    width={18}
+                    height={18}
+                    viewBox="0 0 24 24"
+                    fill="#09332C"
+                  >
+                    <Path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+                  </Svg>
+                )}
+                iconColor="#09332C"
+                label="Apple"
+                // value={isAppleLinked && "Connected"}
+                rightElement={
+                  linkingProvider === "apple" ? (
+                    <ActivityIndicator size="small" color="#A9334D" />
+                  ) : isAppleLinked ? (
+                    <TouchableOpacity
+                      onPress={() => handleUnlink("apple")}
+                      hitSlop={8}
+                      disabled={!canUnlink}
+                      style={!canUnlink ? { opacity: 0.4 } : undefined}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 13,
+                          color: "#DC2626",
+                        }}
+                      >
+                        Disconnect
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity onPress={handleLinkApple} hitSlop={8}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 13,
+                          color: "#A9334D",
+                        }}
+                      >
+                        Connect
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                }
+              />
+            )}
+          </SectionCard>
+
           <SectionCard title="Support">
             <SettingRow
               icon={HelpCircle}
@@ -1721,84 +1945,90 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={() => setEditingFullName(false)}
         />
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View
-          style={{
-            backgroundColor: "#ffffff",
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            paddingBottom: insets.bottom + 12,
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-              paddingTop: 16,
-              paddingBottom: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              backgroundColor: "#ffffff",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: insets.bottom + 12,
             }}
           >
-            <Pressable onPress={() => setEditingFullName(false)} hitSlop={12}>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#9CA3AF",
-                }}
-              >
-                Cancel
-              </Text>
-            </Pressable>
-            <Text
+            <View
               style={{
-                fontFamily: fonts.semibold,
-                fontSize: 16,
-                color: "#09332C",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: "#F0E4E1",
               }}
             >
-              Full Name
-            </Text>
-            <Pressable onPress={saveFullName} hitSlop={12}>
+              <Pressable onPress={() => setEditingFullName(false)} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 16,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
               <Text
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#A9334D",
+                  color: "#09332C",
                 }}
               >
-                Save
+                Full Name
               </Text>
-            </Pressable>
-          </View>
-          <View
-            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
-          >
-            <TextInput
-              value={tempFullName}
-              onChangeText={setTempFullName}
-              placeholder="Your full name"
-              placeholderTextColor="#C4A8A4"
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={saveFullName}
+              <Pressable onPress={saveFullName} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#A9334D",
+                  }}
+                >
+                  Save
+                </Text>
+              </Pressable>
+            </View>
+            <View
               style={{
-                fontFamily: fonts.regular,
-                fontSize: 17,
-                color: "#09332C",
-                borderWidth: 1,
-                borderColor: "#F0E4E1",
-                borderRadius: 12,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                backgroundColor: "#F8F4F0",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 8,
               }}
-            />
+            >
+              <TextInput
+                value={tempFullName}
+                onChangeText={setTempFullName}
+                placeholder="Your full name"
+                placeholderTextColor="#C4A8A4"
+                autoFocus
+                returnKeyType="done"
+                onSubmitEditing={saveFullName}
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 17,
+                  color: "#09332C",
+                  borderWidth: 1,
+                  borderColor: "#F0E4E1",
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  backgroundColor: "#F8F4F0",
+                }}
+              />
+            </View>
           </View>
-        </View>
         </KeyboardAvoidingView>
       </Modal>
 
@@ -1813,96 +2043,102 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={() => setEditingNickname(false)}
         />
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View
-          style={{
-            backgroundColor: "#ffffff",
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            paddingBottom: insets.bottom + 12,
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-              paddingTop: 16,
-              paddingBottom: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              backgroundColor: "#ffffff",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: insets.bottom + 12,
             }}
           >
-            <Pressable onPress={() => setEditingNickname(false)} hitSlop={12}>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#9CA3AF",
-                }}
-              >
-                Cancel
-              </Text>
-            </Pressable>
-            <Text
+            <View
               style={{
-                fontFamily: fonts.semibold,
-                fontSize: 16,
-                color: "#09332C",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: "#F0E4E1",
               }}
             >
-              Nickname
-            </Text>
-            <Pressable onPress={saveNickname} hitSlop={12}>
+              <Pressable onPress={() => setEditingNickname(false)} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 16,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
               <Text
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#A9334D",
+                  color: "#09332C",
                 }}
               >
-                Save
+                Nickname
               </Text>
-            </Pressable>
-          </View>
-          <View
-            style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
-          >
-            <TextInput
-              value={tempNickname}
-              onChangeText={setTempNickname}
-              placeholder="e.g. Alex"
-              placeholderTextColor="#C4A8A4"
-              autoFocus
-              maxLength={20}
-              returnKeyType="done"
-              onSubmitEditing={saveNickname}
+              <Pressable onPress={saveNickname} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#A9334D",
+                  }}
+                >
+                  Save
+                </Text>
+              </Pressable>
+            </View>
+            <View
               style={{
-                fontFamily: fonts.regular,
-                fontSize: 17,
-                color: "#09332C",
-                borderWidth: 1,
-                borderColor: "#F0E4E1",
-                borderRadius: 12,
-                paddingHorizontal: 14,
-                paddingVertical: 12,
-                backgroundColor: "#F8F4F0",
-              }}
-            />
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 12,
-                color: "#C4A8A4",
-                marginTop: 6,
-                textAlign: "right",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 8,
               }}
             >
-              {tempNickname.length}/20
-            </Text>
+              <TextInput
+                value={tempNickname}
+                onChangeText={setTempNickname}
+                placeholder="e.g. Alex"
+                placeholderTextColor="#C4A8A4"
+                autoFocus
+                maxLength={20}
+                returnKeyType="done"
+                onSubmitEditing={saveNickname}
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 17,
+                  color: "#09332C",
+                  borderWidth: 1,
+                  borderColor: "#F0E4E1",
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  backgroundColor: "#F8F4F0",
+                }}
+              />
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 12,
+                  color: "#C4A8A4",
+                  marginTop: 6,
+                  textAlign: "right",
+                }}
+              >
+                {tempNickname.length}/20
+              </Text>
+            </View>
           </View>
-        </View>
         </KeyboardAvoidingView>
       </Modal>
 

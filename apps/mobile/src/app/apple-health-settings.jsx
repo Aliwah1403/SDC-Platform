@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, StyleSheet } from "react-native";
+import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, StyleSheet, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Image } from "react-native";
@@ -125,6 +125,8 @@ export default function AppleHealthSettingsScreen() {
     setHealthKitPreference,
     setHealthKitConnected,
     healthKitData,
+    healthKitManualBaselines,
+    setHealthKitManualBaseline,
   } = useAppStore();
 
   function handleDisconnect() {
@@ -218,6 +220,57 @@ export default function AppleHealthSettingsScreen() {
             </View>
           ))}
         </View>
+
+        {/* Personal Baselines */}
+        <SectionHeader title="Personal Baselines" />
+        <View style={styles.card}>
+          <View style={styles.baselineRow}>
+            <View style={styles.baselineText}>
+              <Text style={styles.rowLabel}>Resting Blood Oxygen</Text>
+              <Text style={styles.rowDesc}>Your typical SpO₂ if chronically below 95%</Text>
+            </View>
+            <View style={styles.baselineInputWrap}>
+              <TextInput
+                style={styles.baselineInput}
+                keyboardType="numeric"
+                placeholder="—"
+                placeholderTextColor="#9CA3AF"
+                maxLength={3}
+                value={healthKitManualBaselines.spO2 != null ? String(healthKitManualBaselines.spO2) : ""}
+                onChangeText={(t) => {
+                  const n = parseInt(t, 10);
+                  setHealthKitManualBaseline("spO2", t === "" ? null : (n >= 50 && n <= 99 ? n : healthKitManualBaselines.spO2));
+                }}
+              />
+              <Text style={styles.baselineUnit}>%</Text>
+            </View>
+          </View>
+          <Divider />
+          <View style={styles.baselineRow}>
+            <View style={styles.baselineText}>
+              <Text style={styles.rowLabel}>Resting Heart Rate</Text>
+              <Text style={styles.rowDesc}>Your typical HR if outside the standard range</Text>
+            </View>
+            <View style={styles.baselineInputWrap}>
+              <TextInput
+                style={styles.baselineInput}
+                keyboardType="numeric"
+                placeholder="—"
+                placeholderTextColor="#9CA3AF"
+                maxLength={3}
+                value={healthKitManualBaselines.heartRate != null ? String(healthKitManualBaselines.heartRate) : ""}
+                onChangeText={(t) => {
+                  const n = parseInt(t, 10);
+                  setHealthKitManualBaseline("heartRate", t === "" ? null : (n >= 30 && n <= 200 ? n : healthKitManualBaselines.heartRate));
+                }}
+              />
+              <Text style={styles.baselineUnit}>bpm</Text>
+            </View>
+          </View>
+        </View>
+        <Text style={styles.baselineHint}>
+          Leave blank to use automatic 7-day averages. Set these if your doctor has confirmed your personal baseline differs from typical ranges.
+        </Text>
 
         {/* Help note */}
         <TouchableOpacity style={styles.helpRow} activeOpacity={0.6}>
@@ -362,5 +415,47 @@ const styles = StyleSheet.create({
     color: "#9CA3AF",
     flex: 1,
     lineHeight: 18,
+  },
+  baselineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  baselineText: {
+    flex: 1,
+  },
+  baselineInputWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  baselineInput: {
+    width: 52,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F8F4F0",
+    textAlign: "center",
+    fontFamily: "Geist_500Medium",
+    fontSize: 15,
+    color: "#09332C",
+  },
+  baselineUnit: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 13,
+    color: "#9CA3AF",
+    minWidth: 28,
+  },
+  baselineHint: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 12,
+    color: "#9CA3AF",
+    lineHeight: 18,
+    marginTop: -16,
+    marginBottom: 24,
+    paddingHorizontal: 4,
   },
 });

@@ -19,6 +19,7 @@ import {
   Geist_700Bold,
   Geist_800ExtraBold,
 } from "@expo-google-fonts/geist";
+import Constants from "expo-constants";
 import SplashAnimation from "@/components/SplashAnimation";
 
 SplashScreen.preventAutoHideAsync();
@@ -81,12 +82,19 @@ export default function RootLayout() {
   // Register Expo push token with Novu whenever the user is authenticated
   useEffect(() => {
     if (!userId) return;
-    Notifications.getExpoPushTokenAsync({ projectId: "97edca88-53f4-4fd5-89ae-800ddc9d7381" })
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+    if (!projectId) {
+      console.error("[PushToken] eas.projectId missing from app config — skipping token registration");
+      return;
+    }
+    Notifications.getExpoPushTokenAsync({ projectId })
       .then(({ data: token }) => {
         setExpoPushToken(token);
         registerPushToken(token, Platform.OS);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("[PushToken] Failed to register push token:", err);
+      });
   }, [userId]);
 
   // Route to the correct screen when user taps a remote or local notification

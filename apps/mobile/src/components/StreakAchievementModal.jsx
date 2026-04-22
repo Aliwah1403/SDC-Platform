@@ -21,18 +21,17 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 // ── Badge images ─────────────────────────────────────────────────────────────
 
 const BADGE_MAP = {
-  "streak-1":   require("../../assets/images/badges/first-streak.svg"),
-  "streak-3":   require("../../assets/images/badges/on-track.svg"),
-  "streak-7":   require("../../assets/images/badges/habit-builder.png"),
-  "streak-14":  require("../../assets/images/badges/fortnight-fighter.svg"),
-  "streak-30":  require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60":  require("../../assets/images/badges/dedicated-tracker.svg"),
-  "streak-100": require("../../assets/images/badges/dedicated-tracker.svg"),
-  days:         require("../../assets/images/badges/habit-builder.png"),
-  symptoms:     require("../../assets/images/badges/pattern-seeker.svg"),
-  hydration:    require("../../assets/images/badges/hydration-junkie.png"),
-  care:         require("../../assets/images/badges/self-care.svg"),
-  learning:     require("../../assets/images/badges/knowledge-seeker.svg"),
+  "streak-1":      require("../../assets/images/badges/first-streak.svg"),
+  "streak-3":      require("../../assets/images/badges/on-track.svg"),
+  "streak-7":      require("../../assets/images/badges/habit-builder.png"),
+  "streak-14":     require("../../assets/images/badges/fortnight-fighter.svg"),
+  "streak-30":     require("../../assets/images/badges/monthly-monster.svg"),
+  "streak-60":     require("../../assets/images/badges/dedicated-tracker.svg"),
+  "days-1":        require("../../assets/images/badges/first-streak.svg"),
+  "days-5":        require("../../assets/images/badges/getting-started.svg"),
+  "symptoms-10":   require("../../assets/images/badges/pattern-seeker.svg"),
+  "hydration-7":   require("../../assets/images/badges/hydration-junkie.png"),
+  // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
 };
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
@@ -177,7 +176,7 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
 
   if (!milestone) return null;
 
-  const badgeImage = BADGE_MAP[milestone.milestoneId] ?? BADGE_MAP[milestone.type];
+  const badgeImage = BADGE_MAP[milestone.milestoneId];
   const isStreak = milestone.type === "streak";
 
   return (
@@ -267,8 +266,9 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
                     contentFit="contain"
                   />
                 ) : (
-                  <View style={{ width: 200, height: 200, borderRadius: 100, backgroundColor: "rgba(248,233,231,0.15)", alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontSize: 80 }}>🏅</Text>
+                  <View style={{ width: 200, height: 200, borderRadius: 100, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "rgba(248,233,231,0.3)" }}>
+                    <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#F8E9E7", letterSpacing: 1, textTransform: "uppercase" }}>No Image</Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "rgba(248,233,231,0.6)", marginTop: 4 }}>{milestone.milestoneId}</Text>
                   </View>
                 )}
 
