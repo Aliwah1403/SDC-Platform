@@ -290,6 +290,12 @@ export const useAppStore = create((set) => ({
       ),
     })),
 
+  // ── App Lock ────────────────────────────────────────────────────────────────
+  appLockEnabled: false,
+  appLockTimeout: 1, // minutes: 0=immediately, 1, 5, 15, 60
+  setAppLockEnabled: (val) => set({ appLockEnabled: val }),
+  setAppLockTimeout: (minutes) => set({ appLockTimeout: minutes }),
+
   // ── Push notifications ─────────────────────────────────────────────────────
   expoPushToken: null,
   setExpoPushToken: (token) => set({ expoPushToken: token }),

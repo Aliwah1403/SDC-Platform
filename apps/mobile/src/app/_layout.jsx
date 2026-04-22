@@ -4,7 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
+import * as LocalAuthentication from "expo-local-authentication";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AppState, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
@@ -49,9 +51,11 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   const { initiate, isReady } = useAuth();
   const router = useRouter();
-  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken } = useAppStore();
+  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout } = useAppStore();
   const userId = useAuthStore((s) => s.auth?.user?.id);
   const [splashDone, setSplashDone] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const backgroundedAt = useRef(null);
   const startTime = useRef(Date.now());
 
   const [fontsLoaded, fontError] = useFonts({
@@ -65,6 +69,48 @@ export default function RootLayout() {
   useEffect(() => {
     return initiate(); // returns onAuthStateChange unsubscribe
   }, [initiate]);
+
+  // Load persisted App Lock settings on startup
+  useEffect(() => {
+    AsyncStorage.multiGet(['appLockEnabled', 'appLockTimeout']).then((pairs) => {
+      const enabled = pairs[0][1];
+      const timeout = pairs[1][1];
+      if (enabled === 'true') setAppLockEnabled(true);
+      if (timeout !== null) setAppLockTimeout(parseInt(timeout, 10));
+    });
+  }, []);
+
+  // App Lock — watch AppState and lock when returning from background
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        backgroundedAt.current = Date.now();
+      } else if (nextState === 'active') {
+        if (appLockEnabled && backgroundedAt.current) {
+          const elapsedMinutes = (Date.now() - backgroundedAt.current) / 1000 / 60;
+          if (appLockTimeout === 0 || elapsedMinutes >= appLockTimeout) {
+            setIsLocked(true);
+            authenticateToUnlock();
+          }
+        }
+        backgroundedAt.current = null;
+      }
+    });
+    return () => sub.remove();
+  }, [appLockEnabled, appLockTimeout]);
+
+  const authenticateToUnlock = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock Hemo',
+        fallbackLabel: 'Use Passcode',
+        disableDeviceFallback: false,
+      });
+      if (result.success) setIsLocked(false);
+    } catch {
+      // keep locked, user can tap button to retry
+    }
+  };
 
   // On every launch: check native HealthKit auth status to restore connected state.
   // This fixes the "shows not connected after reload" bug — the Zustand store is
@@ -199,12 +245,82 @@ export default function RootLayout() {
             options={{ presentation: "card" }}
           />
           <Stack.Screen
+            name="app-lock-setup"
+            options={{ presentation: "card" }}
+          />
+          <Stack.Screen
             name="crisis-mode"
             options={{ presentation: "modal", gestureEnabled: false }}
           />
         </Stack>
+
+        {/* App Lock overlay — rendered above everything */}
+        {isLocked && (
+          <View style={lockStyles.overlay}>
+            <View style={lockStyles.iconCircle}>
+              <Text style={lockStyles.lockEmoji}>🔒</Text>
+            </View>
+            <Text style={lockStyles.appName}>Hemo</Text>
+            <Text style={lockStyles.tagline}>Your sickle cell companion</Text>
+            <Pressable
+              style={({ pressed }) => [lockStyles.unlockBtn, pressed && { opacity: 0.85 }]}
+              onPress={authenticateToUnlock}
+            >
+              <Text style={lockStyles.unlockBtnText}>Unlock with Face ID</Text>
+            </Pressable>
+          </View>
+        )}
         </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
   );
 }
+
+const lockStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#09332C',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999,
+    paddingHorizontal: 32,
+  },
+  iconCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(248,233,231,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 24,
+  },
+  lockEmoji: {
+    fontSize: 40,
+  },
+  appName: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 32,
+    color: '#F8E9E7',
+    letterSpacing: -1,
+    marginBottom: 6,
+  },
+  tagline: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    color: 'rgba(248,233,231,0.45)',
+    marginBottom: 56,
+  },
+  unlockBtn: {
+    backgroundColor: '#F0531C',
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+  },
+  unlockBtnText: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 16,
+    color: '#ffffff',
+    letterSpacing: 0.2,
+  },
+});

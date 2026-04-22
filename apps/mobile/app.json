@@ -65,6 +65,7 @@
         }
       ],
       "expo-apple-authentication",
+      "expo-local-authentication",
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",

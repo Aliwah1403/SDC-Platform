@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { signUp, signInWithGoogle, signInWithApple } from '@/utils/auth/supabase';
 import { useAuthStore } from '@/utils/auth/store';
 
@@ -76,6 +77,7 @@ export default function SignUpScreen() {
     try {
       const { data, error: authError } = await signInWithGoogle();
       if (authError) { setError(authError.message || 'Google sign-in failed.'); return; }
+      await AsyncStorage.setItem('lastAuthProvider', 'google');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
@@ -92,6 +94,7 @@ export default function SignUpScreen() {
     try {
       const { data, error: authError } = await signInWithApple();
       if (authError) { setError(authError.message || 'Apple sign-in failed.'); return; }
+      await AsyncStorage.setItem('lastAuthProvider', 'apple');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
@@ -120,6 +123,7 @@ export default function SignUpScreen() {
         setError('Account created! Please check your email to confirm before signing in.');
         return;
       }
+      await AsyncStorage.setItem('lastAuthProvider', 'email');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
