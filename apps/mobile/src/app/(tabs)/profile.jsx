@@ -322,16 +322,13 @@ export default function ProfileScreen() {
   const { data: medications = [] } = useMedicationsQuery();
   const updateProfile = useUpdateProfileMutation();
   const queryClient = useQueryClient();
-  const { onboardingData } = useAppStore();
+  const { onboardingData, appLockEnabled, appLockTimeout, healthKitConnected: appleHealthConnected } = useAppStore();
   const { theme, setTheme } = useAppearanceStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     profile?.notificationsEnabled ??
       onboardingData?.notificationsEnabled ??
       false,
-  );
-  const [biometricsEnabled, setBiometricsEnabled] = useState(
-    profile?.biometricsEnabled ?? onboardingData?.biometricsEnabled ?? false,
   );
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -340,7 +337,6 @@ export default function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
   const [linkingProvider, setLinkingProvider] = useState(null);
-  const { healthKitConnected: appleHealthConnected } = useAppStore();
 
   const identities = auth?.user?.identities ?? [];
   const linkedProviders = identities.map((i) => i.provider);
@@ -444,10 +440,9 @@ export default function ProfileScreen() {
     setNotificationsEnabled(val);
     updateProfile.mutate({ notificationsEnabled: val });
   };
-  const handleToggleBiometrics = (val) => {
-    setBiometricsEnabled(val);
-    updateProfile.mutate({ biometricsEnabled: val });
-  };
+  const appLockLabel = appLockEnabled
+    ? `On · ${appLockTimeout === 0 ? 'Immediately' : appLockTimeout === 1 ? '1 min' : appLockTimeout === 60 ? '1 hour' : `${appLockTimeout} min`}`
+    : 'Off';
   const handleExportData = () => {
     Alert.alert(
       "Export Health Data",
@@ -1410,12 +1405,13 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={() => router.push("/security")}
             />
-            <SettingRowToggle
+            <SettingRow
               icon={Fingerprint}
               iconColor="#6B7280"
-              label="Biometric Login"
-              value={biometricsEnabled}
-              onChange={handleToggleBiometrics}
+              label="App Lock"
+              value={appLockLabel}
+              rightElement="chevron"
+              onPress={() => router.push('/app-lock-setup')}
             />
           </SectionCard>
 
