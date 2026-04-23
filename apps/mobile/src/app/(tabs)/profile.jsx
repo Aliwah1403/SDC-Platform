@@ -87,6 +87,7 @@ import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";
+import { scheduleCheckInReminders, cancelCheckInReminders } from "@/utils/checkInNotifications";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -443,7 +444,15 @@ export default function ProfileScreen() {
       }
     }
     setNotificationsEnabled(val);
-    updateProfile.mutate({ notificationsEnabled: val });
+    updateProfile.mutate({ notificationsEnabled: val }, {
+      onSuccess: () => {
+        if (val) {
+          scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
+        } else {
+          cancelCheckInReminders();
+        }
+      },
+    });
   };
   const appLockLabel = appLockEnabled
     ? `On · ${appLockTimeout === 0 ? "Immediately" : appLockTimeout === 1 ? "1 min" : appLockTimeout === 60 ? "1 hour" : `${appLockTimeout} min`}`
@@ -502,7 +511,7 @@ export default function ProfileScreen() {
       if (error) throw error;
       await refreshIdentities();
     } catch (e) {
-      if (e.code !== "ERR_CANCELED")
+      if (e.code !== "ERR_REQUEST_CANCELED")
         Alert.alert("Error", "Could not connect Apple account.");
     } finally {
       setLinkingProvider(null);
@@ -1898,7 +1907,9 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
-                  updateProfile.mutate({ checkInFrequency: opt.value });
+                  updateProfile.mutate({ checkInFrequency: opt.value }, {
+                    onSuccess: () => scheduleCheckInReminders(opt.value),
+                  });
                   setEditingFrequency(false);
                 }}
                 style={({ pressed }) => ({

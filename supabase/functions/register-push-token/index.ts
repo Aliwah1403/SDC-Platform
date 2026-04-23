@@ -48,8 +48,8 @@ Deno.serve(async (req) => {
     });
     if (!subscriberRes.ok) {
       const body = await subscriberRes.text();
-      console.error("[register-push-token] Novu upsert subscriber failed:", subscriberRes.status, body);
-      return new Response(JSON.stringify({ error: "Failed to upsert Novu subscriber", detail: body }), {
+      console.error(`[register-push-token] Novu upsert subscriber failed: status=${subscriberRes.status} body=${body.slice(0, 200)}`);
+      return new Response(JSON.stringify({ error: "Failed to upsert Novu subscriber" }), {
         status: 502,
         headers: { "Content-Type": "application/json" },
       });
@@ -66,8 +66,8 @@ Deno.serve(async (req) => {
     });
     if (!credentialsRes.ok) {
       const body = await credentialsRes.text();
-      console.error("[register-push-token] Novu credentials update failed:", credentialsRes.status, body);
-      return new Response(JSON.stringify({ error: "Failed to update Novu credentials", detail: body }), {
+      console.error(`[register-push-token] Novu credentials update failed: status=${credentialsRes.status} body=${body.slice(0, 200)}`);
+      return new Response(JSON.stringify({ error: "Failed to update Novu credentials" }), {
         status: 502,
         headers: { "Content-Type": "application/json" },
       });
@@ -83,8 +83,8 @@ Deno.serve(async (req) => {
       { onConflict: "user_id" },
     );
     if (upsertError) {
-      console.error("[register-push-token] push_tokens upsert failed:", upsertError.message);
-      return new Response(JSON.stringify({ error: "Failed to persist push token", detail: upsertError.message }), {
+      console.error(`[register-push-token] push_tokens upsert failed: ${upsertError.message}`);
+      return new Response(JSON.stringify({ error: "Failed to persist push token" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
