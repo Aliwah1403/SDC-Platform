@@ -39,8 +39,11 @@ export function buildMergedMap(healthDataArray, healthKitDataMap) {
   return map;
 }
 
-export function computeBaselines(mergedMap) {
-  return {
+// `manualOverrides` — optional { spO2, heartRate } from user profile settings.
+// When set, replaces the computed avg7d for that metric so alert thresholds
+// respect the user's known chronic baseline instead of a rolling average.
+export function computeBaselines(mergedMap, manualOverrides = {}) {
+  const baselines = {
     steps:           { avg14d: avg(lastNDays(mergedMap, "steps",           14)),
                        avg30d: avg(lastNDays(mergedMap, "steps",           30)) },
     heartRate:       { avg7d:  avg(lastNDays(mergedMap, "heartRate",        7)) },
@@ -49,4 +52,9 @@ export function computeBaselines(mergedMap) {
     respiratoryRate: { avg7d:  avg(lastNDays(mergedMap, "respiratoryRate",  7)) },
     temperature:     { avg7d:  avg(lastNDays(mergedMap, "temperature",      7)) },
   };
+
+  if (manualOverrides.spO2 != null)      baselines.spO2.avg7d      = manualOverrides.spO2;
+  if (manualOverrides.heartRate != null) baselines.heartRate.avg7d = manualOverrides.heartRate;
+
+  return baselines;
 }

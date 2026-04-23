@@ -14,6 +14,7 @@ export function useHealthKitAlerts() {
   const {
     healthKitData,
     healthKitConnected,
+    healthKitManualBaselines,
     setHealthKitBaselines,
     setComputedAlertState,
   } = useAppStore();
@@ -24,8 +25,11 @@ export function useHealthKitAlerts() {
     [healthData, healthKitData]
   );
 
-  // Compute baselines from the merged map
-  const baselines = useMemo(() => computeBaselines(mergedMap), [mergedMap]);
+  // Compute baselines, applying any user-supplied overrides for chronic values
+  const baselines = useMemo(
+    () => computeBaselines(mergedMap, healthKitManualBaselines),
+    [mergedMap, healthKitManualBaselines]
+  );
 
   // Today's merged entry — HealthKit fields overlay manual log fields
   const today = todayStr();

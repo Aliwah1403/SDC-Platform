@@ -290,7 +290,24 @@ export const useAppStore = create((set) => ({
       ),
     })),
 
+  // ── App Lock ────────────────────────────────────────────────────────────────
+  appLockEnabled: false,
+  appLockTimeout: 1, // minutes: 0=immediately, 1, 5, 15, 60
+  setAppLockEnabled: (val) => set({ appLockEnabled: val }),
+  setAppLockTimeout: (minutes) => set({ appLockTimeout: minutes }),
+
   // ── Push notifications ─────────────────────────────────────────────────────
   expoPushToken: null,
   setExpoPushToken: (token) => set({ expoPushToken: token }),
+
+  // ── Apple Health manual baselines ──────────────────────────────────────────
+  // Overrides the rolling-average baseline for users with chronic atypical values.
+  healthKitManualBaselines: {
+    spO2: null,       // e.g. 93 (%) — user's known chronic SpO2
+    heartRate: null,  // e.g. 88 (bpm) — user's known resting HR
+  },
+  setHealthKitManualBaseline: (metric, value) =>
+    set((state) => ({
+      healthKitManualBaselines: { ...state.healthKitManualBaselines, [metric]: value },
+    })),
 }));
