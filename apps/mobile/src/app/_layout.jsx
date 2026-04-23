@@ -56,6 +56,7 @@ export default function RootLayout() {
   const [splashDone, setSplashDone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const backgroundedAt = useRef(null);
+  const isAuthenticating = useRef(false);
   const startTime = useRef(Date.now());
 
   const [fontsLoaded, fontError] = useFonts({
@@ -80,26 +81,36 @@ export default function RootLayout() {
     });
   }, []);
 
-  // App Lock — watch AppState and lock when returning from background
+  // App Lock — watch AppState and lock when returning from background.
+  // We skip transitions caused by our own Face ID sheet (isAuthenticating guard)
+  // to prevent an infinite re-lock loop.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState === 'background' || nextState === 'inactive') {
-        backgroundedAt.current = Date.now();
+        // Don't record background time if the transition was caused by our own Face ID sheet
+        if (!isAuthenticating.current) {
+          backgroundedAt.current = Date.now();
+        }
       } else if (nextState === 'active') {
-        if (appLockEnabled && backgroundedAt.current) {
-          const elapsedMinutes = (Date.now() - backgroundedAt.current) / 1000 / 60;
+        // Always capture and clear — prevents stale timestamp firing on subsequent active events
+        const wasBackgrounded = backgroundedAt.current;
+        backgroundedAt.current = null;
+
+        if (!isAuthenticating.current && appLockEnabled && wasBackgrounded) {
+          const elapsedMinutes = (Date.now() - wasBackgrounded) / 1000 / 60;
           if (appLockTimeout === 0 || elapsedMinutes >= appLockTimeout) {
             setIsLocked(true);
             authenticateToUnlock();
           }
         }
-        backgroundedAt.current = null;
       }
     });
     return () => sub.remove();
   }, [appLockEnabled, appLockTimeout]);
 
   const authenticateToUnlock = async () => {
+    if (isAuthenticating.current) return;
+    isAuthenticating.current = true;
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: 'Unlock Hemo',
@@ -109,6 +120,8 @@ export default function RootLayout() {
       if (result.success) setIsLocked(false);
     } catch {
       // keep locked, user can tap button to retry
+    } finally {
+      isAuthenticating.current = false;
     }
   };
 
