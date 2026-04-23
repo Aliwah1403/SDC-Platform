@@ -19,7 +19,7 @@ export async function scheduleCheckInReminders(frequency = 2) {
         body: 'How are you feeling today? Take a moment to log your health check-in.',
         data: { type: NOTIFICATION_TAG },
       },
-      trigger: { hour, minute, repeats: true },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute },
     });
   }
 }

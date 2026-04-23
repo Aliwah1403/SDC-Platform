@@ -671,16 +671,13 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
                   });
                   if (insertError) {
                     console.error("[HealthKit] system_notifications insert failed:", {
-                      error: insertError,
-                      userId: user.id,
-                      type: "health_alert",
                       metricKey,
-                      urgentMsg,
+                      error: insertError.message,
                     });
                   }
                 }
               } catch (err) {
-                console.error("[HealthKit] system_notifications insert failed:", err);
+                console.error("[HealthKit] system_notifications insert failed:", err?.message ?? err);
               }
             }
           }
