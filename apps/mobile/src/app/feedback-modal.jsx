@@ -1,28 +1,50 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert, Linking } from "react-native";
+import React, { useRef, useState } from "react";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { X, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { fonts } from "@/utils/fonts";
-import { USERJOT_FEEDBACK_URL, isUserJotUrl } from "@/constants/feedback";
+import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
+import { useAuthStore } from "@/utils/auth/store";
 
 export default function FeedbackModalScreen() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const webViewRef = useRef(null);
 
-  const handleShouldStartRequest = (request) => {
-    const url = request?.url;
+  const user = useAuthStore((s) => s.auth?.user);
+  const userId = user?.id ?? "";
+  const userEmail = user?.email ?? "";
+  const fullName =
+    user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "";
+  const [firstName, ...rest] = fullName.trim().split(" ");
+  const lastName = rest.join(" ");
 
-    if (isUserJotUrl(url)) return true;
-
-    if (!url) return false;
-
-    Linking.openURL(url).catch(() => {
-      Alert.alert("Unable to open link", "Please try again in your browser.");
+  const identifyUser = () => {
+    if (!userId || !webViewRef.current) return;
+    const payload = JSON.stringify({
+      id: userId,
+      email: userEmail,
+      ...(firstName && { firstName }),
+      ...(lastName && { lastName }),
     });
-    return false;
+    // Poll until window.uj is ready — the widget initialises asynchronously
+    // after the page HTML loads, so onLoadEnd fires too early.
+    webViewRef.current.injectJavaScript(`
+      (function() {
+        function tryIdentify(attempts) {
+          if (window.uj && typeof window.uj.identify === 'function') {
+            window.uj.identify(${payload});
+          } else if (attempts > 0) {
+            setTimeout(function() { tryIdentify(attempts - 1); }, 250);
+          }
+        }
+        tryIdentify(20);
+      })();
+      true;
+    `);
   };
 
   return (
@@ -129,15 +151,12 @@ export default function FeedbackModalScreen() {
         </View>
       ) : (
         <WebView
+          ref={webViewRef}
           key={reloadKey}
           source={{ uri: USERJOT_FEEDBACK_URL }}
-          onShouldStartLoadWithRequest={handleShouldStartRequest}
-          onLoadStart={() => {
-            setError(null);
-          }}
-          onError={() => {
-            setError("load_error");
-          }}
+          onLoadStart={() => setError(null)}
+          onLoadEnd={identifyUser}
+          onError={() => setError("load_error")}
           startInLoadingState={false}
         />
       )}

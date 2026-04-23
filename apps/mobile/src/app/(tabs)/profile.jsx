@@ -322,7 +322,12 @@ export default function ProfileScreen() {
   const { data: medications = [] } = useMedicationsQuery();
   const updateProfile = useUpdateProfileMutation();
   const queryClient = useQueryClient();
-  const { onboardingData, appLockEnabled, appLockTimeout, healthKitConnected: appleHealthConnected } = useAppStore();
+  const {
+    onboardingData,
+    appLockEnabled,
+    appLockTimeout,
+    healthKitConnected: appleHealthConnected,
+  } = useAppStore();
   const { theme, setTheme } = useAppearanceStore();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
@@ -441,8 +446,8 @@ export default function ProfileScreen() {
     updateProfile.mutate({ notificationsEnabled: val });
   };
   const appLockLabel = appLockEnabled
-    ? `On · ${appLockTimeout === 0 ? 'Immediately' : appLockTimeout === 1 ? '1 min' : appLockTimeout === 60 ? '1 hour' : `${appLockTimeout} min`}`
-    : 'Off';
+    ? `On · ${appLockTimeout === 0 ? "Immediately" : appLockTimeout === 1 ? "1 min" : appLockTimeout === 60 ? "1 hour" : `${appLockTimeout} min`}`
+    : "Off";
   const handleExportData = () => {
     Alert.alert(
       "Export Health Data",
@@ -467,7 +472,9 @@ export default function ProfileScreen() {
     }
   };
   const refreshIdentities = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       const currentSession = useAuthStore.getState().auth?.session;
       useAuthStore.getState().setAuth(currentSession, user);
@@ -859,11 +866,11 @@ export default function ProfileScreen() {
       },
       {
         key: "biometrics",
-        label: "Biometric Login",
+        label: "App Lock",
         section: "Account",
         icon: Fingerprint,
         iconColor: "#6B7280",
-        onPress: () => comingSoon("Biometric Login"),
+        onPress: () => router.push("/app-lock-setup"),
       },
       {
         key: "help",
@@ -1411,7 +1418,7 @@ export default function ProfileScreen() {
               label="App Lock"
               value={appLockLabel}
               rightElement="chevron"
-              onPress={() => router.push('/app-lock-setup')}
+              onPress={() => router.push("/app-lock-setup")}
             />
           </SectionCard>
 
