@@ -82,7 +82,8 @@ export default function RootLayout() {
       .then((pairs) => {
         const enabled = pairs[0][1];
         const timeout = pairs[1][1];
-        const parsedTimeout = timeout !== null ? parseInt(timeout, 10) : 0;
+        const raw = timeout !== null ? parseInt(timeout, 10) : 0;
+        const parsedTimeout = Number.isFinite(raw) && raw >= 0 ? raw : 0;
         if (enabled === 'true') setAppLockEnabled(true);
         if (timeout !== null) setAppLockTimeout(parsedTimeout);
         // Lock immediately on cold start when appLock is on and timeout is 0 (lock immediately)

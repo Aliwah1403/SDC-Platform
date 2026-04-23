@@ -105,8 +105,8 @@ export default function SignInScreen() {
         setError("Google sign-in failed. Please try again.");
         return;
       }
-      setAuth(data.session, data.user);
       await AsyncStorage.setItem("lastAuthProvider", "google");
+      setAuth(data.session, data.user);
       router.replace("/");
     } catch (e) {
       if (e.code !== "ERR_REQUEST_CANCELED")

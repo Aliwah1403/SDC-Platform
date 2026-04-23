@@ -703,15 +703,18 @@ export default function MetricDetailScreen() {
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const giftedData = data.map((d, i) => ({
-    value: Number.isFinite(d.value) ? d.value : 0,
-    label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
-    tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    ...(meta.chartType === "bar" && {
-      frontColor: goal && d.value >= goal ? meta.color : meta.color + "88",
-    }),
-  }));
+  const giftedData = data.map((d, i) => {
+    const value = Number.isFinite(d.value) ? d.value : 0;
+    return {
+      value,
+      label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
+      tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+      ...(meta.chartType === "bar" && {
+        frontColor: goal && value >= goal ? meta.color : meta.color + "88",
+      }),
+    };
+  });
 
   const IconComp = meta.icon;
 

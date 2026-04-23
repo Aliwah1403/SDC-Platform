@@ -3,7 +3,7 @@ import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import { fetchProfile } from '@/services/supabaseQueries';
 import { scheduleCheckInReminders } from '@/utils/checkInNotifications';
-import { useAuthStore } from '@/utils/auth/store';
+import { supabase } from '@/utils/auth/supabase';
 
 const TASK_NAME = 'checkin-notification-refresh';
 
@@ -15,7 +15,8 @@ TaskManager.defineTask(TASK_NAME, async () => {
     const hasCheckins = scheduled.some((n) => n.content.data?.type === 'checkin');
     if (hasCheckins) return BackgroundTask.BackgroundTaskResult.Success;
 
-    const userId = useAuthStore.getState().auth?.user?.id;
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
     if (!userId) return BackgroundTask.BackgroundTaskResult.Success;
 
     const profile = await fetchProfile(userId);

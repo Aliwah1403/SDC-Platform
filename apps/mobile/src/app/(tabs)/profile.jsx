@@ -1908,7 +1908,7 @@ export default function ProfileScreen() {
               <Pressable
                 onPress={() => {
                   updateProfile.mutate({ checkInFrequency: opt.value }, {
-                    onSuccess: () => scheduleCheckInReminders(opt.value),
+                    onSuccess: () => notificationsEnabled && scheduleCheckInReminders(opt.value),
                   });
                   setEditingFrequency(false);
                 }}
