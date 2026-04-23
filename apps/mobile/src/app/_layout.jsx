@@ -55,6 +55,7 @@ export default function RootLayout() {
   const userId = useAuthStore((s) => s.auth?.user?.id);
   const [splashDone, setSplashDone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [biometricLabel, setBiometricLabel] = useState("Unlock Hemo");
   const backgroundedAt = useRef(null);
   const isAuthenticating = useRef(false);
   const startTime = useRef(Date.now());
@@ -73,11 +74,31 @@ export default function RootLayout() {
 
   // Load persisted App Lock settings on startup
   useEffect(() => {
-    AsyncStorage.multiGet(['appLockEnabled', 'appLockTimeout']).then((pairs) => {
-      const enabled = pairs[0][1];
-      const timeout = pairs[1][1];
-      if (enabled === 'true') setAppLockEnabled(true);
-      if (timeout !== null) setAppLockTimeout(parseInt(timeout, 10));
+    AsyncStorage.multiGet(['appLockEnabled', 'appLockTimeout'])
+      .then((pairs) => {
+        const enabled = pairs[0][1];
+        const timeout = pairs[1][1];
+        const parsedTimeout = timeout !== null ? parseInt(timeout, 10) : 0;
+        if (enabled === 'true') setAppLockEnabled(true);
+        if (timeout !== null) setAppLockTimeout(parsedTimeout);
+        // Lock immediately on cold start when appLock is on and timeout is 0 (lock immediately)
+        if (enabled === 'true' && parsedTimeout === 0) {
+          setIsLocked(true);
+          authenticateToUnlock();
+        }
+      })
+      .catch((err) => console.error('[AppLock] Failed to load lock settings:', err));
+  }, []);
+
+  // Detect available biometric type to label the unlock button correctly
+  useEffect(() => {
+    LocalAuthentication.supportedAuthenticationTypesAsync().then((types) => {
+      if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
+        setBiometricLabel("Unlock with Face ID");
+      } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
+        setBiometricLabel("Unlock with Touch ID");
+      }
+      // else falls back to the default "Unlock Hemo" (passcode-only devices)
     });
   }, []);
 
@@ -279,7 +300,7 @@ export default function RootLayout() {
               style={({ pressed }) => [lockStyles.unlockBtn, pressed && { opacity: 0.85 }]}
               onPress={authenticateToUnlock}
             >
-              <Text style={lockStyles.unlockBtnText}>Unlock with Face ID</Text>
+              <Text style={lockStyles.unlockBtnText}>{biometricLabel}</Text>
             </Pressable>
           </View>
         )}
