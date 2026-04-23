@@ -186,7 +186,8 @@ function getLastNDays(healthData, field, n) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const entry = healthData.find((d) => d.date === dateToStr(date));
-    result.push({ date, value: entry?.[field] ?? 0 });
+    const raw = entry?.[field];
+    result.push({ date, value: (raw != null && Number.isFinite(raw)) ? raw : 0 });
   }
   return result;
 }
@@ -703,7 +704,7 @@ export default function MetricDetailScreen() {
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   const giftedData = data.map((d, i) => ({
-    value: d.value,
+    value: Number.isFinite(d.value) ? d.value : 0,
     label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
     tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
     labelTextStyle: { color: "#9CA3AF", fontSize: 9 },

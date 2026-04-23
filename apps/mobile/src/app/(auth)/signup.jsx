@@ -99,7 +99,7 @@ export default function SignUpScreen() {
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch (e) {
-      if (e.code !== 'ERR_CANCELED') setError('Apple sign-in failed. Please try again.');
+      if (e.code !== 'ERR_REQUEST_CANCELED') setError('Apple sign-in failed. Please try again.');
     } finally {
       setLoading(false);
     }

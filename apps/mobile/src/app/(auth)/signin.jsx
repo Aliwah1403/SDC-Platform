@@ -101,8 +101,12 @@ export default function SignInScreen() {
         setError(authError.message || "Google sign-in failed.");
         return;
       }
-      await AsyncStorage.setItem("lastAuthProvider", "google");
+      if (!data?.session || !data?.user) {
+        setError("Google sign-in failed. Please try again.");
+        return;
+      }
       setAuth(data.session, data.user);
+      await AsyncStorage.setItem("lastAuthProvider", "google");
       router.replace("/");
     } catch (e) {
       if (e.code !== "ERR_REQUEST_CANCELED")
@@ -125,7 +129,7 @@ export default function SignInScreen() {
       setAuth(data.session, data.user);
       router.replace("/");
     } catch (e) {
-      if (e.code !== "ERR_CANCELED")
+      if (e.code !== "ERR_REQUEST_CANCELED")
         setError("Apple sign-in failed. Please try again.");
     } finally {
       setLoading(false);

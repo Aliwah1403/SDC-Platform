@@ -502,7 +502,7 @@ export default function ProfileScreen() {
       if (error) throw error;
       await refreshIdentities();
     } catch (e) {
-      if (e.code !== "ERR_CANCELED")
+      if (e.code !== "ERR_REQUEST_CANCELED")
         Alert.alert("Error", "Could not connect Apple account.");
     } finally {
       setLinkingProvider(null);

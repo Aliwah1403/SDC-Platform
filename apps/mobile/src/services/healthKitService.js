@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import {
   requestAuthorization,
@@ -548,6 +549,38 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
 // ─── Background delivery ──────────────────────────────────────────────────────
 // `onNewData(dateKey, metrics)` — caller should call store.mergeHealthKitDay
 // Critical alerts fire push notifications immediately.
+//
+// Alert deduplication: alerts fire only when crossing INTO the danger zone
+// (previous reading was safe or unknown) or when the 4-hour cooldown has expired.
+// State is persisted in AsyncStorage so it survives app restarts.
+
+const ALERT_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+const ALERT_STATE_KEY = "hk_alert_state";
+
+function isInDangerZone(metricKey, value) {
+  if (value == null) return false;
+  if (metricKey === "spO2") return value < 92;
+  if (metricKey === "temperature") return value >= 38.0;
+  if (metricKey === "heartRate") return value > 120 || value < 50;
+  return false;
+}
+
+async function loadAlertState() {
+  try {
+    const raw = await AsyncStorage.getItem(ALERT_STATE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+async function saveAlertState(state) {
+  try {
+    await AsyncStorage.setItem(ALERT_STATE_KEY, JSON.stringify(state));
+  } catch (err) {
+    console.error("[HealthKit] Failed to save alert state:", err);
+  }
+}
 
 export async function setupBackgroundDelivery(onNewData, prefs = {}) {
   if (!isHKAvailable()) return;
@@ -583,40 +616,72 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
 
           onNewData(key, { [metricKey]: value });
 
-          // Background delivery has no baseline/symptom context — check URGENT thresholds only
-          const urgentMsg =
-            metricKey === "spO2" && value < 92
+          // Background delivery has no baseline/symptom context — check URGENT thresholds only.
+          // Only alert when crossing INTO the danger zone or after the 4-hour cooldown expires.
+          const inDanger = isInDangerZone(metricKey, value);
+          const urgentMsg = !inDanger ? null
+            : metricKey === "spO2"
               ? `Blood oxygen at ${value}% — outside a safe range. Contact your care team now.`
-            : metricKey === "temperature" && value >= 38.0
+            : metricKey === "temperature"
               ? `Temperature ${value}°C — fever in SCD is urgent. Seek care immediately.`
-            : metricKey === "heartRate" && (value > 120 || value < 50)
-              ? `Heart rate ${value} bpm has shifted significantly. Contact your care team.`
-            : null;
+            : `Heart rate ${value} bpm has shifted significantly. Contact your care team.`;
+
+          // Always track the last seen value so re-entry detection works after recovery
+          if (!inDanger && value != null) {
+            const alertState = await loadAlertState();
+            const prev = alertState[metricKey] ?? {};
+            await saveAlertState({ ...alertState, [metricKey]: { ...prev, lastValue: value } });
+          }
 
           if (urgentMsg) {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: "Health Alert",
-                body: urgentMsg,
-                data: { screen: "metric-detail", metric: metricKey },
-              },
-              trigger: null,
-            });
+            const alertState = await loadAlertState();
+            const prev = alertState[metricKey] ?? {};
+            const prevInDanger = isInDangerZone(metricKey, prev.lastValue ?? null);
+            const cooldownExpired = !prev.lastAlertAt || (Date.now() - prev.lastAlertAt) >= ALERT_COOLDOWN_MS;
+            const isCrossing = !prevInDanger;
 
-            // Write to system_notifications so the alert appears in the unified feed
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await supabase.from("system_notifications").insert({
-                  user_id: user.id,
-                  type: "health_alert",
+            if (!isCrossing && !cooldownExpired) {
+              // Already in danger zone and within cooldown — skip
+              await saveAlertState({ ...alertState, [metricKey]: { ...prev, lastValue: value } });
+            } else {
+              await Notifications.scheduleNotificationAsync({
+                content: {
                   title: "Health Alert",
                   body: urgentMsg,
                   data: { screen: "metric-detail", metric: metricKey },
-                });
+                },
+                trigger: null,
+              });
+
+              await saveAlertState({
+                ...alertState,
+                [metricKey]: { lastAlertAt: Date.now(), lastValue: value },
+              });
+
+              // Write to system_notifications so the alert appears in the unified feed
+              try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                  const { error: insertError } = await supabase.from("system_notifications").insert({
+                    user_id: user.id,
+                    type: "health_alert",
+                    title: "Health Alert",
+                    body: urgentMsg,
+                    data: { screen: "metric-detail", metric: metricKey },
+                  });
+                  if (insertError) {
+                    console.error("[HealthKit] system_notifications insert failed:", {
+                      error: insertError,
+                      userId: user.id,
+                      type: "health_alert",
+                      metricKey,
+                      urgentMsg,
+                    });
+                  }
+                }
+              } catch (err) {
+                console.error("[HealthKit] system_notifications insert failed:", err);
               }
-            } catch (err) {
-              console.error("[HealthKit] system_notifications insert failed:", err);
             }
           }
         } catch {}

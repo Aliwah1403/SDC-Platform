@@ -84,6 +84,9 @@ export async function signInWithApple() {
       AppleAuthentication.AppleAuthenticationScope.EMAIL,
     ],
   });
+  if (!credential.identityToken) {
+    return { data: null, error: new Error('Apple sign-in did not return an identity token.') };
+  }
   return supabase.auth.signInWithIdToken({
     provider: 'apple',
     token: credential.identityToken,
@@ -113,6 +116,9 @@ export async function linkApple() {
       AppleAuthentication.AppleAuthenticationScope.EMAIL,
     ],
   });
+  if (!credential.identityToken) {
+    return { data: null, error: new Error('Apple sign-in did not return an identity token.') };
+  }
   return supabase.auth.linkIdentity({
     provider: 'apple',
     token: credential.identityToken,
