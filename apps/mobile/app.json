@@ -72,13 +72,20 @@
       "expo-notifications",
       "expo-location",
       [
+        "expo-calendar",
+        {
+          "calendarPermission": "Hemo adds your appointments to your calendar so you never miss a check-up."
+        }
+      ],
+      [
         "@kingstinct/react-native-healthkit",
         {
           "healthSharePermission": "Hemo reads health data to monitor your sickle cell disease.",
           "healthUpdatePermission": "Hemo saves water intake, symptoms, and mood to Apple Health.",
           "backgroundDeliveryEnabled": true
         }
-      ]
+      ],
+      "expo-background-task"
     ],
     "web": {
       "bundler": "metro",

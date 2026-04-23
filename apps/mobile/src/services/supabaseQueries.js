@@ -431,6 +431,7 @@ export async function addAppointment(userId, appt) {
       added_to_calendar: appt.addedToCalendar ?? false,
       calendar_event_id: appt.calendarEventId || null,
       reminder_ids: appt.reminderIds ?? [],
+      reminder_offsets: appt.reminderOffsets ?? [],
     })
     .select()
     .single();
