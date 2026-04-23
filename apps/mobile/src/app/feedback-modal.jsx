@@ -1,51 +1,16 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { X, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { fonts } from "@/utils/fonts";
-import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
-import { useAuthStore } from "@/utils/auth/store";
+import { FEATUREBASE_URL } from "@/constants/feedback";
 
 export default function FeedbackModalScreen() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const webViewRef = useRef(null);
-
-  const user = useAuthStore((s) => s.auth?.user);
-  const userId = user?.id ?? "";
-  const userEmail = user?.email ?? "";
-  const fullName =
-    user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "";
-  const [firstName, ...rest] = fullName.trim().split(" ");
-  const lastName = rest.join(" ");
-
-  const identifyUser = () => {
-    if (!userId || !webViewRef.current) return;
-    const payload = JSON.stringify({
-      id: userId,
-      email: userEmail,
-      ...(firstName && { firstName }),
-      ...(lastName && { lastName }),
-    });
-    // Poll until window.uj is ready — the widget initialises asynchronously
-    // after the page HTML loads, so onLoadEnd fires too early.
-    webViewRef.current.injectJavaScript(`
-      (function() {
-        function tryIdentify(attempts) {
-          if (window.uj && typeof window.uj.identify === 'function') {
-            window.uj.identify(${payload});
-          } else if (attempts > 0) {
-            setTimeout(function() { tryIdentify(attempts - 1); }, 250);
-          }
-        }
-        tryIdentify(20);
-      })();
-      true;
-    `);
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
@@ -151,11 +116,9 @@ export default function FeedbackModalScreen() {
         </View>
       ) : (
         <WebView
-          ref={webViewRef}
           key={reloadKey}
-          source={{ uri: USERJOT_FEEDBACK_URL }}
+          source={{ uri: FEATUREBASE_URL }}
           onLoadStart={() => setError(null)}
-          onLoadEnd={identifyUser}
           onError={() => setError("load_error")}
           startInLoadingState={false}
         />
