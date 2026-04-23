@@ -26,12 +26,11 @@ const BADGE_MAP = {
   "streak-7":      require("../../assets/images/badges/habit-builder.png"),
   "streak-14":     require("../../assets/images/badges/fortnight-fighter.svg"),
   "streak-30":     require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60":     require("../../assets/images/badges/dedicated-tracker.svg"),
+  "streak-60":     require("../../assets/images/badges/pattern-seeker.svg"),
   "days-1":        require("../../assets/images/badges/first-streak.svg"),
   "days-5":        require("../../assets/images/badges/getting-started.svg"),
-  "symptoms-10":   require("../../assets/images/badges/pattern-seeker.svg"),
   "hydration-7":   require("../../assets/images/badges/hydration-junkie.png"),
-  // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
+  // TODO: add images for symptoms-10, symptoms-25, days-10, days-25, days-50, days-100
 };
 
 // ── Confetti ──────────────────────────────────────────────────────────────────

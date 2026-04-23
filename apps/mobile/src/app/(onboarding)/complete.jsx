@@ -10,6 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/utils/auth/store';
 import { useCompleteOnboardingMutation } from '@/hooks/queries/useProfileQuery';
+import { scheduleCheckInReminders } from '@/utils/checkInNotifications';
 
 const STATS = [
   { icon: StreakFireIcon, label: 'Streak', value: '1 day', color: '#781D11' },
@@ -32,6 +33,9 @@ export default function OnboardingComplete() {
   const handleGetStarted = () => {
     completeOnboardingMutation.mutate(onboardingData, {
       onSuccess: () => {
+        if (onboardingData.notificationsEnabled) {
+          scheduleCheckInReminders(2); // default twice-daily; user can adjust in profile
+        }
         resetOnboarding();
         router.replace('/(tabs)/home');
       },

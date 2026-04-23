@@ -11,6 +11,10 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
+import { fetchProfile } from "@/services/supabaseQueries";
+import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
+import '@/utils/backgroundNotificationRefresh';
+import { registerNotificationRefreshTask } from "@/utils/backgroundNotificationRefresh";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
@@ -175,6 +179,21 @@ export default function RootLayout() {
       .catch((err) => {
         console.error("[PushToken] Failed to register push token:", err);
       });
+  }, [userId]);
+
+  // Re-schedule check-in reminders on every launch for users with notifications enabled.
+  // iOS can silently clear scheduled local notifications after restores/reinstalls.
+  // Also register the background task so the OS can reschedule even when the app is closed.
+  useEffect(() => {
+    if (!userId) return;
+    fetchProfile(userId)
+      .then((profile) => {
+        if (profile?.notificationsEnabled) {
+          scheduleCheckInReminders(profile.checkInFrequency ?? 2);
+        }
+      })
+      .catch(() => {});
+    registerNotificationRefreshTask().catch(() => {});
   }, [userId]);
 
   // Route to the correct screen when user taps a remote or local notification
