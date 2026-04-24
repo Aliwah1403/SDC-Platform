@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -27,12 +28,17 @@ import { mockArticles } from "../../types";
 
 export default function LearnScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const scrollViewRef = useRef(null);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const { chatMessages, addChatMessage, clearChat, setTyping, isTyping } =
     useAppStore();
+
+  useEffect(() => {
+    posthog?.capture('learn_viewed', { has_prior_messages: chatMessages.length > 0 });
+  }, []);
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages are added
@@ -45,6 +51,12 @@ export default function LearnScreen() {
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
+
+    const userCount = chatMessages.filter((m) => m.role === 'user').length;
+    posthog?.capture('chat_message_sent', {
+      is_first_message: userCount === 0,
+      message_length_bucket: inputText.length < 50 ? 'short' : inputText.length < 150 ? 'medium' : 'long',
+    });
 
     const userMessage = {
       id: Date.now().toString(),
@@ -91,7 +103,7 @@ export default function LearnScreen() {
   const handleClearChat = () => {
     Alert.alert("Clear Chat", "Are you sure you want to clear all messages?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Clear", style: "destructive", onPress: clearChat },
+      { text: "Clear", style: "destructive", onPress: () => { posthog?.capture('chat_cleared', {}); clearChat(); } },
     ]);
   };
 

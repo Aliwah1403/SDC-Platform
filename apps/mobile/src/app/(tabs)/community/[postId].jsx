@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -170,6 +171,8 @@ export default function PostDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const posthog = usePostHog();
+
   const { data: post, isLoading, isError } = usePostDetailQuery(postId);
   const { data: notificationsData = [] } = useCommunityNotificationsQuery();
   const notificationCount = notificationsData.filter((n) => !n.read).length;
@@ -184,6 +187,12 @@ export default function PostDetailScreen() {
 
   const [inputText, setInputText] = useState("");
   const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
+
+  // Track post view once data is available
+  useEffect(() => {
+    if (!post) return;
+    posthog?.capture('post_viewed', { post_type: post.poll ? 'poll' : 'text' });
+  }, [!!post]);
   const [actionsComment, setActionsComment] = useState(null); // { id, isOwnComment }
   // { commentId: string, authorName: string } | null
   const [replyingTo, setReplyingTo] = useState(null);
@@ -229,6 +238,8 @@ export default function PostDetailScreen() {
   const handleSubmitComment = () => {
     const text = inputText.trim();
     if (!text) return;
+
+    posthog?.capture('comment_submitted', { is_reply: !!replyingTo });
 
     if (replyingTo) {
       addReply({
@@ -575,13 +586,14 @@ export default function PostDetailScreen() {
             <PollBlock
               poll={post.poll}
               votedOptionId={post.poll?.votedOptionId ?? null}
-              onVote={(optionId) =>
+              onVote={(optionId) => {
+                posthog?.capture('poll_voted', {});
                 voteOnPoll({
                   postId: post.id,
                   optionId,
                   previousOptionId: post.poll?.votedOptionId ?? undefined,
-                })
-              }
+                });
+              }}
             />
           </View>
         )}
@@ -660,7 +672,10 @@ export default function PostDetailScreen() {
           }}
         >
           <TouchableOpacity
-            onPress={() => likePost({ postId: post.id, isLiked })}
+            onPress={() => {
+              posthog?.capture('post_liked', { action: isLiked ? 'unlike' : 'like' });
+              likePost({ postId: post.id, isLiked });
+            }}
             style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
           >
             <Heart

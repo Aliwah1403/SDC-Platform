@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import { View, FlatList, Text, TouchableOpacity } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
@@ -42,6 +43,7 @@ const EMPTY_MESSAGES = {
 export default function CommunityFeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const [activeFeed, setActiveFeed] = useState("popular");
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -49,6 +51,15 @@ export default function CommunityFeedScreen() {
   const [actionsPost, setActionsPost] = useState(null); // { id, isOwnPost }
 
   const hiddenPostIds = useAppStore((s) => s.hiddenPostIds);
+
+  useEffect(() => {
+    posthog?.capture('community_viewed', { feed_type: activeFeed });
+  }, []);
+
+  const handleFeedChange = useCallback((feed) => {
+    posthog?.capture('feed_type_changed', { to: feed });
+    setActiveFeed(feed);
+  }, [posthog]);
 
   const { data: feedData = [], isLoading, refetch } = useCommunityFeedQuery(activeFeed);
   const { data: prefs } = useCategoryPrefsQuery();
@@ -85,7 +96,10 @@ export default function CommunityFeedScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  const handleCompose = () => router.push("/community/create-post");
+  const handleCompose = () => {
+    posthog?.capture('new_post_started', {});
+    router.push("/community/create-post");
+  };
 
   const listData = isLoading || refreshing ? SKELETON_DATA : filteredPosts;
 
@@ -129,7 +143,7 @@ export default function CommunityFeedScreen() {
         onProfile={() => router.push("/(tabs)/profile")}
         notificationCount={notificationCount}
       />
-      <FeedFilter active={activeFeed} onSelect={setActiveFeed} />
+      <FeedFilter active={activeFeed} onSelect={handleFeedChange} />
 
       <View style={{ flex: 1 }}>
         <FlatList
@@ -172,10 +186,19 @@ export default function CommunityFeedScreen() {
               <PostCard
                 post={item}
                 isLiked={item.isLiked ?? false}
-                onLike={() => likePost({ postId: item.id, isLiked: item.isLiked ?? false })}
+                onLike={() => {
+                  posthog?.capture('post_liked', { action: item.isLiked ? 'unlike' : 'like' });
+                  likePost({ postId: item.id, isLiked: item.isLiked ?? false });
+                }}
                 isSaved={item.isSaved ?? false}
-                onSave={() => savePost({ postId: item.id, isSaved: item.isSaved ?? false })}
-                onPress={() => router.push(`/community/${item.id}`)}
+                onSave={() => {
+                  posthog?.capture('post_saved', { action: item.isSaved ? 'unsave' : 'save' });
+                  savePost({ postId: item.id, isSaved: item.isSaved ?? false });
+                }}
+                onPress={() => {
+                  posthog?.capture('post_tapped', { post_type: item.poll ? 'poll' : 'text' });
+                  router.push(`/community/${item.id}`);
+                }}
                 onMorePress={() =>
                   setActionsPost({
                     id: item.id,
@@ -183,13 +206,14 @@ export default function CommunityFeedScreen() {
                   })
                 }
                 pollVotedOptionId={item.poll?.votedOptionId ?? null}
-                onVote={(optionId) =>
+                onVote={(optionId) => {
+                  posthog?.capture('poll_voted', {});
                   voteOnPoll({
                     postId: item.id,
                     optionId,
                     previousOptionId: item.poll?.votedOptionId ?? undefined,
-                  })
-                }
+                  });
+                }}
                 followedCategoryIds={followedCategoryIds}
                 blockedCategoryIds={blockedCategoryIds}
                 onFollowCategory={(categoryId) => followCategory(categoryId)}

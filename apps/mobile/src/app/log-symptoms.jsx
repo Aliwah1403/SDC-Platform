@@ -23,6 +23,7 @@ import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
+import { usePostHog } from "posthog-react-native";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
@@ -520,10 +521,14 @@ function SummaryStep({ log, onSubmit }) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
+const STEP_NAMES = ['pain_level', 'mood', 'body_locations', 'symptoms', 'hydration', 'notes', 'summary'];
+
 export default function LogSymptomsScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected, healthKitPreferences } = useAppStore();
   const submitLogMutation = useSubmitLogMutation();
+  const openedAtRef = useRef(Date.now());
 
   const todayStr = new Date().toISOString().split("T")[0];
   const { data: todayLogs = [] } = useHealthLogsQuery(todayStr);
@@ -542,6 +547,23 @@ export default function LogSymptomsScreen() {
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
 
   const STEP_COUNT = 7; // steps 0-5 + summary (6)
+
+  // Track opened once on mount
+  useEffect(() => {
+    posthog?.capture('symptom_log_opened', {});
+  }, []);
+
+  // Track each step as it becomes active
+  useEffect(() => {
+    posthog?.capture('symptom_log_step_viewed', { step, step_name: STEP_NAMES[step] });
+  }, [step]);
+
+  // Track already-logged notice shown (fires once when hasLoggedToday is known)
+  useEffect(() => {
+    if (hasLoggedToday) {
+      posthog?.capture('already_logged_today_notice_shown', {});
+    }
+  }, [hasLoggedToday]);
 
   function flushToStore() {
     updateSymptomLog({
@@ -564,7 +586,12 @@ export default function LogSymptomsScreen() {
     if (step === 0) {
       Alert.alert("Discard log?", "Your entries will not be saved.", [
         { text: "Keep editing", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: () => router.back() },
+        {
+          text: "Discard", style: "destructive", onPress: () => {
+            posthog?.capture('symptom_log_abandoned', { at_step: step });
+            router.back();
+          }
+        },
       ]);
     } else {
       setStep((s) => s - 1);
@@ -574,7 +601,12 @@ export default function LogSymptomsScreen() {
   function handleCancel() {
     Alert.alert("Discard log?", "Your entries will not be saved.", [
       { text: "Keep editing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: () => router.back() },
+      {
+        text: "Discard", style: "destructive", onPress: () => {
+          posthog?.capture('symptom_log_abandoned', { at_step: step });
+          router.back();
+        }
+      },
     ]);
   }
 
@@ -590,6 +622,12 @@ export default function LogSymptomsScreen() {
     updateSymptomLog(logData);
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
+        posthog?.capture('symptom_log_submitted', {
+          location_count: bodyLocations.length,
+          symptom_count: symptoms.length,
+          has_notes: notes.trim().length > 0,
+          total_time_seconds: Math.round((Date.now() - openedAtRef.current) / 1000),
+        });
         resetSymptomLog();
         // Mirror to Apple Health on the first log of the day only — re-logs would
         // append duplicate DietaryWater and symptom samples to HealthKit.

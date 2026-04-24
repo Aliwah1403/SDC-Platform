@@ -2,6 +2,8 @@ import { View, Text, ScrollView, TouchableOpacity, Dimensions } from "react-nati
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { fonts } from "@/utils/fonts";
@@ -273,6 +275,7 @@ function ClinicsCard({ savedCount, onPress }) {
 export default function CareMenuScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const crisisMode = useAppStore((s) => s.crisisMode);
 
@@ -291,6 +294,14 @@ export default function CareMenuScreen() {
   const nextAppt = appointments
     .filter((a) => a.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
+
+  useEffect(() => {
+    posthog?.capture('care_hub_viewed', {
+      crisis_active: crisisMode.isActive,
+      meds_due_count: medsDue,
+      has_next_appointment: !!nextAppt,
+    });
+  }, []);
 
   // Summary header line
   const summaryLine = [
@@ -347,24 +358,30 @@ export default function CareMenuScreen() {
         contentContainerStyle={{ paddingTop: 20, paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
       >
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 0 }}>
-          <EmergencyButton onPress={() => router.push("/crisis-mode")} isActive={crisisMode.isActive} />
+          <EmergencyButton
+            onPress={() => {
+              posthog?.capture('care_section_tapped', { section: 'crisis_mode', crisis_was_active: crisisMode.isActive });
+              router.push("/crisis-mode");
+            }}
+            isActive={crisisMode.isActive}
+          />
         </MotiView>
 
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 80 }}>
-          <MedsCard taken={medsTaken} total={medsTotal} onPress={() => router.push("/(tabs)/care/medications")} />
+          <MedsCard taken={medsTaken} total={medsTotal} onPress={() => { posthog?.capture('care_section_tapped', { section: 'medications' }); router.push("/(tabs)/care/medications"); }} />
         </MotiView>
 
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 160 }}>
-          <AppointmentsCard appointment={nextAppt} onPress={() => router.push("/(tabs)/care/appointments")} />
+          <AppointmentsCard appointment={nextAppt} onPress={() => { posthog?.capture('care_section_tapped', { section: 'appointments' }); router.push("/(tabs)/care/appointments"); }} />
         </MotiView>
 
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 240 }} style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
-          <CareTeamCard contactCount={contacts.length} onPress={() => router.push("/(tabs)/care/care-team")} />
-          <CrisisPlanCard onPress={() => router.push("/(tabs)/care/crisis-plan")} />
+          <CareTeamCard contactCount={contacts.length} onPress={() => { posthog?.capture('care_section_tapped', { section: 'care_team' }); router.push("/(tabs)/care/care-team"); }} />
+          <CrisisPlanCard onPress={() => { posthog?.capture('care_section_tapped', { section: 'crisis_plan' }); router.push("/(tabs)/care/crisis-plan"); }} />
         </MotiView>
 
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 320 }}>
-          <ClinicsCard savedCount={savedFacilities.length} onPress={() => router.push("/(tabs)/care/facilities")} />
+          <ClinicsCard savedCount={savedFacilities.length} onPress={() => { posthog?.capture('care_section_tapped', { section: 'facilities' }); router.push("/(tabs)/care/facilities"); }} />
         </MotiView>
       </ScrollView>
     </View>
