@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { usePostHog } from "posthog-react-native";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -142,6 +143,7 @@ const ALL_MILESTONES = [
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
 
   const {
     currentUser,
@@ -203,6 +205,14 @@ export default function HomeScreen() {
       });
     }
   }, [streakLoaded, healthData, healthStreak, pendingMilestone, claimedBadges, totalEntries, symptomsLogged, hydrationDays]);
+
+  // Track home screen view on mount
+  useEffect(() => {
+    posthog?.capture('home_viewed', {
+      logged_today: hasLoggedData,
+      streak_days: healthStreak ?? 0,
+    });
+  }, []);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 
@@ -379,6 +389,11 @@ export default function HomeScreen() {
         healthData={healthData}
         onClaim={() => {
           if (pendingMilestone) {
+            posthog?.capture('milestone_claimed', {
+              milestone_id: pendingMilestone.milestoneId,
+              milestone_type: pendingMilestone.type,
+              streak_days: pendingMilestone.streakCount ?? null,
+            });
             const updated = [
               ...new Set([...claimedBadges, pendingMilestone.milestoneId]),
             ];

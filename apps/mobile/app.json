@@ -89,7 +89,13 @@
           "backgroundDeliveryEnabled": true
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/"
+        }
+      ]
     ],
     "web": {
       "bundler": "metro",
