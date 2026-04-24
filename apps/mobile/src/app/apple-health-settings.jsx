@@ -199,7 +199,7 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => { posthog?.capture('healthkit_preference_changed', { key: item.key, enabled: v }); setHealthKitPreference(item.key, v); }}
+                onChange={(v) => { posthog?.capture('healthkit_pref_changed', { enabled: v }); setHealthKitPreference(item.key, v); }}
               />
               {i < READ_ITEMS.length - 1 && <Divider />}
             </View>
@@ -217,7 +217,7 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => { posthog?.capture('healthkit_preference_changed', { key: item.key, enabled: v }); setHealthKitPreference(item.key, v); }}
+                onChange={(v) => { posthog?.capture('healthkit_pref_changed', { enabled: v }); setHealthKitPreference(item.key, v); }}
               />
               {i < WRITE_ITEMS.length - 1 && <Divider />}
             </View>

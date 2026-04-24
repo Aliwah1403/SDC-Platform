@@ -36,7 +36,7 @@ export default function OnboardingComplete() {
     completeOnboardingMutation.mutate(onboardingData, {
       onSuccess: () => {
         posthog?.capture('onboarding_completed', {
-          scd_type: onboardingData.scdType,
+          has_scd_type: Boolean(onboardingData.scdType),
           has_emergency_contacts: (onboardingData.emergencyContacts?.length ?? 0) > 0,
           notifications_enabled: onboardingData.notificationsEnabled,
           biometrics_enabled: onboardingData.biometricsEnabled,
@@ -46,7 +46,6 @@ export default function OnboardingComplete() {
         // Set profile traits now that onboarding is complete
         if (auth?.user?.id) {
           posthog?.identify(auth.user.id, {
-            scd_type: onboardingData.scdType,
             notifications_enabled: onboardingData.notificationsEnabled,
           });
         }

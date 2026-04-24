@@ -87,6 +87,11 @@ export default function SignUpScreen() {
         setError(authError.message || 'Google sign-in failed.');
         return;
       }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'no_session' });
+        setError('Google sign-up failed. Please try again.');
+        return;
+      }
       posthog?.capture('sign_up_succeeded', { method: 'google' });
       await AsyncStorage.setItem('lastAuthProvider', 'google');
       setAuth(data.session, data.user);
@@ -110,6 +115,11 @@ export default function SignUpScreen() {
       if (authError) {
         posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'auth_error' });
         setError(authError.message || 'Apple sign-in failed.');
+        return;
+      }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'no_session' });
+        setError('Apple sign-up failed. Please try again.');
         return;
       }
       posthog?.capture('sign_up_succeeded', { method: 'apple' });
@@ -142,9 +152,14 @@ export default function SignUpScreen() {
         setError(authError.message || 'Sign up failed. Please try again.');
         return;
       }
-      if (!data.session) {
+      if (!data?.session) {
         posthog?.capture('sign_up_email_verification_required', {});
         setError('Account created! Please check your email to confirm before signing in.');
+        return;
+      }
+      if (!data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'email', error_type: 'no_session' });
+        setError('Sign up failed. Please try again.');
         return;
       }
       posthog?.capture('sign_up_succeeded', { method: 'email' });

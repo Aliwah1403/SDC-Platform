@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useMetricInsights } from "@/hooks/useMetricInsights";
 import { usePostHog } from "posthog-react-native";
 import {
   View,
@@ -673,7 +674,7 @@ export default function MetricDetailScreen() {
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
 
-  const { healthKitData, computedAlertState } = useAppStore();
+  const { healthKitData, computedAlertState, onboardingData } = useAppStore();
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
   const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
@@ -719,6 +720,11 @@ export default function MetricDetailScreen() {
 
   const status = currentValue != null ? getStatus(metric, currentValue) : null;
   const trendDelta = useMemo(() => calcTrendDelta(data), [data]);
+
+  const { insight: aiInsight } = useMetricInsights(
+    metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter,
+    { range, unit: meta.unit, goal, scdType: onboardingData?.scdType },
+  );
 
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -1078,7 +1084,7 @@ export default function MetricDetailScreen() {
           transition={{ delay: 240, type: "timing", duration: 280 }}
         >
           <InsightsCard
-            insights={getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
+            insights={aiInsight ?? getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
             color={meta.color}
           />
         </MotiView>

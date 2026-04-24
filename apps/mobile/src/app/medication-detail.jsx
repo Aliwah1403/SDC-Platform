@@ -1094,7 +1094,7 @@ export default function MedicationDetailScreen() {
           </View>
 
           {/* About This Medication */}
-          <SectionLabel title="About This Medication" />
+          <SectionLabel title={drugInfo?.commonName ? `About ${drugInfo.commonName}` : "About This Medication"} />
           <Card>
             {drugInfoLoading ? (
               <View style={{ padding: 16, gap: 10 }}>
@@ -1102,29 +1102,29 @@ export default function MedicationDetailScreen() {
                   <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: "#F0EBE8", borderRadius: 6 }} />
                 ))}
               </View>
-            ) : drugInfo?.indications || drugInfo?.description || drugInfo?.mechanism ? (
+            ) : (drugInfo?.humanizedIndications || drugInfo?.indications || drugInfo?.description || drugInfo?.humanizedMechanism || drugInfo?.mechanism) ? (
               <View style={{ padding: 16, gap: 14 }}>
-                {drugInfo.indications && (
+                {(drugInfo.humanizedIndications || drugInfo.indications) && (
                   <View>
                     <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
                       What it's for
                     </Text>
                     <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={5}>
-                      {drugInfo.indications}
+                      {drugInfo.humanizedIndications || drugInfo.indications}
                     </Text>
                   </View>
                 )}
-                {drugInfo.mechanism && (
+                {(drugInfo.humanizedMechanism || drugInfo.mechanism) && (
                   <View>
                     <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
                       How it works
                     </Text>
                     <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={4}>
-                      {drugInfo.mechanism}
+                      {drugInfo.humanizedMechanism || drugInfo.mechanism}
                     </Text>
                   </View>
                 )}
-                {drugInfo.description && !drugInfo.indications && (
+                {drugInfo.description && !drugInfo.indications && !drugInfo.humanizedIndications && (
                   <View>
                     <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
                       Description
@@ -1144,8 +1144,25 @@ export default function MedicationDetailScreen() {
             )}
           </Card>
 
+          {/* SCD Contraindication Warning */}
+          {drugInfo?.scdContraindication?.flagged && (
+            <View style={{ backgroundColor: "#FEE2E2", borderRadius: 12, padding: 14, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+              <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#DC2626", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
+                <Text style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>!</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#991B1B", marginBottom: 3 }}>
+                  SCD Consideration
+                </Text>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#7F1D1D", lineHeight: 19 }}>
+                  {drugInfo.scdContraindication.reason || "This medication may require special consideration for people with Sickle Cell Disease. Speak with your haematologist before use."}
+                </Text>
+              </View>
+            </View>
+          )}
+
           {/* Side Effects & Warnings */}
-          {(drugInfoLoading || drugInfo?.sideEffects || drugInfo?.warnings) && (
+          {(drugInfoLoading || drugInfo?.humanizedSideEffects || drugInfo?.sideEffects || drugInfo?.humanizedWarnings || drugInfo?.warnings) && (
             <>
               <SectionLabel title="Side Effects & Warnings" />
               <Card>
@@ -1157,23 +1174,23 @@ export default function MedicationDetailScreen() {
                   </View>
                 ) : (
                   <View style={{ padding: 16, gap: 14 }}>
-                    {drugInfo?.sideEffects && (
+                    {(drugInfo?.humanizedSideEffects || drugInfo?.sideEffects) && (
                       <View>
                         <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
                           Common Side Effects
                         </Text>
                         <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
-                          {drugInfo.sideEffects}
+                          {drugInfo.humanizedSideEffects || drugInfo.sideEffects}
                         </Text>
                       </View>
                     )}
-                    {drugInfo?.warnings && (
+                    {(drugInfo?.humanizedWarnings || drugInfo?.warnings) && (
                       <View style={{ backgroundColor: "#FEF3C7", borderRadius: 10, padding: 12 }}>
                         <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#92400E", marginBottom: 4 }}>
                           Warnings
                         </Text>
                         <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#78350F", lineHeight: 20 }} numberOfLines={5}>
-                          {drugInfo.warnings}
+                          {drugInfo.humanizedWarnings || drugInfo.warnings}
                         </Text>
                       </View>
                     )}
@@ -1184,13 +1201,13 @@ export default function MedicationDetailScreen() {
           )}
 
           {/* Drug Interactions */}
-          {drugInfo?.drugInteractions && (
+          {(drugInfo?.humanizedInteractions || drugInfo?.drugInteractions) && (
             <>
               <SectionLabel title="Drug Interactions" />
               <Card>
                 <View style={{ padding: 16 }}>
                   <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
-                    {drugInfo.drugInteractions}
+                    {drugInfo.humanizedInteractions || drugInfo.drugInteractions}
                   </Text>
                 </View>
               </Card>

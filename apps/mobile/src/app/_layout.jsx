@@ -129,13 +129,14 @@ export default function RootLayout() {
   // to prevent an infinite re-lock loop.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'background' || nextState === 'inactive') {
-        // Don't record background time if the transition was caused by our own Face ID sheet
+      if (nextState === 'background') {
         if (!isAuthenticating.current) {
           const sessionDuration = Math.round((Date.now() - sessionStartRef.current) / 1000);
           posthog.capture('app_backgrounded', { session_duration_seconds: sessionDuration });
           backgroundedAt.current = Date.now();
         }
+      } else if (nextState === 'inactive') {
+        // no analytics — inactive is a transient state (e.g. Face ID sheet, notification tray)
       } else if (nextState === 'active') {
         // Always capture and clear — prevents stale timestamp firing on subsequent active events
         const wasBackgrounded = backgroundedAt.current;

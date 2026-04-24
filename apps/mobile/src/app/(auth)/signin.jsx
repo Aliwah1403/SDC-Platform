@@ -134,6 +134,11 @@ export default function SignInScreen() {
         setError(authError.message || "Apple sign-in failed.");
         return;
       }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'no_session' });
+        setError("Apple sign-in failed. Please try again.");
+        return;
+      }
       posthog?.capture('sign_in_succeeded', { method: 'apple' });
       await AsyncStorage.setItem("lastAuthProvider", "apple");
       setAuth(data.session, data.user);
@@ -163,6 +168,11 @@ export default function SignInScreen() {
       if (authError) {
         posthog?.capture('sign_in_failed', { method: 'email', error_type: 'auth_error' });
         setError(authError.message || "Sign in failed. Please try again.");
+        return;
+      }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_in_failed', { method: 'email', error_type: 'no_session' });
+        setError("Sign in failed. Please try again.");
         return;
       }
       posthog?.capture('sign_in_succeeded', { method: 'email' });
