@@ -569,7 +569,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           posthog?.capture('sign_out', {});
           await signOut();
-          router.replace("/");
+          router.replace("/(auth)/welcome");
         },
       },
     ]);
