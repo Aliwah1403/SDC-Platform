@@ -724,7 +724,14 @@ export default function LogSymptomsScreen() {
           <HydrationStep value={hydration} onChange={setHydration} />
         )}
         {step === 5 && (
-          <NotesStep value={notes} onChange={setNotes} onSkip={handleNext} />
+          <NotesStep
+            value={notes}
+            onChange={setNotes}
+            onSkip={() => {
+              posthog?.capture('symptom_log_step_skipped', { step: 5, step_name: 'notes' });
+              handleNext();
+            }}
+          />
         )}
         {step === 6 && (
           <SummaryStep log={logSnapshot} onSubmit={handleSubmit} />

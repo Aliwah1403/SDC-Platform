@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -667,6 +668,7 @@ function InsightsCard({ insights, color }) {
 export default function MetricDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { metric } = useLocalSearchParams();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
@@ -677,6 +679,10 @@ export default function MetricDetailScreen() {
   const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
   const chartWidth = SCREEN_WIDTH - (72 + yAxis.labelWidth);
   const [range, setRange] = useState(30);
+
+  useEffect(() => {
+    posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
+  }, []);
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
@@ -798,7 +804,7 @@ export default function MetricDetailScreen() {
             {[7, 30].map((r) => (
               <TouchableOpacity
                 key={r}
-                onPress={() => setRange(r)}
+                onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
                 style={{
                   paddingHorizontal: 14,
                   paddingVertical: 6,

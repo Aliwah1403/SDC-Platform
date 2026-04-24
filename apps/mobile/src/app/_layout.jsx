@@ -221,6 +221,7 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
+      posthog.capture('notification_opened', { type: data.type ?? data.screen ?? 'unknown' });
       if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
       } else if (data.type === "checkin") {

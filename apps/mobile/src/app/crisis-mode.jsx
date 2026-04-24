@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Linking,
   Pressable,
@@ -137,6 +138,7 @@ async function getLocationString() {
 export default function CrisisModeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const crisisMode = useAppStore((s) => s.crisisMode);
   const crisisPlan = useAppStore((s) => s.crisisPlan);
@@ -171,6 +173,10 @@ export default function CrisisModeScreen() {
     if (!crisisMode.isActive) {
       startCrisisMode(0);
     }
+    posthog?.capture('crisis_mode_viewed', {
+      initial_step: crisisMode.currentStep,
+      has_emergency_contacts: contacts.length > 0,
+    });
   }, []);
 
   useEffect(() => {
@@ -205,10 +211,19 @@ export default function CrisisModeScreen() {
       Linking.openURL(`sms:${contact.phone}?body=${encodeURIComponent(body)}`).catch(() => {});
       addCrisisAlert(contact.id);
     });
+    posthog?.capture('crisis_alert_sent', {
+      contacts_count: contactList.length,
+      step_level: step,
+    });
   }
 
   const handleCheckIn = useCallback(
     async (response) => {
+      posthog?.capture('crisis_checkin_submitted', {
+        response,
+        step_level: crisisMode.currentStep,
+        checkins_so_far: crisisMode.checkInHistory.length,
+      });
       if (response === "better") {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         const newCount = consecutiveBetter + 1;
@@ -234,7 +249,7 @@ export default function CrisisModeScreen() {
         }
       }
     },
-    [consecutiveBetter, crisisMode.currentStep, recordCrisisCheckIn, deescalateCrisis]
+    [consecutiveBetter, crisisMode.currentStep, crisisMode.checkInHistory.length, recordCrisisCheckIn, deescalateCrisis]
   );
 
   const handleAlertTeam = useCallback(async () => {
@@ -242,10 +257,18 @@ export default function CrisisModeScreen() {
   }, [contacts, nickname, crisisMode.currentStep]);
 
   const handleEndCrisis = useCallback(async () => {
+    posthog?.capture('crisis_mode_ended', {
+      duration_minutes: crisisMode.startedAt
+        ? Math.round((Date.now() - new Date(crisisMode.startedAt).getTime()) / 1000 / 60)
+        : 0,
+      total_checkins: crisisMode.checkInHistory.length,
+      alerts_sent_count: crisisMode.alertsSent.length,
+      final_step: crisisMode.currentStep,
+    });
     await cancelCrisisNotifications(crisisMode.scheduledNotificationIds);
     endCrisisMode();
     router.back();
-  }, [crisisMode.scheduledNotificationIds, endCrisisMode, router]);
+  }, [crisisMode, endCrisisMode, router]);
 
   const handleConfirmPainLevel = useCallback(() => {
     if (!painSuggestion) return;

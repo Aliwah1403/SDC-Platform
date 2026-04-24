@@ -4,12 +4,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { Flame, RotateCcw } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { usePostHog } from "posthog-react-native";
 
 export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
+  const posthog = usePostHog();
   const flameScale = useRef(new Animated.Value(0.8)).current;
 
   useEffect(() => {
     if (visible) {
+      posthog?.capture('streak_lost', { streak_days: lostStreak });
       Animated.spring(flameScale, {
         toValue: 1,
         friction: 5,

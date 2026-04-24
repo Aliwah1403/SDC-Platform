@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MotiView } from "moti";
 import { ArrowLeft, MapPin, Cross } from "lucide-react-native";
 import * as Location from "expo-location";
+import { usePostHog } from "posthog-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TOTAL_STEPS } from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
@@ -61,6 +62,7 @@ function MapIllustration() {
 }
 
 export default function Step9() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
   const insets = useSafeAreaInsets();
 
@@ -83,6 +85,7 @@ export default function Step9() {
   };
 
   const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', { step: 9 });
     setOnboardingField("locationEnabled", false);
     router.push("/(onboarding)/step-10");
   };
