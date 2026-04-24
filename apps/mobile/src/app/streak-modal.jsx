@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import {
   Zap,
   Wrench,
 } from "lucide-react-native";
+import { usePostHog } from "posthog-react-native";
 import { useAuthStore } from "@/utils/auth/store";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
@@ -68,6 +69,7 @@ const MILESTONE_BADGE = {
 };
 
 export default function StreakModal() {
+  const posthog = usePostHog();
   const router = useRouter();
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
@@ -80,8 +82,12 @@ export default function StreakModal() {
   const repairsUsed = streak?.repairsUsed ?? 0;
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState("streaks"); // "streaks" | "rewards"
-  const [activeRewardsTab, setActiveRewardsTab] = useState("challenges"); // "challenges" | "badges" | "leaderboard"
+  const [activeTab, setActiveTab] = useState("streaks");
+  const [activeRewardsTab, setActiveRewardsTab] = useState("challenges");
+
+  useEffect(() => {
+    posthog?.capture('streak_modal_viewed', { current_streak: healthStreak });
+  }, []);
 
   const getCurrentWeekData = () => {
     const days = [];
@@ -396,6 +402,11 @@ export default function StreakModal() {
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
+    posthog?.capture('milestone_tapped', {
+      milestone_id: milestone.id,
+      type: milestone.type,
+      unlocked: milestone.unlocked,
+    });
     setSelectedMilestone({
       ...milestone,
       image: MILESTONE_BADGE[milestone.id],
@@ -1041,7 +1052,7 @@ export default function StreakModal() {
         {["streaks", "rewards"].map((tab) => (
           <TouchableOpacity
             key={tab}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => { setActiveTab(tab); posthog?.capture('rewards_tab_changed', { to: tab }); }}
             style={{
               flex: 1,
               paddingVertical: 14,
@@ -1534,19 +1545,19 @@ export default function StreakModal() {
                 title="Challenges"
                 icon={Target}
                 isActive={activeRewardsTab === "challenges"}
-                onPress={() => setActiveRewardsTab("challenges")}
+                onPress={() => { setActiveRewardsTab("challenges"); posthog?.capture('rewards_subtab_changed', { tab: 'challenges' }); }}
               />
               <RewardsSubTabButton
                 title="Badges"
                 icon={Award}
                 isActive={activeRewardsTab === "badges"}
-                onPress={() => setActiveRewardsTab("badges")}
+                onPress={() => { setActiveRewardsTab("badges"); posthog?.capture('rewards_subtab_changed', { tab: 'badges' }); }}
               />
               <RewardsSubTabButton
                 title="Leaderboard"
                 icon={Users}
                 isActive={activeRewardsTab === "leaderboard"}
-                onPress={() => setActiveRewardsTab("leaderboard")}
+                onPress={() => { setActiveRewardsTab("leaderboard"); posthog?.capture('rewards_subtab_changed', { tab: 'leaderboard' }); }}
               />
             </View>
           </View>

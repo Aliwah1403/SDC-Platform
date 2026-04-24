@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { usePostHog } from "posthog-react-native";
 import { MotiView } from "moti";
 import { ArrowLeft, Bell } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
@@ -76,6 +77,7 @@ function PhoneMockup({ name }) {
 }
 
 export default function Step8() {
+  const posthog = usePostHog();
   const { setOnboardingField, onboardingData } = useAppStore();
   const insets = useSafeAreaInsets();
   const name = onboardingData.nickname || "you";
@@ -100,6 +102,7 @@ export default function Step8() {
   };
 
   const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', { step: 8 });
     setOnboardingField("notificationsEnabled", false);
     router.push("/(onboarding)/step-9");
   };

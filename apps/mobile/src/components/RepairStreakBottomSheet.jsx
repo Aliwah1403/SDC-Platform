@@ -6,8 +6,10 @@ import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMissedDay, useStreakQuery, useStreakRepairMutation } from "@/hooks/queries/useStreakQuery";
 import { fonts } from "@/utils/fonts";
+import { usePostHog } from "posthog-react-native";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
+  const posthog = usePostHog();
   const bottomSheetRef = useRef(null);
   const missedDay = useMissedDay();
   const { data: streak } = useStreakQuery();
@@ -43,7 +45,12 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
     ]).start(() => {
       repairMutation.mutate(undefined, {
         onSuccess: (data) => {
-          setRestoredStreak(data?.restoredStreak ?? healthStreak);
+          const restored = data?.restoredStreak ?? healthStreak;
+          posthog?.capture('streak_repair_used', {
+            repairs_remaining_after: repairsAvailable - 1,
+            restored_streak: restored,
+          });
+          setRestoredStreak(restored);
           setRepairComplete(true);
           Animated.parallel([
             Animated.spring(checkScale, { toValue: 1, useNativeDriver: true }),

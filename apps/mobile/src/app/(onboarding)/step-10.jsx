@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Fingerprint, ShieldCheck, AlertCircle } from 'lucide-react-native';
@@ -30,6 +31,7 @@ function FaceIdGraphic() {
 }
 
 export default function Step10() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
   const [status, setStatus] = useState('idle');
   const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
@@ -49,6 +51,7 @@ export default function Step10() {
   };
 
   const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', { step: 10 });
     setOnboardingField('biometricsEnabled', false);
     router.push('/(onboarding)/step-11');
   };

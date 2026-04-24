@@ -25,6 +25,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import { useAppointmentsQuery, useDeleteAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
+import { usePostHog } from "posthog-react-native";
 import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUtils";
 import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 
@@ -145,6 +146,7 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
 }
 
 export default function AppointmentsScreen() {
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -175,6 +177,7 @@ export default function AppointmentsScreen() {
   }, []);
 
   const handleEdit = useCallback(() => {
+    posthog?.capture('appointment_edit_opened', { type: selectedAppt?.type });
     sheetRef.current?.close();
     router.push(`/appointment-form?id=${selectedAppt.id}`);
   }, [selectedAppt]);
@@ -187,6 +190,7 @@ export default function AppointmentsScreen() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
+          posthog?.capture('appointment_deleted', { type: selectedAppt?.type });
           if (selectedAppt?.calendarEventId) await removeFromDeviceCalendar(selectedAppt.calendarEventId);
           if (selectedAppt?.reminderIds?.length) await cancelReminders(selectedAppt.reminderIds);
           deleteAppt.mutate(selectedAppt.id);
@@ -245,7 +249,7 @@ export default function AppointmentsScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={() => router.push("/appointment-form")}
+            onPress={() => { posthog?.capture('appointment_add_tapped'); router.push("/appointment-form"); }}
             style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center" }}
           >
             <Plus size={22} color="#F8E9E7" strokeWidth={2.5} />

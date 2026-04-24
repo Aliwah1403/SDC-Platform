@@ -22,6 +22,7 @@ import {
 } from "lucide-react-native";
 import { MotiView } from "moti";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useMarkGroupTakenMutation } from "@/hooks/queries/useMedicationsQuery";
+import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
 
@@ -317,6 +318,7 @@ function MedicationGridCard({ medication, onPress }) {
 }
 
 export default function MedicationsScreen() {
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: medications = [] } = useMedicationsQuery();
@@ -370,7 +372,7 @@ export default function MedicationsScreen() {
         </Text>
 
         <TouchableOpacity
-          onPress={() => router.push("/add-medication")}
+          onPress={() => { posthog?.capture('medication_add_tapped'); router.push("/add-medication"); }}
           activeOpacity={0.6}
           style={{
             width: 40,
@@ -523,7 +525,7 @@ export default function MedicationsScreen() {
 
         {/* Add Medication */}
         <TouchableOpacity
-          onPress={() => router.push("/add-medication")}
+          onPress={() => { posthog?.capture('medication_add_tapped'); router.push("/add-medication"); }}
           activeOpacity={0.8}
           style={{
             backgroundColor: C.accent,

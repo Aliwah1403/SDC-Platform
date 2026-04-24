@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Picker } from '@react-native-picker/picker';
@@ -46,6 +47,7 @@ function SegmentedControl({ options, selected, onSelect }) {
 }
 
 export default function Step3() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
   const [unit, setUnit] = useState('Metric');
   const [editing, setEditing] = useState(false);
@@ -66,7 +68,7 @@ export default function Step3() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => router.push('/(onboarding)/step-4');
+  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 3 }); router.push('/(onboarding)/step-4'); };
 
   const handleContinue = () => {
     const heightInCm =

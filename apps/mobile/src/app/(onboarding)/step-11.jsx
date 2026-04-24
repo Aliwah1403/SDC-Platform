@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { Check, Pill } from 'lucide-react-native';
@@ -8,6 +9,7 @@ import { useAppStore } from '@/store/appStore';
 import { SCD_MEDICATIONS, SCD_CATEGORIES as CATEGORIES } from '@/utils/scdDrugs';
 
 export default function Step11() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
   const [selectedIds, setSelectedIds] = useState(new Set());
 
@@ -19,7 +21,7 @@ export default function Step11() {
     });
   };
 
-  const handleSkip = () => router.push('/(onboarding)/complete');
+  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 11 }); router.push('/(onboarding)/complete'); };
 
   const handleContinue = () => {
     const selected = SCD_MEDICATIONS.filter((d) => selectedIds.has(d.id)).map((d) => ({
