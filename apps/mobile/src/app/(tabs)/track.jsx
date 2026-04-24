@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -16,6 +17,8 @@ import Animated, {
 import { MotiView } from "moti";
 import {
   Plus,
+  Bell,
+  User,
   Pill,
   Zap,
   Droplets,
@@ -30,9 +33,11 @@ import {
   Check,
   Footprints,
   Wind,
-  Stethoscope,
   Timer,
   Flame,
+  Thermometer,
+  Waves,
+  AlertTriangle,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
@@ -40,6 +45,9 @@ import { useMedicationsQuery, useToggleMedicationTakenMutation } from "@/hooks/q
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { fonts } from "@/utils/fonts";
+import { useAppStore } from "@/store/appStore";
+import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
+import { fetchWorkoutsForDate } from "@/services/healthKitService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -174,10 +182,12 @@ function FullMonthCalendar({ selectedDate, setSelectedDate, loggedDates, isToday
 function ExpandableCalendar({ selectedDate, setSelectedDate, loggedDates, isToday, isFuture, isSelected }) {
   const [expanded, setExpanded] = useState(false);
   const calendarHeight = useSharedValue(WEEK_HEIGHT);
+  const posthog = usePostHog();
 
   function toggle() {
     const next = !expanded;
     setExpanded(next);
+    posthog?.capture('calendar_view_changed', { to_view: next ? 'month' : 'week' });
     calendarHeight.value = withSpring(next ? MONTH_HEIGHT : WEEK_HEIGHT, {
       damping: 20, stiffness: 90,
     });
@@ -313,6 +323,7 @@ function MedicationItem({ medication, taken, onToggle }) {
 function MedicationsSection({ selectedDate }) {
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  const posthog = usePostHog();
   const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
@@ -326,7 +337,10 @@ function MedicationsSection({ selectedDate }) {
           key={med.id}
           medication={med}
           taken={!!med.taken}
-          onToggle={() => toggleTaken.mutate(med.id)}
+          onToggle={() => {
+              posthog?.capture('medication_marked_taken', { new_state: !med.taken });
+              toggleTaken.mutate(med.id);
+            }}
         />
       ))}
     </View>
@@ -336,18 +350,23 @@ function MedicationsSection({ selectedDate }) {
 // ─── Metrics Grid ─────────────────────────────────────────────────────────────
 
 const METRIC_CONFIGS = [
-  { key: "pain",      label: "Pain Level",  icon: Zap,      color: "#DC2626", unit: "/10",    source: "manual", dataField: "painLevel",  maxValue: 10,    getValue: (e) => (e?.painLevel  != null ? e.painLevel              : null) },
-  { key: "hydration", label: "Hydration",   icon: Droplets,  color: "#3B82F6", unit: "glasses",source: "manual", dataField: "hydration",  maxValue: 16,    getValue: (e) => (e?.hydration  != null ? e.hydration              : null) },
-  { key: "mood",      label: "Mood",        icon: Smile,     color: "#7C3AED", unit: "",       source: "manual", dataField: "mood",       maxValue: 5,     getValue: (e) => (e?.mood       != null ? e.mood                   : null) },
-  { key: "steps",     label: "Steps",       icon: Activity,  color: "#059669", unit: "steps",  source: "apple",  dataField: "steps",      maxValue: 15000, getValue: (e) => (e?.steps      != null ? e.steps                  : null) },
-  { key: "sleep",     label: "Sleep",       icon: Moon,      color: "#6366F1", unit: "h",      source: "apple",  dataField: "sleepHours", maxValue: 10,    getValue: (e) => (e?.sleepHours != null ? Number(e.sleepHours.toFixed(1)) : null) },
-  { key: "heartrate", label: "Heart Rate",  icon: Heart,     color: "#EF4444", unit: "bpm",    source: "apple",  dataField: "heartRate",  maxValue: 120,   getValue: (e) => (e?.heartRate  != null ? e.heartRate              : null) },
+  { key: "pain",          label: "Pain Level",     icon: Zap,         color: "#DC2626", unit: "/10",    source: "manual", dataField: "painLevel",      maxValue: 10,    getValue: (e) => (e?.painLevel       != null ? e.painLevel                       : null) },
+  { key: "hydration",     label: "Hydration",      icon: Droplets,    color: "#3B82F6", unit: "glasses",source: "manual", dataField: "hydration",      maxValue: 16,    getValue: (e) => (e?.hydration       != null ? e.hydration                       : null) },
+  { key: "mood",          label: "Mood",           icon: Smile,       color: "#7C3AED", unit: "",       source: "manual", dataField: "mood",           maxValue: 5,     getValue: (e) => (e?.mood            != null ? e.mood                            : null) },
+  { key: "steps",         label: "Steps",          icon: Activity,    color: "#059669", unit: "steps",  source: "apple",  dataField: "steps",          maxValue: 15000, getValue: (e) => (e?.steps           != null ? e.steps                           : null) },
+  { key: "sleep",         label: "Sleep",          icon: Moon,        color: "#6366F1", unit: "h",      source: "apple",  dataField: "sleepHours",     maxValue: 10,    getValue: (e) => (e?.sleepHours      != null ? Number(e.sleepHours.toFixed(1))   : null) },
+  { key: "heartrate",     label: "Heart Rate",     icon: Heart,       color: "#EF4444", unit: "bpm",    source: "apple",  dataField: "heartRate",      maxValue: 120,   getValue: (e) => (e?.heartRate       != null ? e.heartRate                       : null) },
+  { key: "spo2",          label: "Blood Oxygen",   icon: Waves,       color: "#0EA5E9", unit: "%",      source: "apple",  dataField: "spO2",           maxValue: 100,   getValue: (e) => (e?.spO2            != null ? e.spO2                            : null) },
+  { key: "temperature",   label: "Temperature",    icon: Thermometer, color: "#F59E0B", unit: "°C",     source: "apple",  dataField: "temperature",    maxValue: 42,    getValue: (e) => (e?.temperature     != null ? e.temperature                     : null) },
+  { key: "resprate",      label: "Resp. Rate",     icon: Wind,        color: "#8B5CF6", unit: "/min",   source: "apple",  dataField: "respiratoryRate",maxValue: 30,    getValue: (e) => (e?.respiratoryRate != null ? e.respiratoryRate                  : null) },
 ];
 
 const METRIC_CONFIG_MAP = Object.fromEntries(METRIC_CONFIGS.map((c) => [c.key, c]));
 
 // Layout rows: single key = full width, two keys = side-by-side
-const METRIC_ROWS = [["pain"], ["hydration", "mood"], ["steps"], ["sleep", "heartrate"]];
+// spO2/temp/respRate only shown when HealthKit is connected
+const BASE_METRIC_ROWS = [["pain"], ["hydration", "mood"], ["steps"], ["sleep", "heartrate"]];
+const HK_METRIC_ROWS = [["spo2", "temperature"], ["resprate"]];
 
 const FULL_CARD_W = SCREEN_WIDTH - 32;
 const HALF_CARD_W = (SCREEN_WIDTH - 44) / 2;
@@ -389,8 +408,23 @@ function getStatus(metricKey, value) {
       if (value >= 6) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
     case "heartrate":
-      if (value >= 60 && value <= 100) return { label: "Normal", color: "#059669" };
-      if (value > 100) return { label: "Elevated", color: "#DC2626" };
+      // SCD baseline is higher (80–100 bpm) due to chronic anaemia
+      if (value >= 60 && value <= 110) return { label: "Normal", color: "#059669" };
+      if (value > 110) return { label: "Elevated", color: "#DC2626" };
+      return { label: "Low", color: "#F59E0B" };
+    case "spo2":
+      // SCD normal range 94–100%; <92% is critical (Acute Chest Syndrome risk)
+      if (value >= 94) return { label: "Normal", color: "#059669" };
+      if (value >= 92) return { label: "Warning", color: "#F59E0B" };
+      return { label: "Critical", color: "#DC2626" };
+    case "temperature":
+      if (value >= 36.5 && value <= 37.5) return { label: "Normal", color: "#059669" };
+      if (value >= 38.0) return { label: "Fever", color: "#DC2626" };
+      if (value < 36.0) return { label: "Low", color: "#F59E0B" };
+      return { label: "Normal", color: "#059669" };
+    case "resprate":
+      if (value >= 12 && value <= 20) return { label: "Normal", color: "#059669" };
+      if (value > 20) return { label: "Elevated", color: value > 25 ? "#DC2626" : "#F59E0B" };
       return { label: "Low", color: "#F59E0B" };
     default: return null;
   }
@@ -418,6 +452,7 @@ function MiniSparkline({ data, color, maxValue }) {
 
 function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const config = METRIC_CONFIG_MAP[metricKey];
   const rawValue = config.getValue(entry);
   const hasValue = rawValue !== null && rawValue !== undefined;
@@ -443,7 +478,10 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
       transition={{ delay: animIndex * 60, type: "timing", duration: 280 }}
     >
       <TouchableOpacity
-        onPress={() => router.push(`/metric-detail?metric=${metricKey}`)}
+        onPress={() => {
+          posthog?.capture('metric_card_tapped', { metric: metricKey, has_value: hasValue });
+          router.push(`/metric-detail?metric=${metricKey}`);
+        }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
           backgroundColor: "#fff",
@@ -512,95 +550,30 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
 }
 
 // ─── Activity Section ─────────────────────────────────────────────────────────
+// Reads real workout sessions from HealthKit when connected.
+// No derived/fabricated data — if there are no recorded workouts the section
+// shows an empty state with a prompt to connect or record a workout.
 
-function fmtTime(h, m) {
-  const hh = h % 12 || 12;
-  const mm = String(m).padStart(2, "0");
-  return `${hh}:${mm} ${h < 12 ? "AM" : "PM"}`;
+// Maps workout activity type → lucide icon + accent colour
+function workoutStyle(activityType) {
+  switch (activityType) {
+    case 37: return { Icon: Activity,   color: "#F0531C" }; // running
+    case 52: return { Icon: Footprints, color: "#059669" }; // walking
+    case 13: return { Icon: Activity,   color: "#3B82F6" }; // cycling
+    case 46: return { Icon: Waves,      color: "#0EA5E9" }; // swimming
+    case 24: return { Icon: Footprints, color: "#065F46" }; // hiking
+    case 57:
+    case 29: return { Icon: Wind,       color: "#8B5CF6" }; // yoga / mind & body
+    case 20:
+    case 50:
+    case 59: return { Icon: Activity,   color: "#D97706" }; // strength / core
+    case 33: return { Icon: Moon,       color: "#6366F1" }; // recovery
+    default: return { Icon: Activity,   color: "#6B7280" };
+  }
 }
 
-function addMins(h, m, add) {
-  const t = h * 60 + m + add;
-  return { h: Math.floor(t / 60) % 24, m: t % 60 };
-}
-
-function getSessionsForEntry(entry) {
-  if (!entry) return [];
-
-  const steps = entry.steps ?? 0;
-  const pain  = entry.painLevel ?? 0;
-  const hr    = entry.heartRate ?? 72;
-
-  // Bed rest: high pain + nearly no movement
-  if (pain >= 7 && steps < 1000) {
-    return [{
-      id: "bed-rest", label: "Bed Rest", Icon: Moon, color: "#9CA3AF",
-      timeLabel: "All day", duration: null, calories: null, avgHR: hr,
-    }];
-  }
-
-  // Hospital visit: high pain with some movement
-  if (pain >= 7) {
-    const end = addMins(10, 0, 120);
-    return [{
-      id: "hospital", label: "Hospital Visit", Icon: Stethoscope, color: "#DC2626",
-      timeLabel: `${fmtTime(10, 0)} – ${fmtTime(end.h, end.m)}`,
-      duration: 120, calories: null, avgHR: Math.round(hr * 0.9),
-    }];
-  }
-
-  // Rest day: very low steps
-  if (steps < 1500) {
-    return [{
-      id: "rest", label: "Rest Day", Icon: Moon, color: "#6366F1",
-      timeLabel: "All day", duration: null, calories: null, avgHR: hr,
-    }];
-  }
-
-  // Light walk
-  if (steps < 4000) {
-    const mins = Math.round(steps / 80);
-    const end  = addMins(9, 0, mins);
-    return [{
-      id: "light-walk", label: "Light Walk", Icon: Footprints, color: "#3B82F6",
-      timeLabel: `${fmtTime(9, 0)} – ${fmtTime(end.h, end.m)}`,
-      duration: mins, calories: Math.round(steps * 0.038), avgHR: Math.round(hr * 0.82),
-    }];
-  }
-
-  // Walking
-  if (steps < 8000) {
-    const mins = Math.round(steps / 90);
-    const end  = addMins(8, 30, mins);
-    return [{
-      id: "walking", label: "Walking", Icon: Footprints, color: "#059669",
-      timeLabel: `${fmtTime(8, 30)} – ${fmtTime(end.h, end.m)}`,
-      duration: mins, calories: Math.round(steps * 0.042), avgHR: Math.round(hr * 0.87),
-    }];
-  }
-
-  // Active day: Brisk Walk + Light Stretching
-  const walkMins = Math.round(steps / 100);
-  const walkEnd  = addMins(7, 30, walkMins);
-  return [
-    {
-      id: "brisk-walk", label: "Brisk Walk", Icon: Activity, color: "#F0531C",
-      timeLabel: `${fmtTime(7, 30)} – ${fmtTime(walkEnd.h, walkEnd.m)}`,
-      duration: walkMins, calories: Math.round(steps * 0.045), avgHR: Math.round(hr * 0.92),
-    },
-    {
-      id: "stretching", label: "Light Stretching", Icon: Wind, color: "#6366F1",
-      timeLabel: `${fmtTime(18, 0)} – ${fmtTime(18, 20)}`,
-      duration: 20, calories: 45, avgHR: Math.round(hr * 0.65),
-    },
-  ];
-}
-
-const REST_IDS = new Set(["rest", "bed-rest"]);
-
-function ActivityItem({ session, index, isLast }) {
-  const { label, Icon, color, timeLabel, duration, calories, avgHR } = session;
-  const isRest = REST_IDS.has(session.id);
+function WorkoutItem({ workout, index, isLast }) {
+  const { Icon, color } = workoutStyle(workout.activityType);
 
   return (
     <MotiView
@@ -608,11 +581,7 @@ function ActivityItem({ session, index, isLast }) {
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 260, delay: 400 + index * 80 }}
     >
-      <TouchableOpacity
-        activeOpacity={isRest ? 1 : 0.6}
-        style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 }}
-      >
-        {/* Icon bubble */}
+      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 }}>
         <View style={{
           width: 44, height: 44, borderRadius: 12,
           backgroundColor: "#F2EFEC",
@@ -622,95 +591,82 @@ function ActivityItem({ session, index, isLast }) {
           <Icon size={20} color={color} strokeWidth={2} />
         </View>
 
-        {/* Content */}
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1F2937", marginBottom: 2 }}>
-            {label}
+            {workout.label}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginBottom: isRest ? 2 : 8 }}>
-            {timeLabel}
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginBottom: 8 }}>
+            {workout.timeLabel}
           </Text>
 
-          {isRest ? (
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#C4B5B3" }}>
-              {session.id === "bed-rest" ? "Pain crisis · limited movement" : "Rest & recovery day"}
-            </Text>
-          ) : (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-              {duration !== null && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                  <Timer size={12} color="#9CA3AF" strokeWidth={2} />
-                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
-                    {duration} min
-                  </Text>
-                </View>
-              )}
-              {calories !== null && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                  <Flame size={12} color="#F0531C" strokeWidth={2} />
-                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
-                    {calories} kcal
-                  </Text>
-                </View>
-              )}
-              {avgHR !== null && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                  <Heart size={12} color="#EF4444" strokeWidth={2} />
-                  <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
-                    {avgHR} bpm
-                  </Text>
-                </View>
-              )}
-              <View style={{ backgroundColor: "#F3F4F6", borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1 }}>
-                <Text style={{ fontFamily: fonts.medium, fontSize: 9, color: "#9CA3AF" }}>AH</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            {workout.durationMins > 0 && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                <Timer size={12} color="#9CA3AF" strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                  {workout.durationMins} min
+                </Text>
               </View>
-            </View>
-          )}
+            )}
+            {workout.calories != null && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                <Flame size={12} color="#F0531C" strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                  {workout.calories} kcal
+                </Text>
+              </View>
+            )}
+            {workout.distanceKm != null && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                <Footprints size={12} color="#6B7280" strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                  {workout.distanceKm} km
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
+      </View>
 
-        {!isRest && <ChevronRight size={16} color="#D1D5DB" />}
-      </TouchableOpacity>
-
-      {!isLast && (
-        <View style={{ height: 1, backgroundColor: "#F5EFEE", marginLeft: 72 }} />
-      )}
+      {!isLast && <View style={{ height: 1, backgroundColor: "#F5EFEE", marginLeft: 72 }} />}
     </MotiView>
   );
 }
 
-function ActivitySection({ entry }) {
-  const sessions = getSessionsForEntry(entry);
-
+function ActivitySection({ workouts = [], hkConnected, loading }) {
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT, marginBottom: 14 }}>
-        Activity
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT }}>Activity</Text>
+        {hkConnected && (
+          <View style={{ backgroundColor: "#F3F4F6", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+            <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: "#9CA3AF" }}>Apple Health</Text>
+          </View>
+        )}
+      </View>
 
       <View style={{
-        backgroundColor: "#fff",
-        borderRadius: 20,
-        overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 2,
+        backgroundColor: "#fff", borderRadius: 20, overflow: "hidden",
+        shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
       }}>
-        {sessions.length === 0 ? (
+        {loading ? (
           <View style={{ alignItems: "center", paddingVertical: 24 }}>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#9CA3AF" }}>
-              No data logged for this day
+            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#D1D5DB" }}>
+              Loading workouts…
+            </Text>
+          </View>
+        ) : workouts.length === 0 ? (
+          <View style={{ alignItems: "center", paddingVertical: 24, paddingHorizontal: 16 }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#9CA3AF", textAlign: "center" }}>
+              {hkConnected
+                ? "No workouts recorded in Apple Health for this day"
+                : "Connect Apple Health in your profile to see workout data"}
             </Text>
           </View>
         ) : (
-          sessions.map((session, i) => (
-            <ActivityItem
-              key={session.id}
-              session={session}
-              index={i}
-              isLast={i === sessions.length - 1}
-            />
+          workouts.map((w, i) => (
+            <WorkoutItem key={w.id} workout={w} index={i} isLast={i === workouts.length - 1} />
           ))
         )}
       </View>
@@ -718,15 +674,145 @@ function ActivitySection({ entry }) {
   );
 }
 
+// ─── Health Pattern Card ──────────────────────────────────────────────────────
+// Shown for concern / watch / info only — urgent is handled by push notification.
+// Designed as an advisory insight card, not an alarm. Follows the Hemo palette.
+
+const PATTERN_ACCENT = {
+  concern: "#A9334D",
+  watch:   "#F0531C",
+  info:    "#9CA3AF",
+};
+
+const PATTERN_LABEL = {
+  concern: "Pattern shift",
+  watch:   "Worth watching",
+  info:    "Health note",
+};
+
+function HealthAlertCard({ alertState, onLogSymptoms }) {
+  // Urgent is handled by push notification — never show the card for it
+  if (!alertState || alertState.level === "urgent") return null;
+
+  const accent = PATTERN_ACCENT[alertState.level];
+  const label  = PATTERN_LABEL[alertState.level];
+  const triggerLabels = [...new Set(alertState.triggers.map((t) => t.reason))].slice(0, 4);
+
+  return (
+    <MotiView
+      from={{ opacity: 0, translateY: -8 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: 320 }}
+      style={{
+        marginHorizontal: 16,
+        marginTop: 16,
+        marginBottom: 4,
+        backgroundColor: "#ffffff",
+        borderRadius: 16,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.07,
+        shadowRadius: 8,
+        elevation: 2,
+        flexDirection: "row",
+        overflow: "hidden",
+      }}
+    >
+      {/* Left accent bar */}
+      <View style={{ width: 4, backgroundColor: accent }} />
+
+      <View style={{ flex: 1, padding: 14 }}>
+        {/* Label row */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <Text style={{
+            fontFamily: fonts.semibold,
+            fontSize: 10,
+            color: accent,
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+          }}>
+            {label}
+          </Text>
+          {alertState.vocRisk && (
+            <View style={{
+              backgroundColor: `${accent}18`,
+              borderRadius: 20,
+              paddingHorizontal: 7,
+              paddingVertical: 2,
+            }}>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: accent }}>
+                Pain flare pattern
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Message */}
+        <Text style={{
+          fontFamily: fonts.medium,
+          fontSize: 14,
+          color: "#09332C",
+          lineHeight: 20,
+          marginBottom: triggerLabels.length ? 10 : 0,
+        }}>
+          {alertState.message}
+        </Text>
+
+        {/* Trigger indicators */}
+        {triggerLabels.length > 0 && (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+            {triggerLabels.map((t, i) => (
+              <View key={i} style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
+              }}>
+                <View style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: 3,
+                  backgroundColor: accent,
+                  opacity: 0.6,
+                }} />
+                <Text style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 12,
+                  color: "#6B7280",
+                }}>
+                  {t}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* CTA — text link style, not a button */}
+        {alertState.callToAction && (
+          <TouchableOpacity onPress={onLogSymptoms} activeOpacity={0.6} style={{ alignSelf: "flex-start" }}>
+            <Text style={{
+              fontFamily: fonts.semibold,
+              fontSize: 13,
+              color: accent,
+            }}>
+              {alertState.callToAction} →
+            </Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </MotiView>
+  );
+}
+
 // ─── Metrics Grid ─────────────────────────────────────────────────────────────
 
-function MetricsGrid({ entry, healthData }) {
+function MetricsGrid({ entry, healthData, hkConnected }) {
+  const rows = hkConnected ? [...BASE_METRIC_ROWS, ...HK_METRIC_ROWS] : BASE_METRIC_ROWS;
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 24, marginBottom: 8 }}>
       <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT, marginBottom: 14 }}>
         Health Metrics
       </Text>
-      {METRIC_ROWS.map((row, rowIdx) => {
+      {rows.map((row, rowIdx) => {
         const wide = row.length === 1;
         return (
           <View key={rowIdx} style={{ flexDirection: "row", justifyContent: "space-between" }}>
@@ -755,18 +841,49 @@ function MetricsGrid({ entry, healthData }) {
 export default function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { data: healthData = [] } = useHealthDataQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
+  const { healthKitData, healthKitConnected } = useAppStore();
+  const { alertState } = useHealthKitAlerts();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [workouts, setWorkouts] = useState([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(false);
+
+  useEffect(() => {
+    posthog?.capture('track_viewed', { has_healthkit: healthKitConnected });
+  }, []);
+
+  useEffect(() => {
+    if (alertState && alertState.level !== 'urgent') {
+      posthog?.capture('health_alert_shown', { level: alertState.level });
+    }
+  }, [alertState?.level]);
 
   const loggedDates = useMemo(() => new Set(healthData.map((d) => d.date)), [healthData]);
 
-  const entry = useMemo(
-    () => healthData.find((d) => d.date === dateToStr(selectedDate)) ?? null,
-    [healthData, selectedDate]
-  );
-  const hasLoggedData = !!entry;
+  const entry = useMemo(() => {
+    const base = healthData.find((d) => d.date === dateToStr(selectedDate)) ?? null;
+    const hkDay = healthKitData[dateToStr(selectedDate)];
+    if (!hkDay) return base;
+    // HealthKit values silently override manual fields; new fields (spO2, temperature, respiratoryRate) are additive
+    return base ? { ...base, ...hkDay } : { date: dateToStr(selectedDate), ...hkDay };
+  }, [healthData, healthKitData, selectedDate]);
+
+  const hasLoggedData = !!(entry && (entry.painLevel || entry.mood || entry.hydration));
+
+  // Fetch real workouts from HealthKit whenever the selected date or connection changes
+  useEffect(() => {
+    if (!healthKitConnected) {
+      setWorkouts([]);
+      return;
+    }
+    setWorkoutsLoading(true);
+    fetchWorkoutsForDate(selectedDate)
+      .then(setWorkouts)
+      .finally(() => setWorkoutsLoading(false));
+  }, [selectedDate, healthKitConnected]);
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
@@ -787,21 +904,36 @@ export default function TrackScreen() {
           <Text style={{ fontFamily: fonts.bold, fontSize: 24, color: "#fff" }}>
             Health Tracker
           </Text>
-          <TouchableOpacity
-            onPress={() => router.push("/log-symptoms")}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 5,
-              backgroundColor: "rgba(255,255,255,0.2)",
-              borderRadius: 20,
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-            }}
-          >
-            <Plus color="#fff" size={15} strokeWidth={2.5} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Log</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => router.push("/notifications")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <Bell size={20} color="#fff" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/profile")}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              activeOpacity={0.7}
+            >
+              <User size={20} color="#fff" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <ExpandableCalendar
@@ -821,9 +953,15 @@ export default function TrackScreen() {
         showsVerticalScrollIndicator={false}
       >
         {isToday(selectedDate) && !hasLoggedData && <LogTodayCard />}
+        {isToday(selectedDate) && (
+          <HealthAlertCard
+            alertState={alertState}
+            onLogSymptoms={() => router.push("/log-symptoms")}
+          />
+        )}
         <MedicationsSection selectedDate={selectedDate} />
-        <MetricsGrid entry={entry} healthData={healthData} />
-        <ActivitySection entry={entry} />
+        <MetricsGrid entry={entry} healthData={healthData} hkConnected={healthKitConnected} />
+        <ActivitySection workouts={workouts} hkConnected={healthKitConnected} loading={workoutsLoading} />
       </ScrollView>
     </View>
   );

@@ -1,22 +1,22 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
-  Alert,
-  KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
   ActivityIndicator,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Eye, EyeOff, Mail, Lock, User } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
-import { signUp } from '@/utils/auth/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { signUp, signInWithGoogle, signInWithApple } from '@/utils/auth/supabase';
 import { useAuthStore } from '@/utils/auth/store';
 
 function GoogleIcon() {
@@ -57,7 +57,12 @@ function getPasswordStrength(password) {
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { setAuth, setIsNewUser } = useAuthStore();
+
+  useEffect(() => {
+    posthog?.capture('sign_up_screen_viewed', {});
+  }, []);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -72,6 +77,66 @@ export default function SignUpScreen() {
   const strengthIndex = getPasswordStrength(password);
   const strength = strengthIndex >= 0 ? STRENGTH_LEVELS[strengthIndex] : null;
 
+  const handleGoogleSignUp = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithGoogle();
+      if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'auth_error' });
+        setError(authError.message || 'Google sign-in failed.');
+        return;
+      }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'no_session' });
+        setError('Google sign-up failed. Please try again.');
+        return;
+      }
+      posthog?.capture('sign_up_succeeded', { method: 'google' });
+      await AsyncStorage.setItem('lastAuthProvider', 'google');
+      setAuth(data.session, data.user);
+      setIsNewUser(true);
+      router.replace('/(onboarding)/step-1');
+    } catch (e) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'network' });
+        setError('Google sign-in failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleSignUp = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const { data, error: authError } = await signInWithApple();
+      if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'auth_error' });
+        setError(authError.message || 'Apple sign-in failed.');
+        return;
+      }
+      if (!data?.session || !data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'no_session' });
+        setError('Apple sign-up failed. Please try again.');
+        return;
+      }
+      posthog?.capture('sign_up_succeeded', { method: 'apple' });
+      await AsyncStorage.setItem('lastAuthProvider', 'apple');
+      setAuth(data.session, data.user);
+      setIsNewUser(true);
+      router.replace('/(onboarding)/step-1');
+    } catch (e) {
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'network' });
+        setError('Apple sign-in failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignUp = async () => {
     if (!fullName.trim()) { setError('Please enter your full name.'); return; }
     if (!email.trim()) { setError('Please enter your email address.'); return; }
@@ -83,17 +148,27 @@ export default function SignUpScreen() {
     try {
       const { data, error: authError } = await signUp(email.trim().toLowerCase(), password, fullName.trim());
       if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'email', error_type: 'auth_error' });
         setError(authError.message || 'Sign up failed. Please try again.');
         return;
       }
-      if (!data.session) {
+      if (!data?.session) {
+        posthog?.capture('sign_up_email_verification_required', {});
         setError('Account created! Please check your email to confirm before signing in.');
         return;
       }
+      if (!data?.user) {
+        posthog?.capture('sign_up_failed', { method: 'email', error_type: 'no_session' });
+        setError('Sign up failed. Please try again.');
+        return;
+      }
+      posthog?.capture('sign_up_succeeded', { method: 'email' });
+      await AsyncStorage.setItem('lastAuthProvider', 'email');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch {
+      posthog?.capture('sign_up_failed', { method: 'email', error_type: 'network' });
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
@@ -102,8 +177,7 @@ export default function SignUpScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <ScrollView
+      <KeyboardAwareScrollView
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -264,19 +338,23 @@ export default function SignUpScreen() {
             {/* Social auth buttons */}
             <View style={styles.socialRow}>
               <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Google sign-in is coming soon.')}
+                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                onPress={handleGoogleSignUp}
+                disabled={loading}
               >
                 <GoogleIcon />
                 <Text style={styles.socialBtnText}>Google</Text>
               </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }]}
-                onPress={() => Alert.alert('Coming Soon', 'Apple sign-in is coming soon.')}
-              >
-                <AppleIcon />
-                <Text style={styles.socialBtnText}>Apple</Text>
-              </Pressable>
+              {Platform.OS === 'ios' && (
+                <Pressable
+                  style={({ pressed }) => [styles.socialBtn, pressed && { opacity: 0.7 }, loading && { opacity: 0.5 }]}
+                  onPress={handleAppleSignUp}
+                  disabled={loading}
+                >
+                  <AppleIcon />
+                  <Text style={styles.socialBtnText}>Apple</Text>
+                </Pressable>
+              )}
             </View>
 
             {/* Sign In link */}
@@ -289,8 +367,7 @@ export default function SignUpScreen() {
               </Text>
             </Pressable>
           </MotiView>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
     </View>
   );
 }

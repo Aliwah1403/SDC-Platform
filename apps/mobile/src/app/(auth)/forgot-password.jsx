@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,11 +18,16 @@ import { resetPassword } from '@/utils/auth/supabase';
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    posthog?.capture('password_reset_screen_viewed', {});
+  }, []);
 
   const handleReset = async () => {
     if (!email.trim()) { setError('Please enter your email address.'); return; }
@@ -29,8 +35,10 @@ export default function ForgotPasswordScreen() {
     setLoading(true);
     try {
       await resetPassword(email.trim().toLowerCase());
+      posthog?.capture('password_reset_requested', {});
       router.push({ pathname: '/(auth)/verify-code', params: { email: email.trim().toLowerCase() } });
     } catch {
+      posthog?.capture('password_reset_failed', {});
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

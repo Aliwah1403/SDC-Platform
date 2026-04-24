@@ -10,6 +10,8 @@ import * as Haptics from 'expo-haptics';
 import { useAppStore } from '@/store/appStore';
 import { useAuthStore } from '@/utils/auth/store';
 import { useCompleteOnboardingMutation } from '@/hooks/queries/useProfileQuery';
+import { scheduleCheckInReminders } from '@/utils/checkInNotifications';
+import { usePostHog } from 'posthog-react-native';
 
 const STATS = [
   { icon: StreakFireIcon, label: 'Streak', value: '1 day', color: '#781D11' },
@@ -23,6 +25,7 @@ export default function OnboardingComplete() {
   const { auth } = useAuthStore();
   const completeOnboardingMutation = useCompleteOnboardingMutation();
 
+  const posthog = usePostHog();
   const firstName = auth?.user?.user_metadata?.full_name?.split(' ')[0] || 'there';
 
   useEffect(() => {
@@ -32,6 +35,23 @@ export default function OnboardingComplete() {
   const handleGetStarted = () => {
     completeOnboardingMutation.mutate(onboardingData, {
       onSuccess: () => {
+        posthog?.capture('onboarding_completed', {
+          has_scd_type: Boolean(onboardingData.scdType),
+          has_emergency_contacts: (onboardingData.emergencyContacts?.length ?? 0) > 0,
+          notifications_enabled: onboardingData.notificationsEnabled,
+          biometrics_enabled: onboardingData.biometricsEnabled,
+          skipped_hospital: !onboardingData.preferredHospital,
+          skipped_medications: !(onboardingData.medications?.length),
+        });
+        // Set profile traits now that onboarding is complete
+        if (auth?.user?.id) {
+          posthog?.identify(auth.user.id, {
+            notifications_enabled: onboardingData.notificationsEnabled,
+          });
+        }
+        if (onboardingData.notificationsEnabled) {
+          scheduleCheckInReminders(2); // default twice-daily; user can adjust in profile
+        }
         resetOnboarding();
         router.replace('/(tabs)/home');
       },

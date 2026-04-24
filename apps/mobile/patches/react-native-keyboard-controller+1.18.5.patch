@@ -1,0 +1,49 @@
+diff --git a/node_modules/react-native-keyboard-controller/lib/commonjs/animated.js b/node_modules/react-native-keyboard-controller/lib/commonjs/animated.js
+index d6333a6..1b268a0 100644
+--- a/node_modules/react-native-keyboard-controller/lib/commonjs/animated.js
++++ b/node_modules/react-native-keyboard-controller/lib/commonjs/animated.js
+@@ -173,7 +173,8 @@ const KeyboardProvider = props => {
+     onKeyboardMove: OS === "android" ? onKeyboardMove : undefined,
+     onKeyboardMoveInteractive: onKeyboardMove,
+     onKeyboardMoveEnd: OS === "android" ? onKeyboardMove : undefined,
+-    onFocusedInputLayoutChangedReanimated: inputLayoutHandler
++    onFocusedInputLayoutChangedReanimated: inputLayoutHandler,
++    pointerEvents: 'box-none'
+   }, children), /*#__PURE__*/_react.default.createElement(_reactNative.Animated.View, {
+     // we are using this small hack, because if the component (where
+     // animated value has been used) is unmounted, then animation will
+@@ -183,7 +184,8 @@ const KeyboardProvider = props => {
+     //
+     // To test why it's needed, try to open screen which consumes Animated.Value
+     // then close it and open it again (for example 'Animated transition').
+-    style: style
++    style: style,
++    pointerEvents: 'none'
+   }));
+ };
+ exports.KeyboardProvider = KeyboardProvider;
+diff --git a/node_modules/react-native-keyboard-controller/lib/module/animated.js b/node_modules/react-native-keyboard-controller/lib/module/animated.js
+index ad0a0f8..72c22d9 100644
+--- a/node_modules/react-native-keyboard-controller/lib/module/animated.js
++++ b/node_modules/react-native-keyboard-controller/lib/module/animated.js
+@@ -164,7 +164,8 @@ export const KeyboardProvider = props => {
+     onKeyboardMove: OS === "android" ? onKeyboardMove : undefined,
+     onKeyboardMoveInteractive: onKeyboardMove,
+     onKeyboardMoveEnd: OS === "android" ? onKeyboardMove : undefined,
+-    onFocusedInputLayoutChangedReanimated: inputLayoutHandler
++    onFocusedInputLayoutChangedReanimated: inputLayoutHandler,
++    pointerEvents: 'box-none'
+   }, children), /*#__PURE__*/React.createElement(Animated.View, {
+     // we are using this small hack, because if the component (where
+     // animated value has been used) is unmounted, then animation will
+@@ -174,7 +175,8 @@ export const KeyboardProvider = props => {
+     //
+     // To test why it's needed, try to open screen which consumes Animated.Value
+     // then close it and open it again (for example 'Animated transition').
+-    style: style
++    style: style,
++    pointerEvents: 'none'
+   }));
+ };
+ //# sourceMappingURL=animated.js.map
+\ No newline at end of file

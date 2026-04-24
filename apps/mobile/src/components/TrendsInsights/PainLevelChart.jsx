@@ -1,6 +1,9 @@
+import { useMemo } from "react";
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { fonts } from "@/utils/fonts";
+
+const LABEL_TEXT_STYLE = { color: "#9CA3AF", fontSize: 9 };
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // Card has 16px margin each side + 20px padding each side inside
@@ -24,11 +27,11 @@ function getPainInsight(avg, highest, highPainDays, painFreeDays) {
 }
 
 export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
-  const giftedData = painLevelData.map((d, i) => ({
+  const giftedData = useMemo(() => painLevelData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
-    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-  }));
+    labelTextStyle: LABEL_TEXT_STYLE,
+  })), [painLevelData]);
 
   const highest = Math.max(...chartData.map((d) => d.painLevel));
   const lowestLogged = Math.min(

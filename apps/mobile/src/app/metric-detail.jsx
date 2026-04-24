@@ -1,4 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useMetricInsights } from "@/hooks/useMetricInsights";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -22,14 +24,31 @@ import {
   Activity,
   Moon,
   Heart,
+  Thermometer,
+  Waves,
+  Wind,
+  AlertTriangle,
 } from "lucide-react-native";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
+import { useAppStore } from "@/store/appStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// scrollview pad 20*2 + card pad 20*2 + yAxisLabelWidth 24 - marginLeft offset 8 = 96
+// base: scrollview pad 20*2 + card pad 20*2 - marginLeft offset 8 = 72; add labelWidth per metric
 const CHART_WIDTH = SCREEN_WIDTH - 96;
+
+const METRIC_Y_AXIS = {
+  pain:        { sections: 5, labelWidth: 24, labels: ["0","2","4","6","8","10"] },
+  hydration:   { sections: 4, labelWidth: 24, labels: null },
+  mood:        { sections: 5, labelWidth: 20, labels: null },
+  steps:       { sections: 3, labelWidth: 32, labels: ["0","5k","10k","15k"] },
+  sleep:       { sections: 4, labelWidth: 24, labels: null },
+  heartrate:   { sections: 4, labelWidth: 32, labels: ["0","30","60","90","120"] },
+  spo2:        { sections: 4, labelWidth: 24, labels: null },
+  temperature: { sections: 3, labelWidth: 24, labels: ["0","14","28","42°"] },
+  resprate:    { sections: 3, labelWidth: 24, labels: ["0","10","20","30"] },
+};
 
 function dateToStr(date) {
   const y = date.getFullYear();
@@ -118,14 +137,59 @@ const METRIC_META = {
     color: "#EF4444",
     max: 120,
     rangeMin: 40,
-    rangeMax: 120,
+    rangeMax: 130,
     chartType: "line",
     dataField: "heartRate",
     hasGoal: false,
     lowerIsBetter: false,
     aboutTitle: "How hard your heart is working each day",
-    about: "Heart rate data from Apple Health reflects your cardiovascular activity throughout the day. People with SCD often have a higher resting heart rate due to anaemia — the heart works harder to compensate for reduced oxygen-carrying capacity. Sudden spikes may correlate with pain episodes or illness.",
+    about: "Heart rate from Apple Health reflects your cardiovascular activity. People with SCD typically have a higher resting heart rate (80–100 bpm) due to chronic anaemia — the heart works harder to compensate for reduced oxygen-carrying capacity. Readings above 110 bpm warrant rest; above 120 bpm contact your care team.",
     unit: "bpm",
+  },
+  spo2: {
+    label: "Blood Oxygen",
+    icon: Waves,
+    color: "#0EA5E9",
+    max: 100,
+    rangeMin: 88,
+    rangeMax: 100,
+    chartType: "line",
+    dataField: "spO2",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Oxygen saturation — the most critical SCD metric",
+    about: "Blood oxygen (SpO2) measures the percentage of haemoglobin carrying oxygen. For SCD patients (HbSS), a normal baseline is 94–98% — lower than the 95–100% seen in healthy individuals. A reading below 92% is a red flag for Acute Chest Syndrome, one of the most serious SCD complications. Requires Apple Watch Series 6 or later.",
+    unit: "%",
+  },
+  temperature: {
+    label: "Temperature",
+    icon: Thermometer,
+    color: "#F59E0B",
+    max: 42,
+    rangeMin: 35,
+    rangeMax: 42,
+    chartType: "line",
+    dataField: "temperature",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Fever is a medical emergency for SCD patients",
+    about: "SCD patients have functional asplenia — the spleen cannot fight infections effectively. A fever of 38°C or above requires immediate medical evaluation because sepsis can develop rapidly. Even a mild fever should never be managed at home without care team guidance.",
+    unit: "°C",
+  },
+  resprate: {
+    label: "Resp. Rate",
+    icon: Wind,
+    color: "#8B5CF6",
+    max: 30,
+    rangeMin: 8,
+    rangeMax: 30,
+    chartType: "line",
+    dataField: "respiratoryRate",
+    hasGoal: false,
+    lowerIsBetter: false,
+    aboutTitle: "Breathing rate as an early warning sign",
+    about: "Normal respiratory rate is 12–20 breaths per minute. An elevated rate (above 20/min) can be an early indicator of Acute Chest Syndrome (ACS) — a life-threatening complication of SCD that begins with chest pain, fever, and difficulty breathing. ACS requires emergency care. Requires Apple Watch.",
+    unit: "/min",
   },
 };
 
@@ -136,7 +200,8 @@ function getLastNDays(healthData, field, n) {
     const date = new Date(today);
     date.setDate(date.getDate() - i);
     const entry = healthData.find((d) => d.date === dateToStr(date));
-    result.push({ date, value: entry?.[field] ?? 0 });
+    const raw = entry?.[field];
+    result.push({ date, value: (raw != null && Number.isFinite(raw)) ? raw : 0 });
   }
   return result;
 }
@@ -176,12 +241,88 @@ function getStatus(metricKey, value) {
       if (value >= 6) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
     case "heartrate":
-      if (value >= 60 && value <= 100) return { label: "Normal", color: "#059669" };
-      if (value > 100) return { label: "Elevated", color: "#DC2626" };
+      // SCD resting HR baseline 80–100 bpm due to chronic anaemia
+      if (value >= 60 && value <= 110) return { label: "Normal", color: "#059669" };
+      if (value > 110) return { label: "Elevated", color: "#DC2626" };
+      return { label: "Low", color: "#F59E0B" };
+    case "spo2":
+      if (value >= 94) return { label: "Normal", color: "#059669" };
+      if (value >= 92) return { label: "Warning", color: "#F59E0B" };
+      return { label: "Critical", color: "#DC2626" };
+    case "temperature":
+      if (value >= 36.5 && value < 38.0) return { label: "Normal", color: "#059669" };
+      if (value >= 38.0) return { label: "Fever ⚠", color: "#DC2626" };
+      return { label: "Low", color: "#F59E0B" };
+    case "resprate":
+      if (value >= 12 && value <= 20) return { label: "Normal", color: "#059669" };
+      if (value > 20 && value <= 25) return { label: "Elevated", color: "#F59E0B" };
+      if (value > 25) return { label: "Critical", color: "#DC2626" };
       return { label: "Low", color: "#F59E0B" };
     default:
       return null;
   }
+}
+
+// ─── SCD Alert Banner ─────────────────────────────────────────────────────────
+// Shown at the top of a metric detail screen when the reading crosses an
+// SCD-specific threshold. Uses safe, non-diagnostic language per the spec.
+// Also surfaces whether this metric contributed to the composite alert state.
+
+function ScdAlertBanner({ metric, value, status, compositeAlert }) {
+  if (!value || !status) return null;
+  const isNormal = ["Normal", "Good", "Great"].includes(status.label);
+  if (isNormal) return null;
+
+  const isCritical = ["Critical", "Fever ⚠"].includes(status.label);
+
+  // Safe language per spec — never "diagnosis", "abnormal", "crisis"
+  let message = null;
+  if (metric === "spo2" && value < 94) {
+    message = value < 92
+      ? "Your blood oxygen has shifted outside a safe range. This is worth contacting your care team about right away."
+      : "Your blood oxygen is different from the usual SCD range. This may be worth watching — check in on how you're feeling.";
+  } else if (metric === "temperature" && value >= 38.0) {
+    message = "A temperature at this level is important for SCD. Combined with your condition, this warrants prompt medical evaluation.";
+  } else if (metric === "heartrate" && value > 110) {
+    message = value > 120
+      ? "Your heart rate has moved significantly from your usual pattern. Rest and contact your care team."
+      : "Your heart rate is higher than your usual range. This may be worth watching alongside your other readings.";
+  } else if (metric === "resprate" && value > 20) {
+    message = value > 25
+      ? "Your breathing rate has shifted significantly. Combined with SCD, this pattern can be important — seek care if you feel unwell."
+      : "Your respiratory rate is above your usual range. Monitor for any chest discomfort or breathing changes.";
+  }
+
+  if (!message) return null;
+
+  // If this metric is part of a broader composite alert, note that context
+  const compositeNote = compositeAlert?.triggers?.find((t) => t.type === metric)
+    ? "This reading is part of a wider pattern Hemo has flagged today."
+    : null;
+
+  return (
+    <View style={{
+      backgroundColor: isCritical ? "#FEF2F2" : "#FFFBEB",
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: isCritical ? "#FECACA" : "#FDE68A",
+      gap: 6,
+    }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
+        <AlertTriangle size={16} color={isCritical ? "#DC2626" : "#D97706"} style={{ marginTop: 1 }} />
+        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: isCritical ? "#991B1B" : "#92400E", flex: 1, lineHeight: 19 }}>
+          {message}
+        </Text>
+      </View>
+      {compositeNote && (
+        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: isCritical ? "#B91C1C" : "#B45309", paddingLeft: 26, lineHeight: 17 }}>
+          {compositeNote}
+        </Text>
+      )}
+    </View>
+  );
 }
 
 // ─── Dot Range Indicator ─────────────────────────────────────────────────────
@@ -528,18 +669,42 @@ function InsightsCard({ insights, color }) {
 export default function MetricDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { metric } = useLocalSearchParams();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
 
+  const { healthKitData, computedAlertState, onboardingData } = useAppStore();
+
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
+  const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
+  const chartWidth = SCREEN_WIDTH - (72 + yAxis.labelWidth);
   const [range, setRange] = useState(30);
+
+  useEffect(() => {
+    posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
+  }, []);
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
+  // Merge HealthKit data into healthData before computing chart data.
+  // Also includes HealthKit-only dates (e.g. spO2/temperature days with no manual log).
+  const mergedHealthData = useMemo(() => {
+    if (!healthKitData || Object.keys(healthKitData).length === 0) return healthData;
+    const base = healthData.map((entry) => {
+      const hkDay = healthKitData[entry.date];
+      return hkDay ? { ...entry, ...hkDay } : entry;
+    });
+    const coveredDates = new Set(healthData.map((e) => e.date));
+    const hkOnlyEntries = Object.entries(healthKitData)
+      .filter(([date]) => !coveredDates.has(date))
+      .map(([date, hkDay]) => ({ date, ...hkDay }));
+    return [...base, ...hkOnlyEntries];
+  }, [healthData, healthKitData]);
+
   const data = useMemo(
-    () => getLastNDays(healthData, meta.dataField, range),
-    [healthData, meta.dataField, range]
+    () => getLastNDays(mergedHealthData, meta.dataField, range),
+    [mergedHealthData, meta.dataField, range]
   );
 
   const latestEntry = [...data].reverse().find((d) => d.value > 0);
@@ -556,18 +721,26 @@ export default function MetricDetailScreen() {
   const status = currentValue != null ? getStatus(metric, currentValue) : null;
   const trendDelta = useMemo(() => calcTrendDelta(data), [data]);
 
+  const { insight: aiInsight } = useMetricInsights(
+    metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter,
+    { range, unit: meta.unit, goal, scdType: onboardingData?.scdType },
+  );
+
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const giftedData = data.map((d, i) => ({
-    value: d.value,
-    label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
-    tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    ...(meta.chartType === "bar" && {
-      frontColor: goal && d.value >= goal ? meta.color : meta.color + "88",
-    }),
-  }));
+  const giftedData = data.map((d, i) => {
+    const value = Number.isFinite(d.value) ? d.value : 0;
+    return {
+      value,
+      label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
+      tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+      ...(meta.chartType === "bar" && {
+        frontColor: goal && value >= goal ? meta.color : meta.color + "88",
+      }),
+    };
+  });
 
   const IconComp = meta.icon;
 
@@ -622,6 +795,9 @@ export default function MetricDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
       >
+        {/* ── SCD Alert Banner (shown when value crosses clinical threshold) ── */}
+        <ScdAlertBanner metric={metric} value={currentValue} status={status} compositeAlert={computedAlertState} />
+
         {/* ── Value Section ──────────────────────────────── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
@@ -634,7 +810,7 @@ export default function MetricDetailScreen() {
             {[7, 30].map((r) => (
               <TouchableOpacity
                 key={r}
-                onPress={() => setRange(r)}
+                onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
                 style={{
                   paddingHorizontal: 14,
                   paddingVertical: 6,
@@ -773,29 +949,41 @@ export default function MetricDetailScreen() {
             </View>
           )}
 
-          {/* Chart */}
+          {/* Chart — line metrics always use LineChart; bar metrics use LineChart at 30d */}
           <View style={{ marginLeft: -8 }}>
-            {meta.chartType === "line" ? (
+            {meta.chartType === "line" || range === 30 ? (
               <LineChart
                 data={giftedData}
-                width={CHART_WIDTH}
+                width={chartWidth}
                 height={180}
                 color={meta.color}
-                thickness={2}
+                thickness={range === 30 ? 1.5 : 2}
                 curved
+                areaChart
+                startFillColor={meta.color}
+                endFillColor={meta.color}
+                startOpacity={0.15}
+                endOpacity={0}
+                hideDataPoints={range === 30}
                 dataPointsColor={meta.color}
                 dataPointsRadius={3}
-                noOfSections={4}
+                noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
                 xAxisColor="#E5E7EB"
-                rulesColor="#F3F4F6"
+                rulesColor="#EBEBEB"
                 rulesType="solid"
                 initialSpacing={8}
-                spacing={Math.max(4, Math.floor(CHART_WIDTH / (range + 2)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+                spacing={Math.max(4, Math.floor(chartWidth / (range + 2)))}
+                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
                 backgroundColor="transparent"
-                yAxisLabelWidth={24}
+                yAxisLabelWidth={yAxis.labelWidth}
+                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
+                {...(meta.hasGoal && goal ? {
+                  showReferenceLine1: true,
+                  referenceLine1Position: goal,
+                  referenceLine1Config: { color: meta.color, dashWidth: 4, dashGap: 4, thickness: 1.5, opacity: 0.6 },
+                } : {})}
                 pointerConfig={{
                   pointerStripHeight: 180,
                   pointerStripColor: meta.color + "28",
@@ -835,19 +1023,20 @@ export default function MetricDetailScreen() {
             ) : (
               <BarChart
                 data={giftedData}
-                width={CHART_WIDTH}
+                width={chartWidth}
                 height={180}
-                noOfSections={4}
+                noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
                 xAxisColor="#E5E7EB"
-                rulesColor="#F3F4F6"
+                rulesColor="#EBEBEB"
                 initialSpacing={8}
-                barWidth={Math.max(4, Math.floor(CHART_WIDTH / (range * 1.6)))}
-                spacing={Math.max(2, Math.floor(CHART_WIDTH / (range * 3)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+                barWidth={Math.max(6, Math.floor(chartWidth / (range * 1.6)))}
+                spacing={Math.max(3, Math.floor(chartWidth / (range * 3)))}
+                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
                 backgroundColor="transparent"
-                yAxisLabelWidth={24}
+                yAxisLabelWidth={yAxis.labelWidth}
+                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
                 roundedTop
                 showReferenceLine1={!!goal}
                 referenceLine1Position={goal ?? 0}
@@ -867,6 +1056,9 @@ export default function MetricDetailScreen() {
                     }}>
                       <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#fff" }}>
                         {dv}{meta.unit ? ` ${meta.unit}` : ""}
+                      </Text>
+                      <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
+                        {item.tooltipLabel}
                       </Text>
                     </View>
                   );
@@ -892,7 +1084,7 @@ export default function MetricDetailScreen() {
           transition={{ delay: 240, type: "timing", duration: 280 }}
         >
           <InsightsCard
-            insights={getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
+            insights={aiInsight ?? getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
             color={meta.color}
           />
         </MotiView>

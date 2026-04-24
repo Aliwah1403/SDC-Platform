@@ -203,44 +203,24 @@ export const mockArticles = [
   },
 ];
 
-// Badge image assets
-const BADGE_IMAGES = {
-  1:  require("../assets/images/badges/badge-1.svg"),
-  2:  require("../assets/images/badges/badge-2.svg"),
-  3:  require("../assets/images/badges/badge-3.svg"),
-  4:  require("../assets/images/badges/badge-4.svg"),
-  5:  require("../assets/images/badges/badge-5.svg"),
-  6:  require("../assets/images/badges/badge-6.svg"),
-  7:  require("../assets/images/badges/badge-7.svg"),
-  8:  require("../assets/images/badges/badge-8.svg"),
-  9:  require("../assets/images/badges/badge-9.svg"),
-  10: require("../assets/images/badges/badge-10.svg"),
-  11: require("../assets/images/badges/badge-11.svg"),
-  12: require("../assets/images/badges/badge-12.svg"),
-  13: require("../assets/images/badges/badge-13.svg"),
-  14: require("../assets/images/badges/badge-14.svg"),
-  15: require("../assets/images/badges/badge-15.svg"),
-  16: require("../assets/images/badges/badge-16.svg"),
-};
-
 // Mock badges — all 16 from design spec
 export const mockBadges = [
-  { id: "onboarding-done", name: "Getting Started",   description: "Completed your Hemo setup",              image: BADGE_IMAGES[1],  category: "milestone",  unlockedAt: new Date("2024-10-10") },
-  { id: "streak-1",        name: "First Streak",      description: "Logged your first day",                  image: BADGE_IMAGES[2],  category: "streak",     unlockedAt: new Date("2024-10-11") },
-  { id: "streak-3",        name: "On Track",          description: "3-day logging streak",                   image: BADGE_IMAGES[3],  category: "streak",     unlockedAt: null },
-  { id: "streak-7",        name: "Habit Builder",     description: "7-day logging streak",                   image: BADGE_IMAGES[4],  category: "streak",     unlockedAt: null },
-  { id: "streak-14",       name: "Fortnight Fighter", description: "14-day logging streak",                  image: BADGE_IMAGES[5],  category: "streak",     unlockedAt: null },
-  { id: "streak-30",       name: "Monthly Monster",   description: "30-day logging streak",                  image: BADGE_IMAGES[6],  category: "streak",     unlockedAt: null },
-  { id: "streak-60",       name: "Dedicated Tracker", description: "60-day logging streak",                  image: BADGE_IMAGES[7],  category: "streak",     unlockedAt: null },
-  { id: "hydration-7",     name: "Hydration Junkie",  description: "Hit your water goal 7 days in a row",   image: BADGE_IMAGES[8],  category: "health",     unlockedAt: null },
-  { id: "care-10",         name: "Self-Care",         description: "Read 10 care articles",                  image: BADGE_IMAGES[9],  category: "learning",   unlockedAt: null },
-  { id: "learning-5",      name: "Knowledge Seeker",  description: "Explored 5 learning articles",           image: BADGE_IMAGES[10], category: "learning",   unlockedAt: null },
-  { id: "symptoms-10",     name: "Pattern Seeker",    description: "Logged symptoms 10 times",               image: BADGE_IMAGES[11], category: "milestone",  unlockedAt: null },
-  { id: "repair-1",        name: "Back on Track",     description: "Used a streak repair",                   image: BADGE_IMAGES[12], category: "streak",     unlockedAt: null },
-  { id: "restart-1",       name: "Resilient Restart", description: "Rebuilt your streak after a break",      image: BADGE_IMAGES[13], category: "streak",     unlockedAt: null },
-  { id: "meds-streak-7",   name: "On-Time Hero",      description: "Logged meds on time 7 days in a row",   image: BADGE_IMAGES[14], category: "medication", unlockedAt: null },
-  { id: "meds-first",      name: "Dose One",          description: "Logged your first medication dose",      image: BADGE_IMAGES[15], category: "medication", unlockedAt: null },
-  { id: "week-perfect",    name: "Perfect Week",      description: "Logged every day for a full week",       image: BADGE_IMAGES[16], category: "milestone",  unlockedAt: null },
+  { id: "onboarding-done", name: "Getting Started",   description: "Completed your Hemo setup",              image: require("../assets/images/badges/getting-started.svg"),   category: "milestone",  unlockedAt: new Date("2024-10-10") },
+  { id: "streak-1",        name: "First Streak",      description: "Logged your first day",                  image: require("../assets/images/badges/first-streak.svg"),       category: "streak",     unlockedAt: new Date("2024-10-11") },
+  { id: "streak-3",        name: "On Track",          description: "3-day logging streak",                   image: require("../assets/images/badges/on-track.svg"),           category: "streak",     unlockedAt: null },
+  { id: "streak-7",        name: "Habit Builder",     description: "7-day logging streak",                   image: require("../assets/images/badges/habit-builder.png"),      category: "streak",     unlockedAt: null },
+  { id: "streak-14",       name: "Fortnight Fighter", description: "14-day logging streak",                  image: require("../assets/images/badges/fortnight-fighter.svg"),  category: "streak",     unlockedAt: null },
+  { id: "streak-30",       name: "Monthly Monster",   description: "30-day logging streak",                  image: require("../assets/images/badges/monthly-monster.svg"),    category: "streak",     unlockedAt: null },
+  { id: "streak-60",       name: "Dedicated Tracker", description: "60-day logging streak",                  image: require("../assets/images/badges/dedicated-tracker.svg"),  category: "streak",     unlockedAt: null },
+  { id: "hydration-7",     name: "Hydration Junkie",  description: "Hit your water goal 7 days in a row",   image: require("../assets/images/badges/hydration-junkie.png"),   category: "health",     unlockedAt: null },
+  { id: "care-10",         name: "Self-Care",         description: "Read 10 care articles",                  image: require("../assets/images/badges/self-care.svg"),          category: "learning",   unlockedAt: null },
+  { id: "learning-5",      name: "Knowledge Seeker",  description: "Explored 5 learning articles",           image: require("../assets/images/badges/knowledge-seeker.svg"),   category: "learning",   unlockedAt: null },
+  { id: "symptoms-10",     name: "Pattern Seeker",    description: "Logged symptoms 10 times",               image: require("../assets/images/badges/pattern-seeker.svg"),     category: "milestone",  unlockedAt: null },
+  { id: "repair-1",        name: "Back on Track",     description: "Used a streak repair",                   image: require("../assets/images/badges/back-on-track.svg"),      category: "streak",     unlockedAt: null },
+  { id: "restart-1",       name: "Resilient Restart", description: "Rebuilt your streak after a break",      image: require("../assets/images/badges/resilient-restart.svg"),  category: "streak",     unlockedAt: null },
+  { id: "meds-streak-7",   name: "On-Time Hero",      description: "Logged meds on time 7 days in a row",   image: require("../assets/images/badges/on-time.svg"),            category: "medication", unlockedAt: null },
+  { id: "meds-first",      name: "Dose One",          description: "Logged your first medication dose",      image: require("../assets/images/badges/dose-one.svg"),           category: "medication", unlockedAt: null },
+  { id: "week-perfect",    name: "Perfect Week",      description: "Logged every day for a full week",       image: require("../assets/images/badges/perfect-week.svg"),       category: "milestone",  unlockedAt: null },
 ];
 
 // Mock challenges
@@ -411,11 +391,16 @@ export const mockCommunityPosts = [
     id: "cp1",
     author: { id: "u1", name: "Amara D.", avatarInitials: "AD", scdType: "HbSS" },
     content: "Just completed my first 5K walk since my last crisis. Took me 55 mins and I had to stop twice, but I finished it! Six months ago I couldn't walk to the corner shop without pain. Small steps, big wins 💪",
+    imageUrl: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80",
     category: "wins",
+    flair: "win",
     likes: 47,
     timestamp: _ago(1.5),
     comments: [
-      { id: "cc1a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is huge!! I remember when you mentioned your goal in January. So proud of you!", timestamp: _ago(1.2) },
+      { id: "cc1a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is huge!! I remember when you mentioned your goal in January. So proud of you!", timestamp: _ago(1.2), replies: [
+        { id: "r_cc1a_1", author: { name: "Priya N.", avatarInitials: "PN" }, replyingToName: "Marcus T.", content: "Same!! I've been quietly rooting for her too. Actual tears 🥹", timestamp: _ago(1.0) },
+        { id: "r_cc1a_2", author: { name: "Amara D.", avatarInitials: "AD" }, replyingToName: "Marcus T.", content: "This whole thread is making my day honestly.", timestamp: _ago(0.9) },
+      ]},
       { id: "cc1b", author: { name: "Priya N.", avatarInitials: "PN" }, content: "This literally made me tear up. You're an inspiration 🥹", timestamp: _ago(0.8) },
       { id: "cc1c", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "55 mins for a 5K WITH stops is actually great! Keep going ❤️", timestamp: _ago(0.5) },
     ],
@@ -438,11 +423,15 @@ export const mockCommunityPosts = [
     id: "cp3",
     author: { id: "u3", name: "Sasha K.", avatarInitials: "SK", scdType: "HbSS" },
     content: "Hot tip that changed my pain crisis management: I now keep a 'crisis kit' by my bed — heating pad, a water bottle, paracetamol/codeine already measured out, a playlist, and a laminated sheet with my pain plan. In those moments your brain doesn't work well so having everything ready is a game changer.",
+    imageUrl: "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=800&q=80",
     category: "tips",
+    flair: "advice",
     likes: 112,
     timestamp: _ago(11),
     comments: [
-      { id: "cc3a", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "The laminated sheet idea is genius. I always forget what I'm supposed to do when I'm in pain.", timestamp: _ago(10) },
+      { id: "cc3a", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "The laminated sheet idea is genius. I always forget what I'm supposed to do when I'm in pain.", timestamp: _ago(10), replies: [
+        { id: "r_cc3a_1", author: { name: "Sasha K.", avatarInitials: "SK" }, replyingToName: "Fatima R.", content: "Yes! My plan has: 1) take meds 2) heat 3) call this number if no improvement in 2hrs. Simple but I can barely read at a pain level 7.", timestamp: _ago(9.5) },
+      ]},
       { id: "cc3b", author: { name: "Noah B.", avatarInitials: "NB" }, content: "I do something similar but the pre-measured meds is something I haven't thought of. Adding that now!", timestamp: _ago(9) },
       { id: "cc3c", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "@Fatima yes! My pain plan has: 1) take meds 2) heat 3) call this number if no improvement in 2hrs. Simple but I can barely read when I'm at a 7.", timestamp: _ago(8) },
     ],
@@ -456,7 +445,10 @@ export const mockCommunityPosts = [
     timestamp: _ago(18),
     comments: [
       { id: "cc4a", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Completely normal. You're grieving the version of your life where you didn't have this knowledge — and the years of confusion before diagnosis. It's a lot to process.", timestamp: _ago(17) },
-      { id: "cc4b", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Welcome to the community 💙 Late diagnosis is actually really common. Give yourself time to grieve AND celebrate — at least now you have answers.", timestamp: _ago(16) },
+      { id: "cc4b", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Welcome to the community 💙 Late diagnosis is actually really common. Give yourself time to grieve AND celebrate — at least now you have answers.", timestamp: _ago(16), replies: [
+        { id: "r_cc4b_1", author: { name: "Tobias M.", avatarInitials: "TM" }, replyingToName: "Amara D.", content: "Thank you Amara, that reframe really helps. Grief AND celebrate — I'll hold onto that.", timestamp: _ago(15.5) },
+        { id: "r_cc4b_2", author: { name: "Jordan L.", avatarInitials: "JL" }, replyingToName: "Amara D.", content: "Really well put. The late diagnosis grief is its own thing that people don't talk about enough.", timestamp: _ago(15) },
+      ]},
       { id: "cc4c", author: { name: "Dr. Lee (Community Mod)", avatarInitials: "DL" }, content: "Very normal. Many people describe a period of mourning followed by relief. If feelings feel overwhelming, please consider speaking to a counsellor who has experience with chronic illness.", timestamp: _ago(14) },
       { id: "cc4d", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "I was diagnosed at 26 and I cried for a week. Then I joined communities like this one and everything started making sense. You're not alone ❤️", timestamp: _ago(12) },
       { id: "cc4e", author: { name: "Tobias M.", avatarInitials: "TM" }, content: "Thank you all so much. I genuinely didn't expect this response. Already feeling less alone.", timestamp: _ago(10) },
@@ -467,6 +459,7 @@ export const mockCommunityPosts = [
     author: { id: "u5", name: "Priya N.", avatarInitials: "PN", scdType: "HbSS" },
     content: "Has anyone tried the GBT601 gene therapy trial? I've been shortlisted for a site near me and my haematologist is cautiously optimistic. Would love to hear from anyone who's been through a gene therapy process — what questions should I be asking?",
     category: "research",
+    flair: "story",
     likes: 34,
     timestamp: _ago(26),
     comments: [
@@ -493,6 +486,7 @@ export const mockCommunityPosts = [
     id: "cp7",
     author: { id: "u7", name: "Noah B.", avatarInitials: "NB", scdType: "HbSS" },
     content: "6 months crisis-free today. Last year I was hospitalised 4 times. What changed: strict sleep schedule, no longer flying on short-haul without extra hydration, cut out alcohol completely, and finally got my Hydroxyurea dose optimised. It's boring but it works.",
+    imageUrl: "https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=800&q=80",
     category: "wins",
     likes: 134,
     timestamp: _ago(48),
@@ -508,6 +502,7 @@ export const mockCommunityPosts = [
     author: { id: "u8", name: "Marcus T.", avatarInitials: "MT", scdType: "HbSS" },
     content: "Reminder that the cold IS a trigger and it's okay to skip things because of it. I used to push through cold outdoor events to seem 'normal' and ended up in A&E twice. Now I wear layers aggressively, carry a pocket warmer, and leave early if I get cold. My friends understand — and those who don't aren't my people.",
     category: "tips",
+    flair: "vent",
     likes: 76,
     timestamp: _ago(60),
     comments: [
@@ -534,6 +529,7 @@ export const mockCommunityPosts = [
     id: "cp10",
     author: { id: "u10", name: "Kofi A.", avatarInitials: "KA", scdType: "HbSS" },
     content: "Anyone keeping an eye on the Beam Therapeutics base-editing trials? They just published 12-month follow-up data and it looks very promising for HbSS patients. Not gene therapy in the traditional sense — they're editing the existing gene rather than adding a new one. Science is wild.",
+    imageUrl: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=800&q=80",
     category: "research",
     likes: 29,
     timestamp: _ago(85),
@@ -548,6 +544,7 @@ export const mockCommunityPosts = [
     id: "cp11",
     author: { id: "u11", name: "Ben O.", avatarInitials: "BO", scdType: "HbSC" },
     content: "Just got my first full blood count back where my HbF was above 20% — my haematologist was genuinely excited. 8 months on optimised Hydroxyurea. If you're on it and not seeing results, please push for a dosage review — the therapeutic window varies a lot between people.",
+    imageUrl: "https://images.unsplash.com/photo-1559839914-17aae19cec71?auto=format&fit=crop&w=800&q=80",
     category: "wins",
     likes: 68,
     timestamp: _ago(100),
@@ -570,6 +567,240 @@ export const mockCommunityPosts = [
       { id: "cc12c", author: { name: "Olivia W.", avatarInitials: "OW" }, content: "Also — get the accommodations sorted BEFORE a crisis hits. It's much harder to sort in an emergency.", timestamp: _ago(110) },
       { id: "cc12d", author: { name: "Lena H.", avatarInitials: "LH" }, content: "This is all so reassuring. I didn't know the confidentiality piece. Booking the disability services appointment today!", timestamp: _ago(108) },
     ],
+  },
+];
+
+// ── System posts ──────────────────────────────────────────────────────────────
+const _UX = "?w=800&h=600&fit=crop&q=80&auto=format";
+const _img = (id) => `https://images.unsplash.com/photo-${id}${_UX}`;
+
+mockCommunityPosts.push(
+  // System poll — Pain & Crisis
+  {
+    id: "sp1",
+    author: { id: "system_pain", name: "Pain & Crisis", avatarInitials: "PC" },
+    content: "Has Hydroxyurea reduced your pain crisis frequency?",
+    category: "pain",
+    isSystemPost: true,
+    systemCategory: "pain",
+    likes: 203,
+    timestamp: _ago(8),
+    comments: [
+      { id: "spc1a", author: { name: "Amara D.", avatarInitials: "AD" }, content: "Life-changing for me. Down from 6 hospitalisations a year to 1.", timestamp: _ago(7) },
+      { id: "spc1b", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Took about 6 months before I noticed a real difference. Patience is key.", timestamp: _ago(6) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Yes, significantly", votes: 142 },
+        { id: "b", text: "Somewhat", votes: 89 },
+        { id: "c", text: "Not really", votes: 34 },
+        { id: "d", text: "I don't take it", votes: 21 },
+      ],
+    },
+  },
+  // System discussion prompt — Mental Health
+  {
+    id: "sp2",
+    author: { id: "system_mental", name: "Mental Health & Emotions", avatarInitials: "MH" },
+    content: "What's one mental health habit that genuinely helps you on hard days?",
+    category: "mental",
+    isSystemPost: true,
+    systemCategory: "mental",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1506126613408-eca07ce68773"),
+    likes: 167,
+    timestamp: _ago(20),
+    comments: [
+      { id: "spc2a", author: { name: "Priya N.", avatarInitials: "PN" }, content: "Morning journaling. Even just 5 minutes of writing what I'm grateful for shifts my whole day.", timestamp: _ago(19) },
+      { id: "spc2b", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "Limiting social media when I'm in a flare. The comparison spiral is brutal when you're already struggling.", timestamp: _ago(18) },
+    ],
+  },
+  // System poll — Tips & Advice
+  {
+    id: "sp3",
+    author: { id: "system_tips", name: "Tips & Advice", avatarInitials: "TA" },
+    content: "What's the first thing you do when you feel a crisis coming on?",
+    category: "tips",
+    isSystemPost: true,
+    systemCategory: "tips",
+    likes: 189,
+    timestamp: _ago(40),
+    comments: [
+      { id: "spc3a", author: { name: "Noah B.", avatarInitials: "NB" }, content: "Drink 500ml of water immediately, no exceptions.", timestamp: _ago(39) },
+      { id: "spc3b", author: { name: "Sasha K.", avatarInitials: "SK" }, content: "Heat pad on, lie flat, start my pain plan.", timestamp: _ago(38) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Drink lots of water", votes: 218 },
+        { id: "b", text: "Apply heat immediately", votes: 156 },
+        { id: "c", text: "Take pain relief early", votes: 134 },
+        { id: "d", text: "Rest and stay warm", votes: 97 },
+      ],
+    },
+  },
+  // System discussion prompt — Wins & Achievements
+  {
+    id: "sp4",
+    author: { id: "system_wins", name: "Wins & Achievements", avatarInitials: "WA" },
+    content: "Share a win from this week — big or small 🏆",
+    category: "wins",
+    isSystemPost: true,
+    systemCategory: "wins",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1543269865-cbf427effbad"),
+    likes: 241,
+    timestamp: _ago(56),
+    comments: [
+      { id: "spc4a", author: { name: "Lena H.", avatarInitials: "LH" }, content: "Walked to the shops without stopping! First time in three weeks 🙌", timestamp: _ago(55) },
+      { id: "spc4b", author: { name: "Ben O.", avatarInitials: "BO" }, content: "Made it to my cousin's birthday dinner. Wore layers and left by 9pm, but I was THERE.", timestamp: _ago(54) },
+    ],
+  },
+  // System poll — Medications
+  {
+    id: "sp5",
+    author: { id: "system_medications", name: "Medications", avatarInitials: "MD" },
+    content: "How long before you noticed Hydroxyurea working?",
+    category: "medications",
+    isSystemPost: true,
+    systemCategory: "medications",
+    likes: 145,
+    timestamp: _ago(78),
+    comments: [
+      { id: "spc5a", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "About 4 months for me. But my HbF numbers started improving at 8 weeks.", timestamp: _ago(77) },
+      { id: "spc5b", author: { name: "Olivia W.", avatarInitials: "OW" }, content: "Still waiting at month 3. My doctor says some people take up to a year.", timestamp: _ago(76) },
+    ],
+    poll: {
+      options: [
+        { id: "a", text: "Under 3 months", votes: 48 },
+        { id: "b", text: "3–6 months", votes: 112 },
+        { id: "c", text: "6–12 months", votes: 87 },
+        { id: "d", text: "Over a year", votes: 31 },
+      ],
+    },
+  },
+  // System discussion prompt — Support & Encouragement
+  {
+    id: "sp6",
+    author: { id: "system_support", name: "Support & Encouragement", avatarInitials: "SE" },
+    content: "What's something you wish someone had told you when you were first diagnosed?",
+    category: "support",
+    isSystemPost: true,
+    systemCategory: "support",
+    isDiscussionPrompt: true,
+    imageUrl: _img("1529156069898-49953e39b3ac"),
+    likes: 312,
+    timestamp: _ago(92),
+    comments: [
+      { id: "spc6a", author: { name: "Tobias M.", avatarInitials: "TM" }, content: "That it's okay to grieve. No one told me that and I spent years feeling guilty for being sad about my own diagnosis.", timestamp: _ago(91) },
+      { id: "spc6b", author: { name: "Fatima R.", avatarInitials: "FR" }, content: "That you WILL find your rhythm. The first year is the hardest. It gets more manageable.", timestamp: _ago(90) },
+    ],
+  },
+  // Current user posts (for "My Posts" and notifications demo)
+  {
+    id: "cp_me1",
+    author: { id: "me", name: "You", avatarInitials: "Y", scdType: "HbSS", isCurrentUser: true },
+    content: "After 3 years of trial and error, finally found what works for my daily routine: 8 glasses of water minimum, no cold drinks ever, and a 20-min walk every morning (weather permitting). Boring as it sounds, consistency is everything.",
+    category: "tips",
+    flair: "story",
+    likes: 12,
+    timestamp: _ago(3),
+    comments: [
+      { id: "cme1a", author: { name: "Amara D.", avatarInitials: "AD" }, content: "The cold drinks thing is SO underrated. My crises dropped significantly when I cut those out.", timestamp: _ago(2.5) },
+      { id: "cme1b", author: { name: "Marcus T.", avatarInitials: "MT" }, content: "This is great, thanks for sharing! Adding the morning walk to my routine 🙏", timestamp: _ago(1.8) },
+      { id: "cme1c", author: { name: "Priya N.", avatarInitials: "PN" }, content: "How long before you noticed a difference with the cold drinks?", timestamp: _ago(1) },
+    ],
+  },
+  {
+    id: "cp_me2",
+    author: { id: "me", name: "You", avatarInitials: "Y", scdType: "HbSS", isCurrentUser: true },
+    content: "Has anyone experienced joint pain specifically in the hips as a standalone symptom between crises? Not a full crisis, just persistent aching. My haematologist isn't sure if it's avascular necrosis starting or just typical SCD joint involvement.",
+    category: "questions",
+    flair: "advice",
+    likes: 8,
+    timestamp: _ago(15),
+    comments: [
+      { id: "cme2a", author: { name: "Jordan L.", avatarInitials: "JL" }, content: "Yes! Push for an MRI of the hip. AVN is more common than people realise and early detection matters a lot for treatment options.", timestamp: _ago(14) },
+      { id: "cme2b", author: { name: "Kofi A.", avatarInitials: "KA" }, content: "I have this. Was told it was AVN at stage 1. Still manageable with physio but really glad I caught it early.", timestamp: _ago(13) },
+    ],
+  }
+);
+
+// ── Notifications mock data ────────────────────────────────────────────────────
+export const mockNotifications = [
+  {
+    id: "n1",
+    type: "like",
+    actorName: "Amara D.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(0.5),
+    read: false,
+  },
+  {
+    id: "n2",
+    type: "comment",
+    actorName: "Priya N.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(1),
+    read: false,
+  },
+  {
+    id: "n3",
+    type: "like",
+    actorName: "Marcus T.",
+    postId: "cp_me1",
+    postSnippet: "Finally found what works for my daily routine...",
+    timestamp: _ago(1.8),
+    read: false,
+  },
+  {
+    id: "n4",
+    type: "comment",
+    actorName: "Jordan L.",
+    postId: "cp_me2",
+    postSnippet: "Has anyone experienced joint pain specifically in the hips...",
+    timestamp: _ago(14),
+    read: true,
+  },
+  {
+    id: "n5",
+    type: "category_post",
+    actorName: null,
+    categoryName: "Pain & Crisis",
+    categoryId: "pain",
+    postSnippet: null,
+    timestamp: _ago(20),
+    read: true,
+  },
+  {
+    id: "n6",
+    type: "category_post",
+    actorName: null,
+    categoryName: "Tips & Advice",
+    categoryId: "tips",
+    postSnippet: null,
+    timestamp: _ago(40),
+    read: true,
+  },
+  {
+    id: "n7",
+    type: "system_poll",
+    actorName: null,
+    categoryName: "Medications",
+    categoryId: "medications",
+    postSnippet: "How long before you noticed Hydroxyurea working?",
+    timestamp: _ago(78),
+    read: true,
+  },
+  {
+    id: "n8",
+    type: "like",
+    actorName: "Kofi A.",
+    postId: "cp_me2",
+    postSnippet: "Has anyone experienced joint pain specifically in the hips...",
+    timestamp: _ago(92),
+    read: true,
   },
 ];
 

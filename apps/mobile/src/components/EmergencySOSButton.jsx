@@ -13,8 +13,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useAppStore } from "../store/appStore";
+import { usePostHog } from "posthog-react-native";
 
 export default function EmergencySOSButton() {
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const [isSOSModalVisible, setSOSModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(5);
@@ -74,6 +76,7 @@ export default function EmergencySOSButton() {
   };
 
   const handleEmergencyPress = () => {
+    posthog?.capture('emergency_sos_triggered', { has_emergency_contacts: emergencyContacts.length > 0 });
     Vibration.vibrate(200);
     startShakeAnimation();
     setSOSModalVisible(true);
@@ -81,6 +84,7 @@ export default function EmergencySOSButton() {
   };
 
   const startCountdown = () => {
+    posthog?.capture('emergency_sos_countdown_started', { contacts_count: emergencyContacts.length });
     setCountdownActive(true);
     setCountdown(5);
     startPulseAnimation();
@@ -113,14 +117,20 @@ export default function EmergencySOSButton() {
   };
 
   const closeModal = () => {
+    if (isCountdownActive) {
+      posthog?.capture('emergency_sos_cancelled');
+    }
     cancelCountdown();
     setSOSModalVisible(false);
     setEmergencyMode(false);
   };
 
   const triggerEmergencyCall = async () => {
+    posthog?.capture('emergency_sos_call_placed', {
+      calling_contact: !!primaryContact,
+      contacts_count: emergencyContacts.length,
+    });
     try {
-      // Call primary emergency contact
       const phoneNumber = primaryContact?.phone || "911";
       const telUrl = `tel:${phoneNumber.replace(/[^0-9+]/g, "")}`;
 

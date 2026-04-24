@@ -1,8 +1,9 @@
+import { useMemo } from "react";
+
 export function useChartData(healthData) {
-  // Prepare chart data from healthData (last 30 days)
-  const getLast30DaysData = () => {
-    const data = [];
+  return useMemo(() => {
     const today = new Date();
+    const chartData = [];
 
     for (let i = 29; i >= 0; i--) {
       const date = new Date(today);
@@ -10,7 +11,7 @@ export function useChartData(healthData) {
       const dateStr = date.toISOString().split("T")[0];
       const dayData = healthData.find((d) => d.date === dateStr);
 
-      data.push({
+      chartData.push({
         date: date,
         painLevel: dayData?.painLevel || 0,
         hydration: dayData?.hydration || 0,
@@ -18,27 +19,12 @@ export function useChartData(healthData) {
       });
     }
 
-    return data;
-  };
+    const painLevelData = chartData.map((d) => ({ date: d.date, value: d.painLevel }));
+    const hydrationData = chartData.map((d) => ({ date: d.date, value: d.hydration }));
+    const moodData = chartData.map((d) => ({ date: d.date, value: d.mood }));
 
-  const chartData = getLast30DaysData();
-
-  // Prepare data for each chart
-  const painLevelData = chartData.map((d) => ({
-    date: d.date,
-    value: d.painLevel,
-  }));
-  const hydrationData = chartData.map((d) => ({
-    date: d.date,
-    value: d.hydration,
-  }));
-  const moodData = chartData.map((d) => ({ date: d.date, value: d.mood }));
-
-  // Calculate crisis-free days (consecutive days with pain level < 5)
-  const calculateCrisisPeriods = () => {
     let currentStreak = 0;
     let longestStreak = 0;
-
     chartData.forEach((day) => {
       if (day.painLevel < 5 && day.painLevel > 0) {
         currentStreak++;
@@ -47,36 +33,18 @@ export function useChartData(healthData) {
         currentStreak = 0;
       }
     });
+    const crisisPeriods = { current: currentStreak, longest: longestStreak };
 
-    return { current: currentStreak, longest: longestStreak };
-  };
-
-  const crisisPeriods = calculateCrisisPeriods();
-
-  // Calculate stats
-  const avgPainLevel =
-    chartData.filter((d) => d.painLevel > 0).length > 0
-      ? (
-          chartData.reduce((sum, d) => sum + d.painLevel, 0) /
-          chartData.filter((d) => d.painLevel > 0).length
-        ).toFixed(1)
+    const painDays = chartData.filter((d) => d.painLevel > 0);
+    const avgPainLevel = painDays.length > 0
+      ? (painDays.reduce((sum, d) => sum + d.painLevel, 0) / painDays.length).toFixed(1)
       : "0.0";
 
-  const avgHydration =
-    chartData.filter((d) => d.hydration > 0).length > 0
-      ? (
-          chartData.reduce((sum, d) => sum + d.hydration, 0) /
-          chartData.filter((d) => d.hydration > 0).length
-        ).toFixed(1)
+    const hydrationDays = chartData.filter((d) => d.hydration > 0);
+    const avgHydration = hydrationDays.length > 0
+      ? (hydrationDays.reduce((sum, d) => sum + d.hydration, 0) / hydrationDays.length).toFixed(1)
       : "0.0";
 
-  return {
-    chartData,
-    painLevelData,
-    hydrationData,
-    moodData,
-    crisisPeriods,
-    avgPainLevel,
-    avgHydration,
-  };
+    return { chartData, painLevelData, hydrationData, moodData, crisisPeriods, avgPainLevel, avgHydration };
+  }, [healthData]);
 }
