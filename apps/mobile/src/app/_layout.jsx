@@ -1,6 +1,11 @@
 import { useAuth } from "@/utils/auth/useAuth";
 import { useAuthStore } from "@/utils/auth/store";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { PostHogProvider } from "posthog-react-native";
+import { posthog } from "@/utils/analytics";
+import { initSentry, Sentry } from "@/utils/sentry";
+
+initSentry();
 import { Stack, useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
@@ -63,6 +68,7 @@ export default function RootLayout() {
   const backgroundedAt = useRef(null);
   const isAuthenticating = useRef(false);
   const startTime = useRef(Date.now());
+  const sessionStartRef = useRef(Date.now());
 
   const [fontsLoaded, fontError] = useFonts({
     Geist_400Regular,
@@ -76,13 +82,25 @@ export default function RootLayout() {
     return initiate(); // returns onAuthStateChange unsubscribe
   }, [initiate]);
 
+  // Track cold start and identify user when auth resolves
+  useEffect(() => {
+    posthog.capture('app_opened', { cold_start: true });
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    posthog.identify(userId);
+    Sentry.setUser({ id: userId });
+  }, [userId]);
+
   // Load persisted App Lock settings on startup
   useEffect(() => {
     AsyncStorage.multiGet(['appLockEnabled', 'appLockTimeout'])
       .then((pairs) => {
         const enabled = pairs[0][1];
         const timeout = pairs[1][1];
-        const parsedTimeout = timeout !== null ? parseInt(timeout, 10) : 0;
+        const raw = timeout !== null ? parseInt(timeout, 10) : 0;
+        const parsedTimeout = Number.isFinite(raw) && raw >= 0 ? raw : 0;
         if (enabled === 'true') setAppLockEnabled(true);
         if (timeout !== null) setAppLockTimeout(parsedTimeout);
         // Lock immediately on cold start when appLock is on and timeout is 0 (lock immediately)
@@ -114,12 +132,15 @@ export default function RootLayout() {
       if (nextState === 'background' || nextState === 'inactive') {
         // Don't record background time if the transition was caused by our own Face ID sheet
         if (!isAuthenticating.current) {
+          const sessionDuration = Math.round((Date.now() - sessionStartRef.current) / 1000);
+          posthog.capture('app_backgrounded', { session_duration_seconds: sessionDuration });
           backgroundedAt.current = Date.now();
         }
       } else if (nextState === 'active') {
         // Always capture and clear — prevents stale timestamp firing on subsequent active events
         const wasBackgrounded = backgroundedAt.current;
         backgroundedAt.current = null;
+        sessionStartRef.current = Date.now();
 
         if (!isAuthenticating.current && appLockEnabled && wasBackgrounded) {
           const elapsedMinutes = (Date.now() - wasBackgrounded) / 1000 / 60;
@@ -200,6 +221,7 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
+      posthog.capture('notification_opened', { type: data.type ?? data.screen ?? 'unknown' });
       if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
       } else if (data.type === "checkin") {
@@ -232,6 +254,7 @@ export default function RootLayout() {
   }
 
   return (
+    <PostHogProvider client={posthog} autocapture={false}>
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
@@ -326,6 +349,7 @@ export default function RootLayout() {
         </KeyboardProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
+    </PostHogProvider>
   );
 }
 

@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePostHog } from 'posthog-react-native';
 import {
   Platform,
   Pressable,
@@ -56,7 +57,12 @@ function getPasswordStrength(password) {
 
 export default function SignUpScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { setAuth, setIsNewUser } = useAuthStore();
+
+  useEffect(() => {
+    posthog?.capture('sign_up_screen_viewed', {});
+  }, []);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -76,13 +82,21 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const { data, error: authError } = await signInWithGoogle();
-      if (authError) { setError(authError.message || 'Google sign-in failed.'); return; }
+      if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'auth_error' });
+        setError(authError.message || 'Google sign-in failed.');
+        return;
+      }
+      posthog?.capture('sign_up_succeeded', { method: 'google' });
       await AsyncStorage.setItem('lastAuthProvider', 'google');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch (e) {
-      if (e.code !== 'ERR_REQUEST_CANCELED') setError('Google sign-in failed. Please try again.');
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        posthog?.capture('sign_up_failed', { method: 'google', error_type: 'network' });
+        setError('Google sign-in failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -93,13 +107,21 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const { data, error: authError } = await signInWithApple();
-      if (authError) { setError(authError.message || 'Apple sign-in failed.'); return; }
+      if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'auth_error' });
+        setError(authError.message || 'Apple sign-in failed.');
+        return;
+      }
+      posthog?.capture('sign_up_succeeded', { method: 'apple' });
       await AsyncStorage.setItem('lastAuthProvider', 'apple');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch (e) {
-      if (e.code !== 'ERR_REQUEST_CANCELED') setError('Apple sign-in failed. Please try again.');
+      if (e.code !== 'ERR_REQUEST_CANCELED') {
+        posthog?.capture('sign_up_failed', { method: 'apple', error_type: 'network' });
+        setError('Apple sign-in failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -116,18 +138,22 @@ export default function SignUpScreen() {
     try {
       const { data, error: authError } = await signUp(email.trim().toLowerCase(), password, fullName.trim());
       if (authError) {
+        posthog?.capture('sign_up_failed', { method: 'email', error_type: 'auth_error' });
         setError(authError.message || 'Sign up failed. Please try again.');
         return;
       }
       if (!data.session) {
+        posthog?.capture('sign_up_email_verification_required', {});
         setError('Account created! Please check your email to confirm before signing in.');
         return;
       }
+      posthog?.capture('sign_up_succeeded', { method: 'email' });
       await AsyncStorage.setItem('lastAuthProvider', 'email');
       setAuth(data.session, data.user);
       setIsNewUser(true);
       router.replace('/(onboarding)/step-1');
     } catch {
+      posthog?.capture('sign_up_failed', { method: 'email', error_type: 'network' });
       setError('Something went wrong. Please try again.');
     } finally {
       setLoading(false);

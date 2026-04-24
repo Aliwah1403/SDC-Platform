@@ -12,6 +12,10 @@
       "icon": "./assets/app-icon.icon",
       "supportsTablet": true,
       "infoPlist": {
+        "UIBackgroundModes": ["processing"],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.expo.modules.backgroundtask.processing"
+        ],
         "ITSAppUsesNonExemptEncryption": false,
         "NSHealthShareUsageDescription": "Hemo reads your steps, resting heart rate, blood oxygen (SpO2), body temperature, respiratory rate, sleep, and workout sessions from Apple Health to help monitor your sickle cell disease. Low SpO2 and fever are medical emergencies for SCD patients and will trigger urgent alerts.",
         "NSHealthUpdateUsageDescription": "Hemo saves your daily water intake, logged symptoms (fatigue, shortness of breath, fever, and others), and mood check-ins to Apple Health so your care team has a complete picture of your health."
@@ -85,7 +89,13 @@
           "backgroundDeliveryEnabled": true
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/"
+        }
+      ]
     ],
     "web": {
       "bundler": "metro",

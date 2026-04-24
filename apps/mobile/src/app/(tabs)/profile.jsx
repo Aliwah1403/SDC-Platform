@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
+import { usePostHog } from "posthog-react-native";
 import * as Notifications from "expo-notifications";
 import {
   View,
@@ -315,6 +316,7 @@ function SectionCard({ title, children }) {
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const posthog = usePostHog();
 
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
@@ -351,6 +353,7 @@ export default function ProfileScreen() {
   const canUnlink = identities.length > 1;
 
   useEffect(() => {
+    posthog?.capture('profile_viewed', {});
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const currentSession = useAuthStore.getState().auth?.session;
@@ -443,6 +446,7 @@ export default function ProfileScreen() {
         if (newStatus !== "granted") return;
       }
     }
+    posthog?.capture('notifications_toggled', { enabled: val });
     setNotificationsEnabled(val);
     updateProfile.mutate({ notificationsEnabled: val }, {
       onSuccess: () => {
@@ -563,6 +567,7 @@ export default function ProfileScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
+          posthog?.capture('sign_out', {});
           await signOut();
           router.replace("/");
         },
@@ -1907,8 +1912,9 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
+                  posthog?.capture('check_in_frequency_changed', { frequency: opt.value });
                   updateProfile.mutate({ checkInFrequency: opt.value }, {
-                    onSuccess: () => scheduleCheckInReminders(opt.value),
+                    onSuccess: () => notificationsEnabled && scheduleCheckInReminders(opt.value),
                   });
                   setEditingFrequency(false);
                 }}

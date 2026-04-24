@@ -1,6 +1,7 @@
 import { router } from "expo-router";
 import { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { usePostHog } from "posthog-react-native";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -76,6 +77,7 @@ function AppleIcon() {
 
 export default function SignInScreen() {
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { setAuth } = useAuthStore();
 
   const [email, setEmail] = useState("");
@@ -87,6 +89,7 @@ export default function SignInScreen() {
   const [lastProvider, setLastProvider] = useState(null);
 
   useEffect(() => {
+    posthog?.capture('sign_in_screen_viewed', {});
     AsyncStorage.getItem("lastAuthProvider").then((p) => {
       if (p) setLastProvider(p);
     });
@@ -98,19 +101,24 @@ export default function SignInScreen() {
     try {
       const { data, error: authError } = await signInWithGoogle();
       if (authError) {
+        posthog?.capture('sign_in_failed', { method: 'google', error_type: 'auth_error' });
         setError(authError.message || "Google sign-in failed.");
         return;
       }
       if (!data?.session || !data?.user) {
+        posthog?.capture('sign_in_failed', { method: 'google', error_type: 'no_session' });
         setError("Google sign-in failed. Please try again.");
         return;
       }
-      setAuth(data.session, data.user);
+      posthog?.capture('sign_in_succeeded', { method: 'google' });
       await AsyncStorage.setItem("lastAuthProvider", "google");
+      setAuth(data.session, data.user);
       router.replace("/");
     } catch (e) {
-      if (e.code !== "ERR_REQUEST_CANCELED")
+      if (e.code !== "ERR_REQUEST_CANCELED") {
+        posthog?.capture('sign_in_failed', { method: 'google', error_type: 'network' });
         setError("Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -122,15 +130,19 @@ export default function SignInScreen() {
     try {
       const { data, error: authError } = await signInWithApple();
       if (authError) {
+        posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'auth_error' });
         setError(authError.message || "Apple sign-in failed.");
         return;
       }
+      posthog?.capture('sign_in_succeeded', { method: 'apple' });
       await AsyncStorage.setItem("lastAuthProvider", "apple");
       setAuth(data.session, data.user);
       router.replace("/");
     } catch (e) {
-      if (e.code !== "ERR_REQUEST_CANCELED")
+      if (e.code !== "ERR_REQUEST_CANCELED") {
+        posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'network' });
         setError("Apple sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -149,13 +161,16 @@ export default function SignInScreen() {
         password,
       );
       if (authError) {
+        posthog?.capture('sign_in_failed', { method: 'email', error_type: 'auth_error' });
         setError(authError.message || "Sign in failed. Please try again.");
         return;
       }
+      posthog?.capture('sign_in_succeeded', { method: 'email' });
       await AsyncStorage.setItem("lastAuthProvider", "email");
       setAuth(data.session, data.user);
       router.replace("/");
     } catch {
+      posthog?.capture('sign_in_failed', { method: 'email', error_type: 'network' });
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -306,7 +321,7 @@ export default function SignInScreen() {
                 styles.forgotBtn,
                 pressed && { opacity: 0.6 },
               ]}
-              onPress={() => router.push("/(auth)/forgot-password")}
+              onPress={() => { posthog?.capture('forgot_password_tapped', {}); router.push("/(auth)/forgot-password"); }}
             >
               <Text style={styles.forgotText}>Forgot password?</Text>
             </Pressable>

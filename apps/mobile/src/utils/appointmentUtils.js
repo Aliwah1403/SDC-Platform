@@ -38,8 +38,9 @@ export async function addToDeviceCalendar(appt) {
     }
     if (!calendarId) {
       const all = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-      const writable = all.find((c) => c.allowsModifications && c.isPrimary)
-        ?? all.find((c) => c.allowsModifications);
+      const writable =
+        all.find((c) => c.allowsModifications && c.isPrimary) ??
+        all.find((c) => c.allowsModifications);
       calendarId = writable?.id;
     }
     if (!calendarId) {
@@ -51,9 +52,7 @@ export async function addToDeviceCalendar(appt) {
     const endDate = new Date(`${appt.date}T${convertTo24h(appt.time, 60)}:00`);
 
     const eventId = await Calendar.createEventAsync(calendarId, {
-      title: appt.doctor
-        ? `${appt.title} — Dr. ${appt.doctor}`
-        : appt.title,
+      title: appt.doctor ? `${appt.title} — Dr. ${appt.doctor}` : appt.title,
       location: appt.facility,
       startDate,
       endDate,
@@ -103,7 +102,7 @@ export async function scheduleReminders(appt, minuteOffsets = []) {
         content: {
           title: reminderTitle(minutes),
           body: `${appt.title}${appt.doctor ? ` with Dr. ${appt.doctor}` : ""}${appt.facility ? ` at ${appt.facility}` : ""}`,
-          data: { appointmentId: appt.id },
+          data: { type: "appointment", appointmentId: appt.id },
         },
         trigger,
       });
@@ -119,7 +118,7 @@ export async function scheduleReminders(appt, minuteOffsets = []) {
 export async function cancelReminders(reminderIds = []) {
   await Promise.all(
     reminderIds.map((id) =>
-      Notifications.cancelScheduledNotificationAsync(id).catch(() => {})
-    )
+      Notifications.cancelScheduledNotificationAsync(id).catch(() => {}),
+    ),
   );
 }

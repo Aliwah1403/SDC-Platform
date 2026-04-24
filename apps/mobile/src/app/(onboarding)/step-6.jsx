@@ -1,5 +1,6 @@
 import { router } from "expo-router";
 import { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   Pressable,
   StyleSheet,
@@ -23,6 +24,7 @@ const PRESET_ALLERGIES = [
 ];
 
 export default function Step6() {
+  const posthog = usePostHog();
   const { setOnboardingField, updateCrisisPlan } = useAppStore();
 
   const [bloodType, setBloodType] = useState(null);
@@ -57,6 +59,7 @@ export default function Step6() {
   };
 
   const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', { step: 6 });
     router.push("/(onboarding)/step-7");
   };
 

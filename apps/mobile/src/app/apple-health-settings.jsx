@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, StyleSheet, TextInput } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import { Image } from "react-native";
 import {
   ChevronLeft,
@@ -118,6 +119,7 @@ function PreferenceRow({ icon: Icon, iconColor, label, description, value, onCha
 }
 
 export default function AppleHealthSettingsScreen() {
+  const posthog = usePostHog();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
@@ -139,6 +141,7 @@ export default function AppleHealthSettingsScreen() {
           text: "Disconnect",
           style: "destructive",
           onPress: () => {
+            posthog?.capture('healthkit_disconnected');
             setHealthKitConnected(false);
             router.back();
           },
@@ -196,7 +199,7 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => setHealthKitPreference(item.key, v)}
+                onChange={(v) => { posthog?.capture('healthkit_preference_changed', { key: item.key, enabled: v }); setHealthKitPreference(item.key, v); }}
               />
               {i < READ_ITEMS.length - 1 && <Divider />}
             </View>
@@ -214,7 +217,7 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => setHealthKitPreference(item.key, v)}
+                onChange={(v) => { posthog?.capture('healthkit_preference_changed', { key: item.key, enabled: v }); setHealthKitPreference(item.key, v); }}
               />
               {i < WRITE_ITEMS.length - 1 && <Divider />}
             </View>

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -33,8 +34,20 @@ import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// scrollview pad 20*2 + card pad 20*2 + yAxisLabelWidth 24 - marginLeft offset 8 = 96
+// base: scrollview pad 20*2 + card pad 20*2 - marginLeft offset 8 = 72; add labelWidth per metric
 const CHART_WIDTH = SCREEN_WIDTH - 96;
+
+const METRIC_Y_AXIS = {
+  pain:        { sections: 5, labelWidth: 24, labels: ["0","2","4","6","8","10"] },
+  hydration:   { sections: 4, labelWidth: 24, labels: null },
+  mood:        { sections: 5, labelWidth: 20, labels: null },
+  steps:       { sections: 3, labelWidth: 32, labels: ["0","5k","10k","15k"] },
+  sleep:       { sections: 4, labelWidth: 24, labels: null },
+  heartrate:   { sections: 4, labelWidth: 32, labels: ["0","30","60","90","120"] },
+  spo2:        { sections: 4, labelWidth: 24, labels: null },
+  temperature: { sections: 3, labelWidth: 24, labels: ["0","14","28","42°"] },
+  resprate:    { sections: 3, labelWidth: 24, labels: ["0","10","20","30"] },
+};
 
 function dateToStr(date) {
   const y = date.getFullYear();
@@ -655,6 +668,7 @@ function InsightsCard({ insights, color }) {
 export default function MetricDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { metric } = useLocalSearchParams();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
@@ -662,7 +676,13 @@ export default function MetricDetailScreen() {
   const { healthKitData, computedAlertState } = useAppStore();
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
+  const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
+  const chartWidth = SCREEN_WIDTH - (72 + yAxis.labelWidth);
   const [range, setRange] = useState(30);
+
+  useEffect(() => {
+    posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
+  }, []);
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
@@ -703,15 +723,18 @@ export default function MetricDetailScreen() {
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  const giftedData = data.map((d, i) => ({
-    value: Number.isFinite(d.value) ? d.value : 0,
-    label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
-    tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    ...(meta.chartType === "bar" && {
-      frontColor: goal && d.value >= goal ? meta.color : meta.color + "88",
-    }),
-  }));
+  const giftedData = data.map((d, i) => {
+    const value = Number.isFinite(d.value) ? d.value : 0;
+    return {
+      value,
+      label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
+      tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+      ...(meta.chartType === "bar" && {
+        frontColor: goal && value >= goal ? meta.color : meta.color + "88",
+      }),
+    };
+  });
 
   const IconComp = meta.icon;
 
@@ -781,7 +804,7 @@ export default function MetricDetailScreen() {
             {[7, 30].map((r) => (
               <TouchableOpacity
                 key={r}
-                onPress={() => setRange(r)}
+                onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
                 style={{
                   paddingHorizontal: 14,
                   paddingVertical: 6,
@@ -920,29 +943,41 @@ export default function MetricDetailScreen() {
             </View>
           )}
 
-          {/* Chart */}
+          {/* Chart — line metrics always use LineChart; bar metrics use LineChart at 30d */}
           <View style={{ marginLeft: -8 }}>
-            {meta.chartType === "line" ? (
+            {meta.chartType === "line" || range === 30 ? (
               <LineChart
                 data={giftedData}
-                width={CHART_WIDTH}
+                width={chartWidth}
                 height={180}
                 color={meta.color}
-                thickness={2}
+                thickness={range === 30 ? 1.5 : 2}
                 curved
+                areaChart
+                startFillColor={meta.color}
+                endFillColor={meta.color}
+                startOpacity={0.15}
+                endOpacity={0}
+                hideDataPoints={range === 30}
                 dataPointsColor={meta.color}
                 dataPointsRadius={3}
-                noOfSections={4}
+                noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
                 xAxisColor="#E5E7EB"
-                rulesColor="#F3F4F6"
+                rulesColor="#EBEBEB"
                 rulesType="solid"
                 initialSpacing={8}
-                spacing={Math.max(4, Math.floor(CHART_WIDTH / (range + 2)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+                spacing={Math.max(4, Math.floor(chartWidth / (range + 2)))}
+                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
                 backgroundColor="transparent"
-                yAxisLabelWidth={24}
+                yAxisLabelWidth={yAxis.labelWidth}
+                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
+                {...(meta.hasGoal && goal ? {
+                  showReferenceLine1: true,
+                  referenceLine1Position: goal,
+                  referenceLine1Config: { color: meta.color, dashWidth: 4, dashGap: 4, thickness: 1.5, opacity: 0.6 },
+                } : {})}
                 pointerConfig={{
                   pointerStripHeight: 180,
                   pointerStripColor: meta.color + "28",
@@ -982,19 +1017,20 @@ export default function MetricDetailScreen() {
             ) : (
               <BarChart
                 data={giftedData}
-                width={CHART_WIDTH}
+                width={chartWidth}
                 height={180}
-                noOfSections={4}
+                noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
                 xAxisColor="#E5E7EB"
-                rulesColor="#F3F4F6"
+                rulesColor="#EBEBEB"
                 initialSpacing={8}
-                barWidth={Math.max(4, Math.floor(CHART_WIDTH / (range * 1.6)))}
-                spacing={Math.max(2, Math.floor(CHART_WIDTH / (range * 3)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
+                barWidth={Math.max(6, Math.floor(chartWidth / (range * 1.6)))}
+                spacing={Math.max(3, Math.floor(chartWidth / (range * 3)))}
+                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
                 backgroundColor="transparent"
-                yAxisLabelWidth={24}
+                yAxisLabelWidth={yAxis.labelWidth}
+                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
                 roundedTop
                 showReferenceLine1={!!goal}
                 referenceLine1Position={goal ?? 0}
@@ -1014,6 +1050,9 @@ export default function MetricDetailScreen() {
                     }}>
                       <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#fff" }}>
                         {dv}{meta.unit ? ` ${meta.unit}` : ""}
+                      </Text>
+                      <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
+                        {item.tooltipLabel}
                       </Text>
                     </View>
                   );

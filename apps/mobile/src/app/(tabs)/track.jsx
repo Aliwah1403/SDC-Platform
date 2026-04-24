@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -181,10 +182,12 @@ function FullMonthCalendar({ selectedDate, setSelectedDate, loggedDates, isToday
 function ExpandableCalendar({ selectedDate, setSelectedDate, loggedDates, isToday, isFuture, isSelected }) {
   const [expanded, setExpanded] = useState(false);
   const calendarHeight = useSharedValue(WEEK_HEIGHT);
+  const posthog = usePostHog();
 
   function toggle() {
     const next = !expanded;
     setExpanded(next);
+    posthog?.capture('calendar_view_changed', { to_view: next ? 'month' : 'week' });
     calendarHeight.value = withSpring(next ? MONTH_HEIGHT : WEEK_HEIGHT, {
       damping: 20, stiffness: 90,
     });
@@ -320,6 +323,7 @@ function MedicationItem({ medication, taken, onToggle }) {
 function MedicationsSection({ selectedDate }) {
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  const posthog = usePostHog();
   const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
@@ -333,7 +337,10 @@ function MedicationsSection({ selectedDate }) {
           key={med.id}
           medication={med}
           taken={!!med.taken}
-          onToggle={() => toggleTaken.mutate(med.id)}
+          onToggle={() => {
+              posthog?.capture('medication_marked_taken', { new_state: !med.taken });
+              toggleTaken.mutate(med.id);
+            }}
         />
       ))}
     </View>
@@ -445,6 +452,7 @@ function MiniSparkline({ data, color, maxValue }) {
 
 function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const config = METRIC_CONFIG_MAP[metricKey];
   const rawValue = config.getValue(entry);
   const hasValue = rawValue !== null && rawValue !== undefined;
@@ -470,7 +478,10 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
       transition={{ delay: animIndex * 60, type: "timing", duration: 280 }}
     >
       <TouchableOpacity
-        onPress={() => router.push(`/metric-detail?metric=${metricKey}`)}
+        onPress={() => {
+          posthog?.capture('metric_card_tapped', { metric: metricKey, has_value: hasValue });
+          router.push(`/metric-detail?metric=${metricKey}`);
+        }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
           backgroundColor: "#fff",
@@ -830,6 +841,7 @@ function MetricsGrid({ entry, healthData, hkConnected }) {
 export default function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { data: healthData = [] } = useHealthDataQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
   const { healthKitData, healthKitConnected } = useAppStore();
@@ -838,6 +850,16 @@ export default function TrackScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workouts, setWorkouts] = useState([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
+
+  useEffect(() => {
+    posthog?.capture('track_viewed', { has_healthkit: healthKitConnected });
+  }, []);
+
+  useEffect(() => {
+    if (alertState && alertState.level !== 'urgent') {
+      posthog?.capture('health_alert_shown', { level: alertState.level });
+    }
+  }, [alertState?.level]);
 
   const loggedDates = useMemo(() => new Set(healthData.map((d) => d.date)), [healthData]);
 
