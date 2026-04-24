@@ -45,7 +45,7 @@ export default function Step11() {
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
-      onCta={handleContinue}
+      onCta={selectedCount > 0 ? handleContinue : handleSkip}
       ctaLabel={selectedCount > 0 ? 'Save & Finish' : 'Skip'}
     >
       <MotiView
