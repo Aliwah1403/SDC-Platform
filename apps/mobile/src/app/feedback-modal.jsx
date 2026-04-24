@@ -1,29 +1,16 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Alert, Linking } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { X, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { fonts } from "@/utils/fonts";
-import { USERJOT_FEEDBACK_URL, isUserJotUrl } from "@/constants/feedback";
+import { FEATUREBASE_URL } from "@/constants/feedback";
 
 export default function FeedbackModalScreen() {
   const router = useRouter();
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
-
-  const handleShouldStartRequest = (request) => {
-    const url = request?.url;
-
-    if (isUserJotUrl(url)) return true;
-
-    if (!url) return false;
-
-    Linking.openURL(url).catch(() => {
-      Alert.alert("Unable to open link", "Please try again in your browser.");
-    });
-    return false;
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
@@ -130,14 +117,9 @@ export default function FeedbackModalScreen() {
       ) : (
         <WebView
           key={reloadKey}
-          source={{ uri: USERJOT_FEEDBACK_URL }}
-          onShouldStartLoadWithRequest={handleShouldStartRequest}
-          onLoadStart={() => {
-            setError(null);
-          }}
-          onError={() => {
-            setError("load_error");
-          }}
+          source={{ uri: FEATUREBASE_URL }}
+          onLoadStart={() => setError(null)}
+          onError={() => setError("load_error")}
           startInLoadingState={false}
         />
       )}

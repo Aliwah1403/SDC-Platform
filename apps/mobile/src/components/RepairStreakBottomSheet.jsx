@@ -6,13 +6,16 @@ import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
 import { useMissedDay, useStreakQuery, useStreakRepairMutation } from "@/hooks/queries/useStreakQuery";
 import { fonts } from "@/utils/fonts";
+import { usePostHog } from "posthog-react-native";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
+  const posthog = usePostHog();
   const bottomSheetRef = useRef(null);
   const missedDay = useMissedDay();
   const { data: streak } = useStreakQuery();
   const repairsAvailable = streak?.repairsAvailable ?? 0;
-  const healthStreak = streak?.currentStreak ?? 0;
+  // previousStreak is the streak count before it broke (currentStreak is already 0 by now)
+  const healthStreak = streak?.previousStreak ?? streak?.currentStreak ?? 0;
   const repairMutation = useStreakRepairMutation();
 
   const [isRepairing, setIsRepairing] = useState(false);
@@ -32,6 +35,16 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
     }
   }, [isVisible]);
 
+  const handleClose = useCallback(() => {
+    setIsRepairing(false);
+    setRepairComplete(false);
+    setRestoredStreak(0);
+    wrenchRotation.setValue(0);
+    checkScale.setValue(0);
+    successOpacity.setValue(0);
+    onClose();
+  }, [onClose, wrenchRotation, checkScale, successOpacity]);
+
   const handleRepair = useCallback(() => {
     setIsRepairing(true);
 
@@ -42,7 +55,12 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
     ]).start(() => {
       repairMutation.mutate(undefined, {
         onSuccess: (data) => {
-          setRestoredStreak(data?.restoredStreak ?? healthStreak);
+          const restored = data?.restoredStreak ?? healthStreak;
+          posthog?.capture('streak_repair_used', {
+            repairs_remaining_after: Math.max(0, repairsAvailable - 1),
+            restored_streak: restored,
+          });
+          setRestoredStreak(restored);
           setRepairComplete(true);
           Animated.parallel([
             Animated.spring(checkScale, { toValue: 1, useNativeDriver: true }),
@@ -54,17 +72,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         onError: () => setIsRepairing(false),
       });
     });
-  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity]);
-
-  const handleClose = useCallback(() => {
-    setIsRepairing(false);
-    setRepairComplete(false);
-    setRestoredStreak(0);
-    wrenchRotation.setValue(0);
-    checkScale.setValue(0);
-    successOpacity.setValue(0);
-    onClose();
-  }, [onClose, wrenchRotation, checkScale, successOpacity]);
+  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity, healthStreak, repairsAvailable, posthog, handleClose]);
 
   const rotateInterpolate = wrenchRotation.interpolate({
     inputRange: [-1, 1],

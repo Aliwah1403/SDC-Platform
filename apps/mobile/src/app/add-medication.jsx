@@ -26,6 +26,7 @@ import MedicationIcon from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
 import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
+import { lookupByNDC } from "@/utils/medicationApi";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -231,6 +232,8 @@ export default function AddMedicationScreen() {
   const [step, setStep] = useState(isEditing ? 2 : 0);
   const [cameraMode, setCameraMode] = useState(null); // null | 'barcode'
   const [identifying, setIdentifying] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [scanNotFound, setScanNotFound] = useState(false);
   const [showCameraOptions, setShowCameraOptions] = useState(false);
 
   // ── Step 1: Drug
@@ -276,19 +279,27 @@ export default function AddMedicationScreen() {
     }
   };
 
-  const handleBarcodeScanned = (data) => {
+  const handleBarcodeScanned = async (data) => {
     setCameraMode(null);
-    const matched = SCD_MEDICATIONS.find((d) =>
-      data.toLowerCase().includes(d.name.toLowerCase())
-    );
-    if (matched) {
-      setName(matched.name);
-      setCategory(matched.category);
-    } else {
-      setName(data.length <= 40 ? data : "Scanned Medication");
-      setCategory("Supportive");
+    setBarcodeLoading(true);
+    try {
+      const found = await lookupByNDC(data);
+      if (found) {
+        setName(found.name);
+        setCategory(found.category);
+        if (found.rxcui) setRxcui(found.rxcui);
+        setStep(2);
+      } else {
+        // Drug not in US database — drop to name search so user can type it
+        setScanNotFound(true);
+        setStep(1);
+      }
+    } catch {
+      setScanNotFound(true);
+      setStep(1);
+    } finally {
+      setBarcodeLoading(false);
     }
-    setStep(2);
   };
 
   const handlePhotoCapture = async () => {
@@ -363,6 +374,20 @@ export default function AddMedicationScreen() {
 
   if (identifying) {
     return <IdentifyingView />;
+  }
+
+  if (barcodeLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", padding: 32 }}>
+        <ActivityIndicator size="large" color={C.accent} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: C.dark, marginTop: 20 }}>
+          Looking up medication…
+        </Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 6, textAlign: "center" }}>
+          Searching drug database
+        </Text>
+      </View>
+    );
   }
 
   const catColor = CATEGORY_COLORS[category] ?? C.accent;
@@ -615,6 +640,32 @@ export default function AddMedicationScreen() {
             {/* ━━ Step 1: Drug search ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 1 && (
               <View>
+                {/* Barcode not found banner */}
+                {scanNotFound && (
+                  <View
+                    style={{
+                      backgroundColor: "#FEF9C3",
+                      borderRadius: 12,
+                      borderWidth: 1,
+                      borderColor: "#FDE047",
+                      padding: 14,
+                      marginBottom: 16,
+                      flexDirection: "row",
+                      alignItems: "flex-start",
+                      gap: 10,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, lineHeight: 20 }}>⚠️</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#78350F" }}>
+                        Barcode not found
+                      </Text>
+                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E", marginTop: 2 }}>
+                        This medication isn't in our US database. Search by name below.
+                      </Text>
+                    </View>
+                  </View>
+                )}
                 {/* Search input */}
                 <View
                   style={{

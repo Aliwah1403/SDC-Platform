@@ -1,18 +1,26 @@
 {
   "expo": {
-    "name": "Hemo",
+    "name": "Hemo SCD",
+    "slug": "hemo",
+    "scheme": "hemoscd",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon-hemo-alt-a-20260402.png",
+    "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "icon": "./assets/app-icon.icon",
       "supportsTablet": true,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "UIBackgroundModes": ["processing"],
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "com.expo.modules.backgroundtask.processing"
+        ],
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSHealthShareUsageDescription": "Hemo reads your steps, resting heart rate, blood oxygen (SpO2), body temperature, respiratory rate, sleep, and workout sessions from Apple Health to help monitor your sickle cell disease. Low SpO2 and fever are medical emergencies for SCD patients and will trigger urgent alerts.",
+        "NSHealthUpdateUsageDescription": "Hemo saves your daily water intake, logged symptoms (fatigue, shortness of breath, fever, and others), and mood check-ins to Apple Health so your care team has a complete picture of your health."
       },
-      "bundleIdentifier": "xyz.create.CreateExpoEnvironment"
+      "bundleIdentifier": "com.hemoscd.hemo"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,9 +31,11 @@
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "xyz.create.CreateExpoEnvironment"
+      "package": "com.hemoscd.hemo"
     },
     "plugins": [
       [
@@ -58,11 +68,34 @@
           "supportsPictureInPicture": true
         }
       ],
+      "expo-apple-authentication",
+      "expo-local-authentication",
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
       "expo-notifications",
-      "expo-location"
+      "expo-location",
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Hemo adds your appointments to your calendar so you never miss a check-up."
+        }
+      ],
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "healthSharePermission": "Hemo reads health data to monitor your sickle cell disease.",
+          "healthUpdatePermission": "Hemo saves water intake, symptoms, and mood to Apple Health.",
+          "backgroundDeliveryEnabled": true
+        }
+      ],
+      "expo-background-task",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/"
+        }
+      ]
     ],
     "web": {
       "bundler": "metro",
@@ -73,8 +106,13 @@
     },
     "extra": {
       "router": {
-        "origin": false
+        "origin": false,
+        "sitemap": false
+      },
+      "eas": {
+        "projectId": "97edca88-53f4-4fd5-89ae-800ddc9d7381"
       }
-    }
+    },
+    "owner": "aliwah1403"
   }
 }

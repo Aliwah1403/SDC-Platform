@@ -5,16 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
   Pressable,
-  ScrollView,
   Switch,
   Platform,
   Alert,
   Modal,
   FlatList,
   ActivityIndicator,
-  KeyboardAvoidingView,
   StyleSheet,
 } from "react-native";
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -395,11 +394,7 @@ export default function AddContactScreen() {
         </View>
       </LinearGradient>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScrollView
+      <KeyboardAwareScrollView
           contentContainerStyle={{
             padding: 20,
             paddingBottom: insets.bottom + 60,
@@ -688,8 +683,7 @@ export default function AddContactScreen() {
               )}
             </>
           )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        </KeyboardAwareScrollView>
 
       {/* Android contacts picker modal */}
       <Modal

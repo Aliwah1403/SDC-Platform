@@ -1,209 +1,206 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { usePostHog } from 'posthog-react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
-import { Check, Pill } from 'lucide-react-native';
+import { Fingerprint, ShieldCheck, AlertCircle } from 'lucide-react-native';
+import Svg, { Path, Circle } from 'react-native-svg';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
-import { SCD_MEDICATIONS, SCD_CATEGORIES as CATEGORIES } from '@/utils/scdDrugs';
+
+async function authenticateAsync() {
+  console.log('[BIOMETRICS STUB] authenticateAsync');
+  return { success: true };
+}
+
+function FaceIdGraphic() {
+  return (
+    <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
+      <Circle cx="40" cy="40" r="38" stroke="#09332C" strokeWidth="2" strokeOpacity={0.15} />
+      <Circle cx="40" cy="40" r="30" stroke="#09332C" strokeWidth="1.5" strokeOpacity={0.1} />
+      <Path d="M24 36 C24 26 56 26 56 36 L56 46 C56 56 24 56 24 46 Z" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Circle cx="33" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
+      <Circle cx="47" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
+      <Path d="M33 48 Q40 53 47 48" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Path d="M24 28 L24 24 L28 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 28 L52 24 L56 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M24 52 L24 56 L28 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+      <Path d="M52 52 L52 56 L56 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
+    </Svg>
+  );
+}
 
 export default function Step10() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
-  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [status, setStatus] = useState('idle');
+  const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
 
-  const toggleDrug = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const handleEnable = async () => {
+    try {
+      const result = await authenticateAsync();
+      if (result.success) {
+        setStatus('success');
+        setOnboardingField('biometricsEnabled', true);
+      } else {
+        setStatus('failed');
+      }
+    } catch {
+      setStatus('unavailable');
+    }
   };
 
-  const handleSkip = () => router.push('/(onboarding)/complete');
-
-  const handleContinue = () => {
-    const selected = SCD_MEDICATIONS.filter((d) => selectedIds.has(d.id)).map((d) => ({
-      name: d.name,
-      dosage: '',
-      frequency: '',
-    }));
-    if (selected.length) setOnboardingField('medications', selected);
-    router.push('/(onboarding)/complete');
+  const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', { step: 10 });
+    setOnboardingField('biometricsEnabled', false);
+    router.push('/(onboarding)/step-11');
   };
-
-  const selectedCount = selectedIds.size;
 
   return (
     <OnboardingStep
       step={10}
-      title="Current medications"
-      subtitle="Select the medications you currently take. You can add dosages and schedules in the Care Hub."
-      illustrationIcon={Pill}
-      illustrationColor="#781D11"
+      title="Secure your account"
+      subtitle={`Use ${biometricType} for quick and secure access to your health data.`}
+      illustrationIcon={Fingerprint}
+      illustrationColor="#A9334D"
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
-      onCta={handleContinue}
-      ctaLabel={selectedCount > 0 ? 'Save & Finish' : 'Skip'}
+      onCta={status === 'success' ? () => router.push('/(onboarding)/step-11') : handleEnable}
+      ctaLabel={status === 'success' ? 'Continue' : `Enable ${biometricType}`}
     >
-      <MotiView
-        from={{ opacity: 0, translateY: 8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: 'spring', damping: 16, stiffness: 80 }}
-        style={styles.container}
-      >
-        {selectedCount > 0 && (
-          <MotiView
-            from={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', damping: 14, stiffness: 120 }}
-            style={styles.badge}
-          >
-            <Text style={styles.badgeText}>{selectedCount} selected</Text>
+      <View style={styles.graphicContainer}>
+        <MotiView
+          from={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 15, stiffness: 80, delay: 100 }}
+          style={styles.graphicWrapper}
+        >
+          {status === 'success' && (
+            <>
+              <MotiView from={{ scale: 1, opacity: 0.4 }} animate={{ scale: 1.5, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />
+              <MotiView from={{ scale: 1, opacity: 0.3 }} animate={{ scale: 1.3, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true, delay: 300 }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />
+            </>
+          )}
+          <View style={[styles.graphicCircle, status === 'success' && styles.graphicCircleSuccess]}>
+            {status === 'success'
+              ? <ShieldCheck size={44} color="#A9334D" strokeWidth={1.5} />
+              : <FaceIdGraphic />
+            }
+          </View>
+        </MotiView>
+
+        {status === 'success' && (
+          <MotiView from={{ opacity: 0, translateY: 8 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: 'spring', damping: 16, stiffness: 80 }}>
+            <Text style={styles.successText}>{biometricType} enabled!</Text>
           </MotiView>
         )}
+        {status === 'failed' && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.warningRow}>
+            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
+            <Text style={styles.warningText}>Authentication failed. Try again or skip for now.</Text>
+          </MotiView>
+        )}
+        {status === 'unavailable' && (
+          <MotiView from={{ opacity: 0 }} animate={{ opacity: 1 }} style={styles.warningRow}>
+            <AlertCircle size={16} color="#F59E0B" strokeWidth={2} />
+            <Text style={styles.warningText}>{biometricType} is not available on this device. You can enable it later in Settings.</Text>
+          </MotiView>
+        )}
+      </View>
 
-        {CATEGORIES.map((category) => {
-          const drugs = SCD_MEDICATIONS.filter((d) => d.category === category);
-          return (
-            <View key={category} style={styles.section}>
-              <Text style={styles.sectionLabel}>{category}</Text>
-              <View style={styles.chipGrid}>
-                {drugs.map((drug, i) => {
-                  const isSelected = selectedIds.has(drug.id);
-                  return (
-                    <MotiView
-                      key={drug.id}
-                      from={{ opacity: 0, translateY: 6 }}
-                      animate={{ opacity: 1, translateY: 0 }}
-                      transition={{ type: 'spring', damping: 16, stiffness: 80, delay: i * 40 }}
-                      style={styles.chipWrapper}
-                    >
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.chip,
-                          isSelected && styles.chipSelected,
-                          pressed && { opacity: 0.75 },
-                        ]}
-                        onPress={() => toggleDrug(drug.id)}
-                      >
-                        <View style={styles.chipTop}>
-                          {isSelected && (
-                            <View style={styles.checkCircle}>
-                              <Check size={10} color="#FFFFFF" strokeWidth={2.5} />
-                            </View>
-                          )}
-                          <Text style={[styles.chipName, isSelected && styles.chipNameSelected]} numberOfLines={2}>
-                            {drug.name}
-                          </Text>
-                        </View>
-                        {drug.subtitle && (
-                          <Text style={[styles.chipSubtitle, isSelected && styles.chipSubtitleSelected]} numberOfLines={1}>
-                            {drug.subtitle}
-                          </Text>
-                        )}
-                      </Pressable>
-                    </MotiView>
-                  );
-                })}
-              </View>
+      {status !== 'success' && (
+        <View style={styles.bullets}>
+          {[
+            'Quick access without typing your password',
+            'Your health data stays private and secure',
+            'Works even in an emergency when time matters',
+          ].map((text) => (
+            <View key={text} style={styles.bulletRow}>
+              <View style={styles.bulletDot} />
+              <Text style={styles.bulletText}>{text}</Text>
             </View>
-          );
-        })}
-
-        <Text style={styles.hint}>
-          Dosages and frequency can be configured in the Care Hub after setup.
-        </Text>
-      </MotiView>
+          ))}
+        </View>
+      )}
     </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 20,
+  graphicContainer: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    gap: 16,
   },
-  badge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#A9334D',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-  },
-  badgeText: {
-    fontFamily: 'Geist_600SemiBold',
-    fontSize: 13,
-    color: '#FFFFFF',
-  },
-  section: {
-    gap: 10,
-  },
-  sectionLabel: {
-    fontFamily: 'Geist_600SemiBold',
-    fontSize: 12,
-    color: 'rgba(9,51,44,0.5)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chipWrapper: {
-    width: '48%',
-  },
-  chip: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 3,
-  },
-  chipSelected: {
-    backgroundColor: '#A9334D',
-    borderColor: '#A9334D',
-  },
-  chipTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  checkCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.25)',
+  graphicWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 1,
-    flexShrink: 0,
+    width: 120,
+    height: 120,
   },
-  chipName: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 13,
-    color: '#09332C',
-    flexShrink: 1,
+  pulseRing: {
+    borderRadius: 60,
+    borderWidth: 2,
+    borderColor: '#A9334D',
   },
-  chipNameSelected: {
-    color: '#FFFFFF',
+  graphicCircle: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(9,51,44,0.06)',
+    borderWidth: 2,
+    borderColor: 'rgba(9,51,44,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  graphicCircleSuccess: {
+    backgroundColor: 'rgba(169,51,77,0.08)',
+    borderColor: 'rgba(169,51,77,0.25)',
+  },
+  successText: {
     fontFamily: 'Geist_600SemiBold',
-  },
-  chipSubtitle: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 11,
-    color: 'rgba(9,51,44,0.45)',
-  },
-  chipSubtitleSelected: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-  hint: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
+    fontSize: 16,
+    color: '#A9334D',
     textAlign: 'center',
-    lineHeight: 17,
+  },
+  warningRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: 'rgba(245,158,11,0.08)',
+    borderRadius: 10,
+    padding: 12,
+    marginHorizontal: 16,
+  },
+  warningText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13,
+    color: '#B45309',
+    flex: 1,
+    lineHeight: 18,
+  },
+  bullets: {
+    gap: 12,
+    paddingHorizontal: 4,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#A9334D',
+    marginTop: 6,
+  },
+  bulletText: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 14,
+    color: 'rgba(9,51,44,0.65)',
+    flex: 1,
+    lineHeight: 20,
   },
 });

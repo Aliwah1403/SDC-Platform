@@ -5,6 +5,7 @@ import {
   Calendar,
   MessageCircle,
   Users,
+  HeartHandshake,
 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 
@@ -17,14 +18,14 @@ export default function TabLayout() {
           backgroundColor: "#fff",
           borderTopWidth: 1,
           borderColor: "#E5E7EB",
-          paddingTop: 8,
-          paddingBottom: 8,
+          paddingTop: 6,
+          paddingBottom: 6,
         },
         tabBarActiveTintColor: "#DC2626",
         tabBarInactiveTintColor: "#6B6B6B",
         tabBarLabelStyle: {
           fontFamily: fonts.semibold,
-          fontSize: 11,
+          fontSize: 10,
           marginTop: 2,
         },
       }}
@@ -33,14 +34,14 @@ export default function TabLayout() {
         name="home"
         options={{
           title: "Home",
-          tabBarIcon: ({ color }) => <Home color={color} size={22} />,
+          tabBarIcon: ({ color }) => <Home color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="track"
         options={{
-          title: "Track",
-          tabBarIcon: ({ color }) => <Activity color={color} size={22} />,
+          title: "Activity",
+          tabBarIcon: ({ color }) => <Activity color={color} size={20} />,
         }}
       />
       <Tabs.Screen
@@ -54,14 +55,14 @@ export default function TabLayout() {
         name="care"
         options={{
           title: "Care",
-          tabBarIcon: ({ color }) => <Calendar color={color} size={22} />,
+          tabBarIcon: ({ color }) => <HeartHandshake color={color} size={20} />,
         }}
       />
       <Tabs.Screen
         name="community"
         options={{
           title: "Community",
-          tabBarIcon: ({ color }) => <Users color={color} size={22} />,
+          tabBarIcon: ({ color }) => <Users color={color} size={20} />,
         }}
       />
       <Tabs.Screen name="profile" options={{ href: null }} />

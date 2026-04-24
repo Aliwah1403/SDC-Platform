@@ -1,281 +1,751 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState, useRef } from "react";
+import {
+  FlatList,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
-import { ArrowLeft, Bell } from "lucide-react-native";
-import * as Notifications from "expo-notifications";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { TOTAL_STEPS } from "@/components/OnboardingStep";
+import * as Contacts from "expo-contacts";
+import PhoneInput from "react-native-phone-number-input";
+import {
+  Plus,
+  Trash2,
+  Shield,
+  Search,
+  X,
+  BookUser,
+  PenLine,
+} from "lucide-react-native";
+import OnboardingStep from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
 
-function PhoneMockup({ name }) {
-  return (
-    <MotiView
-      from={{ opacity: 0, scale: 0.94, translateY: 12 }}
-      animate={{ opacity: 1, scale: 1, translateY: 0 }}
-      transition={{ type: "spring", damping: 16, stiffness: 80, delay: 80 }}
-      style={styles.phoneMockup}
-    >
-      {/* Status bar */}
-      <View style={styles.statusBar}>
-        <Text style={styles.statusTime}>9:41</Text>
-        <View style={styles.statusIcons}>
-          {[4, 6, 8, 10].map((h, i) => (
-            <View key={i} style={[styles.signalBar, { height: h }]} />
-          ))}
-          <View style={styles.battery}>
-            <View style={styles.batteryFill} />
-          </View>
-        </View>
-      </View>
+const RELATIONSHIPS = [
+  "Parent",
+  "Sibling",
+  "Partner",
+  "Friend",
+  "Carer",
+  "Doctor",
+  "Other",
+];
 
-      {/* Notification card */}
-      <MotiView
-        from={{ opacity: 0, translateY: -8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 220 }}
-        style={styles.mockNotifCard}
-      >
-        <View style={styles.mockNotifAppIcon}>
-          <Bell size={13} color="#FFFFFF" strokeWidth={2.2} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={styles.mockNotifTopRow}>
-            <Text style={styles.mockNotifApp}>Hemo</Text>
-            <Text style={styles.mockNotifTime}>now</Text>
-          </View>
-          <Text style={styles.mockNotifTitle}>Daily check-in</Text>
-          <Text style={styles.mockNotifBody} numberOfLines={1}>
-            {`How are you feeling today${name !== "you" ? `, ${name}` : ""}?`}
-          </Text>
-        </View>
-      </MotiView>
+const emptyManual = () => ({
+  name: "",
+  phone: "", // formatted international number (+441234567890)
+  relationship: "",
+  source: "manual",
+});
 
-      {/* App icon placeholders */}
-      <View style={styles.appGrid}>
-        {[0, 1].map((row) => (
-          <View key={row} style={styles.appRow}>
-            {[0, 1, 2, 3].map((col) => (
-              <View
-                key={col}
-                style={[styles.appIcon, { opacity: row === 1 ? 0.45 : 0.75 }]}
-              />
-            ))}
-          </View>
-        ))}
-        <View style={styles.appRow}>
-          {[0, 1, 2, 3].map((col) => (
-            <View
-              key={col}
-              style={[styles.appIcon, { opacity: 0.22, borderRadius: 22 }]}
-            />
-          ))}
-        </View>
-      </View>
-    </MotiView>
-  );
-}
+const getInitials = (name = "") =>
+  name
+    .split(" ")
+    .filter(Boolean)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 export default function Step7() {
-  const { setOnboardingField, onboardingData } = useAppStore();
-  const insets = useSafeAreaInsets();
-  const name = onboardingData.nickname || "you";
+  const { setOnboardingField } = useAppStore();
 
-  const handleRequestPermission = async () => {
-    try {
-      const { status: current } = await Notifications.getPermissionsAsync();
-      if (current === "granted") {
-        setOnboardingField("notificationsEnabled", true);
-        router.push("/(onboarding)/step-8");
-        return;
+  const [contacts, setContacts] = useState([]);
+  const [isManual, setIsManual] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
+
+  // Android contacts modal
+  const [allContacts, setAllContacts] = useState([]);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactPickerTarget, setContactPickerTarget] = useState(null);
+  const [contactSearch, setContactSearch] = useState("");
+  const contactSearchRef = useRef(null);
+
+  // ── Contact picker (from phone) ─────────────────────────────
+  const addPickedContact = (contact, targetIndex) => {
+    const resolvedName =
+      contact.name ||
+      [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
+      "";
+    const phone = contact.phoneNumbers?.[0]?.number || "";
+    const slot = {
+      name: resolvedName,
+      phone,
+      relationship: "",
+      source: "picker",
+    };
+    setContacts((prev) => {
+      const updated = [...prev];
+      if (targetIndex >= updated.length) return [...updated, slot];
+      updated[targetIndex] = slot;
+      return updated;
+    });
+  };
+
+  const handlePickContact = async (targetIndex) => {
+    if (Platform.OS === "ios") {
+      try {
+        const contact = await Contacts.presentContactPickerAsync();
+        if (contact) addPickedContact(contact, targetIndex);
+      } catch {
+        /* cancelled */
       }
-      const { status } = await Notifications.requestPermissionsAsync({
-        ios: { allowAlert: true, allowBadge: true, allowSound: true },
-      });
-      setOnboardingField("notificationsEnabled", status === "granted");
-      router.push("/(onboarding)/step-8");
-    } catch {
-      setOnboardingField("notificationsEnabled", false);
-      router.push("/(onboarding)/step-8");
+    } else {
+      setIsLoading(true);
+      try {
+        const { status } = await Contacts.requestPermissionsAsync();
+        if (status === "granted") {
+          const { data } = await Contacts.getContactsAsync({
+            fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+          });
+          setAllContacts(
+            data.filter((c) => c.name && c.phoneNumbers?.length > 0),
+          );
+          setContactPickerTarget(targetIndex);
+          setContactSearch("");
+          setShowContactModal(true);
+          setTimeout(() => contactSearchRef.current?.focus(), 300);
+        } else {
+          setIsManual(true);
+          if (contacts.length === 0) setContacts([emptyManual()]);
+        }
+      } catch {
+        setIsManual(true);
+        if (contacts.length === 0) setContacts([emptyManual()]);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleSkip = () => {
-    setOnboardingField("notificationsEnabled", false);
+  const selectFromContactModal = (contact) => {
+    addPickedContact(contact, contactPickerTarget ?? contacts.length);
+    setShowContactModal(false);
+    setContactPickerTarget(null);
+  };
+
+  // ── Contact list helpers ────────────────────────────────────
+  const removeContact = (index) =>
+    setContacts((prev) => prev.filter((_, i) => i !== index));
+
+  const updateContact = (index, field, value) =>
+    setContacts((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+
+  const handleAddAnother = () => {
+    if (isManual) setContacts((prev) => [...prev, emptyManual()]);
+    else handlePickContact(contacts.length);
+  };
+
+  // ── Save ───────────────────────────────────────────────────
+  const isValid =
+    contacts.length > 0 &&
+    !!contacts[0]?.name?.trim() &&
+    !!contacts[0]?.phone?.trim();
+
+  const handleContinue = () => {
+    const valid = contacts
+      .filter((c) => c.name?.trim() && c.phone?.trim())
+      .map(({ name, phone, relationship }) => ({ name, phone, relationship }));
+    setOnboardingField("emergencyContacts", valid);
     router.push("/(onboarding)/step-8");
   };
 
+  const filteredContacts = allContacts
+    .filter((c) => c.name.toLowerCase().includes(contactSearch.toLowerCase()))
+    .slice(0, 60);
+
+  const showingCards = contacts.length > 0 || isManual;
+
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* Top bar */}
-      <View style={styles.topBar}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.backCircle,
-            pressed && { opacity: 0.6 },
-          ]}
-          onPress={() => router.back()}
-        >
-          <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
-        </Pressable>
-        <View style={styles.dotsRow}>
-          {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-            <View
-              key={i}
-              style={[
-                styles.dot,
-                i === 6
-                  ? styles.dotCurrent
-                  : i < 6
-                    ? styles.dotPast
-                    : styles.dotFuture,
-              ]}
-            />
-          ))}
-        </View>
-        <Pressable onPress={handleSkip} hitSlop={10} style={styles.skipBtn}>
-          <Text style={styles.skipText}>Skip</Text>
-        </Pressable>
-      </View>
-
-      {/* Middle: phone + heading, vertically centered */}
-      <View style={styles.middle}>
-        <PhoneMockup name={name} />
-
+    <OnboardingStep
+      step={7}
+      title="Emergency contact"
+      subtitle="In a crisis, who should we call? At least one contact is required."
+      illustrationIcon={Shield}
+      illustrationColor="#781D11"
+      onBack={() => router.back()}
+      onCta={handleContinue}
+      ctaDisabled={!isValid}
+      ctaLabel="Save & Next"
+    >
+      {/* ── Gate ─────────────────────────────────────────────── */}
+      {!showingCards && (
         <MotiView
-          from={{ opacity: 0, translateY: 16 }}
+          from={{ opacity: 0, translateY: 12 }}
           animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "spring", damping: 16, stiffness: 80, delay: 320 }}
-          style={styles.headingBlock}
+          transition={{ type: "spring", damping: 16, stiffness: 80 }}
+          style={styles.gateCard}
         >
-          <Text style={styles.title}>Never miss a moment</Text>
-          <Text style={styles.subtitle}>
-            Daily reminders, streak alerts, and health nudges — all in one place.
+          <View style={styles.gateIconWrap}>
+            <BookUser size={32} color="#A9334D" strokeWidth={1.6} />
+          </View>
+          <Text style={styles.gateTitle}>Import from Contacts</Text>
+          <Text style={styles.gateBody}>
+            Select someone from your phone's contact book — their name and
+            number will be filled in automatically.
           </Text>
-        </MotiView>
-      </View>
 
-      {/* Bottom: full-width CTA + skip link */}
-      <MotiView
-        from={{ opacity: 0, translateY: 20 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "spring", damping: 16, stiffness: 80, delay: 420 }}
-        style={[styles.bottomArea, { paddingBottom: insets.bottom + 28 }]}
-      >
-        <Pressable
-          style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.85 }]}
-          onPress={handleRequestPermission}
+          {isLoading ? (
+            <ActivityIndicator color="#A9334D" style={{ marginTop: 8 }} />
+          ) : (
+            <Pressable
+              style={({ pressed }) => [
+                styles.accessBtn,
+                pressed && { opacity: 0.85 },
+              ]}
+              onPress={() => handlePickContact(0)}
+            >
+              <BookUser size={18} color="#FFFFFF" strokeWidth={2} />
+              <Text style={styles.accessBtnText}>Select a Contact</Text>
+            </Pressable>
+          )}
+
+          <Pressable
+            onPress={() => {
+              setIsManual(true);
+              setContacts([emptyManual()]);
+            }}
+            hitSlop={8}
+          >
+            <Text style={styles.manualLink}>Add manually instead</Text>
+          </Pressable>
+        </MotiView>
+      )}
+
+      {/* ── Contact cards ─────────────────────────────────────── */}
+      {contacts.map((contact, index) => (
+        <MotiView
+          key={index}
+          from={{ opacity: 0, translateY: 12 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: "spring",
+            damping: 16,
+            stiffness: 80,
+            delay: index * 60,
+          }}
+          style={styles.contactCard}
         >
-          <Text style={styles.ctaBtnText}>Turn on Notifications</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardLabel}>
+              {index === 0 ? "Primary contact" : `Contact ${index + 1}`}
+            </Text>
+            {index > 0 && (
+              <Pressable onPress={() => removeContact(index)} hitSlop={8}>
+                <Trash2 size={16} color="#DC2626" strokeWidth={1.8} />
+              </Pressable>
+            )}
+          </View>
+
+          {contact.source === "picker" ? (
+            <View style={styles.pickedRow}>
+              <View style={styles.initialsCircle}>
+                <Text style={styles.initialsText}>
+                  {getInitials(contact.name)}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.pickedName}>{contact.name}</Text>
+                <Text style={styles.pickedPhone}>{contact.phone}</Text>
+              </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.changeBtn,
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={() => handlePickContact(index)}
+              >
+                <PenLine size={14} color="#A9334D" strokeWidth={2} />
+                <Text style={styles.changeBtnText}>Change</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              {/* Name input */}
+              <View
+                style={[
+                  styles.inputWrapper,
+                  focusedField === `name-${index}` && styles.inputFocused,
+                ]}
+              >
+                <TextInput
+                  style={styles.input}
+                  placeholder="Full name"
+                  placeholderTextColor="rgba(9,51,44,0.35)"
+                  value={contact.name}
+                  onChangeText={(v) => updateContact(index, "name", v)}
+                  autoCapitalize="words"
+                  onFocus={() => setFocusedField(`name-${index}`)}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+
+              {/* Phone input — library handles flag + country code + number */}
+              <PhoneInput
+                defaultCode="GB"
+                layout="first"
+                placeholder="Phone number"
+                onChangeFormattedText={(text) =>
+                  updateContact(index, "phone", text)
+                }
+                containerStyle={styles.phoneContainer}
+                textContainerStyle={styles.phoneTextContainer}
+                textInputStyle={styles.phoneTextInput}
+                codeTextStyle={styles.phoneCodeText}
+                flagButtonStyle={styles.phoneFlagBtn}
+                textInputProps={{
+                  placeholderTextColor: "rgba(9,51,44,0.35)",
+                  keyboardType: "phone-pad",
+                  onFocus: () => setFocusedField(`phone-${index}`),
+                  onBlur: () => setFocusedField(null),
+                }}
+                countryPickerProps={{
+                  withFilter: true,
+                  withFlag: true,
+                  withCallingCodeButton: true,
+                  withAlphaFilter: true,
+                }}
+              />
+            </>
+          )}
+
+          {/* Relationship chips */}
+          <Text style={styles.relLabel}>Relationship</Text>
+          <View style={styles.relChips}>
+            {RELATIONSHIPS.map((rel) => {
+              const selected = contact.relationship === rel;
+              return (
+                <Pressable
+                  key={rel}
+                  style={({ pressed }) => [
+                    styles.relChip,
+                    selected && styles.relChipSelected,
+                    pressed && !selected && { opacity: 0.7 },
+                  ]}
+                  onPress={() => updateContact(index, "relationship", rel)}
+                >
+                  <Text
+                    style={[
+                      styles.relChipText,
+                      selected && styles.relChipTextSelected,
+                    ]}
+                  >
+                    {rel}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </MotiView>
+      ))}
+
+      {/* ── Add another ───────────────────────────────────────── */}
+      {showingCards && contacts.length < 3 && (
+        <Pressable
+          style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
+          onPress={handleAddAnother}
+        >
+          <Plus size={16} color="#09332C" strokeWidth={2} />
+          <Text style={styles.addBtnText}>Add another contact</Text>
         </Pressable>
-        <Pressable onPress={handleSkip} hitSlop={12}>
-          <Text style={styles.notNowText}>Not right now</Text>
-        </Pressable>
-      </MotiView>
-    </View>
+      )}
+
+      {/* ── Android contacts modal ────────────────────────────── */}
+      <Modal
+        visible={showContactModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowContactModal(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select a contact</Text>
+              <Pressable onPress={() => setShowContactModal(false)} hitSlop={8}>
+                <X size={22} color="#09332C" strokeWidth={2} />
+              </Pressable>
+            </View>
+
+            <View style={styles.searchWrapper}>
+              <Search size={17} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
+              <TextInput
+                ref={contactSearchRef}
+                style={styles.searchInput}
+                placeholder="Search contacts"
+                placeholderTextColor="rgba(9,51,44,0.35)"
+                value={contactSearch}
+                onChangeText={setContactSearch}
+                autoCorrect={false}
+              />
+            </View>
+
+            <FlatList
+              data={filteredContacts}
+              keyExtractor={(item) => item.id}
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={styles.listContent}
+              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.contactRow,
+                    pressed && { backgroundColor: "rgba(169,51,77,0.04)" },
+                  ]}
+                  onPress={() => selectFromContactModal(item)}
+                >
+                  <View style={styles.rowInitials}>
+                    <Text style={styles.rowInitialsText}>
+                      {getInitials(item.name)}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowName}>{item.name}</Text>
+                    <Text style={styles.rowPhone} numberOfLines={1}>
+                      {item.phoneNumbers[0]?.number}
+                    </Text>
+                  </View>
+                </Pressable>
+              )}
+              ListEmptyComponent={
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyText}>
+                    {contactSearch
+                      ? "No contacts match your search."
+                      : "No contacts with phone numbers found."}
+                  </Text>
+                </View>
+              }
+            />
+          </KeyboardAvoidingView>
+        </SafeAreaView>
+      </Modal>
+    </OnboardingStep>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8F4F0" },
-  topBar: {
+  gateCard: {
+    borderRadius: 18,
+    borderStyle: "dashed",
+    padding: 20,
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.08)",
+  },
+  gateIconWrap: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(169,51,77,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  gateTitle: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 17,
+    color: "#09332C",
+    textAlign: "center",
+  },
+  gateBody: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 14,
+    color: "rgba(9,51,44,0.6)",
+    textAlign: "center",
+    lineHeight: 20,
+    paddingHorizontal: 8,
+  },
+  accessBtn: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
+    backgroundColor: "#A9334D",
+    borderRadius: 12,
+    paddingVertical: 13,
     paddingHorizontal: 24,
-    paddingTop: 10,
-    paddingBottom: 6,
-    minHeight: 52,
+    marginTop: 4,
   },
-  backCircle: {
+  accessBtnText: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  manualLink: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 13,
+    color: "rgba(9,51,44,0.5)",
+    textDecorationLine: "underline",
+    marginTop: 2,
+  },
+  contactCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.08)",
+    gap: 12,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardLabel: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 13,
+    color: "#09332C",
+    letterSpacing: 0.2,
+  },
+  pickedRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#F8F4F0",
+    borderRadius: 12,
+    padding: 12,
+  },
+  initialsCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "#A9334D",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  initialsText: {
+    fontFamily: "Geist_700Bold",
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  pickedName: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 15,
+    color: "#09332C",
+  },
+  pickedPhone: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 13,
+    color: "rgba(9,51,44,0.5)",
+    marginTop: 1,
+  },
+  changeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "rgba(169,51,77,0.08)",
+    borderRadius: 8,
+  },
+  changeBtnText: {
+    fontFamily: "Geist_500Medium",
+    fontSize: 13,
+    color: "#A9334D",
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F4F0",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.08)",
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  inputFocused: {
+    borderColor: "#A9334D",
+    backgroundColor: "rgba(169,51,77,0.04)",
+  },
+  input: {
+    flex: 1,
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+    color: "#09332C",
+    padding: 0,
+    margin: 0,
+  },
+  // PhoneInput library styling
+  phoneContainer: {
+    width: "100%",
+    backgroundColor: "#F8F4F0",
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.08)",
+    height: 50,
+  },
+  phoneTextContainer: {
+    backgroundColor: "#F8F4F0",
+    borderRadius: 10,
+    paddingVertical: 0,
+  },
+  phoneTextInput: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+    color: "#09332C",
+    height: 50,
+  },
+  phoneCodeText: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 14,
+    color: "#09332C",
+  },
+  phoneFlagBtn: {
+    backgroundColor: "transparent",
+  },
+  relLabel: {
+    fontFamily: "Geist_500Medium",
+    fontSize: 13,
+    color: "rgba(9,51,44,0.55)",
+    marginBottom: -4,
+  },
+  relChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  relChip: {
+    backgroundColor: "#F8F4F0",
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.1)",
+  },
+  relChipSelected: {
+    backgroundColor: "#A9334D",
+    borderColor: "#A9334D",
+  },
+  relChipText: {
+    fontFamily: "Geist_500Medium",
+    fontSize: 13,
+    color: "#09332C",
+  },
+  relChipTextSelected: {
+    color: "#FFFFFF",
+  },
+  addBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(9,51,44,0.05)",
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "rgba(9,51,44,0.1)",
+    borderStyle: "dashed",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  addBtnText: {
+    fontFamily: "Geist_500Medium",
+    fontSize: 14,
+    color: "#09332C",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#FAFAFA",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(9,51,44,0.07)",
+  },
+  modalTitle: {
+    fontFamily: "Geist_600SemiBold",
+    fontSize: 17,
+    color: "#09332C",
+  },
+  searchWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#F0EBE5",
+    marginHorizontal: 16,
+    marginVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+    color: "#09332C",
+    padding: 0,
+    margin: 0,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 40,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: "rgba(9,51,44,0.06)",
+    marginLeft: 62,
+  },
+  contactRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderRadius: 8,
+  },
+  rowInitials: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(9,51,44,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  dotsRow: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 5,
-  },
-  dot: { height: 6, borderRadius: 3 },
-  dotCurrent: { width: 22, backgroundColor: "#A9334D" },
-  dotPast: { width: 6, backgroundColor: "#A9334D", opacity: 0.4 },
-  dotFuture: { width: 6, backgroundColor: "rgba(9,51,44,0.14)" },
-  skipBtn: { width: 44, alignItems: "flex-end" },
-  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: "rgba(9,51,44,0.4)" },
-  middle: { flex: 1, paddingHorizontal: 24, justifyContent: "center", gap: 36 },
-  headingBlock: { gap: 10, alignItems: "center" },
-  title: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 30,
-    color: "#09332C",
-    letterSpacing: -0.9,
-    lineHeight: 36,
-    textAlign: "center",
-  },
-  subtitle: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "rgba(9,51,44,0.55)",
-    lineHeight: 22,
-    textAlign: "center",
-  },
-  bottomArea: { paddingHorizontal: 24, paddingTop: 12, gap: 14, alignItems: "center" },
-  ctaBtn: {
-    width: "100%",
     backgroundColor: "#A9334D",
-    borderRadius: 16,
-    paddingVertical: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowInitialsText: {
+    fontFamily: "Geist_700Bold",
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  rowName: {
+    fontFamily: "Geist_500Medium",
+    fontSize: 15,
+    color: "#09332C",
+  },
+  rowPhone: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 13,
+    color: "rgba(9,51,44,0.5)",
+    marginTop: 1,
+  },
+  emptyState: {
+    paddingTop: 48,
     alignItems: "center",
   },
-  ctaBtnText: { fontFamily: "Geist_700Bold", fontSize: 17, color: "#FFFFFF", letterSpacing: 0.2 },
-  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: "rgba(9,51,44,0.4)" },
-
-  // Phone mockup
-  phoneMockup: {
-    alignSelf: "center",
-    width: "100%",
-    backgroundColor: "rgba(9,51,44,0.035)",
-    borderRadius: 26,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.07)",
-    padding: 16,
-    gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.07,
-    shadowRadius: 20,
-    elevation: 5,
+  emptyText: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 14,
+    color: "rgba(9,51,44,0.45)",
+    textAlign: "center",
   },
-  statusBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
-  statusTime: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "rgba(9,51,44,0.55)" },
-  statusIcons: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
-  signalBar: { width: 3, backgroundColor: "rgba(9,51,44,0.45)", borderRadius: 1 },
-  battery: { width: 20, height: 10, borderRadius: 2.5, borderWidth: 1.5, borderColor: "rgba(9,51,44,0.4)", justifyContent: "center", paddingHorizontal: 2, marginLeft: 4 },
-  batteryFill: { height: 5, width: "75%", backgroundColor: "rgba(9,51,44,0.4)", borderRadius: 1 },
-  mockNotifCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "rgba(255,255,255,0.96)",
-    borderRadius: 14,
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  mockNotifAppIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center" },
-  mockNotifTopRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
-  mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: "rgba(9,51,44,0.45)" },
-  mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: "rgba(9,51,44,0.3)" },
-  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#09332C" },
-  mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: "rgba(9,51,44,0.5)", marginTop: 1 },
-  appGrid: { gap: 8, paddingTop: 4 },
-  appRow: { flexDirection: "row", gap: 8, justifyContent: "space-between" },
-  appIcon: { flex: 1, height: 70, width: 70, borderRadius: 12, backgroundColor: "rgba(9,51,44,0.07)" },
 });

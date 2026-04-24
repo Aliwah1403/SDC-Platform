@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import {
   Zap,
   Wrench,
 } from "lucide-react-native";
+import { usePostHog } from "posthog-react-native";
 import { useAuthStore } from "@/utils/auth/store";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
@@ -47,33 +48,28 @@ const HEMO = {
 };
 
 const MILESTONE_BADGE = {
-  "onboarding-done": require("../../assets/images/badges/badge-1.svg"),
-  "streak-1": require("../../assets/images/badges/badge-2.svg"),
-  "streak-3": require("../../assets/images/badges/badge-3.svg"),
-  "streak-7": require("../../assets/images/badges/badge-4.svg"),
-  "streak-14": require("../../assets/images/badges/badge-5.svg"),
-  "streak-30": require("../../assets/images/badges/badge-6.svg"),
-  "streak-60": require("../../assets/images/badges/badge-7.svg"),
-  "hydration-7": require("../../assets/images/badges/badge-8.svg"),
-  "care-10": require("../../assets/images/badges/badge-9.svg"),
-  "learning-5": require("../../assets/images/badges/badge-10.svg"),
-  "symptoms-10": require("../../assets/images/badges/badge-11.svg"),
-  "repair-1": require("../../assets/images/badges/badge-12.svg"),
-  "restart-1": require("../../assets/images/badges/badge-13.svg"),
-  "meds-streak-7": require("../../assets/images/badges/badge-14.svg"),
-  "meds-first": require("../../assets/images/badges/badge-15.svg"),
-  "week-perfect": require("../../assets/images/badges/badge-16.svg"),
-  // Legacy keys
-  "days-5": require("../../assets/images/badges/badge-1.svg"),
-  "days-10": require("../../assets/images/badges/badge-4.svg"),
-  "days-25": require("../../assets/images/badges/badge-7.svg"),
-  "days-1": require("../../assets/images/badges/badge-2.svg"),
-  "days-50": require("../../assets/images/badges/badge-6.svg"),
-  "days-100": require("../../assets/images/badges/badge-7.svg"),
-  "symptoms-25": require("../../assets/images/badges/badge-11.svg"),
+  "onboarding-done": require("../../assets/images/badges/getting-started.svg"),
+  "streak-1":        require("../../assets/images/badges/first-streak.svg"),
+  "streak-3":        require("../../assets/images/badges/on-track.svg"),
+  "streak-7":        require("../../assets/images/badges/habit-builder.png"),
+  "streak-14":       require("../../assets/images/badges/fortnight-fighter.svg"),
+  "streak-30":       require("../../assets/images/badges/monthly-monster.svg"),
+  "streak-60":       require("../../assets/images/badges/pattern-seeker.svg"),
+  "hydration-7":     require("../../assets/images/badges/hydration-junkie.png"),
+  "care-10":         require("../../assets/images/badges/self-care.svg"),
+  "learning-5":      require("../../assets/images/badges/knowledge-seeker.svg"),
+  "repair-1":        require("../../assets/images/badges/back-on-track.svg"),
+  "restart-1":       require("../../assets/images/badges/resilient-restart.svg"),
+  "meds-streak-7":   require("../../assets/images/badges/on-time.svg"),
+  "meds-first":      require("../../assets/images/badges/dose-one.svg"),
+  "week-perfect":    require("../../assets/images/badges/perfect-week.svg"),
+  "days-1":          require("../../assets/images/badges/first-streak.svg"),
+  "days-5":          require("../../assets/images/badges/getting-started.svg"),
+  // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
 };
 
 export default function StreakModal() {
+  const posthog = usePostHog();
   const router = useRouter();
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
@@ -86,8 +82,12 @@ export default function StreakModal() {
   const repairsUsed = streak?.repairsUsed ?? 0;
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState("streaks"); // "streaks" | "rewards"
-  const [activeRewardsTab, setActiveRewardsTab] = useState("challenges"); // "challenges" | "badges" | "leaderboard"
+  const [activeTab, setActiveTab] = useState("streaks");
+  const [activeRewardsTab, setActiveRewardsTab] = useState("challenges");
+
+  useEffect(() => {
+    posthog?.capture('streak_modal_viewed', { current_streak: healthStreak });
+  }, []);
 
   const getCurrentWeekData = () => {
     const days = [];
@@ -172,7 +172,7 @@ export default function StreakModal() {
     },
     {
       id: "days-10",
-      name: "Habit Builder",
+      name: "Double Digits",
       type: "days",
       value: 10,
       target: 10,
@@ -185,7 +185,7 @@ export default function StreakModal() {
     },
     {
       id: "days-25",
-      name: "Dedicated Tracker",
+      name: "Quarter Century",
       type: "days",
       value: 25,
       target: 25,
@@ -224,7 +224,7 @@ export default function StreakModal() {
     },
     {
       id: "streak-3",
-      name: "First Streak",
+      name: "On Track",
       type: "streak",
       value: 3,
       target: 3,
@@ -236,7 +236,7 @@ export default function StreakModal() {
     },
     {
       id: "streak-7",
-      name: "On Track Streak",
+      name: "Habit Builder",
       type: "streak",
       value: 7,
       target: 7,
@@ -310,7 +310,7 @@ export default function StreakModal() {
     },
     {
       id: "care-10",
-      name: "Self-Care Badge",
+      name: "Self-Care",
       type: "care",
       value: 10,
       target: 10,
@@ -373,7 +373,7 @@ export default function StreakModal() {
     },
     {
       id: "meds-streak-7",
-      name: "On Time Hero",
+      name: "On-Time Hero",
       type: "medications",
       value: 7,
       target: 7,
@@ -402,6 +402,11 @@ export default function StreakModal() {
   const unlockedCount = milestones.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
+    posthog?.capture('milestone_tapped', {
+      milestone_id: milestone.id,
+      type: milestone.type,
+      unlocked: milestone.unlocked,
+    });
     setSelectedMilestone({
       ...milestone,
       image: MILESTONE_BADGE[milestone.id],
@@ -415,7 +420,7 @@ export default function StreakModal() {
       (milestone.current / milestone.target) * 100,
       100,
     );
-    const badgeSource = MILESTONE_BADGE[milestone.id] ?? BADGE_IMAGES.a;
+    const badgeSource = MILESTONE_BADGE[milestone.id] ?? null;
 
     const MilestoneIcon = {
       days: Trophy,
@@ -459,16 +464,23 @@ export default function StreakModal() {
       >
         {/* Badge image with overlay */}
         <View style={{ width: "100%", aspectRatio: 1, marginBottom: 16 }}>
-          <Image
-            source={badgeSource}
-            style={{
-              width: "100%",
-              height: "100%",
-              borderRadius: 12,
-              opacity: isUnlocked ? 1 : 0.4,
-            }}
-            contentFit="cover"
-          />
+          {badgeSource ? (
+            <Image
+              source={badgeSource}
+              style={{
+                width: "100%",
+                height: "100%",
+                borderRadius: 12,
+                opacity: isUnlocked ? 1 : 0.4,
+              }}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={{ width: "100%", height: "100%", borderRadius: 12, backgroundColor: "#A9334D", opacity: isUnlocked ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 10, color: "#F8E9E7", letterSpacing: 1, textTransform: "uppercase" }}>No Image</Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 9, color: "rgba(248,233,231,0.6)", marginTop: 2 }}>{milestone.id}</Text>
+            </View>
+          )}
           {isUnlocked ? (
             <View
               style={{
@@ -1040,7 +1052,7 @@ export default function StreakModal() {
         {["streaks", "rewards"].map((tab) => (
           <TouchableOpacity
             key={tab}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => { setActiveTab(tab); posthog?.capture('rewards_tab_changed', { to: tab }); }}
             style={{
               flex: 1,
               paddingVertical: 14,
@@ -1533,19 +1545,19 @@ export default function StreakModal() {
                 title="Challenges"
                 icon={Target}
                 isActive={activeRewardsTab === "challenges"}
-                onPress={() => setActiveRewardsTab("challenges")}
+                onPress={() => { setActiveRewardsTab("challenges"); posthog?.capture('rewards_subtab_changed', { tab: 'challenges' }); }}
               />
               <RewardsSubTabButton
                 title="Badges"
                 icon={Award}
                 isActive={activeRewardsTab === "badges"}
-                onPress={() => setActiveRewardsTab("badges")}
+                onPress={() => { setActiveRewardsTab("badges"); posthog?.capture('rewards_subtab_changed', { tab: 'badges' }); }}
               />
               <RewardsSubTabButton
                 title="Leaderboard"
                 icon={Users}
                 isActive={activeRewardsTab === "leaderboard"}
-                onPress={() => setActiveRewardsTab("leaderboard")}
+                onPress={() => { setActiveRewardsTab("leaderboard"); posthog?.capture('rewards_subtab_changed', { tab: 'leaderboard' }); }}
               />
             </View>
           </View>
