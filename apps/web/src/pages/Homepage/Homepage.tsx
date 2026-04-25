@@ -90,11 +90,15 @@ const Homepage = () => {
 
         <WhyHemo />
 
+        <AboutUs />
+
         <AppFeatures />
 
         <Testimonials />
 
-        <WaitlistCTA />
+        <PricingSection />
+
+        <FaqSection />
 
         {/* <section className="bg-secondary py-20">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -150,10 +154,7 @@ const Homepage = () => {
           </div>
         </section> */}
 
-        <AboutUs />
-        <PricingSection />
-
-        <FaqSection />
+        <WaitlistCTA />
       </div>
     </>
   );
