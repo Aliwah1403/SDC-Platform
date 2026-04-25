@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 
 import PageLayout from "./layouts/PageLayout";
-import Homepage from "./pages/Homepage";
+import Homepage from "./pages/Homepage/Homepage";
 
 import "./index.css";
 
@@ -15,43 +15,43 @@ const router = createBrowserRouter([
       {
         path: "/why-hemo",
         lazy: async () => ({
-          Component: (await import("./pages/WhyHemoPage")).default,
+          Component: (await import("./pages/About/WhyHemoPage")).default,
         }),
       },
       {
         path: "/features",
         lazy: async () => ({
-          Component: (await import("./pages/FeaturesPage")).default,
+          Component: (await import("./pages/FeaturesPage/FeaturesPage")).default,
         }),
       },
       {
         path: "/pricing",
         lazy: async () => ({
-          Component: (await import("./pages/PricingPage")).default,
+          Component: (await import("./pages/Pricing/PricingPage")).default,
         }),
       },
       {
         path: "/contact",
         lazy: async () => ({
-          Component: (await import("./pages/ContactPage")).default,
+          Component: (await import("./pages/Contact/ContactPage")).default,
         }),
       },
       {
         path: "/faq",
         lazy: async () => ({
-          Component: (await import("./pages/FaqPage")).default,
+          Component: (await import("./pages/FAQ/FaqPage")).default,
         }),
       },
       {
         path: "/privacy",
         lazy: async () => ({
-          Component: (await import("./pages/PrivacyPage")).default,
+          Component: (await import("./pages/Privacy/PrivacyPage")).default,
         }),
       },
       {
         path: "/terms",
         lazy: async () => ({
-          Component: (await import("./pages/TermsPage")).default,
+          Component: (await import("./pages/Terms/TermsPage")).default,
         }),
       },
       {
