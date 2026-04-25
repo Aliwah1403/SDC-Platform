@@ -1,37 +1,29 @@
 import { useMemo } from "react";
 
-import { Button } from "@/components/ui/button";
-
 import HeroSection from "./HeroSection";
 import TrustLogoSection from "./TrustLogoSection";
-import WhyHemo from "./WhyHemo";
 import AppFeatures from "./AppFeatures";
 import Testimonials from "./Testimonials";
 import WaitlistCTA from "./WaitlistCTA";
 import FaqSection from "./FaqSection";
-import AboutUs from "./AboutUs";
 import PricingSection from "./PricingSection";
 
 const FAQS = [
   {
-    question: "How does Hemo protect my data?",
-    answer:
-      "We design Hemo with privacy-first principles and limit sensitive data exposure. More detailed policy terms are provided on the Privacy page.",
+    q: "What is Hemo?",
+    a: "Hemo is a daily health companion for people living with Sickle Cell Disease. It helps you log symptoms, track patterns over time, manage your care details, and walk into every clinic visit with real context instead of guesswork.",
   },
   {
-    question: "Is Hemo a replacement for emergency care?",
-    answer:
-      "No. Hemo is a support app for tracking and preparedness. In emergencies, contact local emergency services immediately.",
+    q: "How long does a daily log take?",
+    a: "Most check-ins take around two minutes. The log is designed to be short enough to complete even on difficult days.",
   },
   {
-    question: "When is Hemo launching?",
-    answer:
-      "Hemo is currently pre-launch. Waitlist members receive timing updates as milestones are reached.",
+    q: "Is Hemo a replacement for emergency care?",
+    a: "No. Hemo is a tracking and preparedness tool. In an emergency, contact local emergency services immediately.",
   },
   {
-    question: "Who is Hemo designed for?",
-    answer:
-      "Patients with SCD first, plus caregivers and clinicians who benefit from structured day-to-day health context.",
+    q: "Is Hemo free to use?",
+    a: "Yes. Core daily logging, trend tracking, emergency SOS, and care hub tools are free. Optional paid plans unlock deeper history, AI insights, and multi-member support.",
   },
 ];
 
@@ -56,12 +48,12 @@ function HomeJsonLd() {
         },
         {
           "@type": "FAQPage",
-          mainEntity: FAQS.map((item) => ({
+          mainEntity: FAQS.map((faq) => ({
             "@type": "Question",
-            name: item.q,
+            name: faq.q,
             acceptedAnswer: {
               "@type": "Answer",
-              text: item.a,
+              text: faq.a,
             },
           })),
         },
@@ -85,75 +77,11 @@ const Homepage = () => {
 
       <div className="relative page-grid-lines overflow-hidden">
         <HeroSection />
-
         <TrustLogoSection />
-
-        <WhyHemo />
-
-        <AboutUs />
-
         <AppFeatures />
-
         <Testimonials />
-
         <PricingSection />
-
         <FaqSection />
-
-        {/* <section className="bg-secondary py-20">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-center text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">
-              Build the habit. Protect your streak.
-            </h2>
-            <div className="mx-auto mt-8 grid max-w-4xl gap-4 sm:grid-cols-3">
-              <div className="rounded-lg bg-white p-5">
-                <Flame className="size-5 text-primary" />
-                <p className="mt-4 text-3xl font-semibold">36</p>
-                <p className="text-sm text-muted-foreground">
-                  Current streak days
-                </p>
-              </div>
-              <div className="rounded-lg bg-white p-5">
-                <Sparkles className="size-5 text-primary" />
-                <p className="mt-4 text-3xl font-semibold">15+</p>
-                <p className="text-sm text-muted-foreground">
-                  Milestone badges
-                </p>
-              </div>
-              <div className="rounded-lg bg-white p-5">
-                <HeartPulse className="size-5 text-primary" />
-                <p className="mt-4 text-3xl font-semibold">7/7</p>
-                <p className="text-sm text-muted-foreground">
-                  Weekly check-ins complete
-                </p>
-              </div>
-            </div>
-          </div>
-        </section> */}
-
-        {/* <section className="bg-secondary py-18">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">
-              What this adds up to
-            </h2>
-            <div className="mt-8 grid gap-6 border-t border-border pt-8 sm:grid-cols-3">
-              {STATS.map((item) => (
-                <div key={item.label}>
-                  <p className="text-6xl font-semibold tracking-tight">
-                    {item.value}
-                    <span className="ml-1 text-2xl text-muted-foreground">
-                      {item.unit}
-                    </span>
-                  </p>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {item.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section> */}
-
         <WaitlistCTA />
       </div>
     </>
