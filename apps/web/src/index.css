@@ -1,3 +1,19 @@
+@font-face {
+  font-family: "Geist";
+  src: url("../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("../node_modules/geist/dist/fonts/geist-mono/GeistMono-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -5,7 +21,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "SF Pro Text", "SF Pro Display", "Neue Haas Grotesk Text", "Helvetica Neue", "Segoe UI", sans-serif;
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
   --font-heading: var(--font-sans);
 
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,77 +66,79 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #0d2e29;
+  --background: #F8F4F0;
+  --foreground: #09332C;
   --card: #ffffff;
-  --card-foreground: #0d2e29;
+  --card-foreground: #09332C;
   --popover: #ffffff;
-  --popover-foreground: #0d2e29;
-  --primary: #b34760;
-  --primary-foreground: #fff5f2;
-  --secondary: #f8f2ee;
-  --secondary-foreground: #653443;
-  --muted: #fffaf8;
-  --muted-foreground: #736a67;
-  --accent: #ead8d1;
-  --accent-foreground: #5f353f;
-  --destructive: #b3261e;
-  --border: #e8ddda;
-  --input: #dfd4d1;
-  --ring: #b34760;
+  --popover-foreground: #09332C;
+  --primary: #A9334D;
+  --primary-foreground: #F8E9E7;
+  --secondary: #F8E9E7;
+  --secondary-foreground: #A9334D;
+  --muted: #F8F4F0;
+  --muted-foreground: #7a6e6b;
+  --accent: #F0E4E1;
+  --accent-foreground: #09332C;
+  --destructive: #DC2626;
+  --border: #F0E4E1;
+  --input: #E8D8D5;
+  --ring: #A9334D;
 
-  --chart-1: #b34760;
-  --chart-2: #0d2e29;
-  --chart-3: #d8a878;
-  --chart-4: #90b3a9;
-  --chart-5: #64594f;
+  /* chart-1: Burgundy, chart-2: Orange CTA, chart-3: Dusty Rose, chart-4: Dark Burgundy, chart-5: Red */
+  --chart-1: #A9334D;
+  --chart-2: #F0531C;
+  --chart-3: #D09F9A;
+  --chart-4: #781D11;
+  --chart-5: #DC2626;
 
-  --sidebar: #fffdfc;
-  --sidebar-foreground: #0d2e29;
-  --sidebar-primary: #b34760;
-  --sidebar-primary-foreground: #fff5f2;
-  --sidebar-accent: #f5ece8;
-  --sidebar-accent-foreground: #653443;
-  --sidebar-border: #e8ddda;
-  --sidebar-ring: #b34760;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #09332C;
+  --sidebar-primary: #A9334D;
+  --sidebar-primary-foreground: #F8E9E7;
+  --sidebar-accent: #F8E9E7;
+  --sidebar-accent-foreground: #09332C;
+  --sidebar-border: #F0E4E1;
+  --sidebar-ring: #A9334D;
 
   --radius: 0.95rem;
 }
 
 .dark {
-  --background: #151a19;
-  --foreground: #f5ece7;
-  --card: #1a2120;
-  --card-foreground: #f5ece7;
-  --popover: #1a2120;
-  --popover-foreground: #f5ece7;
-  --primary: #df92a4;
-  --primary-foreground: #2f1a22;
-  --secondary: #292f2e;
-  --secondary-foreground: #f5ece7;
-  --muted: #272f2d;
-  --muted-foreground: #bdb3ad;
-  --accent: #332e2d;
-  --accent-foreground: #f5ece7;
-  --destructive: #ff766a;
-  --border: #3a403f;
-  --input: #39413f;
-  --ring: #df92a4;
+  --background: #0D0D0D;
+  --foreground: #F8E9E7;
+  --card: #1a1212;
+  --card-foreground: #F8E9E7;
+  --popover: #1a1212;
+  --popover-foreground: #F8E9E7;
+  --primary: #D09F9A;
+  --primary-foreground: #781D11;
+  --secondary: #2a1a1a;
+  --secondary-foreground: #F8E9E7;
+  --muted: #1f1515;
+  --muted-foreground: #D09F9A;
+  --accent: #3a2020;
+  --accent-foreground: #F8E9E7;
+  --destructive: #F0531C;
+  --border: #3a2020;
+  --input: #3a2020;
+  --ring: #D09F9A;
 
-  --chart-1: #df92a4;
-  --chart-2: #8fc3b6;
-  --chart-3: #f0ba86;
-  --chart-4: #f3dfd2;
-  --chart-5: #cfbcb1;
+  /* chart-1: Dusty Rose, chart-2: Orange, chart-3: Cream, chart-4: Burgundy, chart-5: Dark Burgundy */
+  --chart-1: #D09F9A;
+  --chart-2: #F0531C;
+  --chart-3: #F8E9E7;
+  --chart-4: #A9334D;
+  --chart-5: #781D11;
 
-  --sidebar: #1a2120;
-  --sidebar-foreground: #f5ece7;
-  --sidebar-primary: #df92a4;
-  --sidebar-primary-foreground: #2f1a22;
-  --sidebar-accent: #292f2e;
-  --sidebar-accent-foreground: #f5ece7;
-  --sidebar-border: #3a403f;
-  --sidebar-ring: #df92a4;
+  --sidebar: #1a1212;
+  --sidebar-foreground: #F8E9E7;
+  --sidebar-primary: #D09F9A;
+  --sidebar-primary-foreground: #781D11;
+  --sidebar-accent: #2a1a1a;
+  --sidebar-accent-foreground: #F8E9E7;
+  --sidebar-border: #3a2020;
+  --sidebar-ring: #D09F9A;
 }
 
 @layer base {
@@ -153,8 +172,8 @@
   .page-grid-lines {
     background-image: repeating-linear-gradient(
       to right,
-      rgba(13, 46, 41, 0.05) 0,
-      rgba(13, 46, 41, 0.05) 1px,
+      rgba(9, 51, 44, 0.05) 0,
+      rgba(9, 51, 44, 0.05) 1px,
       transparent 1px,
       transparent 220px
     );
