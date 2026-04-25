@@ -21,7 +21,7 @@ const PageLayout = () => {
   return (
     <div className="flex min-h-screen w-full flex-col overflow-x-hidden">
       <Navigation />
-      <main className="flex-1">
+      <main className="flex-1 pt-16">
         <Outlet />
       </main>
       <Footer />
