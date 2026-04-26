@@ -4,15 +4,30 @@ import WaitlistCTAButton from "@/components/WaitlistCTAButton";
 import { Iphone } from "@/components/ui/iphone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { AvatarGroup } from "@/components/avatar-group";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
   { x: -290, scale: 0.8, delay: 0.45, zIndex: 1, src: undefined },
-  { x: 0,    scale: 1,   delay: 0.2,  zIndex: 3, src: undefined },
-  { x: 290,  scale: 0.8, delay: 0.45, zIndex: 1, src: undefined },
-] satisfies { x: number; scale: number; delay: number; zIndex: number; src: string | undefined }[];
+  { x: 0, scale: 1, delay: 0.2, zIndex: 3, src: undefined },
+  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: undefined },
+] satisfies {
+  x: number;
+  scale: number;
+  delay: number;
+  zIndex: number;
+  src: string | undefined;
+}[];
+
+const BASE = "https://api.dicebear.com/9.x/notionists/svg?seed=";
+
+const avatars = [
+  { alt: "Amara",   src: `${BASE}Amara&backgroundColor=ffd5dc`  },
+  { alt: "Kwame",   src: `${BASE}Kwame&backgroundColor=d1d4f9`  },
+  { alt: "James",   src: `${BASE}James&backgroundColor=b6e3f4`  },
+  { alt: "Fatima",  src: `${BASE}Fatima&backgroundColor=c0aede` },
+  { alt: "Esi",     src: `${BASE}Esi&backgroundColor=ffdfbf`    },
+];
 
 const HeroSection = () => {
   return (
@@ -53,7 +68,7 @@ const HeroSection = () => {
         </div>
 
         <div className="mt-4 flex flex-row items-center justify-center gap-2">
-          <AvatarGroup animate>
+          {/* <AvatarGroup animate>
             <Avatar size="sm">
               <AvatarImage src="https://github.com/haydenbleasel.png" />
               <AvatarFallback>HB</AvatarFallback>
@@ -70,10 +85,12 @@ const HeroSection = () => {
               <AvatarImage src="https://github.com/zerostaticthemes.png" />
               <AvatarFallback>SC</AvatarFallback>
             </Avatar>
-          </AvatarGroup>
-          <p className="text-sm text-muted-foreground">
-            Join 1,200+ people with Sickle Cell Disease already waiting
-          </p>
+          </AvatarGroup> */}
+          <SocialProofAvatars avatars={avatars} stars={false}>
+            <p className="text-sm text-muted-foreground">
+              Join 1,200+ people with Sickle Cell Disease already waiting
+            </p>
+          </SocialProofAvatars>
         </div>
       </motion.div>
 
