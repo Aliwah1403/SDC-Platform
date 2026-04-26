@@ -174,12 +174,15 @@ const Pricing34 = ({ className, showCTA = false }: Pricing34Props) => {
                 {plan.buttonText}
               </Button>
 
-              <div className="relative my-6 flex items-center gap-2">
-                <Separator />
-                <span className="shrink-0 text-xs text-muted-foreground/50 uppercase tracking-widest">
-                  includes
-                </span>
-                <Separator />
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-card px-2 text-xs uppercase tracking-wide text-muted-foreground/50">
+                    includes
+                  </span>
+                </div>
               </div>
 
               <ul className="space-y-3">
