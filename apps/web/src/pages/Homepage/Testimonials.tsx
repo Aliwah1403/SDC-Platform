@@ -7,7 +7,8 @@ const TESTIMONIALS = [
     role: "Living with SCD",
   },
   {
-    quote: "We finally had one clear place for meds, symptoms, and appointments.",
+    quote:
+      "We finally had one clear place for meds, symptoms, and appointments.",
     name: "Jordan T.",
     role: "Caregiver",
   },
@@ -22,7 +23,8 @@ const TESTIMONIALS = [
     role: "Living with SCD",
   },
   {
-    quote: "My daughter's care team finally understands what her weeks look like.",
+    quote:
+      "My daughter's care team finally understands what her weeks look like.",
     name: "Rachel B.",
     role: "Caregiver",
   },
@@ -33,14 +35,17 @@ const TESTIMONIALS = [
   },
 ] as const;
 
-const TestimonialItem = ({ quote, name, role }: typeof TESTIMONIALS[number]) => (
+const TestimonialItem = ({
+  quote,
+  name,
+  role,
+}: (typeof TESTIMONIALS)[number]) => (
   <figure className="w-[340px] shrink-0 py-2 pr-12">
     <blockquote className="text-xl font-medium leading-snug tracking-[-0.01em]">
       "{quote}"
     </blockquote>
     <figcaption className="mt-4 text-sm text-muted-foreground">
-      <span className="font-semibold text-foreground">{name}</span>
-      {" "}· {role}
+      <span className="font-semibold text-foreground">{name}</span> · {role}
     </figcaption>
   </figure>
 );
@@ -59,10 +64,14 @@ const Testimonials = () => {
 
       <div className="relative mt-10 overflow-hidden">
         {/* Edge fades */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-gradient-to-r from-background to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-gradient-to-l from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-24 bg-linear-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-24 bg-linear-to-l from-background to-transparent" />
 
-        <Marquee pauseOnHover repeat={3} className="[--duration:50s] [--gap:0rem] py-4">
+        <Marquee
+          pauseOnHover
+          repeat={3}
+          className="[--duration:50s] [--gap:0rem] py-4"
+        >
           {TESTIMONIALS.map((t) => (
             <TestimonialItem key={t.name} {...t} />
           ))}
