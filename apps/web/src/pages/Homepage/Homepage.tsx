@@ -7,6 +7,7 @@ import Testimonials from "./Testimonials";
 import WaitlistCTA from "./WaitlistCTA";
 import FaqSection from "./FaqSection";
 import PricingSection from "./PricingSection";
+import Benefits from "./Benefits";
 
 const FAQS = [
   {
@@ -79,6 +80,7 @@ const Homepage = () => {
         <HeroSection />
         <TrustLogoSection />
         <AppFeatures />
+        <Benefits />
         <Testimonials />
         <PricingSection />
         <FaqSection />
