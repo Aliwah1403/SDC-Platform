@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { View, Text, TouchableOpacity, Alert, Dimensions } from "react-native";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { View, Text, TouchableOpacity, Alert, Dimensions, PanResponder } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   ChevronLeft,
+  ChevronRight,
   MoreHorizontal,
   Clock,
   Calendar,
@@ -21,10 +22,13 @@ import {
   Archive,
   Trash2,
   Bell,
+  Pencil,
 } from "lucide-react-native";
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
+import { cancelMedicationNotifications } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
 
@@ -77,37 +81,48 @@ function fmtShort(d) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function hashInt(str) {
-  let h = 5381;
-  for (let i = 0; i < str.length; i++)
-    h = (((h << 5) + h) ^ str.charCodeAt(i)) >>> 0;
-  return h;
+function getBaseDate(period, offset) {
+  const base = new Date();
+  if (offset === 0) return base;
+  switch (period) {
+    case "D":  base.setDate(base.getDate() - offset); break;
+    case "W":  base.setDate(base.getDate() - offset * 7); break;
+    case "M":  base.setDate(base.getDate() - offset * 28); break;
+    case "6M": base.setMonth(base.getMonth() - offset * 6); break;
+    case "Y":  base.setFullYear(base.getFullYear() - offset); break;
+  }
+  return base;
 }
 
-function deterministicTaken(medId, date, takenToday) {
-  const today = new Date();
-  if (date.toDateString() === today.toDateString()) return !!takenToday;
-  const seed = hashInt(
-    `${medId}-${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`,
-  );
-  return seed % 100 < 82;
-}
+// logDates: Set<string> of "YYYY-MM-DD" strings from medication_logs
+function getAdherenceChartData(period, med, logDates, baseDate) {
+  const now = baseDate ?? new Date();
+  const today = new Date(); // always real today — for med.taken check
+  // Normalise to start of local day — created_at timestamps carry a time component
+  // that can cause d >= startDate checks to fail earlier in the day.
+  const startDate = med.startDate
+    ? (() => { const d = new Date(med.startDate); d.setHours(0, 0, 0, 0); return d; })()
+    : null;
 
-function getAdherenceChartData(period, med) {
-  const now = new Date();
-  const startDate = med.startDate ? new Date(med.startDate) : null;
-  const isBefore = (d) => startDate && new Date(d) < startDate;
-  const dayTaken = (d) =>
-    !isBefore(d) && deterministicTaken(med.id ?? "med", d, med.taken);
+  const toDateStr = (d) => d.toISOString().slice(0, 10);
+
+  const dayTaken = (d) => {
+    if (startDate && d < startDate) return false;
+    if (d.toDateString() === today.toDateString()) return !!med.taken;
+    return logDates.has(toDateStr(d));
+  };
+
+  const isActive = (d) => !startDate || d >= startDate;
 
   if (period === "D") {
     const times = parseTimes(med.time);
     const slots = times.length > 0 ? times : ["Today"];
+    const takenDay = dayTaken(now);
     let takenCount = 0;
     const bars = slots.map((label, i) => {
-      const taken = i === 0 && !!med.taken;
+      const taken = i === 0 && takenDay;
       if (taken) takenCount++;
-      return { value: taken ? 1 : 0, label };
+      return { value: taken ? 100 : 0, label };
     });
     return {
       bars,
@@ -125,13 +140,16 @@ function getAdherenceChartData(period, med) {
 
   if (period === "W") {
     let takenCount = 0;
+    let activeDays = 0;
     const bars = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(now);
       d.setDate(d.getDate() - (6 - i));
-      const taken = dayTaken(d);
+      const active = isActive(d);
+      if (active) activeDays++;
+      const taken = active && dayTaken(d);
       if (taken) takenCount++;
       return {
-        value: taken ? 1 : 0,
+        value: taken ? 100 : 0,
         label: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 3),
       };
     });
@@ -140,8 +158,8 @@ function getAdherenceChartData(period, med) {
     return {
       bars,
       takenCount,
-      missedCount: 7 - takenCount,
-      pct: Math.round((takenCount / 7) * 100),
+      missedCount: activeDays - takenCount,
+      pct: activeDays > 0 ? Math.round((takenCount / activeDays) * 100) : 0,
       dateRange: `${fmtShort(start)} – ${fmtShort(now)}`,
       missedLabel: "DAYS MISSED",
     };
@@ -149,79 +167,54 @@ function getAdherenceChartData(period, med) {
 
   if (period === "M") {
     let totalTaken = 0;
+    let totalActive = 0;
     const bars = Array.from({ length: 4 }, (_, wi) => {
       const wEnd = new Date(now);
       wEnd.setDate(wEnd.getDate() - (3 - wi) * 7);
       const wStart = new Date(wEnd);
       wStart.setDate(wStart.getDate() - 6);
-      let taken = 0,
-        total = 0;
+      let taken = 0, total = 0;
       for (let d = new Date(wStart); d <= wEnd; d.setDate(d.getDate() + 1)) {
-        if (!isBefore(d)) {
+        if (isActive(d)) {
           total++;
-          if (dayTaken(new Date(d))) {
-            taken++;
-            totalTaken++;
-          }
+          if (dayTaken(new Date(d))) { taken++; totalTaken++; }
         }
       }
-      return { value: total > 0 ? taken / total : 0, label: fmtShort(wStart) };
+      totalActive += total;
+      return { value: total > 0 ? Math.round((taken / total) * 100) : 0, label: fmtShort(wEnd) };
     });
     const start = new Date(now);
     start.setDate(start.getDate() - 27);
     return {
       bars,
       takenCount: totalTaken,
-      missedCount: 28 - totalTaken,
-      pct: Math.round((totalTaken / 28) * 100),
+      missedCount: totalActive - totalTaken,
+      pct: totalActive > 0 ? Math.round((totalTaken / totalActive) * 100) : 0,
       dateRange: `${fmtShort(start)} – ${fmtShort(now)}`,
       missedLabel: "DAYS MISSED",
     };
   }
 
   const months = period === "6M" ? 6 : 12;
-  let totalTaken = 0,
-    totalDays = 0;
+  let totalTaken = 0, totalDays = 0;
   const bars = Array.from({ length: months }, (_, i) => {
-    const mStart = new Date(
-      now.getFullYear(),
-      now.getMonth() - (months - 1 - i),
-      1,
-    );
-    const mEnd = new Date(
-      now.getFullYear(),
-      now.getMonth() - (months - 1 - i) + 1,
-      0,
-    );
-    let taken = 0,
-      total = 0;
-    for (
-      let d = new Date(mStart);
-      d <= mEnd && d <= now;
-      d.setDate(d.getDate() + 1)
-    ) {
-      if (!isBefore(d)) {
+    const mStart = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i), 1);
+    const mEnd = new Date(now.getFullYear(), now.getMonth() - (months - 1 - i) + 1, 0);
+    let taken = 0, total = 0;
+    for (let d = new Date(mStart); d <= mEnd && d <= now; d.setDate(d.getDate() + 1)) {
+      if (isActive(d)) {
         total++;
-        if (dayTaken(new Date(d))) {
-          taken++;
-          totalTaken++;
-        }
+        if (dayTaken(new Date(d))) { taken++; totalTaken++; }
       }
     }
     totalDays += total;
     const showLabel = months === 6 || i % 2 === 0;
     return {
-      value: total > 0 ? taken / total : 0,
-      label: showLabel
-        ? mStart.toLocaleDateString("en-US", { month: "short" })
-        : "",
+      value: total > 0 ? Math.round((taken / total) * 100) : 0,
+      label: showLabel ? mStart.toLocaleDateString("en-US", { month: "short" }) : "",
     };
   });
-  const pStart = new Date(
-    now.getFullYear(),
-    now.getMonth() - (months - 1),
-    1,
-  );
+  const pStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
   return {
     bars,
     takenCount: totalTaken,
@@ -436,10 +429,15 @@ export default function MedicationDetailScreen() {
   const { medicationId } = useLocalSearchParams();
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  const addLog = useAddMedicationLogMutation();
   const deleteMed = useDeleteMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
 
   const [adherencePeriod, setAdherencePeriod] = useState("W");
+  const [offset, setOffset] = useState(0);
+  const sheetRef = useRef(null);
+
+  useEffect(() => { setOffset(0); }, [adherencePeriod]);
   const [heroHeight, setHeroHeight] = useState(insets.top + 280);
 
   const scrollY = useSharedValue(0);
@@ -473,6 +471,7 @@ export default function MedicationDetailScreen() {
 
   const med = medications.find((m) => m.id === medicationId);
   const { data: drugInfo, isLoading: drugInfoLoading } = useDrugInfoQuery(med?.name);
+  const { data: logHistory = [] } = useMedicationHistoryQuery(med?.id);
 
   if (!med) {
     return (
@@ -505,10 +504,48 @@ export default function MedicationDetailScreen() {
 
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
   const times = parseTimes(med.time);
-  const extraLogs = med.logs ?? [];
+  const extraLogs = med.logs?.slice(1) ?? [];
+
+  const logDates = useMemo(
+    () => new Set(logHistory.map((l) => l.date)),
+    [logHistory],
+  );
+
+  const baseDate = useMemo(
+    () => getBaseDate(adherencePeriod, offset),
+    [adherencePeriod, offset],
+  );
+
+  const medStartDate = med.startDate ? new Date(med.startDate) : null;
+  const canGoBack = !medStartDate || baseDate > medStartDate;
+
+  const canGoBackRef = useRef(canGoBack);
+  const offsetRef = useRef(offset);
+  canGoBackRef.current = canGoBack;
+  offsetRef.current = offset;
+
+  const swipePanHandlers = useRef(
+    PanResponder.create({
+      // Only claim the gesture when horizontal movement clearly dominates
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 10,
+      onMoveShouldSetPanResponderCapture: (_, gs) =>
+        Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 10,
+      onPanResponderRelease: (_, gs) => {
+        if (gs.dx < -40 && canGoBackRef.current) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setOffset((o) => o + 1);
+        } else if (gs.dx > 40 && offsetRef.current > 0) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          setOffset((o) => Math.max(0, o - 1));
+        }
+      },
+    })
+  ).current;
+
   const adherenceResult = useMemo(
-    () => getAdherenceChartData(adherencePeriod, med),
-    [adherencePeriod, med.id, med.taken],
+    () => getAdherenceChartData(adherencePeriod, med, logDates, baseDate),
+    [adherencePeriod, med.id, med.taken, med.startDate, logDates, offset],
   );
   const CHART_WIDTH = SCREEN_WIDTH - 64;
 
@@ -519,10 +556,11 @@ export default function MedicationDetailScreen() {
 
   const handleAddLog = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleTaken.mutate(med.id);
+    addLog.mutate(med.id);
   };
 
   const handleDelete = () => {
+    sheetRef.current?.close();
     Alert.alert(
       "Delete Medication",
       `Remove ${med.name} from your medication list?`,
@@ -532,6 +570,7 @@ export default function MedicationDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: () => {
+            cancelMedicationNotifications(med.id);
             deleteMed.mutate(med.id);
             router.back();
           },
@@ -541,24 +580,14 @@ export default function MedicationDetailScreen() {
   };
 
   const handleArchive = () => {
+    sheetRef.current?.close();
+    cancelMedicationNotifications(med.id);
     updateMed.mutate({ id: med.id, updates: { isActive: false } });
     router.back();
   };
 
   const handleMore = () => {
-    Alert.alert(med.name, undefined, [
-      {
-        text: "Edit",
-        onPress: () =>
-          router.push({
-            pathname: "/add-medication",
-            params: { medicationId: med.id },
-          }),
-      },
-      { text: "Archive", onPress: handleArchive },
-      { text: "Delete", style: "destructive", onPress: handleDelete },
-      { text: "Cancel", style: "cancel" },
-    ]);
+    sheetRef.current?.expand();
   };
 
   // Floating action button shared style
@@ -774,14 +803,14 @@ export default function MedicationDetailScreen() {
               />
             )}
 
-            {/* Extra ad-hoc logs */}
+            {/* Extra doses logged today */}
             {extraLogs.map((log, idx) => (
               <DoseRow
-                key={log.time}
+                key={log.id}
                 color={color}
                 timeLabel="Extra dose"
                 isTaken
-                takenTime={formatLogTime(log.time)}
+                takenTime={formatLogTime(log.takenAt)}
                 isExtra
                 last={idx === extraLogs.length - 1}
               />
@@ -951,66 +980,73 @@ export default function MedicationDetailScreen() {
                   </Text>
                 </View>
               </View>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 12,
-                  color: C.muted,
-                  marginBottom: 20,
-                }}
-              >
-                {adherenceResult.dateRange}
-              </Text>
+              {/* Date range nav row */}
+              <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 20 }}>
+                <TouchableOpacity
+                  onPress={() => { if (canGoBack) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOffset((o) => o + 1); } }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <ChevronLeft size={18} color={canGoBack ? C.dark : C.border} />
+                </TouchableOpacity>
+                <Text style={{ flex: 1, textAlign: "center", fontFamily: fonts.regular, fontSize: 12, color: C.muted }}>
+                  {adherenceResult.dateRange}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => { if (offset > 0) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOffset((o) => o - 1); } }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <ChevronRight size={18} color={offset > 0 ? C.dark : C.border} />
+                </TouchableOpacity>
+              </View>
 
               {/* Chart */}
-              {(() => {
-                const chartData = adherenceResult.bars.map((bar) => ({
-                  value: bar.value,
-                  label: bar.label,
-                  frontColor: bar.value > 0 ? color : "transparent",
-                  gradientColor: bar.value > 0 ? `${color}80` : "transparent",
-                  topLabelComponent: null,
-                }));
-                const cfg = {
-                  D:   { barWidth: 52, spacing: 32 },
-                  W:   { barWidth: 24, spacing: 13 },
-                  M:   { barWidth: 48, spacing: 26 },
-                  "6M":{ barWidth: 26, spacing: 16 },
-                  Y:   { barWidth: 14, spacing: 8  },
-                }[adherencePeriod] ?? { barWidth: 24, spacing: 13 };
-                return (
-                  <BarChart
-                    data={chartData}
-                    width={CHART_WIDTH}
-                    height={200}
-                    barWidth={cfg.barWidth}
-                    spacing={cfg.spacing}
-                    maxValue={1}
-                    noOfSections={2}
-                    rulesType="dashed"
-                    rulesColor={C.border}
-                    yAxisLabelTexts={["0%", "50%", "100%"]}
-                    yAxisTextStyle={{
-                      fontFamily: fonts.regular,
-                      fontSize: 10,
-                      color: C.muted,
-                    }}
-                    yAxisLabelWidth={34}
-                    yAxisThickness={0}
-                    xAxisThickness={1}
-                    xAxisColor={C.border}
-                    xAxisLabelTextStyle={{
-                      fontFamily: fonts.regular,
-                      fontSize: adherencePeriod === "Y" ? 9 : 10,
-                      color: C.muted,
-                    }}
-                    barBorderRadius={6}
-                    isAnimated
-                    animationDuration={400}
-                    showGradient
-                  />
-                );
-              })()}
+              <View {...swipePanHandlers.panHandlers}>
+                  {(() => {
+                    const chartData = adherenceResult.bars.map((bar) => ({
+                      value: bar.value,
+                      label: bar.label,
+                      frontColor: bar.value > 0 ? color : C.border,
+                    }));
+                    const cfg = {
+                      D:   { barWidth: 52, spacing: 32 },
+                      W:   { barWidth: 24, spacing: 13 },
+                      M:   { barWidth: 48, spacing: 26 },
+                      "6M":{ barWidth: 26, spacing: 16 },
+                      Y:   { barWidth: 14, spacing: 8  },
+                    }[adherencePeriod] ?? { barWidth: 24, spacing: 13 };
+                    return (
+                      <BarChart
+                        data={chartData}
+                        width={CHART_WIDTH}
+                        height={200}
+                        barWidth={cfg.barWidth}
+                        spacing={cfg.spacing}
+                        maxValue={101}
+                        noOfSections={2}
+                        rulesType="dashed"
+                        rulesColor={C.border}
+                        yAxisLabelTexts={["0%", "50%", "100%"]}
+                        yAxisTextStyle={{
+                          fontFamily: fonts.regular,
+                          fontSize: 10,
+                          color: C.muted,
+                        }}
+                        yAxisLabelWidth={34}
+                        yAxisThickness={0}
+                        xAxisThickness={1}
+                        xAxisColor={C.border}
+                        xAxisLabelTextStyle={{
+                          fontFamily: fonts.regular,
+                          fontSize: adherencePeriod === "Y" ? 9 : 10,
+                          color: C.muted,
+                        }}
+                        barBorderRadius={4}
+                        isAnimated
+                        animationDuration={400}
+                      />
+                    );
+                  })()}
+              </View>
             </View>
           </Card>
 
@@ -1052,7 +1088,7 @@ export default function MedicationDetailScreen() {
                       month: "long",
                       year: "numeric",
                     })
-                  : "Not set"
+                  : "Unknown"
               }
             />
             <InfoRow
@@ -1214,56 +1250,57 @@ export default function MedicationDetailScreen() {
             </>
           )}
 
-          {/* Options — centered text links, no card */}
-          <SectionLabel title="Options" />
-          <View style={{ gap: 4, marginBottom: 24 }}>
-            <TouchableOpacity
-              onPress={handleArchive}
-              activeOpacity={0.6}
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 8,
-                paddingVertical: 14,
-              }}
-            >
-              <Archive size={17} color={C.muted} />
-              <Text
-                style={{
-                  fontFamily: fonts.medium,
-                  fontSize: 15,
-                  color: C.muted,
-                }}
-              >
-                Archive medication
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleDelete}
-              activeOpacity={0.6}
-              style={{
-                flexDirection: "row",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 8,
-                paddingVertical: 14,
-              }}
-            >
-              <Trash2 size={17} color="#EF4444" />
-              <Text
-                style={{
-                  fontFamily: fonts.medium,
-                  fontSize: 15,
-                  color: "#EF4444",
-                }}
-              >
-                Delete medication
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </Animated.ScrollView>
+
+      {/* Actions Bottom Sheet */}
+      <BottomSheet
+        ref={sheetRef}
+        index={-1}
+        snapPoints={["32%"]}
+        enablePanDownToClose
+        backgroundStyle={{ backgroundColor: "#fff", borderRadius: 24 }}
+        handleIndicatorStyle={{ backgroundColor: "#D1D5DB", width: 36 }}
+      >
+        <BottomSheetView style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: insets.bottom + 16 }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: C.dark, marginBottom: 2 }}>
+            {med.name}
+          </Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginBottom: 20 }}>
+            {med.dosage ? `${med.dosage}  ·  ` : ""}{med.category}
+          </Text>
+
+          <TouchableOpacity
+            onPress={() => { sheetRef.current?.close(); router.push({ pathname: "/add-medication", params: { medicationId: med.id } }); }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
+              <Pencil size={18} color={C.accent} />
+            </View>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>Edit Medication</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleArchive}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
+              <Archive size={18} color={C.muted} />
+            </View>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>Archive Medication</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleDelete}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+          >
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
+              <Trash2 size={18} color="#DC2626" />
+            </View>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#DC2626" }}>Delete Medication</Text>
+          </TouchableOpacity>
+        </BottomSheetView>
+      </BottomSheet>
     </View>
   );
 }

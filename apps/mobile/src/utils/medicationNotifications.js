@@ -1,0 +1,109 @@
+import * as Notifications from 'expo-notifications';
+
+function parseTimeToHourMinute(timeStr) {
+  const match = timeStr?.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!match) return null;
+  let hour = parseInt(match[1], 10);
+  const minute = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === 'PM' && hour !== 12) hour += 12;
+  if (period === 'AM' && hour === 12) hour = 0;
+  return { hour, minute };
+}
+
+function offsetTime({ hour, minute }, offsetMinutes) {
+  let totalMinutes = hour * 60 + minute + offsetMinutes;
+  totalMinutes = ((totalMinutes % 1440) + 1440) % 1440; // wrap around midnight
+  return { hour: Math.floor(totalMinutes / 60), minute: totalMinutes % 60 };
+}
+
+function weekdayTrigger(hour, minute) {
+  // Sunday = 1 in expo-notifications weekday convention
+  const jsDay = new Date().getDay(); // 0 = Sunday
+  const weekday = jsDay + 1;
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+    weekday,
+    hour,
+    minute,
+  };
+}
+
+function dailyTrigger(hour, minute) {
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    hour,
+    minute,
+  };
+}
+
+export async function scheduleMedicationNotifications(med) {
+  await cancelMedicationNotifications(med.id);
+
+  // "As needed" meds have no fixed schedule
+  if (!med.time || med.frequency === 'As needed') return;
+
+  const isWeekly = med.frequency === 'Weekly';
+  const times = med.time.split(',').map((t) => t.trim()).filter(Boolean);
+
+  for (const timeStr of times) {
+    const parsed = parseTimeToHourMinute(timeStr);
+    if (!parsed) continue;
+
+    const trigger = isWeekly
+      ? weekdayTrigger(parsed.hour, parsed.minute)
+      : dailyTrigger(parsed.hour, parsed.minute);
+
+    // Main dose notification
+    await Notifications.scheduleNotificationAsync({
+      identifier: `med-${med.id}-${timeStr}-dose`,
+      content: {
+        title: `Time for ${med.name}`,
+        body: med.dosage ? `Take your ${med.dosage} dose` : 'Take your dose',
+        data: { type: 'medication', medicationId: med.id },
+        sound: true,
+      },
+      trigger,
+    });
+
+    const reminders = Array.isArray(med.reminders) ? med.reminders : [];
+
+    // "Remind before" notifications
+    for (const r of reminders.filter((r) => r.direction === 'before')) {
+      const t = offsetTime(parsed, -r.offsetMinutes);
+      await Notifications.scheduleNotificationAsync({
+        identifier: `med-${med.id}-${timeStr}-before-${r.offsetMinutes}`,
+        content: {
+          title: `${med.name} in ${r.offsetMinutes} min`,
+          body: `Your ${med.name} dose is coming up soon`,
+          data: { type: 'medication', medicationId: med.id },
+          sound: true,
+        },
+        trigger: isWeekly ? weekdayTrigger(t.hour, t.minute) : dailyTrigger(t.hour, t.minute),
+      });
+    }
+
+    // "Remind if missed" notifications
+    for (const r of reminders.filter((r) => r.direction === 'after')) {
+      const t = offsetTime(parsed, r.offsetMinutes);
+      await Notifications.scheduleNotificationAsync({
+        identifier: `med-${med.id}-${timeStr}-after-${r.offsetMinutes}`,
+        content: {
+          title: `Did you take ${med.name}?`,
+          body: `Don't forget your dose scheduled for ${timeStr}`,
+          data: { type: 'medication', medicationId: med.id },
+          sound: true,
+        },
+        trigger: isWeekly ? weekdayTrigger(t.hour, t.minute) : dailyTrigger(t.hour, t.minute),
+      });
+    }
+  }
+}
+
+export async function cancelMedicationNotifications(medId) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const toCancel = scheduled
+    .filter((n) => n.content.data?.medicationId === medId)
+    .map((n) => n.identifier);
+  await Promise.all(toCancel.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+}

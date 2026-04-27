@@ -298,23 +298,44 @@ export async function fetchMedications(userId) {
       .order('created_at', { ascending: true }),
     supabase
       .from('medication_logs')
-      .select('medication_id, taken_at')
+      .select('id, medication_id, taken_at')
       .eq('user_id', userId)
-      .eq('date', todayStr),
+      .eq('date', todayStr)
+      .order('taken_at', { ascending: true }),
   ]);
 
   if (medsResult.error) throw medsResult.error;
   if (logsResult.error) throw logsResult.error;
 
-  const takenMap = new Map(
-    (logsResult.data || []).map((l) => [l.medication_id, l.taken_at])
-  );
+  // Group all today's logs per medication (supports multiple doses per day)
+  const logsMap = new Map();
+  for (const log of logsResult.data || []) {
+    if (!logsMap.has(log.medication_id)) logsMap.set(log.medication_id, []);
+    logsMap.get(log.medication_id).push({ id: log.id, takenAt: log.taken_at });
+  }
 
-  return (medsResult.data || []).map((med) => ({
-    ...toCamelCase(med),
-    taken: takenMap.has(med.id),
-    takenAt: takenMap.get(med.id) ?? null,
-  }));
+  return (medsResult.data || []).map((med) => {
+    const todayLogs = logsMap.get(med.id) ?? [];
+    return {
+      ...toCamelCase(med),
+      // start_date is intentionally set by the user; fall back to created_at so it's always populated
+      startDate: med.start_date ?? med.created_at,
+      taken: todayLogs.length > 0,
+      takenAt: todayLogs[0]?.takenAt ?? null,
+      logs: todayLogs,
+    };
+  });
+}
+
+export async function fetchMedicationHistory(userId, medicationId) {
+  const { data, error } = await supabase
+    .from('medication_logs')
+    .select('date, taken_at')
+    .eq('user_id', userId)
+    .eq('medication_id', medicationId)
+    .order('date', { ascending: false });
+  if (error) throw error;
+  return data || [];
 }
 
 export async function addMedication(userId, med) {
@@ -334,6 +355,7 @@ export async function addMedication(userId, med) {
       category: med.category || 'Supportive',
       rxcui: med.rxcui || null,
       brand_names: med.brandNames || null,
+      reminders: med.reminders ?? [],
     })
     .select()
     .single();
@@ -371,7 +393,7 @@ export async function toggleMedicationTaken(userId, medId) {
     .maybeSingle();
 
   if (existing) {
-    // Un-take: delete the log
+    // Un-take: delete ALL logs for today (including any extra doses)
     const { error } = await supabase
       .from('medication_logs')
       .delete()
@@ -385,6 +407,13 @@ export async function toggleMedicationTaken(userId, medId) {
       .insert({ medication_id: medId, user_id: userId, date: todayStr, taken_at: new Date().toISOString() });
     if (error) throw error;
   }
+}
+
+export async function addMedicationLog(userId, medId) {
+  const { error } = await supabase
+    .from('medication_logs')
+    .insert({ medication_id: medId, user_id: userId, date: today(), taken_at: new Date().toISOString() });
+  if (error) throw error;
 }
 
 export async function markGroupTaken(userId, medIds) {

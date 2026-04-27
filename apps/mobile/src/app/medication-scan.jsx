@@ -8,30 +8,61 @@ import {
   TextInput,
   Alert,
   StyleSheet,
+  Dimensions,
+  StatusBar,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ChevronLeft, Camera, Image, AlertTriangle, CheckCircle, ScanLine } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Camera,
+  Image as ImageIcon,
+  AlertTriangle,
+  CheckCircle,
+  ScanLine,
+  Zap,
+  Focus,
+  Sun,
+  Type,
+  Sparkles,
+  Lightbulb,
+} from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
+import { LinearGradient } from "expo-linear-gradient";
 import { fonts } from "@/utils/fonts";
 import { lookupByNDC, lookupByName } from "@/utils/medicationApi";
 import { identifyPill } from "@/utils/pillVision";
 import { Sentry } from "@/utils/sentry";
 
+const { height: SCREEN_H } = Dimensions.get("window");
+const VIEWFINDER_RATIO = 0.58;
+
 const C = {
-  bg: "#F8F4F0",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  dark: "#09332C",
-  muted: "#9CA3AF",
-  accent: "#A9334D",
-  orange: "#F0531C",
-  cream: "#F8E9E7",
+  bg:         "#F2EEE8",
+  card:       "#ffffff",
+  border:     "#F0E4E1",
+  textDark:   "#09332C",
+  muted:      "#9CA3AF",
+  accent:     "#A9334D",
+  darkBurg:   "#781D11",
+  orange:     "#F0531C",
+  cream:      "#F8E9E7",
 };
 
-const TABS = ["Barcode", "Photo"];
+const TIPS = [
+  { Icon: Focus, text: "Ensure the label or pill is clearly in focus" },
+  { Icon: Sun,   text: "Use good lighting — avoid harsh shadows" },
+  { Icon: Type,  text: "Include the drug name or pill imprint" },
+];
+
+const STEPS = [
+  { n: "1", title: "Point at label or pill",  body: "Place the medication on a flat, well-lit surface." },
+  { n: "2", title: "Capture a clear photo",   body: "Ensure text is readable and the pill is in focus." },
+];
+
+// ─── Result card (unchanged) ──────────────────────────────────────────────────
 
 function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, onStrengthChange, enriching, onAdd, onClear }) {
   return (
@@ -62,7 +93,6 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
       </View>
 
       <Text style={styles.editHint}>Tap name or strength to edit</Text>
-
       <View style={styles.divider} />
 
       <Text style={styles.sectionLabel}>What it's for</Text>
@@ -84,7 +114,6 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
       <TouchableOpacity style={styles.addButton} onPress={onAdd} activeOpacity={0.8}>
         <Text style={styles.addButtonText}>Confirm & Add</Text>
       </TouchableOpacity>
-
       <TouchableOpacity style={styles.clearButton} onPress={onClear} activeOpacity={0.7}>
         <Text style={styles.clearButtonText}>Scan another</Text>
       </TouchableOpacity>
@@ -92,10 +121,12 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
   );
 }
 
-function BarcodeTab({ onResult }) {
+// ─── Barcode camera (logic unchanged, UI trimmed) ─────────────────────────────
+
+function BarcodeCamera({ onResult, flash, onScanOverlay }) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [scanned, setScanned]           = useState(false);
+  const [loading, setLoading]           = useState(false);
 
   const handleBarcode = async ({ data }) => {
     if (scanned || loading) return;
@@ -117,7 +148,7 @@ function BarcodeTab({ onResult }) {
       } else {
         Alert.alert(
           "Not found",
-          "This barcode wasn't matched to a known medication. Try the Photo tab to identify it by image.",
+          "This barcode wasn't matched to a known medication. Try the Photo AI tab to identify it by image.",
           [{ text: "OK", onPress: () => setScanned(false) }],
         );
       }
@@ -130,16 +161,14 @@ function BarcodeTab({ onResult }) {
     }
   };
 
-  if (!permission) return null;
+  if (!permission) return <View style={{ flex: 1, backgroundColor: C.darkBurg }} />;
 
   if (!permission.granted) {
     return (
       <View style={styles.permissionBox}>
-        <Camera size={36} color={C.muted} />
+        <Camera size={36} color="rgba(248,233,231,0.5)" />
         <Text style={styles.permissionTitle}>Camera access needed</Text>
-        <Text style={styles.permissionSubtitle}>
-          Allow camera access to scan medication barcodes
-        </Text>
+        <Text style={styles.permissionSubtitle}>Allow camera access to scan medication barcodes</Text>
         <TouchableOpacity style={styles.permissionButton} onPress={requestPermission} activeOpacity={0.8}>
           <Text style={styles.permissionButtonText}>Grant Access</Text>
         </TouchableOpacity>
@@ -148,23 +177,37 @@ function BarcodeTab({ onResult }) {
   }
 
   return (
-    <View style={styles.cameraContainer}>
+    <View style={{ flex: 1 }}>
       <CameraView
         style={StyleSheet.absoluteFill}
         facing="back"
+        enableTorch={flash}
         barcodeScannerSettings={{ barcodeTypes: ["ean13", "upc_a", "code128", "code39"] }}
         onBarcodeScanned={handleBarcode}
       />
 
-      {/* Scanner overlay */}
-      <View style={styles.scanOverlay}>
+      {/* Dark radial vignette */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <LinearGradient
+          colors={["transparent", `${C.darkBurg}CC`]}
+          style={StyleSheet.absoluteFill}
+        />
+      </View>
+
+      {/* Scan brackets */}
+      <View style={styles.scanOverlay} pointerEvents="none">
         <View style={styles.scanWindow}>
-          <View style={[styles.scanCorner, styles.scanCornerTL]} />
-          <View style={[styles.scanCorner, styles.scanCornerTR]} />
-          <View style={[styles.scanCorner, styles.scanCornerBL]} />
-          <View style={[styles.scanCorner, styles.scanCornerBR]} />
+          <View style={[styles.scanCorner, styles.cornerTL]} />
+          <View style={[styles.scanCorner, styles.cornerTR]} />
+          <View style={[styles.scanCorner, styles.cornerBL]} />
+          <View style={[styles.scanCorner, styles.cornerBR]} />
         </View>
-        <Text style={styles.scanHint}>Point at the barcode on the medication packaging</Text>
+      </View>
+
+      {/* Instruction pill */}
+      <View style={styles.instructionPill} pointerEvents="none">
+        <ScanLine size={13} color={C.orange} />
+        <Text style={styles.instructionText}>Point at the barcode on the medication packaging</Text>
       </View>
 
       {loading && (
@@ -175,11 +218,7 @@ function BarcodeTab({ onResult }) {
       )}
 
       {scanned && !loading && (
-        <TouchableOpacity
-          style={styles.rescanButton}
-          onPress={() => setScanned(false)}
-          activeOpacity={0.8}
-        >
+        <TouchableOpacity style={styles.rescanButton} onPress={() => setScanned(false)} activeOpacity={0.8}>
           <Text style={styles.rescanButtonText}>Tap to scan again</Text>
         </TouchableOpacity>
       )}
@@ -187,23 +226,21 @@ function BarcodeTab({ onResult }) {
   );
 }
 
-function PhotoTab({ onResult }) {
+// ─── Photo AI content ─────────────────────────────────────────────────────────
+
+function PhotoContent({ onResult }) {
   const [loading, setLoading] = useState(false);
 
-  const pickAndIdentify = async (useCamera) => {
+  const pickAndIdentify = async (useCamera: boolean) => {
     try {
       const result = useCamera
         ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7, mediaTypes: "images" })
         : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7, mediaTypes: "images" });
 
       if (result.canceled || !result.assets?.[0]) return;
-
       const asset = result.assets[0];
-
       setLoading(true);
 
-      // Convert to JPEG regardless of source format (HEIC, PNG, etc.)
-      // This guarantees clean, valid base64 that the Anthropic API can process.
       const jpeg = await ImageManipulator.manipulateAsync(
         asset.uri,
         [{ resize: { width: 1280 } }],
@@ -242,58 +279,84 @@ function PhotoTab({ onResult }) {
   }
 
   return (
-    <View style={styles.photoTabContent}>
-      <View style={styles.photoIllustration}>
-        <ScanLine size={48} color={C.accent} strokeWidth={1.5} />
-      </View>
-      <Text style={styles.photoTitle}>Identify by photo</Text>
-      <Text style={styles.photoSubtitle}>
-        Take a clear photo of the medication label, packaging, or pill to identify it
-      </Text>
-
-      <TouchableOpacity
-        style={styles.photoButton}
-        onPress={() => pickAndIdentify(true)}
-        activeOpacity={0.8}
+    <View style={{ flex: 1 }}>
+      {/* Scrollable steps + tips */}
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 180 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Camera size={18} color="#fff" />
-        <Text style={styles.photoButtonText}>Take Photo</Text>
-      </TouchableOpacity>
+        <Text style={styles.howTitle}>How it works</Text>
+        <Text style={styles.howSubtitle}>Our AI identifies your medication from a photo.</Text>
 
-      <TouchableOpacity
-        style={styles.photoButtonOutline}
-        onPress={() => pickAndIdentify(false)}
-        activeOpacity={0.8}
+        {/* Steps */}
+        <View style={{ marginTop: 24, gap: 20 }}>
+          {STEPS.map(({ n, title, body }) => (
+            <View key={n} style={styles.stepRow}>
+              <View style={styles.stepNumber}>
+                <Text style={styles.stepNumberText}>{n}</Text>
+              </View>
+              <View style={{ flex: 1, paddingTop: 2 }}>
+                <Text style={styles.stepTitle}>{title}</Text>
+                <Text style={styles.stepBody}>{body}</Text>
+              </View>
+            </View>
+          ))}
+          <View style={styles.stepRow}>
+            <View style={[styles.stepNumber]}>
+              <Sparkles size={18} color="#A9334D" />
+            </View>
+            <View style={{ flex: 1, paddingTop: 2 }}>
+              <Text style={styles.stepTitle}>AI Identifies</Text>
+              <Text style={styles.stepBody}>We'll instantly match it to our medical database.</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Tips */}
+        <View style={{ marginTop: 60 }}>
+          <Text style={styles.tipsLabel}>FOR BEST RESULTS</Text>
+          <View style={{ marginTop: 10, gap: 10 }}>
+            {TIPS.map(({ Icon, text }) => (
+              <View key={text} style={styles.tipRow}>
+                <Icon size={15} color={C.accent} />
+                <Text style={styles.tipText}>{text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Sticky CTAs */}
+      <LinearGradient
+        colors={[`${C.bg}00`, C.bg, C.bg]}
+        style={styles.ctaGradient}
+        pointerEvents="box-none"
       >
-        <Image size={18} color={C.dark} />
-        <Text style={styles.photoButtonOutlineText}>Choose from Library</Text>
-      </TouchableOpacity>
-
-      <View style={styles.tipsCard}>
-        <Text style={styles.tipsTitle}>For best results</Text>
-        {[
-          "Ensure the label or pill is in focus",
-          "Use good lighting — avoid shadows",
-          "Include the drug name or imprint if possible",
-        ].map((tip) => (
-          <Text key={tip} style={styles.tipItem}>
-            · {tip}
-          </Text>
-        ))}
-      </View>
+        <TouchableOpacity style={styles.primaryCta} onPress={() => pickAndIdentify(true)} activeOpacity={0.8}>
+          <Camera size={18} color="#fff" />
+          <Text style={styles.primaryCtaText}>Take Photo</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryCta} onPress={() => pickAndIdentify(false)} activeOpacity={0.7}>
+          <ImageIcon size={18} color={`${C.textDark}99`} />
+          <Text style={styles.secondaryCtaText}>Choose from Library</Text>
+        </TouchableOpacity>
+      </LinearGradient>
     </View>
   );
 }
 
+// ─── Main screen ──────────────────────────────────────────────────────────────
+
 export default function MedicationScanScreen() {
   const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const [activeTab, setActiveTab] = useState(0);
-  const [result, setResult] = useState(null);
-  const [confirmedName, setConfirmedName] = useState("");
+  const router= useRouter();
+  const [tab, setTab]= useState("barcode");
+  const [flash, setFlash]= useState(false);
+  const [result, setResult]= useState(null);
+  const [confirmedName, setConfirmedName]         = useState("");
   const [confirmedStrength, setConfirmedStrength] = useState("");
   const [confirmedCategory, setConfirmedCategory] = useState("Supportive");
-  const [enriching, setEnriching] = useState(false);
+  const [enriching, setEnriching]                 = useState(false);
   const userEditedNameRef = useRef(false);
 
   const handlePhotoResult = async (identified) => {
@@ -332,49 +395,53 @@ export default function MedicationScanScreen() {
     }
   };
 
-  return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      {/* Header */}
-      <View
-        style={{
-          paddingTop: insets.top + 12,
-          paddingBottom: 12,
-          paddingHorizontal: 16,
-          backgroundColor: C.card,
-          borderBottomWidth: 1,
-          borderBottomColor: C.border,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          activeOpacity={0.6}
-          style={styles.backButton}
-        >
-          <ChevronLeft size={22} color={C.dark} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Scan Pill</Text>
-      </View>
+  const VIEWFINDER_H = SCREEN_H * VIEWFINDER_RATIO;
 
-      {/* Tab bar */}
-      <View style={styles.tabBar}>
-        {TABS.map((tab, i) => (
+  // ── Tabs pill (shared between both modes) ──
+  const TabPill = ({ onDark }) => (
+    <View style={[styles.tabPill, onDark ? styles.tabPillDark : styles.tabPillLight]}>
+      {(["barcode", "photo"]).map((t) => {
+        const active = tab === t;
+        return (
           <TouchableOpacity
-            key={tab}
-            onPress={() => { setActiveTab(i); setResult(null); }}
+            key={t}
+            onPress={() => { setTab(t); setResult(null); setFlash(false); }}
             activeOpacity={0.7}
-            style={[styles.tab, activeTab === i && styles.tabActive]}
+            style={[
+              styles.tabBtn,
+              active && (onDark ? styles.tabBtnActiveDark : styles.tabBtnActiveLight),
+            ]}
           >
-            <Text style={[styles.tabText, activeTab === i && styles.tabTextActive]}>
-              {tab}
+            {t === "barcode"
+              ? <ScanLine size={14} color={active ? (onDark ? C.darkBurg : "#fff") : (onDark ? "rgba(248,233,231,0.55)" : "rgba(9,51,44,0.45)")} />
+              : <Camera   size={14} color={active ? (onDark ? C.darkBurg : "#fff") : (onDark ? "rgba(248,233,231,0.55)" : "rgba(9,51,44,0.45)")} />
+            }
+            <Text style={[
+              styles.tabBtnText,
+              active
+                ? (onDark ? styles.tabBtnTextActiveDark : styles.tabBtnTextActiveLight)
+                : (onDark ? styles.tabBtnTextInactiveDark : styles.tabBtnTextInactiveLight),
+            ]}>
+              {t === "barcode" ? "Barcode" : "Photo AI"}
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
+        );
+      })}
+    </View>
+  );
 
-      {/* Content */}
-      {result ? (
+  // ── Result view ──
+  if (result) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <StatusBar barStyle="dark-content" />
+        <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity style={styles.iconBtn} onPress={() => setResult(null)} activeOpacity={0.7}>
+            <ChevronLeft size={22} color={C.textDark} />
+          </TouchableOpacity>
+          <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
+          <View style={styles.iconBtn} />
+        </View>
         <ScrollView
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
           showsVerticalScrollIndicator={false}
@@ -390,99 +457,241 @@ export default function MedicationScanScreen() {
             onClear={() => { setResult(null); setEnriching(false); }}
           />
         </ScrollView>
-      ) : activeTab === 0 ? (
-        <BarcodeTab onResult={setResult} />
-      ) : (
-        <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
-          showsVerticalScrollIndicator={false}
+      </View>
+    );
+  }
+
+  // ── Barcode mode ──
+  if (tab === "barcode") {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg }}>
+        <StatusBar barStyle="light-content" />
+
+        {/* Camera viewfinder */}
+        <View style={{ height: VIEWFINDER_H, overflow: "hidden", borderBottomLeftRadius: 24, borderBottomRightRadius: 24, backgroundColor: C.darkBurg }}>
+          <BarcodeCamera onResult={setResult} flash={flash} />
+        </View>
+
+        {/* Floating header */}
+        <LinearGradient
+          colors={[`${C.darkBurg}CC`, "transparent"]}
+          style={[styles.floatingHeader, { paddingTop: insets.top + 8 }]}
+          pointerEvents="box-none"
         >
-          <PhotoTab onResult={handlePhotoResult} />
-        </ScrollView>
-      )}
+          <TouchableOpacity style={styles.floatIconBtn} onPress={() => router.back()} activeOpacity={0.7}>
+            <ChevronLeft size={22} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.floatingTitle}>Scan Pill</Text>
+          <TouchableOpacity
+            style={[styles.floatIconBtn, flash && styles.floatIconBtnActive]}
+            onPress={() => setFlash(!flash)}
+            activeOpacity={0.7}
+          >
+            <Lightbulb size={20} color={flash ? C.orange : "#fff"} />
+          </TouchableOpacity>
+        </LinearGradient>
+
+        {/* Tabs straddling the viewfinder edge */}
+        <View style={styles.tabsOverlap}>
+          <TabPill onDark />
+        </View>
+
+        {/* Tips — small top margin from viewfinder */}
+        <View style={{ paddingHorizontal: 24, paddingTop: 30 }}>
+          <Text style={styles.tipsLabel}>FOR BEST RESULTS</Text>
+          <View style={{ marginTop: 10, gap: 10 }}>
+            {TIPS.map(({ Icon, text }) => (
+              <View key={text} style={styles.tipRow}>
+                <Icon size={15} color={C.accent} />
+                <Text style={styles.tipText}>{text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // ── Photo AI mode ──
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Regular header */}
+      <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <ChevronLeft size={22} color={C.textDark} />
+        </TouchableOpacity>
+        <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
+        <View style={styles.iconBtn} />
+      </View>
+
+      {/* Tabs inline */}
+      <View style={{ alignItems: "center", paddingVertical: 6 }}>
+        <TabPill onDark={false} />
+      </View>
+
+      <PhotoContent onResult={handlePhotoResult} />
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: C.bg,
+  // Headers
+  floatingHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    zIndex: 10,
+  },
+  floatingTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 18,
+    color: "#fff",
+    letterSpacing: 0.2,
+  },
+  floatIconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.25)",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
   },
-  headerTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    color: C.dark,
+  floatIconBtnActive: {
+    backgroundColor: "rgba(240,83,28,0.3)",
   },
-  tabBar: {
+  plainHeader: {
     flexDirection: "row",
-    backgroundColor: C.card,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  tab: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginRight: 4,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  tabActive: {
-    borderBottomColor: C.accent,
-  },
-  tabText: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: C.muted,
-  },
-  tabTextActive: {
-    color: C.accent,
+  plainHeaderTitle: {
     fontFamily: fonts.semibold,
+    fontSize: 17,
+    color: C.textDark,
+    letterSpacing: 0.1,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(9,51,44,0.07)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
-  // Camera
-  cameraContainer: {
-    flex: 1,
-    backgroundColor: "#000",
+  // Tabs pill
+  tabsOverlap: {
+    alignItems: "center",
+    marginTop: -26,
+    zIndex: 5,
   },
+  tabPill: {
+    flexDirection: "row",
+    borderRadius: 100,
+    padding: 4,
+  },
+  tabPillDark: {
+    backgroundColor: "rgba(120,29,17,0.82)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  tabPillLight: {
+    backgroundColor: "rgba(169,51,77,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(169,51,77,0.12)",
+  },
+  tabBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 100,
+  },
+  tabBtnActiveDark: {
+    backgroundColor: C.cream,
+  },
+  tabBtnActiveLight: {
+    backgroundColor: C.accent,
+  },
+  tabBtnText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+  },
+  tabBtnTextActiveDark: {
+    color: C.darkBurg,
+    fontFamily: fonts.semibold,
+  },
+  tabBtnTextActiveLight: {
+    color: "#fff",
+    fontFamily: fonts.semibold,
+  },
+  tabBtnTextInactiveDark: {
+    color: "rgba(248,233,231,0.55)",
+  },
+  tabBtnTextInactiveLight: {
+    color: "rgba(9,51,44,0.45)",
+  },
+
+  // Camera / barcode
   scanOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    gap: 20,
   },
   scanWindow: {
-    width: 260,
-    height: 140,
+    width: 248,
+    height: 160,
     position: "relative",
+    marginBottom: 48,
   },
   scanCorner: {
     position: "absolute",
     width: 28,
     height: 28,
-    borderColor: "#fff",
-    borderWidth: 3,
+    borderColor: "rgba(248,233,231,0.8)",
+    borderWidth: 2.5,
   },
-  scanCornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 6 },
-  scanCornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 6 },
-  scanCornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 6 },
-  scanCornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 6 },
-  scanHint: {
+  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 6 },
+  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 6 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 6 },
+  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 6 },
+  instructionPill: {
+    position: "absolute",
+    bottom: 72,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(120,29,17,0.7)",
+    borderRadius: 100,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "rgba(248,233,231,0.12)",
+  },
+  instructionText: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    color: "rgba(255,255,255,0.8)",
-    textAlign: "center",
-    paddingHorizontal: 32,
+    fontSize: 11.5,
+    color: "rgba(248,233,231,0.9)",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     alignItems: "center",
     justifyContent: "center",
     gap: 12,
@@ -494,7 +703,7 @@ const styles = StyleSheet.create({
   },
   rescanButton: {
     position: "absolute",
-    bottom: 40,
+    bottom: 24,
     alignSelf: "center",
     backgroundColor: "rgba(255,255,255,0.15)",
     borderRadius: 20,
@@ -516,17 +725,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 32,
     gap: 12,
+    backgroundColor: C.darkBurg,
   },
   permissionTitle: {
     fontFamily: fonts.semibold,
     fontSize: 17,
-    color: C.dark,
+    color: C.cream,
     marginTop: 8,
   },
   permissionSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: C.muted,
+    color: "rgba(248,233,231,0.6)",
     textAlign: "center",
   },
   permissionButton: {
@@ -542,92 +752,113 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
 
-  // Photo tab
-  photoTabContent: {
+  // Tips
+  tipsLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    color: "rgba(9,51,44,0.38)",
+    letterSpacing: 0.8,
+  },
+  tipRow: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingTop: 16,
-    gap: 12,
+    gap: 10,
   },
-  photoIllustration: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: `${C.accent}10`,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  photoTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 20,
-    color: C.dark,
-  },
-  photoSubtitle: {
+  tipText: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: C.muted,
-    textAlign: "center",
-    paddingHorizontal: 16,
-  },
-  photoButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: C.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    marginTop: 8,
-    width: "100%",
-    justifyContent: "center",
-  },
-  photoButtonText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "#fff",
-  },
-  photoButtonOutline: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: C.border,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    width: "100%",
-    justifyContent: "center",
-    backgroundColor: C.card,
-  },
-  photoButtonOutlineText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: C.dark,
-  },
-  tipsCard: {
-    backgroundColor: C.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 14,
-    width: "100%",
-    marginTop: 8,
-    gap: 4,
-  },
-  tipsTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
-    color: C.dark,
-    marginBottom: 4,
-  },
-  tipItem: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: C.muted,
-    lineHeight: 20,
+    color: "rgba(9,51,44,0.65)",
+    flex: 1,
   },
 
-  // Loading box
+  // Photo AI steps
+  howTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 22,
+    color: C.textDark,
+    letterSpacing: -0.3,
+  },
+  howSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: "rgba(9,51,44,0.5)",
+    marginTop: 4,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 14,
+  },
+  stepNumber: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: C.cream,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  stepNumberText: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: C.accent,
+  },
+  stepTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: C.textDark,
+    marginBottom: 2,
+  },
+  stepBody: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: "rgba(9,51,44,0.5)",
+    lineHeight: 19,
+  },
+
+  // Photo CTAs
+  ctaGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    paddingTop: 32,
+    gap: 10,
+  },
+  primaryCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: C.accent,
+    borderRadius: 14,
+    paddingVertical: 16,
+    shadowColor: C.accent,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  primaryCtaText: {
+    fontFamily: fonts.semibold,
+    fontSize: 16,
+    color: "#fff",
+  },
+  secondaryCta: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+  },
+  secondaryCtaText: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: "rgba(9,51,44,0.5)",
+  },
+
+  // Loading box (photo)
   loadingBox: {
     flex: 1,
     alignItems: "center",
@@ -637,7 +868,7 @@ const styles = StyleSheet.create({
   loadingBoxTitle: {
     fontFamily: fonts.semibold,
     fontSize: 17,
-    color: C.dark,
+    color: C.textDark,
   },
   loadingBoxSubtitle: {
     fontFamily: fonts.regular,
@@ -667,7 +898,7 @@ const styles = StyleSheet.create({
   resultNameInput: {
     fontFamily: fonts.bold,
     fontSize: 22,
-    color: C.dark,
+    color: C.textDark,
     marginBottom: 4,
     borderBottomWidth: 1,
     borderBottomColor: C.border,
@@ -711,7 +942,7 @@ const styles = StyleSheet.create({
   indicationText: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: C.dark,
+    color: C.textDark,
     lineHeight: 22,
   },
   scdBanner: {
