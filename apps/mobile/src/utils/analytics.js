@@ -19,3 +19,18 @@ export function captureAIGeneration(featureName, meta) {
     hemo_feature: featureName,
   });
 }
+
+export function captureAIError(featureName, errorMessage, meta) {
+  posthog.capture('$ai_generation', {
+    $ai_provider: 'anthropic',
+    $ai_model: meta?.model ?? 'unknown',
+    $ai_input_tokens: meta?.inputTokens ?? 0,
+    $ai_output_tokens: meta?.outputTokens ?? 0,
+    $ai_cache_read_input_tokens: meta?.cacheReadTokens ?? 0,
+    $ai_latency: meta?.latencyMs ? meta.latencyMs / 1000 : null,
+    $ai_base_url: 'https://api.anthropic.com',
+    $ai_http_status: 500,
+    $ai_error: errorMessage,
+    hemo_feature: featureName,
+  });
+}

@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  Alert,
   Dimensions,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,7 +20,11 @@ import {
   Camera,
 } from "lucide-react-native";
 import { MotiView } from "moti";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useMarkGroupTakenMutation } from "@/hooks/queries/useMedicationsQuery";
+import {
+  useMedicationsQuery,
+  useToggleMedicationTakenMutation,
+  useMarkGroupTakenMutation,
+} from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
@@ -46,10 +49,10 @@ const CATEGORY_COLORS = {
 
 // Time-of-day groups
 const TIME_GROUPS = [
-  { key: "morning",   label: "Morning",   emoji: "🌅", hours: [5, 11] },
+  { key: "morning", label: "Morning", emoji: "🌅", hours: [5, 11] },
   { key: "afternoon", label: "Afternoon", emoji: "☀️", hours: [12, 16] },
-  { key: "evening",   label: "Evening",   emoji: "🌆", hours: [17, 20] },
-  { key: "night",     label: "Night",     emoji: "🌙", hours: [21, 4] },
+  { key: "evening", label: "Evening", emoji: "🌆", hours: [17, 20] },
+  { key: "night", label: "Night", emoji: "🌙", hours: [21, 4] },
 ];
 
 function parseHour(timeStr) {
@@ -84,9 +87,10 @@ function buildGroups(meds) {
     const key = getGroupKey(m.time);
     map[key].push(m);
   }
-  return TIME_GROUPS
-    .filter((g) => map[g.key].length > 0)
-    .map((g) => ({ ...g, meds: map[g.key] }));
+  return TIME_GROUPS.filter((g) => map[g.key].length > 0).map((g) => ({
+    ...g,
+    meds: map[g.key],
+  }));
 }
 
 function SectionLabel({ title }) {
@@ -108,7 +112,9 @@ function SectionLabel({ title }) {
 }
 
 function Divider() {
-  return <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 76 }} />;
+  return (
+    <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 76 }} />
+  );
 }
 
 function GroupHeader({ group, onLogAll, allTaken }) {
@@ -136,11 +142,20 @@ function GroupHeader({ group, onLogAll, allTaken }) {
         <Text style={{ fontSize: 18 }}>{group.emoji}</Text>
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: C.dark }}>
+        <Text
+          style={{ fontFamily: fonts.semibold, fontSize: 15, color: C.dark }}
+        >
           {group.label}
         </Text>
         {group.meds[0]?.time ? (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1 }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: C.muted,
+              marginTop: 1,
+            }}
+          >
             {group.meds[0].time} reminder
           </Text>
         ) : null}
@@ -202,7 +217,11 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             marginRight: 12,
           }}
         >
-          <MedicationIcon type={medication.type ?? "tablet"} color={color} size={40} />
+          <MedicationIcon
+            type={medication.type ?? "tablet"}
+            color={color}
+            size={40}
+          />
         </View>
 
         {/* Info */}
@@ -211,16 +230,34 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 15,
+              textTransform: "capitalize",
               color: medication.taken ? C.muted : C.dark,
               textDecorationLine: medication.taken ? "line-through" : "none",
             }}
           >
             {medication.name}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 2 }}>
-            {[medication.dosage, medication.category].filter(Boolean).join(" · ")}
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: C.muted,
+              marginTop: 2,
+            }}
+          >
+            {[medication.dosage, medication.category]
+              .filter(Boolean)
+              .join(" · ")}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1, opacity: 0.75 }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: C.muted,
+              marginTop: 1,
+              opacity: 0.75,
+            }}
+          >
             {medication.frequency}
           </Text>
         </View>
@@ -275,21 +312,36 @@ function MedicationGridCard({ medication, onPress }) {
           justifyContent: "center",
         }}
       >
-        <MedicationIcon type={medication.type ?? "tablet"} color={color} size={52} />
+        <MedicationIcon
+          type={medication.type ?? "tablet"}
+          color={color}
+          size={52}
+        />
       </View>
 
       {/* Info area */}
       <View style={{ padding: 12 }}>
         <Text
           numberOfLines={1}
-          style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.dark, marginBottom: 2 }}
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 14,
+            textTransform: "capitalize",
+            color: C.dark,
+            marginBottom: 2,
+          }}
         >
           {medication.name}
         </Text>
         {medication.dosage ? (
           <Text
             numberOfLines={1}
-            style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginBottom: 8 }}
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: C.muted,
+              marginBottom: 8,
+            }}
           >
             {medication.dosage}
           </Text>
@@ -307,7 +359,13 @@ function MedicationGridCard({ medication, onPress }) {
         >
           <Text
             numberOfLines={1}
-            style={{ fontFamily: fonts.medium, fontSize: 10, color, textTransform: "uppercase", letterSpacing: 0.3 }}
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 10,
+              color,
+              textTransform: "uppercase",
+              letterSpacing: 0.3,
+            }}
           >
             {medication.category}
           </Text>
@@ -348,8 +406,30 @@ export default function MedicationsScreen() {
           overflow: "hidden",
         }}
       >
-        <View style={{ position: "absolute", width: 180, height: 180, borderRadius: 999, backgroundColor: "#D09F9A", opacity: 0.15, top: -60, right: -40 }} />
-        <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 999, backgroundColor: "#781D11", opacity: 0.15, bottom: -20, left: -30 }} />
+        <View
+          style={{
+            position: "absolute",
+            width: 180,
+            height: 180,
+            borderRadius: 999,
+            backgroundColor: "#D09F9A",
+            opacity: 0.15,
+            top: -60,
+            right: -40,
+          }}
+        />
+        <View
+          style={{
+            position: "absolute",
+            width: 120,
+            height: 120,
+            borderRadius: 999,
+            backgroundColor: "#781D11",
+            opacity: 0.15,
+            bottom: -20,
+            left: -30,
+          }}
+        />
 
         <TouchableOpacity
           onPress={() => router.back()}
@@ -367,12 +447,22 @@ export default function MedicationsScreen() {
           <ChevronLeft size={22} color="#F8E9E7" />
         </TouchableOpacity>
 
-        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#F8E9E7", flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 22,
+            color: "#F8E9E7",
+            flex: 1,
+          }}
+        >
           Medications
         </Text>
 
         <TouchableOpacity
-          onPress={() => { posthog?.capture('medication_add_tapped'); router.push("/add-medication"); }}
+          onPress={() => {
+            posthog?.capture("medication_add_tapped");
+            router.push("/add-medication");
+          }}
           activeOpacity={0.6}
           style={{
             width: 40,
@@ -389,7 +479,10 @@ export default function MedicationsScreen() {
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{
+          padding: 16,
+          paddingBottom: insets.bottom + 32,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Today's Progress */}
@@ -403,25 +496,71 @@ export default function MedicationsScreen() {
             marginBottom: 24,
           }}
         >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: C.dark }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
+          >
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 15,
+                color: C.dark,
+              }}
+            >
               Today's Progress
             </Text>
             {dueCount > 0 ? (
-              <View style={{ backgroundColor: "#FEE2E2", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: C.warning }}>
+              <View
+                style={{
+                  backgroundColor: "#FEE2E2",
+                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 12,
+                    color: C.warning,
+                  }}
+                >
                   {dueCount} due
                 </Text>
               </View>
             ) : (
-              <View style={{ backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: C.success }}>
+              <View
+                style={{
+                  backgroundColor: "#D1FAE5",
+                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                }}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 12,
+                    color: C.success,
+                  }}
+                >
                   All done
                 </Text>
               </View>
             )}
           </View>
-          <View style={{ height: 6, backgroundColor: "#F3F4F6", borderRadius: 3, overflow: "hidden" }}>
+          <View
+            style={{
+              height: 6,
+              backgroundColor: "#F3F4F6",
+              borderRadius: 3,
+              overflow: "hidden",
+            }}
+          >
             <View
               style={{
                 height: "100%",
@@ -431,7 +570,14 @@ export default function MedicationsScreen() {
               }}
             />
           </View>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 8 }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: C.muted,
+              marginTop: 8,
+            }}
+          >
             {takenCount} of {active.length} taken today
           </Text>
         </View>
@@ -451,17 +597,35 @@ export default function MedicationsScreen() {
             }}
           >
             <Pill size={28} color={C.muted} />
-            <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.muted, marginTop: 10, textAlign: "center" }}>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 15,
+                color: C.muted,
+                marginTop: 10,
+                textAlign: "center",
+              }}
+            >
               No medications added yet
             </Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 4, textAlign: "center" }}>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 13,
+                color: C.muted,
+                marginTop: 4,
+                textAlign: "center",
+              }}
+            >
               Tap + to add your first medication
             </Text>
           </View>
         ) : (
           groups.map((group, gi) => {
             const allTaken = group.meds.every((m) => m.taken);
-            const untakenIds = group.meds.filter((m) => !m.taken).map((m) => m.id);
+            const untakenIds = group.meds
+              .filter((m) => !m.taken)
+              .map((m) => m.id);
             return (
               <View
                 key={group.key}
@@ -487,7 +651,10 @@ export default function MedicationsScreen() {
                       index={gi * 4 + i}
                       onToggle={() => toggleTaken.mutate(med.id)}
                       onPress={() =>
-                        router.push({ pathname: "/medication-detail", params: { medicationId: med.id } })
+                        router.push({
+                          pathname: "/medication-detail",
+                          params: { medicationId: med.id },
+                        })
                       }
                     />
                     {i < group.meds.length - 1 && <Divider />}
@@ -515,7 +682,10 @@ export default function MedicationsScreen() {
                   key={med.id}
                   medication={med}
                   onPress={() =>
-                    router.push({ pathname: "/medication-detail", params: { medicationId: med.id } })
+                    router.push({
+                      pathname: "/medication-detail",
+                      params: { medicationId: med.id },
+                    })
                   }
                 />
               ))}
@@ -525,7 +695,10 @@ export default function MedicationsScreen() {
 
         {/* Add Medication */}
         <TouchableOpacity
-          onPress={() => { posthog?.capture('medication_add_tapped'); router.push("/add-medication"); }}
+          onPress={() => {
+            posthog?.capture("medication_add_tapped");
+            router.push("/add-medication");
+          }}
           activeOpacity={0.8}
           style={{
             backgroundColor: C.accent,
@@ -535,24 +708,25 @@ export default function MedicationsScreen() {
             marginBottom: 12,
           }}
         >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#fff" }}>
+          <Text
+            style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#fff" }}
+          >
             Add Medication
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() =>
-            Alert.alert(
-              "Scan Pill",
-              "Use your camera to identify a medication by its barcode or photo. Coming soon.",
-            )
-          }
+          onPress={() => {
+            posthog?.capture("medication_scan_tapped");
+            router.push("/medication-scan");
+          }}
           activeOpacity={0.7}
           style={{
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "center",
             borderRadius: 14,
+            borderStyle: "dashed",
             paddingVertical: 14,
             borderWidth: 1.5,
             borderColor: C.border,
@@ -560,14 +734,11 @@ export default function MedicationsScreen() {
           }}
         >
           <Camera size={18} color={C.dark} />
-          <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}>
+          <Text
+            style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}
+          >
             Scan Pill
           </Text>
-          <View style={{ backgroundColor: C.bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 }}>
-            <Text style={{ fontFamily: fonts.medium, fontSize: 11, color: C.muted }}>
-              Coming soon
-            </Text>
-          </View>
         </TouchableOpacity>
       </ScrollView>
     </View>
