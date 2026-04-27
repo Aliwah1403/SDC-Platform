@@ -326,6 +326,10 @@ export default function RootLayout() {
             options={{ presentation: "card" }}
           />
           <Stack.Screen
+            name="medication-scan"
+            options={{ presentation: "card" }}
+          />
+          <Stack.Screen
             name="crisis-mode"
             options={{ presentation: "modal", gestureEnabled: false }}
           />

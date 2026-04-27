@@ -75,6 +75,30 @@ function parseFDAResult(result) {
 }
 
 /**
+ * Look up a medication by drug name via openFDA.
+ * Tries generic_name first, then brand_name — covers most worldwide drugs by their INN.
+ * Returns { name, category, rxcui } or null if not found.
+ */
+export async function lookupByName(drugName) {
+  const name = (drugName ?? "").trim();
+  if (!name) return null;
+
+  for (const field of ["generic_name", "brand_name"]) {
+    const url = `https://api.fda.gov/drug/ndc.json?search=${field}:"${encodeURIComponent(name)}"&limit=1`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const result = data?.results?.[0];
+      if (result) return parseFDAResult(result);
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
  * Look up a medication by NDC/UPC barcode data via openFDA.
  * Returns { name, category, rxcui } or null if not found.
  */
