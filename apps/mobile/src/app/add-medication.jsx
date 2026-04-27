@@ -14,12 +14,24 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { X, ChevronLeft, ChevronRight, Search, Camera } from "lucide-react-native";
+import {
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Camera,
+  ScanBarcode,
+} from "lucide-react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import { Picker } from "@react-native-picker/picker";
 import { MotiView } from "moti";
-import { useMedicationsQuery, useAddMedicationMutation, useUpdateMedicationMutation, useDeleteMedicationMutation } from "@/hooks/queries/useMedicationsQuery";
+import {
+  useMedicationsQuery,
+  useAddMedicationMutation,
+  useUpdateMedicationMutation,
+  useDeleteMedicationMutation,
+} from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon from "@/components/MedicationIcon";
@@ -48,7 +60,13 @@ const CATEGORY_COLORS = {
   Supportive: "#059669",
 };
 
-const FREQUENCIES = ["Daily", "Twice daily", "Three times daily", "Weekly", "As needed"];
+const FREQUENCIES = [
+  "Daily",
+  "Twice daily",
+  "Three times daily",
+  "Weekly",
+  "As needed",
+];
 
 const TIME_PRESETS = [
   { label: "Morning", value: "8:00 AM" },
@@ -71,7 +89,11 @@ function ChipRow({ options, selected, onSelect, getLabel }) {
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {options.map((opt) => {
         const val = typeof opt === "object" ? opt.value : opt;
-        const label = getLabel ? getLabel(opt) : typeof opt === "object" ? opt.label : String(opt);
+        const label = getLabel
+          ? getLabel(opt)
+          : typeof opt === "object"
+            ? opt.label
+            : String(opt);
         const active = selected === val;
         return (
           <TouchableOpacity
@@ -87,7 +109,13 @@ function ChipRow({ options, selected, onSelect, getLabel }) {
               borderColor: active ? C.accent : C.border,
             }}
           >
-            <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: active ? "#fff" : C.dark }}>
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 13,
+                color: active ? "#fff" : C.dark,
+              }}
+            >
               {label}
             </Text>
           </TouchableOpacity>
@@ -99,12 +127,29 @@ function ChipRow({ options, selected, onSelect, getLabel }) {
 
 function FieldLabel({ children, optional }) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}>
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: C.muted, textTransform: "uppercase", letterSpacing: 0.7 }}>
+    <View
+      style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
+    >
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 11,
+          color: C.muted,
+          textTransform: "uppercase",
+          letterSpacing: 0.7,
+        }}
+      >
         {children}
       </Text>
       {optional && (
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginLeft: 6 }}>
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 12,
+            color: C.muted,
+            marginLeft: 6,
+          }}
+        >
           optional
         </Text>
       )}
@@ -123,23 +168,66 @@ function BarcodeScannerView({ insets, onScan, onCancel }) {
 
   if (!permission.granted) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#000", justifyContent: "center", alignItems: "center", padding: 32 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: "#000",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 32,
+        }}
+      >
         <Camera size={48} color="#fff" />
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 18, color: "#fff", textAlign: "center", marginTop: 16, marginBottom: 8 }}>
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 18,
+            color: "#fff",
+            textAlign: "center",
+            marginTop: 16,
+            marginBottom: 8,
+          }}
+        >
           Camera access needed
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "rgba(255,255,255,0.65)", textAlign: "center", marginBottom: 32 }}>
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 14,
+            color: "rgba(255,255,255,0.65)",
+            textAlign: "center",
+            marginBottom: 32,
+          }}
+        >
           Allow camera access to scan your medication barcode
         </Text>
         <TouchableOpacity
           onPress={requestPermission}
           activeOpacity={0.8}
-          style={{ backgroundColor: C.accent, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, marginBottom: 14 }}
+          style={{
+            backgroundColor: C.accent,
+            borderRadius: 12,
+            paddingVertical: 14,
+            paddingHorizontal: 32,
+            marginBottom: 14,
+          }}
         >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#fff" }}>Allow Camera</Text>
+          <Text
+            style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#fff" }}
+          >
+            Allow Camera
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={onCancel} activeOpacity={0.7}>
-          <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: "rgba(255,255,255,0.55)" }}>Cancel</Text>
+          <Text
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 15,
+              color: "rgba(255,255,255,0.55)",
+            }}
+          >
+            Cancel
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -161,8 +249,25 @@ function BarcodeScannerView({ insets, onScan, onCancel }) {
       />
       {/* Scanning frame overlay */}
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <View style={{ width: 240, height: 140, borderRadius: 16, borderWidth: 2.5, borderColor: "#fff", opacity: 0.9 }} />
-        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#fff", marginTop: 18, opacity: 0.85 }}>
+        <View
+          style={{
+            width: 240,
+            height: 140,
+            borderRadius: 16,
+            borderWidth: 2.5,
+            borderColor: "#fff",
+            opacity: 0.9,
+          }}
+        />
+        <Text
+          style={{
+            fontFamily: fonts.medium,
+            fontSize: 14,
+            color: "#fff",
+            marginTop: 18,
+            opacity: 0.85,
+          }}
+        >
           Point at medication barcode
         </Text>
       </View>
@@ -189,12 +294,35 @@ function BarcodeScannerView({ insets, onScan, onCancel }) {
 // ─── AI identifying loader ────────────────────────────────────────────────────
 function IdentifyingView() {
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", padding: 32 }}>
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: C.bg,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 32,
+      }}
+    >
       <ActivityIndicator size="large" color={C.accent} />
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: C.dark, marginTop: 20 }}>
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 17,
+          color: C.dark,
+          marginTop: 20,
+        }}
+      >
         Identifying medication…
       </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 6, textAlign: "center" }}>
+      <Text
+        style={{
+          fontFamily: fonts.regular,
+          fontSize: 13,
+          color: C.muted,
+          marginTop: 6,
+          textAlign: "center",
+        }}
+      >
         Analysing your photo
       </Text>
     </View>
@@ -205,31 +333,48 @@ function IdentifyingView() {
 function parseTimeStr(timeStr) {
   const match = (timeStr ?? "").match(/(\d+):(\d+)\s*(AM|PM)/i);
   if (!match) return { h: 8, m: 0, p: "AM" };
-  return { h: parseInt(match[1], 10), m: parseInt(match[2], 10), p: match[3].toUpperCase() };
+  return {
+    h: parseInt(match[1], 10),
+    m: parseInt(match[2], 10),
+    p: match[3].toUpperCase(),
+  };
 }
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function AddMedicationScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { medicationId } = useLocalSearchParams();
+  const { medicationId, prefillName, prefillCategory, prefillDosage } =
+    useLocalSearchParams();
   const { data: medications = [] } = useMedicationsQuery();
   const addMed = useAddMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
   const deleteMed = useDeleteMedicationMutation();
 
-  const existing = medicationId ? medications.find((m) => m.id === medicationId) : null;
+  const existing = medicationId
+    ? medications.find((m) => m.id === medicationId)
+    : null;
   const isEditing = !!existing;
 
   // Parse existing dosage "500 mg" → parts
   const [existingAmount, existingUnit] = (existing?.dosage ?? "").split(" ");
   const existingTimeParsed = parseTimeStr(existing?.time);
   const existingTimeIsPreset = TIME_PRESETS.some(
-    (p) => p.value !== "custom" && p.value === existing?.time
+    (p) => p.value !== "custom" && p.value === existing?.time,
   );
 
+  // Parse prefill dosage "500mg" or "500 mg" → { amount, unit }
+  const prefillParsed = (() => {
+    if (!prefillDosage) return { amount: "", unit: "mg" };
+    const m = String(prefillDosage).match(/^([\d.]+)\s*([a-zA-Z]+)?/);
+    if (!m) return { amount: "", unit: "mg" };
+    const u = (m[2] ?? "").toLowerCase();
+    const unit = UNITS.find((x) => x.toLowerCase() === u) ?? "mg";
+    return { amount: m[1], unit };
+  })();
+
   // ── Navigation / camera state
-  const [step, setStep] = useState(isEditing ? 2 : 0);
+  const [step, setStep] = useState(isEditing ? 2 : prefillName ? 2 : 0);
   const [cameraMode, setCameraMode] = useState(null); // null | 'barcode'
   const [identifying, setIdentifying] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
@@ -237,8 +382,10 @@ export default function AddMedicationScreen() {
   const [showCameraOptions, setShowCameraOptions] = useState(false);
 
   // ── Step 1: Drug
-  const [name, setName] = useState(existing?.name ?? "");
-  const [category, setCategory] = useState(existing?.category ?? "Supportive");
+  const [name, setName] = useState(existing?.name ?? prefillName ?? "");
+  const [category, setCategory] = useState(
+    existing?.category ?? prefillCategory ?? "Supportive",
+  );
   const [rxcui, setRxcui] = useState(existing?.rxcui ?? null);
   const [medType, setMedType] = useState(existing?.type ?? "tablet");
   const [searchQuery, setSearchQuery] = useState("");
@@ -246,12 +393,20 @@ export default function AddMedicationScreen() {
   const [customNameInput, setCustomNameInput] = useState("");
 
   // ── Step 2: Dosage
-  const [dosageAmount, setDosageAmount] = useState(existingAmount ?? "");
-  const [dosageUnit, setDosageUnit] = useState(existingUnit ?? "mg");
+  const [dosageAmount, setDosageAmount] = useState(
+    existingAmount ?? prefillParsed.amount,
+  );
+  const [dosageUnit, setDosageUnit] = useState(
+    existingUnit ?? prefillParsed.unit,
+  );
 
   // ── Step 3: Schedule
   const [frequency, setFrequency] = useState(existing?.frequency ?? "Daily");
-  const [time, setTime] = useState(isEditing && !existingTimeIsPreset ? "custom" : (existing?.time ?? "8:00 AM"));
+  const [time, setTime] = useState(
+    isEditing && !existingTimeIsPreset
+      ? "custom"
+      : (existing?.time ?? "8:00 AM"),
+  );
   const [customHour, setCustomHour] = useState(existingTimeParsed.h);
   const [customMinute, setCustomMinute] = useState(existingTimeParsed.m);
   const [customPeriod, setCustomPeriod] = useState(existingTimeParsed.p);
@@ -264,7 +419,11 @@ export default function AddMedicationScreen() {
   const [notes, setNotes] = useState(existing?.notes ?? "");
 
   // ── Step 1: Live drug search (saved medications + RxNorm API)
-  const { results: drugResults, isLoading: drugLoading, error: drugError } = useDrugSearch(searchQuery);
+  const {
+    results: drugResults,
+    isLoading: drugLoading,
+    error: drugError,
+  } = useDrugSearch(searchQuery);
 
   const computedTime =
     time === "custom"
@@ -305,10 +464,16 @@ export default function AddMedicationScreen() {
   const handlePhotoCapture = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert("Permission required", "Camera access is needed to identify medication.");
+      Alert.alert(
+        "Permission required",
+        "Camera access is needed to identify medication.",
+      );
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ allowsEditing: false, quality: 0.8 });
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: false,
+      quality: 0.8,
+    });
     if (result.canceled) return;
     setIdentifying(true);
     // Stub: simulate AI identification
@@ -322,10 +487,14 @@ export default function AddMedicationScreen() {
   };
 
   const handleSave = () => {
-    const dosage = dosageAmount.trim() ? `${dosageAmount.trim()} ${dosageUnit}` : "";
+    const dosage = dosageAmount.trim()
+      ? `${dosageAmount.trim()} ${dosageUnit}`
+      : "";
     const reminders = [];
-    if (remindBefore) reminders.push({ offsetMinutes: remindBeforeMin, direction: "before" });
-    if (remindAfter) reminders.push({ offsetMinutes: remindAfterMin, direction: "after" });
+    if (remindBefore)
+      reminders.push({ offsetMinutes: remindBeforeMin, direction: "before" });
+    if (remindAfter)
+      reminders.push({ offsetMinutes: remindAfterMin, direction: "after" });
 
     const med = {
       name: name.trim(),
@@ -341,7 +510,10 @@ export default function AddMedicationScreen() {
     };
 
     if (isEditing) {
-      updateMed.mutate({ id: medicationId, updates: med }, { onSuccess: () => router.back() });
+      updateMed.mutate(
+        { id: medicationId, updates: med },
+        { onSuccess: () => router.back() },
+      );
     } else {
       addMed.mutate(med, { onSuccess: () => router.back() });
     }
@@ -378,12 +550,35 @@ export default function AddMedicationScreen() {
 
   if (barcodeLoading) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", padding: 32 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: C.bg,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 32,
+        }}
+      >
         <ActivityIndicator size="large" color={C.accent} />
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: C.dark, marginTop: 20 }}>
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 17,
+            color: C.dark,
+            marginTop: 20,
+          }}
+        >
           Looking up medication…
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 6, textAlign: "center" }}>
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 13,
+            color: C.muted,
+            marginTop: 6,
+            textAlign: "center",
+          }}
+        >
           Searching drug database
         </Text>
       </View>
@@ -420,10 +615,25 @@ export default function AddMedicationScreen() {
             justifyContent: "center",
           }}
         >
-          {step === 0 ? <X size={18} color={C.dark} /> : <ChevronLeft size={20} color={C.dark} />}
+          {step === 0 ? (
+            <X size={18} color={C.dark} />
+          ) : (
+            <ChevronLeft size={20} color={C.dark} />
+          )}
         </TouchableOpacity>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: C.dark, flex: 1 }}>
-          {isEditing ? "Edit Medication" : step === 0 ? "Add Medication" : STEP_LABELS[step]}
+        <Text
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 20,
+            color: C.dark,
+            flex: 1,
+          }}
+        >
+          {isEditing
+            ? "Edit Medication"
+            : step === 0
+              ? "Add Medication"
+              : STEP_LABELS[step]}
         </Text>
       </View>
 
@@ -475,7 +685,14 @@ export default function AddMedicationScreen() {
             {/* ━━ Step 0: Method picker ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 0 && (
               <View style={{ gap: 14, marginTop: 4 }}>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: C.muted, marginBottom: 4 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 15,
+                    color: C.muted,
+                    marginBottom: 4,
+                  }}
+                >
                   How would you like to add your medication?
                 </Text>
 
@@ -507,10 +724,23 @@ export default function AddMedicationScreen() {
                     <Search size={24} color={C.accent} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 16,
+                        color: C.dark,
+                      }}
+                    >
                       Search & select drug
                     </Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 2 }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 13,
+                        color: C.muted,
+                        marginTop: 2,
+                      }}
+                    >
                       Search any medication by name
                     </Text>
                   </View>
@@ -523,14 +753,19 @@ export default function AddMedicationScreen() {
                     backgroundColor: C.card,
                     borderRadius: 16,
                     borderWidth: 1.5,
-                    borderColor: showCameraOptions ? C.dark : C.border,
+                    borderColor: C.border,
                     overflow: "hidden",
                   }}
                 >
                   <TouchableOpacity
                     onPress={() => setShowCameraOptions((v) => !v)}
                     activeOpacity={0.8}
-                    style={{ padding: 20, flexDirection: "row", alignItems: "center", gap: 16 }}
+                    style={{
+                      padding: 20,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 16,
+                    }}
                   >
                     <View
                       style={{
@@ -545,27 +780,52 @@ export default function AddMedicationScreen() {
                       <Camera size={24} color={C.dark} />
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 16,
+                          color: C.dark,
+                        }}
+                      >
                         Use camera
                       </Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 2 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 13,
+                          color: C.muted,
+                          marginTop: 2,
+                        }}
+                      >
                         Scan barcode or identify by photo
                       </Text>
                     </View>
                     <ChevronRight
                       size={18}
                       color={C.muted}
-                      style={{ transform: [{ rotate: showCameraOptions ? "90deg" : "0deg" }] }}
+                      style={{
+                        transform: [
+                          { rotate: showCameraOptions ? "90deg" : "0deg" },
+                        ],
+                      }}
                     />
                   </TouchableOpacity>
 
                   {showCameraOptions && (
-                    <View style={{ borderTopWidth: 1, borderTopColor: C.divider }}>
+                    <View
+                      style={{ borderTopWidth: 1, borderTopColor: C.divider }}
+                    >
                       {/* Scan barcode */}
                       <TouchableOpacity
                         onPress={() => setCameraMode("barcode")}
                         activeOpacity={0.7}
-                        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, paddingLeft: 20 }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: 16,
+                          paddingLeft: 20,
+                        }}
                       >
                         <View
                           style={{
@@ -577,26 +837,53 @@ export default function AddMedicationScreen() {
                             justifyContent: "center",
                           }}
                         >
-                          <Text style={{ fontSize: 20 }}>⬛</Text>
+                          <Text style={{ fontSize: 20 }}>
+                            <ScanBarcode size={18} color={C.dark} />
+                          </Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.dark }}>
+                          <Text
+                            style={{
+                              fontFamily: fonts.medium,
+                              fontSize: 14,
+                              color: C.dark,
+                            }}
+                          >
                             Scan barcode or QR code
                           </Text>
-                          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1 }}>
+                          <Text
+                            style={{
+                              fontFamily: fonts.regular,
+                              fontSize: 12,
+                              color: C.muted,
+                              marginTop: 1,
+                            }}
+                          >
                             Works with most medication packaging
                           </Text>
                         </View>
                         <ChevronRight size={16} color={C.muted} />
                       </TouchableOpacity>
 
-                      <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 72 }} />
+                      <View
+                        style={{
+                          height: 1,
+                          backgroundColor: C.divider,
+                          marginLeft: 72,
+                        }}
+                      />
 
                       {/* Photo AI */}
                       <TouchableOpacity
                         onPress={handlePhotoCapture}
                         activeOpacity={0.7}
-                        style={{ flexDirection: "row", alignItems: "center", gap: 14, padding: 16, paddingLeft: 20 }}
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 14,
+                          padding: 16,
+                          paddingLeft: 20,
+                        }}
                       >
                         <View
                           style={{
@@ -611,10 +898,23 @@ export default function AddMedicationScreen() {
                           <Camera size={18} color={C.dark} />
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.dark }}>
+                          <Text
+                            style={{
+                              fontFamily: fonts.medium,
+                              fontSize: 14,
+                              color: C.dark,
+                            }}
+                          >
                             Take photo for AI identification
                           </Text>
-                          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              gap: 6,
+                              marginTop: 2,
+                            }}
+                          >
                             <View
                               style={{
                                 backgroundColor: "#FEF3C7",
@@ -623,7 +923,13 @@ export default function AddMedicationScreen() {
                                 paddingVertical: 1,
                               }}
                             >
-                              <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: "#92400E" }}>
+                              <Text
+                                style={{
+                                  fontFamily: fonts.medium,
+                                  fontSize: 10,
+                                  color: "#92400E",
+                                }}
+                              >
                                 Prototype
                               </Text>
                             </View>
@@ -657,11 +963,25 @@ export default function AddMedicationScreen() {
                   >
                     <Text style={{ fontSize: 16, lineHeight: 20 }}>⚠️</Text>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#78350F" }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 13,
+                          color: "#78350F",
+                        }}
+                      >
                         Barcode not found
                       </Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E", marginTop: 2 }}>
-                        This medication isn't in our US database. Search by name below.
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: "#92400E",
+                          marginTop: 2,
+                        }}
+                      >
+                        This medication isn't in our US database. Search by name
+                        below.
                       </Text>
                     </View>
                   </View>
@@ -720,7 +1040,13 @@ export default function AddMedicationScreen() {
                       marginBottom: 12,
                     }}
                   >
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E" }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 12,
+                        color: "#92400E",
+                      }}
+                    >
                       {drugError}
                     </Text>
                   </View>
@@ -763,11 +1089,24 @@ export default function AddMedicationScreen() {
                               }}
                             >
                               <View style={{ flex: 1 }}>
-                                <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}>
+                                <Text
+                                  style={{
+                                    fontFamily: fonts.medium,
+                                    fontSize: 15,
+                                    color: C.dark,
+                                  }}
+                                >
                                   {drug.name}
                                 </Text>
                                 {drug.subtitle && (
-                                  <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1 }}>
+                                  <Text
+                                    style={{
+                                      fontFamily: fonts.regular,
+                                      fontSize: 12,
+                                      color: C.muted,
+                                      marginTop: 1,
+                                    }}
+                                  >
                                     {drug.subtitle}
                                   </Text>
                                 )}
@@ -782,7 +1121,13 @@ export default function AddMedicationScreen() {
                                     paddingVertical: 2,
                                   }}
                                 >
-                                  <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.success }}>
+                                  <Text
+                                    style={{
+                                      fontFamily: fonts.medium,
+                                      fontSize: 10,
+                                      color: C.success,
+                                    }}
+                                  >
                                     Saved
                                   </Text>
                                 </View>
@@ -796,7 +1141,13 @@ export default function AddMedicationScreen() {
                                     paddingVertical: 2,
                                   }}
                                 >
-                                  <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.accent }}>
+                                  <Text
+                                    style={{
+                                      fontFamily: fonts.medium,
+                                      fontSize: 10,
+                                      color: C.accent,
+                                    }}
+                                  >
                                     SCD
                                   </Text>
                                 </View>
@@ -804,7 +1155,13 @@ export default function AddMedicationScreen() {
                               <ChevronRight size={16} color={C.muted} />
                             </TouchableOpacity>
                             {i < drugResults.length - 1 && (
-                              <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 16 }} />
+                              <View
+                                style={{
+                                  height: 1,
+                                  backgroundColor: C.divider,
+                                  marginLeft: 16,
+                                }}
+                              />
                             )}
                           </React.Fragment>
                         ))}
@@ -813,9 +1170,18 @@ export default function AddMedicationScreen() {
 
                     {/* Loading with no results yet */}
                     {drugLoading && drugResults.length === 0 && (
-                      <View style={{ alignItems: "center", paddingVertical: 32 }}>
+                      <View
+                        style={{ alignItems: "center", paddingVertical: 32 }}
+                      >
                         <ActivityIndicator color={C.accent} />
-                        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 10 }}>
+                        <Text
+                          style={{
+                            fontFamily: fonts.regular,
+                            fontSize: 13,
+                            color: C.muted,
+                            marginTop: 10,
+                          }}
+                        >
                           Searching drug database…
                         </Text>
                       </View>
@@ -838,7 +1204,13 @@ export default function AddMedicationScreen() {
                           gap: 8,
                         }}
                       >
-                        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.muted }}>
+                        <Text
+                          style={{
+                            fontFamily: fonts.medium,
+                            fontSize: 14,
+                            color: C.muted,
+                          }}
+                        >
                           Can't find it? Add manually
                         </Text>
                       </TouchableOpacity>
@@ -852,7 +1224,14 @@ export default function AddMedicationScreen() {
                           padding: 16,
                         }}
                       >
-                        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: C.dark, marginBottom: 10 }}>
+                        <Text
+                          style={{
+                            fontFamily: fonts.medium,
+                            fontSize: 13,
+                            color: C.dark,
+                            marginBottom: 10,
+                          }}
+                        >
                           Enter medication name
                         </Text>
                         <TextInput
@@ -875,7 +1254,8 @@ export default function AddMedicationScreen() {
                         />
                         <TouchableOpacity
                           onPress={() => {
-                            const n = (customNameInput.trim() || searchQuery.trim());
+                            const n =
+                              customNameInput.trim() || searchQuery.trim();
                             if (!n) return;
                             setName(n);
                             setCategory("Supportive");
@@ -889,7 +1269,15 @@ export default function AddMedicationScreen() {
                             alignItems: "center",
                           }}
                         >
-                          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#fff" }}>Continue</Text>
+                          <Text
+                            style={{
+                              fontFamily: fonts.semibold,
+                              fontSize: 14,
+                              color: "#fff",
+                            }}
+                          >
+                            Continue
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     )}
@@ -913,7 +1301,9 @@ export default function AddMedicationScreen() {
                       Common SCD medications
                     </Text>
                     {SCD_CATEGORIES.map((cat) => {
-                      const drugs = SCD_MEDICATIONS.filter((d) => d.category === cat);
+                      const drugs = SCD_MEDICATIONS.filter(
+                        (d) => d.category === cat,
+                      );
                       const cc = CATEGORY_COLORS[cat] ?? C.accent;
                       return (
                         <View key={cat} style={{ marginBottom: 18 }}>
@@ -947,8 +1337,11 @@ export default function AddMedicationScreen() {
                                     setCategory(drug.category);
                                     if (drug.rxcui) {
                                       setRxcui(drug.rxcui);
-                                      const form = await fetchDoseForm(drug.rxcui);
-                                      if (form) setMedType(normalizeDoseForm(form));
+                                      const form = await fetchDoseForm(
+                                        drug.rxcui,
+                                      );
+                                      if (form)
+                                        setMedType(normalizeDoseForm(form));
                                     }
                                     setStep(2);
                                   }}
@@ -961,11 +1354,24 @@ export default function AddMedicationScreen() {
                                   }}
                                 >
                                   <View style={{ flex: 1 }}>
-                                    <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}>
+                                    <Text
+                                      style={{
+                                        fontFamily: fonts.medium,
+                                        fontSize: 15,
+                                        color: C.dark,
+                                      }}
+                                    >
                                       {drug.name}
                                     </Text>
                                     {drug.subtitle && (
-                                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 1 }}>
+                                      <Text
+                                        style={{
+                                          fontFamily: fonts.regular,
+                                          fontSize: 12,
+                                          color: C.muted,
+                                          marginTop: 1,
+                                        }}
+                                      >
                                         {drug.subtitle}
                                       </Text>
                                     )}
@@ -979,14 +1385,26 @@ export default function AddMedicationScreen() {
                                       marginRight: 8,
                                     }}
                                   >
-                                    <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: C.accent }}>
+                                    <Text
+                                      style={{
+                                        fontFamily: fonts.medium,
+                                        fontSize: 10,
+                                        color: C.accent,
+                                      }}
+                                    >
                                       SCD
                                     </Text>
                                   </View>
                                   <ChevronRight size={16} color={C.muted} />
                                 </TouchableOpacity>
                                 {i < drugs.length - 1 && (
-                                  <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 16 }} />
+                                  <View
+                                    style={{
+                                      height: 1,
+                                      backgroundColor: C.divider,
+                                      marginLeft: 16,
+                                    }}
+                                  />
                                 )}
                               </React.Fragment>
                             ))}
@@ -1029,8 +1447,23 @@ export default function AddMedicationScreen() {
                     <MedicationIcon type="tablet" color={catColor} size={36} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: C.dark }}>{name}</Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginTop: 2 }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 17,
+                        color: C.dark,
+                      }}
+                    >
+                      {name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 13,
+                        color: C.muted,
+                        marginTop: 2,
+                      }}
+                    >
                       {category}
                     </Text>
                   </View>
@@ -1058,7 +1491,11 @@ export default function AddMedicationScreen() {
                 />
 
                 <FieldLabel>Unit</FieldLabel>
-                <ChipRow options={UNITS} selected={dosageUnit} onSelect={setDosageUnit} />
+                <ChipRow
+                  options={UNITS}
+                  selected={dosageUnit}
+                  onSelect={setDosageUnit}
+                />
 
                 {dosageAmount.trim().length > 0 && (
                   <View
@@ -1070,7 +1507,13 @@ export default function AddMedicationScreen() {
                       alignItems: "center",
                     }}
                   >
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.success }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 16,
+                        color: C.success,
+                      }}
+                    >
                       {dosageAmount.trim()} {dosageUnit}
                     </Text>
                   </View>
@@ -1083,11 +1526,19 @@ export default function AddMedicationScreen() {
               <View>
                 <FieldLabel>Frequency</FieldLabel>
                 <View style={{ marginBottom: 28 }}>
-                  <ChipRow options={FREQUENCIES} selected={frequency} onSelect={setFrequency} />
+                  <ChipRow
+                    options={FREQUENCIES}
+                    selected={frequency}
+                    onSelect={setFrequency}
+                  />
                 </View>
 
                 <FieldLabel>Time of day</FieldLabel>
-                <ChipRow options={TIME_PRESETS} selected={time} onSelect={setTime} />
+                <ChipRow
+                  options={TIME_PRESETS}
+                  selected={time}
+                  onSelect={setTime}
+                />
 
                 {/* Custom time drum-roll */}
                 {time === "custom" && (
@@ -1106,7 +1557,11 @@ export default function AddMedicationScreen() {
                         selectedValue={customHour}
                         onValueChange={setCustomHour}
                         style={{ flex: 1 }}
-                        itemStyle={{ fontFamily: fonts.regular, color: C.dark, fontSize: 18 }}
+                        itemStyle={{
+                          fontFamily: fonts.regular,
+                          color: C.dark,
+                          fontSize: 18,
+                        }}
                       >
                         {HOURS.map((h) => (
                           <Picker.Item key={h} label={String(h)} value={h} />
@@ -1116,17 +1571,29 @@ export default function AddMedicationScreen() {
                         selectedValue={customMinute}
                         onValueChange={setCustomMinute}
                         style={{ flex: 1 }}
-                        itemStyle={{ fontFamily: fonts.regular, color: C.dark, fontSize: 18 }}
+                        itemStyle={{
+                          fontFamily: fonts.regular,
+                          color: C.dark,
+                          fontSize: 18,
+                        }}
                       >
                         {MINUTES_LIST.map((m) => (
-                          <Picker.Item key={m} label={String(m).padStart(2, "0")} value={m} />
+                          <Picker.Item
+                            key={m}
+                            label={String(m).padStart(2, "0")}
+                            value={m}
+                          />
                         ))}
                       </Picker>
                       <Picker
                         selectedValue={customPeriod}
                         onValueChange={setCustomPeriod}
                         style={{ flex: 1 }}
-                        itemStyle={{ fontFamily: fonts.regular, color: C.dark, fontSize: 18 }}
+                        itemStyle={{
+                          fontFamily: fonts.regular,
+                          color: C.dark,
+                          fontSize: 18,
+                        }}
                       >
                         {["AM", "PM"].map((p) => (
                           <Picker.Item key={p} label={p} value={p} />
@@ -1146,7 +1613,13 @@ export default function AddMedicationScreen() {
                     alignItems: "center",
                   }}
                 >
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.success }}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 14,
+                      color: C.success,
+                    }}
+                  >
                     Notification at {computedTime}
                   </Text>
                 </View>
@@ -1172,8 +1645,22 @@ export default function AddMedicationScreen() {
                 >
                   <MedicationIcon type="tablet" color={catColor} size={28} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.dark }}>{name}</Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 14,
+                        color: C.dark,
+                      }}
+                    >
+                      {name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 12,
+                        color: C.muted,
+                      }}
+                    >
                       {frequency} · {computedTime}
                     </Text>
                   </View>
@@ -1198,10 +1685,23 @@ export default function AddMedicationScreen() {
                     }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.dark }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: C.dark,
+                        }}
+                      >
                         Remind me before
                       </Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 2 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: C.muted,
+                          marginTop: 2,
+                        }}
+                      >
                         Get a heads-up before it's time
                       </Text>
                     </View>
@@ -1241,10 +1741,23 @@ export default function AddMedicationScreen() {
                     }}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: C.dark }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: C.dark,
+                        }}
+                      >
                         Remind if missed
                       </Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 2 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: C.muted,
+                          marginTop: 2,
+                        }}
+                      >
                         Nudge me after the time passes
                       </Text>
                     </View>
@@ -1292,9 +1805,19 @@ export default function AddMedicationScreen() {
                   <TouchableOpacity
                     onPress={handleDelete}
                     activeOpacity={0.7}
-                    style={{ alignItems: "center", paddingVertical: 20, marginTop: 4 }}
+                    style={{
+                      alignItems: "center",
+                      paddingVertical: 20,
+                      marginTop: 4,
+                    }}
                   >
-                    <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.danger }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 15,
+                        color: C.danger,
+                      }}
+                    >
                       Delete Medication
                     </Text>
                   </TouchableOpacity>
@@ -1326,8 +1849,18 @@ export default function AddMedicationScreen() {
                 alignItems: "center",
               }}
             >
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#fff" }}>
-                {step === 4 ? (isEditing ? "Save Changes" : "Save Medication") : "Next"}
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#fff",
+                }}
+              >
+                {step === 4
+                  ? isEditing
+                    ? "Save Changes"
+                    : "Save Medication"
+                  : "Next"}
               </Text>
             </TouchableOpacity>
           </View>

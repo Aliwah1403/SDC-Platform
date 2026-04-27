@@ -35,6 +35,16 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
     }
   }, [isVisible]);
 
+  const handleClose = useCallback(() => {
+    setIsRepairing(false);
+    setRepairComplete(false);
+    setRestoredStreak(0);
+    wrenchRotation.setValue(0);
+    checkScale.setValue(0);
+    successOpacity.setValue(0);
+    onClose();
+  }, [onClose, wrenchRotation, checkScale, successOpacity]);
+
   const handleRepair = useCallback(() => {
     setIsRepairing(true);
 
@@ -47,7 +57,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         onSuccess: (data) => {
           const restored = data?.restoredStreak ?? healthStreak;
           posthog?.capture('streak_repair_used', {
-            repairs_remaining_after: repairsAvailable - 1,
+            repairs_remaining_after: Math.max(0, repairsAvailable - 1),
             restored_streak: restored,
           });
           setRestoredStreak(restored);
@@ -62,17 +72,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         onError: () => setIsRepairing(false),
       });
     });
-  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity, healthStreak]);
-
-  const handleClose = useCallback(() => {
-    setIsRepairing(false);
-    setRepairComplete(false);
-    setRestoredStreak(0);
-    wrenchRotation.setValue(0);
-    checkScale.setValue(0);
-    successOpacity.setValue(0);
-    onClose();
-  }, [onClose, wrenchRotation, checkScale, successOpacity]);
+  }, [repairMutation, missedDay, wrenchRotation, checkScale, successOpacity, healthStreak, repairsAvailable, posthog, handleClose]);
 
   const rotateInterpolate = wrenchRotation.interpolate({
     inputRange: [-1, 1],

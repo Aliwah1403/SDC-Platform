@@ -16,8 +16,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
   Check,
-  Fingerprint,
-  Lock,
   ShieldCheck,
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
@@ -169,18 +167,6 @@ function IntroStep({ loading, onGetStarted, insets }) {
           </View>
         </View>
       </View>
-
-      {/* <View style={styles.illustrationContainer}>
-        <View style={styles.illustrationCircle}>
-          <Lock size={52} color="#09332C" strokeWidth={1.5} />
-        </View>
-        <View style={styles.badgeRight}>
-          <Fingerprint size={22} color="#ffffff" strokeWidth={1.8} />
-        </View>
-        <View style={styles.badgeBottom}>
-          <ShieldCheck size={22} color="#ffffff" strokeWidth={1.8} />
-        </View>
-      </View> */}
 
       <Text style={styles.title}>Protect your Hemo account</Text>
       <Text style={styles.body}>
@@ -363,51 +349,6 @@ const styles = StyleSheet.create({
         shadowRadius: 6,
       },
     }),
-  },
-  illustrationContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 40,
-    marginBottom: 36,
-    height: 160,
-  },
-  illustrationCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "#F0E4E1",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeRight: {
-    position: "absolute",
-    right: 20,
-    top: 10,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#A9334D",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  badgeBottom: {
-    position: "absolute",
-    right: 16,
-    bottom: 0,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#09332C",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
   },
   title: {
     fontFamily: fonts.bold,

@@ -1,0 +1,6 @@
+0000000000000000000000000000000000000000 2af9e0bd7e7b7c61533208d4613fc0fe5d9f14a8 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775333764 +0400	commit (initial): feat: initial commit
+2af9e0bd7e7b7c61533208d4613fc0fe5d9f14a8 bfc7776fafddb8f3203f0bc1ace26dd0774aa560 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775387663 +0400	commit: set up navbar and added shadcn ui components
+bfc7776fafddb8f3203f0bc1ace26dd0774aa560 6ab253fa52d944a059134adb9f27e9dd0c2e2dd2 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775549649 +0400	commit: feat: Added iphone mockup component to hero
+6ab253fa52d944a059134adb9f27e9dd0c2e2dd2 63db67fb06ae9d3351b563f374398ac057d743c0 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775573836 +0400	commit: Structured how files should flow
+63db67fb06ae9d3351b563f374398ac057d743c0 63db67fb06ae9d3351b563f374398ac057d743c0 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775987882 +0400	checkout: moving from master to rescue-before-flatten-20260412-135802
+63db67fb06ae9d3351b563f374398ac057d743c0 c24a71e553efc541c10fb7711dfd37f5b863e700 Curtis Aliwah <aliwahcurtis5@gmail.com> 1775987882 +0400	commit: chore: rescue commit before removing nested git repo
