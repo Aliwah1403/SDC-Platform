@@ -1,11 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Alert } from 'react-native';
 import { useAuthStore } from '@/utils/auth/store';
 import {
   fetchMedications,
+  fetchMedicationHistory,
   addMedication,
   updateMedication,
   deleteMedication,
   toggleMedicationTaken,
+  addMedicationLog,
   markGroupTaken,
   fetchDrugInfo,
 } from '@/services/supabaseQueries';
@@ -90,6 +93,50 @@ export function useToggleMedicationTakenMutation() {
 /**
  * Optimistic bulk mark-taken.
  */
+export function useAddMedicationLogMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  const queryKey = ['medications', userId];
+
+  return useMutation({
+    mutationFn: (medId) => addMedicationLog(userId, medId),
+    onMutate: async (medId) => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
+      const now = new Date().toISOString();
+      queryClient.setQueryData(queryKey, (old) =>
+        (old || []).map((m) =>
+          m.id === medId
+            ? {
+                ...m,
+                taken: true,
+                logs: [...(m.logs ?? []), { id: `temp-${now}`, takenAt: now }],
+              }
+            : m
+        )
+      );
+      return { prev };
+    },
+    onError: (_err, _medId, ctx) => {
+      queryClient.setQueryData(queryKey, ctx.prev);
+      Alert.alert('Couldn\'t log dose', 'Something went wrong. Please try again.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+}
+
+export function useMedicationHistoryQuery(medicationId) {
+  const userId = useUserId();
+  return useQuery({
+    queryKey: ['medicationHistory', medicationId],
+    queryFn: () => fetchMedicationHistory(userId, medicationId),
+    enabled: !!userId && !!medicationId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useDrugInfoQuery(drugName) {
   return useQuery({
     queryKey: ['drugInfo', drugName?.toLowerCase()],

@@ -39,6 +39,7 @@ import { useDrugSearch } from "@/hooks/useDrugSearch";
 import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
 import { lookupByNDC } from "@/utils/medicationApi";
+import { scheduleMedicationNotifications, cancelMedicationNotifications } from "@/utils/medicationNotifications";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -412,10 +413,12 @@ export default function AddMedicationScreen() {
   const [customPeriod, setCustomPeriod] = useState(existingTimeParsed.p);
 
   // ── Step 4: Reminders + Notes
-  const [remindBefore, setRemindBefore] = useState(false);
-  const [remindBeforeMin, setRemindBeforeMin] = useState(10);
-  const [remindAfter, setRemindAfter] = useState(false);
-  const [remindAfterMin, setRemindAfterMin] = useState(5);
+  const existingBefore = existing?.reminders?.find((r) => r.direction === "before");
+  const existingAfter = existing?.reminders?.find((r) => r.direction === "after");
+  const [remindBefore, setRemindBefore] = useState(!!existingBefore);
+  const [remindBeforeMin, setRemindBeforeMin] = useState(existingBefore?.offsetMinutes ?? 10);
+  const [remindAfter, setRemindAfter] = useState(!!existingAfter);
+  const [remindAfterMin, setRemindAfterMin] = useState(existingAfter?.offsetMinutes ?? 5);
   const [notes, setNotes] = useState(existing?.notes ?? "");
 
   // ── Step 1: Live drug search (saved medications + RxNorm API)
@@ -502,7 +505,6 @@ export default function AddMedicationScreen() {
       dosage,
       frequency,
       time: computedTime,
-      nextDose: computedTime,
       reminders,
       notes,
       rxcui: rxcui || null,
@@ -512,10 +514,20 @@ export default function AddMedicationScreen() {
     if (isEditing) {
       updateMed.mutate(
         { id: medicationId, updates: med },
-        { onSuccess: () => router.back() },
+        {
+          onSuccess: () => {
+            scheduleMedicationNotifications({ ...med, id: medicationId });
+            router.back();
+          },
+        },
       );
     } else {
-      addMed.mutate(med, { onSuccess: () => router.back() });
+      addMed.mutate(med, {
+        onSuccess: (savedMed) => {
+          scheduleMedicationNotifications({ ...med, id: savedMed.id });
+          router.back();
+        },
+      });
     }
   };
 
@@ -526,6 +538,7 @@ export default function AddMedicationScreen() {
         text: "Delete",
         style: "destructive",
         onPress: () => {
+          cancelMedicationNotifications(medicationId);
           deleteMed.mutate(medicationId);
           router.back();
         },
