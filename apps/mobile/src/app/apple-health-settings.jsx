@@ -1,4 +1,13 @@
-import { View, Text, ScrollView, Switch, TouchableOpacity, Alert, StyleSheet, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Switch,
+  TouchableOpacity,
+  Alert,
+  StyleSheet,
+  TextInput,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { usePostHog } from "posthog-react-native";
@@ -88,16 +97,21 @@ const WRITE_ITEMS = [
 ];
 
 function SectionHeader({ title }) {
-  return (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  );
+  return <Text style={styles.sectionHeader}>{title}</Text>;
 }
 
 function Divider() {
   return <View style={styles.divider} />;
 }
 
-function PreferenceRow({ icon: Icon, iconColor, label, description, value, onChange }) {
+function PreferenceRow({
+  icon: Icon,
+  iconColor,
+  label,
+  description,
+  value,
+  onChange,
+}) {
   return (
     <View style={styles.row}>
       <View style={[styles.iconBubble, { backgroundColor: `${iconColor}18` }]}>
@@ -141,12 +155,12 @@ export default function AppleHealthSettingsScreen() {
           text: "Disconnect",
           style: "destructive",
           onPress: () => {
-            posthog?.capture('healthkit_disconnected');
+            posthog?.capture("healthkit_disconnected");
             setHealthKitConnected(false);
             router.back();
           },
         },
-      ]
+      ],
     );
   }
 
@@ -156,7 +170,11 @@ export default function AppleHealthSettingsScreen() {
     <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.6}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          activeOpacity={0.6}
+        >
           <ChevronLeft size={20} color="#09332C" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Apple Health</Text>
@@ -165,7 +183,11 @@ export default function AppleHealthSettingsScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40, paddingHorizontal: 16, paddingTop: 16 }}
+        contentContainerStyle={{
+          paddingBottom: insets.bottom + 40,
+          paddingHorizontal: 16,
+          paddingTop: 16,
+        }}
       >
         {/* Connected status card */}
         <View style={styles.statusCard}>
@@ -179,13 +201,14 @@ export default function AppleHealthSettingsScreen() {
               <Text style={styles.statusLabel}>Apple Health</Text>
               <Text style={styles.statusConnected}>Connected</Text>
             </View>
-            <TouchableOpacity onPress={handleDisconnect} activeOpacity={0.7} style={styles.disconnectBtn}>
+            <TouchableOpacity
+              onPress={handleDisconnect}
+              activeOpacity={0.7}
+              style={styles.disconnectBtn}
+            >
               <Text style={styles.disconnectText}>Disconnect</Text>
             </TouchableOpacity>
           </View>
-          {syncedDaysCount > 0 && (
-            <Text style={styles.syncNote}>{syncedDaysCount} days of data synced</Text>
-          )}
         </View>
 
         {/* Read from Apple Health */}
@@ -199,7 +222,10 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => { posthog?.capture('healthkit_pref_changed', { enabled: v }); setHealthKitPreference(item.key, v); }}
+                onChange={(v) => {
+                  posthog?.capture("healthkit_pref_changed", { enabled: v });
+                  setHealthKitPreference(item.key, v);
+                }}
               />
               {i < READ_ITEMS.length - 1 && <Divider />}
             </View>
@@ -217,7 +243,10 @@ export default function AppleHealthSettingsScreen() {
                 label={item.label}
                 description={item.description}
                 value={prefs[item.key] ?? true}
-                onChange={(v) => { posthog?.capture('healthkit_pref_changed', { enabled: v }); setHealthKitPreference(item.key, v); }}
+                onChange={(v) => {
+                  posthog?.capture("healthkit_pref_changed", { enabled: v });
+                  setHealthKitPreference(item.key, v);
+                }}
               />
               {i < WRITE_ITEMS.length - 1 && <Divider />}
             </View>
@@ -230,7 +259,9 @@ export default function AppleHealthSettingsScreen() {
           <View style={styles.baselineRow}>
             <View style={styles.baselineText}>
               <Text style={styles.rowLabel}>Resting Blood Oxygen</Text>
-              <Text style={styles.rowDesc}>Your typical SpO₂ if chronically below 95%</Text>
+              <Text style={styles.rowDesc}>
+                Your typical SpO₂ if chronically below 95%
+              </Text>
             </View>
             <View style={styles.baselineInputWrap}>
               <TextInput
@@ -239,10 +270,21 @@ export default function AppleHealthSettingsScreen() {
                 placeholder="—"
                 placeholderTextColor="#9CA3AF"
                 maxLength={3}
-                value={healthKitManualBaselines.spO2 != null ? String(healthKitManualBaselines.spO2) : ""}
+                value={
+                  healthKitManualBaselines.spO2 != null
+                    ? String(healthKitManualBaselines.spO2)
+                    : ""
+                }
                 onChangeText={(t) => {
                   const n = parseInt(t, 10);
-                  setHealthKitManualBaseline("spO2", t === "" ? null : (n >= 50 && n <= 99 ? n : healthKitManualBaselines.spO2));
+                  setHealthKitManualBaseline(
+                    "spO2",
+                    t === ""
+                      ? null
+                      : n >= 50 && n <= 99
+                        ? n
+                        : healthKitManualBaselines.spO2,
+                  );
                 }}
               />
               <Text style={styles.baselineUnit}>%</Text>
@@ -252,7 +294,9 @@ export default function AppleHealthSettingsScreen() {
           <View style={styles.baselineRow}>
             <View style={styles.baselineText}>
               <Text style={styles.rowLabel}>Resting Heart Rate</Text>
-              <Text style={styles.rowDesc}>Your typical HR if outside the standard range</Text>
+              <Text style={styles.rowDesc}>
+                Your typical HR if outside the standard range
+              </Text>
             </View>
             <View style={styles.baselineInputWrap}>
               <TextInput
@@ -261,10 +305,21 @@ export default function AppleHealthSettingsScreen() {
                 placeholder="—"
                 placeholderTextColor="#9CA3AF"
                 maxLength={3}
-                value={healthKitManualBaselines.heartRate != null ? String(healthKitManualBaselines.heartRate) : ""}
+                value={
+                  healthKitManualBaselines.heartRate != null
+                    ? String(healthKitManualBaselines.heartRate)
+                    : ""
+                }
                 onChangeText={(t) => {
                   const n = parseInt(t, 10);
-                  setHealthKitManualBaseline("heartRate", t === "" ? null : (n >= 30 && n <= 200 ? n : healthKitManualBaselines.heartRate));
+                  setHealthKitManualBaseline(
+                    "heartRate",
+                    t === ""
+                      ? null
+                      : n >= 30 && n <= 200
+                        ? n
+                        : healthKitManualBaselines.heartRate,
+                  );
                 }}
               />
               <Text style={styles.baselineUnit}>bpm</Text>
@@ -272,13 +327,17 @@ export default function AppleHealthSettingsScreen() {
           </View>
         </View>
         <Text style={styles.baselineHint}>
-          Leave blank to use automatic 7-day averages. Set these if your doctor has confirmed your personal baseline differs from typical ranges.
+          Leave blank to use automatic 7-day averages. Set these if your doctor
+          has confirmed your personal baseline differs from typical ranges.
         </Text>
 
         {/* Help note */}
         <TouchableOpacity style={styles.helpRow} activeOpacity={0.6}>
           <AlertCircle size={15} color="#9CA3AF" />
-          <Text style={styles.helpText}>Not seeing data? Check permissions in iOS Settings → Privacy & Security → Health → Hemo SCD</Text>
+          <Text style={styles.helpText}>
+            Not seeing data? Check permissions in iOS Settings → Privacy &
+            Security → Health → Hemo SCD
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
