@@ -3,7 +3,8 @@ const NOVU_API_URL = "https://api.novu.co/v1";
 export async function triggerNovu(
   workflowId: string,
   subscriberId: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  options?: { idempotencyKey?: string }
 ): Promise<void> {
   const apiKey = process.env.NOVU_API_KEY;
   if (!apiKey) throw new Error("Missing NOVU_API_KEY");
@@ -18,6 +19,9 @@ export async function triggerNovu(
       name: workflowId,
       to: { subscriberId },
       payload,
+      ...(options?.idempotencyKey
+        ? { transactionId: options.idempotencyKey }
+        : {}),
     }),
   });
 

@@ -499,6 +499,16 @@ export default function AddMedicationScreen() {
     if (remindAfter)
       reminders.push({ offsetMinutes: remindAfterMin, direction: "after" });
 
+    // Sunday = 1 for expo-notifications weekly triggers.
+    // Persist weekday for weekly meds so rescheduling does not drift by current date.
+    const fallbackWeekday = new Date().getDay() + 1;
+    const persistedWeekday =
+      Number.isInteger(existing?.weekday) &&
+      existing.weekday >= 1 &&
+      existing.weekday <= 7
+        ? existing.weekday
+        : fallbackWeekday;
+
     const med = {
       name: name.trim(),
       category,
@@ -509,6 +519,7 @@ export default function AddMedicationScreen() {
       notes,
       rxcui: rxcui || null,
       type: medType,
+      ...(frequency === "Weekly" ? { weekday: persistedWeekday } : { weekday: null }),
     };
 
     if (isEditing) {
@@ -551,8 +562,12 @@ export default function AddMedicationScreen() {
           } catch (error) {
             console.error("Failed to cancel medication notifications:", error);
           }
-          deleteMed.mutate(medicationId);
-          router.back();
+          try {
+            await deleteMed.mutateAsync(medicationId);
+            router.back();
+          } catch (error) {
+            console.error("Failed to delete medication:", error);
+          }
         },
       },
     ]);

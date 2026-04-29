@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 import {
   ChevronLeft,
   Camera,
@@ -440,6 +441,7 @@ function PhotoContent({ onResult }) {
 export default function MedicationScanScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const posthog = usePostHog();
   const [tab, setTab] = useState("barcode");
   const [flash, setFlash] = useState(false);
   const [result, setResult] = useState(null);
@@ -462,7 +464,16 @@ export default function MedicationScanScreen() {
         if (!userEditedNameRef.current) setConfirmedName(fda.name);
         setConfirmedCategory(fda.category);
       }
-    } catch {}
+    } catch (err) {
+      console.error(
+        `[medication-scan] FDA lookup failed for "${identified.name}"`,
+        err
+      );
+      posthog?.capture("medication_fda_lookup_failed", {
+        identified_name: identified.name ?? null,
+        error_message: err instanceof Error ? err.message : String(err),
+      });
+    }
     setEnriching(false);
   };
 

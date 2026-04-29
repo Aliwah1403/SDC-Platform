@@ -1,9 +1,11 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
 import { triggerNovu } from "../lib/novu";
+import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-re-engagement";
 const GAP_DAYS = 3;
+const NOVU_BATCH_SIZE = 25;
 
 export const reEngagementNudge = schedules.task({
   id: "re-engagement-nudge",
@@ -40,17 +42,17 @@ export const reEngagementNudge = schedules.task({
     if (lapsedIds.length === 0) return { nudged: 0 };
 
     // Get last log date for each lapsed user to compute exact day count
+    // (one row per user, reduced at the DB level)
     const { data: lastLogs, error: lastLogError } = await supabase
       .from("health_logs")
-      .select("user_id, date")
-      .in("user_id", lapsedIds)
-      .order("date", { ascending: false });
+      .select("user_id, last_date:date.max()")
+      .in("user_id", lapsedIds);
     if (lastLogError) throw lastLogError;
 
     const lastLogByUser = new Map<string, string>();
     for (const row of lastLogs ?? []) {
-      if (!lastLogByUser.has(row.user_id)) {
-        lastLogByUser.set(row.user_id, row.date as string);
+      if (row.last_date) {
+        lastLogByUser.set(row.user_id as string, row.last_date as string);
       }
     }
 
@@ -65,20 +67,41 @@ export const reEngagementNudge = schedules.task({
     );
 
     let nudged = 0;
-    for (const userId of lapsedIds) {
-      const lastDate = lastLogByUser.get(userId);
-      const daysWithoutLog = lastDate
-        ? Math.floor(
-            (today.getTime() - new Date(lastDate).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        : null;
+    for (let i = 0; i < lapsedIds.length; i += NOVU_BATCH_SIZE) {
+      const batch = lapsedIds.slice(i, i + NOVU_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map(async (userId) => {
+          const lastDate = lastLogByUser.get(userId);
+          const daysWithoutLog = lastDate
+            ? Math.floor(
+                (today.getTime() - new Date(lastDate).getTime()) /
+                  (1000 * 60 * 60 * 24)
+              )
+            : null;
 
-      await triggerNovu(WORKFLOW_ID, userId, {
-        nickname: nicknameMap.get(userId) ?? "there",
-        daysWithoutLog,
+          await triggerNovu(WORKFLOW_ID, userId, {
+            nickname: nicknameMap.get(userId) ?? "there",
+            daysWithoutLog,
+          });
+        })
+      );
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          nudged++;
+          return;
+        }
+
+        const failedUserId = batch[index] ?? "unknown";
+        console.error(
+          `[re-engagement-nudge] Failed to trigger Novu for user ${failedUserId}:`,
+          result.reason
+        );
+        Sentry.captureException(result.reason, {
+          tags: { task: "re-engagement-nudge" },
+          extra: { userId: failedUserId },
+        });
       });
-      nudged++;
     }
 
     console.log(`[re-engagement-nudge] Nudged ${nudged} users`);
