@@ -69,6 +69,7 @@ export default function RootLayout() {
   const isAuthenticating = useRef(false);
   const startTime = useRef(Date.now());
   const sessionStartRef = useRef(Date.now());
+  const lastHKFetchAt = useRef(Date.now());
 
   const [fontsLoaded, fontError] = useFonts({
     Geist_400Regular,
@@ -150,10 +151,20 @@ export default function RootLayout() {
             authenticateToUnlock();
           }
         }
+
+        if (wasBackgrounded && healthKitConnected) {
+          const minutesSinceFetch = (Date.now() - lastHKFetchAt.current) / 1000 / 60;
+          if (minutesSinceFetch >= 15) {
+            lastHKFetchAt.current = Date.now();
+            fetchHealthKitRange(30, healthKitPreferences)
+              .then((rangeData) => setHealthKitRange(rangeData))
+              .catch(() => {});
+          }
+        }
       }
     });
     return () => sub.remove();
-  }, [appLockEnabled, appLockTimeout]);
+  }, [appLockEnabled, appLockTimeout, healthKitConnected, healthKitPreferences]);
 
   const authenticateToUnlock = async () => {
     if (isAuthenticating.current) return;
@@ -181,6 +192,7 @@ export default function RootLayout() {
       setHealthKitConnected(true);
       const rangeData = await fetchHealthKitRange(30, healthKitPreferences);
       setHealthKitRange(rangeData);
+      lastHKFetchAt.current = Date.now();
       setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics), healthKitPreferences);
     });
   }, []);

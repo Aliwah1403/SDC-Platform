@@ -12,7 +12,7 @@ import {
   saveCategorySample,
   enableBackgroundDelivery,
   subscribeToChanges,
-  getMostRecentQuantitySample,
+  queryQuantitySamplesWithAnchor,
 } from "@kingstinct/react-native-healthkit";
 import {
   CategoryValueSeverity,
@@ -582,6 +582,10 @@ async function saveAlertState(state) {
   }
 }
 
+function anchorKey(type) {
+  return `anchor_${type}`;
+}
+
 export async function setupBackgroundDelivery(onNewData, prefs = {}) {
   if (!isHKAvailable()) return;
 
@@ -599,50 +603,87 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
 
       subscribeToChanges(type, async () => {
         try {
-          const sample = await getMostRecentQuantitySample(type);
-          if (!sample) return;
+          // Load stored anchor — undefined on first fire returns all recent samples
+          const alertState = await loadAlertState();
+          const storedAnchor = alertState[anchorKey(type)] ?? undefined;
 
-          const key = dateStr(new Date(sample.startDate ?? Date.now()));
-          let value = sample.quantity.quantity;
+          const unitMap = {
+            [QT.SPO2]:       "%",
+            [QT.TEMPERATURE]: "degC",
+            [QT.RESTING_HR]:  "count/min",
+          };
+          const { samples, newAnchor } = await queryQuantitySamplesWithAnchor(
+            type,
+            { anchor: storedAnchor, limit: 100, unit: unitMap[type] }
+          );
 
-          if (type === QT.SPO2) value = normaliseSpO2(value);
-          else if (type === QT.TEMPERATURE) value = Math.round(value * 10) / 10;
-          else value = Math.round(value);
+          if (!samples.length) return;
 
           const metricKey =
             type === QT.RESTING_HR ? "heartRate"
-            : type === QT.SPO2 ? "spO2"
-            : "temperature";
+            : type === QT.SPO2     ? "spO2"
+            :                        "temperature";
 
-          onNewData(key, { [metricKey]: value });
+          const normalise = (raw) => {
+            if (type === QT.SPO2)        return normaliseSpO2(raw);
+            if (type === QT.TEMPERATURE) return Math.round(raw * 10) / 10;
+            return Math.round(raw);
+          };
 
-          // Background delivery has no baseline/symptom context — check URGENT thresholds only.
-          // Only alert when crossing INTO the danger zone or after the 4-hour cooldown expires.
-          const inDanger = isInDangerZone(metricKey, value);
+          // Merge all new samples into the store (keyed by date)
+          for (const s of samples) {
+            const key   = dateStr(new Date(s.startDate ?? Date.now()));
+            const value = normalise(s.quantity.quantity);
+            if (value != null) onNewData(key, { [metricKey]: value });
+          }
+
+          // Persist the anchor before alert logic — if notification throws,
+          // the same samples won't be reprocessed on the next observer fire
+          await saveAlertState({ ...alertState, [anchorKey(type)]: newAnchor });
+
+          // Most recent value — used for lastValue / re-entry recovery tracking
+          const sorted = [...samples].sort(
+            (a, b) => new Date(b.startDate) - new Date(a.startDate)
+          );
+          const mostRecentValue = normalise(sorted[0].quantity.quantity);
+
+          // Most severe value — drives alert evaluation so a brief dangerous dip
+          // (e.g. SpO2 91% sandwiched between 98% readings) is never silently missed
+          const severityScore = (raw) => {
+            const v = normalise(raw);
+            if (type === QT.SPO2)        return -v;       // lower is worse
+            if (type === QT.TEMPERATURE) return v;         // higher is worse
+            return Math.abs(v - 80);                      // distance from midpoint
+          };
+          const mostSevere = samples.reduce((worst, s) =>
+            severityScore(s.quantity.quantity) > severityScore(worst.quantity.quantity) ? s : worst
+          );
+          const alertValue = normalise(mostSevere.quantity.quantity);
+
+          // Alert logic — unchanged, operating on alertValue rather than a single sample
+          const inDanger = isInDangerZone(metricKey, alertValue);
           const urgentMsg = !inDanger ? null
             : metricKey === "spO2"
-              ? `Blood oxygen at ${value}% — outside a safe range. Contact your care team now.`
+              ? `Blood oxygen at ${alertValue}% — outside a safe range. Contact your care team now.`
             : metricKey === "temperature"
-              ? `Temperature ${value}°C — fever in SCD is urgent. Seek care immediately.`
-            : `Heart rate ${value} bpm has shifted significantly. Contact your care team.`;
+              ? `Temperature ${alertValue}°C — fever in SCD is urgent. Seek care immediately.`
+            : `Heart rate ${alertValue} bpm has shifted significantly. Contact your care team.`;
 
-          // Always track the last seen value so re-entry detection works after recovery
-          if (!inDanger && value != null) {
-            const alertState = await loadAlertState();
-            const prev = alertState[metricKey] ?? {};
-            await saveAlertState({ ...alertState, [metricKey]: { ...prev, lastValue: value } });
+          if (!inDanger && mostRecentValue != null) {
+            const freshState = await loadAlertState();
+            const prev = freshState[metricKey] ?? {};
+            await saveAlertState({ ...freshState, [metricKey]: { ...prev, lastValue: mostRecentValue } });
           }
 
           if (urgentMsg) {
-            const alertState = await loadAlertState();
-            const prev = alertState[metricKey] ?? {};
-            const prevInDanger = isInDangerZone(metricKey, prev.lastValue ?? null);
+            const freshState = await loadAlertState();
+            const prev            = freshState[metricKey] ?? {};
+            const prevInDanger    = isInDangerZone(metricKey, prev.lastValue ?? null);
             const cooldownExpired = !prev.lastAlertAt || (Date.now() - prev.lastAlertAt) >= ALERT_COOLDOWN_MS;
-            const isCrossing = !prevInDanger;
+            const isCrossing      = !prevInDanger;
 
             if (!isCrossing && !cooldownExpired) {
-              // Already in danger zone and within cooldown — skip
-              await saveAlertState({ ...alertState, [metricKey]: { ...prev, lastValue: value } });
+              await saveAlertState({ ...freshState, [metricKey]: { ...prev, lastValue: alertValue } });
             } else {
               await Notifications.scheduleNotificationAsync({
                 content: {
@@ -654,11 +695,10 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
               });
 
               await saveAlertState({
-                ...alertState,
-                [metricKey]: { lastAlertAt: Date.now(), lastValue: value },
+                ...freshState,
+                [metricKey]: { lastAlertAt: Date.now(), lastValue: alertValue },
               });
 
-              // Write to system_notifications so the alert appears in the unified feed
               try {
                 const { data: { user } } = await supabase.auth.getUser();
                 if (user) {
