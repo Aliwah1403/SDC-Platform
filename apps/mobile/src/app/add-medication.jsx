@@ -515,16 +515,24 @@ export default function AddMedicationScreen() {
       updateMed.mutate(
         { id: medicationId, updates: med },
         {
-          onSuccess: () => {
-            scheduleMedicationNotifications({ ...med, id: medicationId });
+          onSuccess: async () => {
+            try {
+              await scheduleMedicationNotifications({ ...med, id: medicationId });
+            } catch (error) {
+              console.error("Failed to schedule medication notifications:", error);
+            }
             router.back();
           },
         },
       );
     } else {
       addMed.mutate(med, {
-        onSuccess: (savedMed) => {
-          scheduleMedicationNotifications({ ...med, id: savedMed.id });
+        onSuccess: async (savedMed) => {
+          try {
+            await scheduleMedicationNotifications({ ...med, id: savedMed.id });
+          } catch (error) {
+            console.error("Failed to schedule medication notifications:", error);
+          }
           router.back();
         },
       });
@@ -537,8 +545,12 @@ export default function AddMedicationScreen() {
       {
         text: "Delete",
         style: "destructive",
-        onPress: () => {
-          cancelMedicationNotifications(medicationId);
+        onPress: async () => {
+          try {
+            await cancelMedicationNotifications(medicationId);
+          } catch (error) {
+            console.error("Failed to cancel medication notifications:", error);
+          }
           deleteMed.mutate(medicationId);
           router.back();
         },

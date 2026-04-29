@@ -12,15 +12,17 @@ function parseTimeToHourMinute(timeStr) {
 }
 
 function offsetTime({ hour, minute }, offsetMinutes) {
-  let totalMinutes = hour * 60 + minute + offsetMinutes;
-  totalMinutes = ((totalMinutes % 1440) + 1440) % 1440; // wrap around midnight
-  return { hour: Math.floor(totalMinutes / 60), minute: totalMinutes % 60 };
+  const rawTotalMinutes = hour * 60 + minute + offsetMinutes;
+  const dayShift = Math.floor(rawTotalMinutes / 1440);
+  const totalMinutes = ((rawTotalMinutes % 1440) + 1440) % 1440; // wrap around midnight
+  return {
+    hour: Math.floor(totalMinutes / 60),
+    minute: totalMinutes % 60,
+    dayShift,
+  };
 }
 
-function weekdayTrigger(hour, minute) {
-  // Sunday = 1 in expo-notifications weekday convention
-  const jsDay = new Date().getDay(); // 0 = Sunday
-  const weekday = jsDay + 1;
+function weekdayTrigger(weekday, hour, minute) {
   return {
     type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
     weekday,
@@ -44,6 +46,8 @@ export async function scheduleMedicationNotifications(med) {
   if (!med.time || med.frequency === 'As needed') return;
 
   const isWeekly = med.frequency === 'Weekly';
+  // Sunday = 1 in expo-notifications weekday convention
+  const baseWeekday = new Date().getDay() + 1;
   const times = med.time.split(',').map((t) => t.trim()).filter(Boolean);
 
   for (const timeStr of times) {
@@ -51,7 +55,7 @@ export async function scheduleMedicationNotifications(med) {
     if (!parsed) continue;
 
     const trigger = isWeekly
-      ? weekdayTrigger(parsed.hour, parsed.minute)
+      ? weekdayTrigger(baseWeekday, parsed.hour, parsed.minute)
       : dailyTrigger(parsed.hour, parsed.minute);
 
     // Main dose notification
@@ -71,6 +75,7 @@ export async function scheduleMedicationNotifications(med) {
     // "Remind before" notifications
     for (const r of reminders.filter((r) => r.direction === 'before')) {
       const t = offsetTime(parsed, -r.offsetMinutes);
+      const reminderWeekday = ((baseWeekday - 1 + t.dayShift) % 7 + 7) % 7 + 1;
       await Notifications.scheduleNotificationAsync({
         identifier: `med-${med.id}-${timeStr}-before-${r.offsetMinutes}`,
         content: {
@@ -79,13 +84,16 @@ export async function scheduleMedicationNotifications(med) {
           data: { type: 'medication', medicationId: med.id },
           sound: true,
         },
-        trigger: isWeekly ? weekdayTrigger(t.hour, t.minute) : dailyTrigger(t.hour, t.minute),
+        trigger: isWeekly
+          ? weekdayTrigger(reminderWeekday, t.hour, t.minute)
+          : dailyTrigger(t.hour, t.minute),
       });
     }
 
     // "Remind if missed" notifications
     for (const r of reminders.filter((r) => r.direction === 'after')) {
       const t = offsetTime(parsed, r.offsetMinutes);
+      const reminderWeekday = ((baseWeekday - 1 + t.dayShift) % 7 + 7) % 7 + 1;
       await Notifications.scheduleNotificationAsync({
         identifier: `med-${med.id}-${timeStr}-after-${r.offsetMinutes}`,
         content: {
@@ -94,7 +102,9 @@ export async function scheduleMedicationNotifications(med) {
           data: { type: 'medication', medicationId: med.id },
           sound: true,
         },
-        trigger: isWeekly ? weekdayTrigger(t.hour, t.minute) : dailyTrigger(t.hour, t.minute),
+        trigger: isWeekly
+          ? weekdayTrigger(reminderWeekday, t.hour, t.minute)
+          : dailyTrigger(t.hour, t.minute),
       });
     }
   }
