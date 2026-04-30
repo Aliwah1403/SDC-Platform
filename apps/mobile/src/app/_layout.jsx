@@ -155,10 +155,14 @@ export default function RootLayout() {
         if (wasBackgrounded && healthKitConnected) {
           const minutesSinceFetch = (Date.now() - lastHKFetchAt.current) / 1000 / 60;
           if (minutesSinceFetch >= 15) {
-            lastHKFetchAt.current = Date.now();
             fetchHealthKitRange(30, healthKitPreferences)
-              .then((rangeData) => setHealthKitRange(rangeData))
-              .catch(() => {});
+              .then((rangeData) => {
+                setHealthKitRange(rangeData);
+                lastHKFetchAt.current = Date.now();
+              })
+              .catch((err) => {
+                console.error("[HealthKit] Failed to refresh range after background:", err);
+              });
           }
         }
       }

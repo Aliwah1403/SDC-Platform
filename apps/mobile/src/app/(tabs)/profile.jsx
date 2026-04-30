@@ -48,7 +48,6 @@ import {
   User,
   Lock,
   HelpCircle,
-  Info,
   LogOut,
   Fingerprint,
   Search,
@@ -61,6 +60,8 @@ import {
   PenLine,
   Images,
   Trash2,
+  Shield,
+  ShieldHalf,
 } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
@@ -88,7 +89,10 @@ import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";
-import { scheduleCheckInReminders, cancelCheckInReminders } from "@/utils/checkInNotifications";
+import {
+  scheduleCheckInReminders,
+  cancelCheckInReminders,
+} from "@/utils/checkInNotifications";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -353,7 +357,7 @@ export default function ProfileScreen() {
   const canUnlink = identities.length > 1;
 
   useEffect(() => {
-    posthog?.capture('profile_viewed', {});
+    posthog?.capture("profile_viewed", {});
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const currentSession = useAuthStore.getState().auth?.session;
@@ -446,17 +450,20 @@ export default function ProfileScreen() {
         if (newStatus !== "granted") return;
       }
     }
-    posthog?.capture('notifications_toggled', { enabled: val });
+    posthog?.capture("notifications_toggled", { enabled: val });
     setNotificationsEnabled(val);
-    updateProfile.mutate({ notificationsEnabled: val }, {
-      onSuccess: () => {
-        if (val) {
-          scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
-        } else {
-          cancelCheckInReminders();
-        }
+    updateProfile.mutate(
+      { notificationsEnabled: val },
+      {
+        onSuccess: () => {
+          if (val) {
+            scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
+          } else {
+            cancelCheckInReminders();
+          }
+        },
       },
-    });
+    );
   };
   const appLockLabel = appLockEnabled
     ? `On · ${appLockTimeout === 0 ? "Immediately" : appLockTimeout === 1 ? "1 min" : appLockTimeout === 60 ? "1 hour" : `${appLockTimeout} min`}`
@@ -567,7 +574,7 @@ export default function ProfileScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          posthog?.capture('sign_out', {});
+          posthog?.capture("sign_out", {});
           await signOut();
           router.replace("/(auth)/welcome");
         },
@@ -903,14 +910,6 @@ export default function ProfileScreen() {
         onPress: () => router.push("/feedback-modal"),
       },
       {
-        key: "about",
-        label: "About Hemo",
-        section: "Support",
-        icon: Info,
-        iconColor: "#6B7280",
-        onPress: () => comingSoon("About Hemo"),
-      },
-      {
         key: "signout",
         label: "Sign Out",
         section: "",
@@ -1142,7 +1141,7 @@ export default function ProfileScreen() {
 
       <Animated.ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -1571,13 +1570,20 @@ export default function ProfileScreen() {
               disabled={isFeedbackInitializing}
               onPress={handleStartFeedback}
             />
+          </SectionCard>
+
+          <SectionCard title="Legal">
             <SettingRow
-              icon={Info}
-              iconColor="#6B7280"
-              label="About Hemo"
-              value="v1.0.0"
+              icon={ShieldHalf}
+              label="Privacy Policy"
+              onPress={() => comingSoon("Privacy Policy")}
               rightElement="chevron"
-              onPress={() => comingSoon("About Hemo")}
+            />
+            <SettingRow
+              icon={Shield}
+              label="Terms of Service"
+              onPress={() => comingSoon("Terms of Service")}
+              rightElement="chevron"
             />
           </SectionCard>
 
@@ -1590,25 +1596,55 @@ export default function ProfileScreen() {
             />
           </SectionCard>
 
+          {/* Profile Footer */}
           <View style={{ alignItems: "center", marginTop: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 5,
+              }}
+            >
+              <Image
+                source={require("../../../assets/images/icon.png")}
+                style={{ width: 70, height: 50, borderRadius: 10 }}
+              />
+            </View>
             <Text
               style={{
-                fontFamily: fonts.semibold,
+                fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "#A9334D",
+                color: "#9CA3AF",
                 marginBottom: 2,
               }}
             >
-              Hemo
+              © {new Date().getFullYear()} Hemo. All Rights Reserved.
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#9CA3AF",
+                marginBottom: 2,
+              }}
+            >
+              {" "}
+              v1.0.0
             </Text>
             <Text
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 11,
                 color: "#C4A8A4",
+                textAlign: "center",
+                paddingHorizontal: 32,
+                marginTop: 6,
+                lineHeight: 16,
               }}
             >
-              Your sickle cell companion
+              Hemo is not a substitute for professional medical advice. Always
+              consult your physician first.
             </Text>
           </View>
         </View>
@@ -1912,10 +1948,17 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
-                  posthog?.capture('check_in_frequency_changed', { frequency: opt.value });
-                  updateProfile.mutate({ checkInFrequency: opt.value }, {
-                    onSuccess: () => notificationsEnabled && scheduleCheckInReminders(opt.value),
+                  posthog?.capture("check_in_frequency_changed", {
+                    frequency: opt.value,
                   });
+                  updateProfile.mutate(
+                    { checkInFrequency: opt.value },
+                    {
+                      onSuccess: () =>
+                        notificationsEnabled &&
+                        scheduleCheckInReminders(opt.value),
+                    },
+                  );
                   setEditingFrequency(false);
                 }}
                 style={({ pressed }) => ({

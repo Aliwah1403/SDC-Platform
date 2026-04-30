@@ -1,11 +1,10 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
-import { triggerNovu } from "../lib/novu";
+import { triggerNovuBulk } from "../lib/novu";
 import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-re-engagement";
 const GAP_DAYS = 3;
-const NOVU_BATCH_SIZE = 25;
 
 export const reEngagementNudge = schedules.task({
   id: "re-engagement-nudge",
@@ -66,44 +65,37 @@ export const reEngagementNudge = schedules.task({
       (profiles ?? []).map((p) => [p.user_id, p.nickname as string | null])
     );
 
-    let nudged = 0;
-    for (let i = 0; i < lapsedIds.length; i += NOVU_BATCH_SIZE) {
-      const batch = lapsedIds.slice(i, i + NOVU_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(async (userId) => {
-          const lastDate = lastLogByUser.get(userId);
-          const daysWithoutLog = lastDate
-            ? Math.floor(
-                (today.getTime() - new Date(lastDate).getTime()) /
-                  (1000 * 60 * 60 * 24)
-              )
-            : null;
+    const bulkEvents = lapsedIds.map((userId) => {
+      const lastDate = lastLogByUser.get(userId);
+      const daysWithoutLog = lastDate
+        ? Math.floor(
+            (today.getTime() - new Date(lastDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          )
+        : null;
 
-          await triggerNovu(WORKFLOW_ID, userId, {
-            nickname: nicknameMap.get(userId) ?? "there",
-            daysWithoutLog,
-          });
-        })
-      );
+      return {
+        workflowId: WORKFLOW_ID,
+        subscriberId: userId,
+        payload: {
+          nickname: nicknameMap.get(userId) ?? "there",
+          daysWithoutLog,
+        },
+      };
+    });
 
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          nudged++;
-          return;
-        }
-
-        const failedUserId = batch[index] ?? "unknown";
-        console.error(
-          `[re-engagement-nudge] Failed to trigger Novu for user ${failedUserId}:`,
-          result.reason
-        );
-        Sentry.captureException(result.reason, {
-          tags: { task: "re-engagement-nudge" },
-          extra: { userId: failedUserId },
-        });
-      });
+    let failedCount = 0;
+    try {
+      ({ failedCount } = await triggerNovuBulk(bulkEvents));
+      if (failedCount > 0) {
+        console.error(`[re-engagement-nudge] ${failedCount} partial failures in bulk send`);
+      }
+    } catch (err) {
+      Sentry.captureException(err, { tags: { task: "re-engagement-nudge" } });
+      throw err;
     }
 
+    const nudged = lapsedIds.length - failedCount;
     console.log(`[re-engagement-nudge] Nudged ${nudged} users`);
     return { nudged };
   },

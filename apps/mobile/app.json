@@ -93,7 +93,9 @@
       [
         "@sentry/react-native/expo",
         {
-          "url": "https://sentry.io/"
+          "url": "https://sentry.io/",
+          "organization": "hemo-scd",
+          "project": "hemo-scd"
         }
       ]
     ],

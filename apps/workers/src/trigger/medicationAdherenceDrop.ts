@@ -1,12 +1,11 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
-import { triggerNovu } from "../lib/novu";
+import { triggerNovuBulk } from "../lib/novu";
 import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-adherence-drop";
 const ADHERENCE_THRESHOLD = 0.7;
 const LOOKBACK_DAYS = 7;
-const NOVU_BATCH_SIZE = 25;
 
 export const medicationAdherenceDrop = schedules.task({
   id: "medication-adherence-drop",
@@ -99,38 +98,25 @@ export const medicationAdherenceDrop = schedules.task({
       });
     }
 
-    let nudged = 0;
-    for (let i = 0; i < lowAdherencePayloads.length; i += NOVU_BATCH_SIZE) {
-      const batch = lowAdherencePayloads.slice(i, i + NOVU_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map(({ userId, nickname, adherencePercent }) =>
-          triggerNovu(
-            WORKFLOW_ID,
-            userId,
-            { nickname, adherencePercent },
-            { idempotencyKey: `${WORKFLOW_ID}:${userId}:${runDateStr}` }
-          )
-        )
-      );
+    const bulkEvents = lowAdherencePayloads.map(({ userId, nickname, adherencePercent }) => ({
+      workflowId: WORKFLOW_ID,
+      subscriberId: userId,
+      payload: { nickname, adherencePercent },
+      idempotencyKey: `${WORKFLOW_ID}:${userId}:${runDateStr}`,
+    }));
 
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          nudged++;
-          return;
-        }
-
-        const failedUserId = batch[index]?.userId ?? "unknown";
-        console.error(
-          `[medication-adherence-drop] Failed to trigger Novu for user ${failedUserId}:`,
-          result.reason
-        );
-        Sentry.captureException(result.reason, {
-          tags: { task: "medication-adherence-drop" },
-          extra: { userId: failedUserId },
-        });
-      });
+    let failedCount = 0;
+    try {
+      ({ failedCount } = await triggerNovuBulk(bulkEvents));
+      if (failedCount > 0) {
+        console.error(`[medication-adherence-drop] ${failedCount} partial failures in bulk send`);
+      }
+    } catch (err) {
+      Sentry.captureException(err, { tags: { task: "medication-adherence-drop" } });
+      throw err;
     }
 
+    const nudged = lowAdherencePayloads.length - failedCount;
     console.log(`[medication-adherence-drop] Nudged ${nudged} users`);
     return { nudged };
   },
