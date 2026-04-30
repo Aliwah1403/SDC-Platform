@@ -73,6 +73,8 @@ export async function completeOnboarding(userId, onboardingData) {
     allergies = [],
     emergencyContacts = [],
     medications = [],
+    timezone,
+    timezoneAuto = true,
   } = onboardingData;
 
   // 1. Update profile
@@ -90,6 +92,8 @@ export async function completeOnboarding(userId, onboardingData) {
       preferred_hospital: preferredHospital || null,
       blood_type: bloodType || null,
       allergies: allergies.length > 0 ? allergies : [],
+      timezone: timezone || null,
+      timezone_auto: timezoneAuto,
       onboarding_complete: true,
       updated_at: new Date().toISOString(),
     })

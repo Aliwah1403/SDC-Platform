@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
-import { fetchProfile } from "@/services/supabaseQueries";
+import { fetchProfile, updateProfile } from "@/services/supabaseQueries";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
 import '@/utils/backgroundNotificationRefresh';
 import { registerNotificationRefreshTask } from "@/utils/backgroundNotificationRefresh";
@@ -228,6 +228,10 @@ export default function RootLayout() {
       .then((profile) => {
         if (profile?.notificationsEnabled) {
           scheduleCheckInReminders(profile.checkInFrequency ?? 2);
+        }
+        // Keep timezone current when user travels (only when auto is on)
+        if (profile?.timezoneAuto !== false) {
+          updateProfile(userId, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }).catch(() => {});
         }
       })
       .catch(() => {});

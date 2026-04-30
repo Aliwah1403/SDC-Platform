@@ -17,6 +17,8 @@ export const useAppStore = create((set) => ({
     healthDataConnected: [],
     bloodType: null,
     allergies: [],
+    timezone: null,
+    timezoneAuto: true,
   },
 
   setOnboardingField: (field, value) =>
@@ -41,6 +43,8 @@ export const useAppStore = create((set) => ({
         healthDataConnected: [],
         bloodType: null,
         allergies: [],
+        timezone: null,
+        timezoneAuto: true,
       },
     }),
 

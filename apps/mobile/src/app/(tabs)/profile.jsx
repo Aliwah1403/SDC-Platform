@@ -125,6 +125,32 @@ function formatDob(dob) {
   });
 }
 
+const TIMEZONE_LIST = [
+  { value: 'Pacific/Honolulu',    label: 'Hawaii (UTC−10)' },
+  { value: 'America/Anchorage',   label: 'Alaska (UTC−9)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (UTC−8/−7)' },
+  { value: 'America/Denver',      label: 'Mountain Time (UTC−7/−6)' },
+  { value: 'America/Chicago',     label: 'Central Time (UTC−6/−5)' },
+  { value: 'America/New_York',    label: 'Eastern Time (UTC−5/−4)' },
+  { value: 'America/Sao_Paulo',   label: 'Brazil (UTC−3)' },
+  { value: 'Atlantic/Azores',     label: 'Azores (UTC−1)' },
+  { value: 'Europe/London',       label: 'London / Dublin (UTC±0/+1)' },
+  { value: 'Europe/Paris',        label: 'Central Europe (UTC+1/+2)' },
+  { value: 'Europe/Helsinki',     label: 'Eastern Europe (UTC+2/+3)' },
+  { value: 'Africa/Lagos',        label: 'West Africa (UTC+1)' },
+  { value: 'Africa/Nairobi',      label: 'East Africa (UTC+3)' },
+  { value: 'Asia/Dubai',          label: 'Gulf / UAE (UTC+4)' },
+  { value: 'Asia/Karachi',        label: 'Pakistan (UTC+5)' },
+  { value: 'Asia/Kolkata',        label: 'India (UTC+5:30)' },
+  { value: 'Asia/Dhaka',          label: 'Bangladesh (UTC+6)' },
+  { value: 'Asia/Bangkok',        label: 'Indochina (UTC+7)' },
+  { value: 'Asia/Singapore',      label: 'Singapore / Malaysia (UTC+8)' },
+  { value: 'Asia/Tokyo',          label: 'Japan / Korea (UTC+9)' },
+  { value: 'Australia/Sydney',    label: 'Sydney (UTC+10/+11)' },
+  { value: 'Pacific/Auckland',    label: 'New Zealand (UTC+12/+13)' },
+];
+const TIMEZONE_DISPLAY = Object.fromEntries(TIMEZONE_LIST.map((t) => [t.value, t.label]));
+
 const FREQUENCY_OPTIONS = [
   { label: "Twice a day", value: 2 },
   { label: "3 times a day", value: 3 },
@@ -397,6 +423,7 @@ export default function ProfileScreen() {
   const [editingNickname, setEditingNickname] = useState(false);
   const [editingAppearance, setEditingAppearance] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState(false);
+  const [editingTimezone, setEditingTimezone] = useState(false);
   const [editingBloodType, setEditingBloodType] = useState(false);
   const [editingAllergies, setEditingAllergies] = useState(false);
   const [tempAllergyPresets, setTempAllergyPresets] = useState([]);
@@ -441,6 +468,9 @@ export default function ProfileScreen() {
       },
     ],
   }));
+
+  const timezoneAuto = profile?.timezoneAuto ?? true;
+  const timezone = profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const scdType = profile?.scdType;
   const age = formatAge(profile?.dob);
@@ -927,6 +957,22 @@ export default function ProfileScreen() {
         icon: Globe,
         iconColor: "#6B7280",
         onPress: () => setEditingLanguage(true),
+      },
+      {
+        key: "timezone-auto",
+        label: "Automatic Timezone",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => {},
+      },
+      {
+        key: "timezone",
+        label: "Timezone",
+        section: "Preferences",
+        icon: Clock,
+        iconColor: "#6B7280",
+        onPress: () => setEditingTimezone(true),
       },
       {
         key: "password",
@@ -1454,6 +1500,32 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={() => setEditingLanguage(true)}
             />
+            <SettingRowToggle
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Automatic Timezone"
+              value={timezoneAuto}
+              onChange={(val) => {
+                if (val) {
+                  updateProfile.mutate({
+                    timezoneAuto: true,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  });
+                } else {
+                  updateProfile.mutate({ timezoneAuto: false });
+                }
+              }}
+            />
+            {!timezoneAuto && (
+              <SettingRow
+                icon={Clock}
+                iconColor="#6B7280"
+                label="Timezone"
+                value={TIMEZONE_DISPLAY[timezone] ?? timezone}
+                rightElement="chevron"
+                onPress={() => setEditingTimezone(true)}
+              />
+            )}
           </SectionCard>
 
           <SectionCard title="Account">
@@ -2768,6 +2840,80 @@ export default function ProfileScreen() {
             </Text>
             <Check size={18} color="#A9334D" />
           </Pressable>
+        </View>
+      </Modal>
+
+      {/* ── Timezone Picker Sheet ── */}
+      <Modal
+        visible={editingTimezone}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingTimezone(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingTimezone(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+            maxHeight: "70%",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingTimezone(false)} hitSlop={12}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+              Timezone
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <FlatList
+            data={TIMEZONE_LIST}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item, index }) => (
+              <React.Fragment>
+                <Pressable
+                  onPress={() => {
+                    updateProfile.mutate({ timezone: item.value });
+                    setEditingTimezone(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  })}
+                >
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#09332C", flex: 1 }}>
+                    {item.label}
+                  </Text>
+                  {timezone === item.value && <Check size={18} color="#A9334D" />}
+                </Pressable>
+                {index < TIMEZONE_LIST.length - 1 && (
+                  <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
+                )}
+              </React.Fragment>
+            )}
+          />
         </View>
       </Modal>
 
