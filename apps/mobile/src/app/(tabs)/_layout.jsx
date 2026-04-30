@@ -2,8 +2,6 @@ import { Tabs } from "expo-router";
 import {
   Home,
   Activity,
-  Calendar,
-  MessageCircle,
   Users,
   HeartHandshake,
 } from "lucide-react-native";
@@ -44,13 +42,8 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <Activity color={color} size={20} />,
         }}
       />
-      <Tabs.Screen
-        name="learn"
-        options={{
-          title: "Learn",
-          tabBarIcon: ({ color }) => <MessageCircle color={color} size={22} />,
-        }}
-      />
+      {/* Learn tab hidden — direction TBD */}
+      <Tabs.Screen name="learn" options={{ href: null }} />
       <Tabs.Screen
         name="care"
         options={{

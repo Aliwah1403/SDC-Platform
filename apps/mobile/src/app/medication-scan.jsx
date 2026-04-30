@@ -40,37 +40,60 @@ const { height: SCREEN_H } = Dimensions.get("window");
 const VIEWFINDER_RATIO = 0.58;
 
 const C = {
-  bg:         "#F2EEE8",
-  card:       "#ffffff",
-  border:     "#F0E4E1",
-  textDark:   "#09332C",
-  muted:      "#9CA3AF",
-  accent:     "#A9334D",
-  darkBurg:   "#781D11",
-  orange:     "#F0531C",
-  cream:      "#F8E9E7",
+  bg: "#F2EEE8",
+  card: "#ffffff",
+  border: "#F0E4E1",
+  textDark: "#09332C",
+  muted: "#9CA3AF",
+  accent: "#A9334D",
+  darkBurg: "#781D11",
+  orange: "#F0531C",
+  cream: "#F8E9E7",
 };
 
 const TIPS = [
   { Icon: Focus, text: "Ensure the label or pill is clearly in focus" },
-  { Icon: Sun,   text: "Use good lighting — avoid harsh shadows" },
-  { Icon: Type,  text: "Include the drug name or pill imprint" },
+  { Icon: Sun, text: "Use good lighting — avoid harsh shadows" },
+  { Icon: Type, text: "Include the drug name or pill imprint" },
 ];
 
 const STEPS = [
-  { n: "1", title: "Point at label or pill",  body: "Place the medication on a flat, well-lit surface." },
-  { n: "2", title: "Capture a clear photo",   body: "Ensure text is readable and the pill is in focus." },
+  {
+    n: "1",
+    title: "Point at label or pill",
+    body: "Place the medication on a flat, well-lit surface.",
+  },
+  {
+    n: "2",
+    title: "Capture a clear photo",
+    body: "Ensure text is readable and the pill is in focus.",
+  },
 ];
 
 // ─── Result card (unchanged) ──────────────────────────────────────────────────
 
-function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, onStrengthChange, enriching, onAdd, onClear }) {
+function ResultCard({
+  result,
+  confirmedName,
+  onNameChange,
+  confirmedStrength,
+  onStrengthChange,
+  enriching,
+  onAdd,
+  onClear,
+}) {
   return (
     <View style={styles.resultCard}>
       <View style={styles.resultHeader}>
         <CheckCircle size={20} color="#059669" />
         <Text style={styles.resultFoundLabel}>Medication identified</Text>
-        {enriching && <ActivityIndicator size="small" color={C.muted} style={{ marginLeft: 6 }} />}
+        {enriching && (
+          <ActivityIndicator
+            size="small"
+            color={C.muted}
+            style={{ marginLeft: 6 }}
+          />
+        )}
       </View>
 
       <TextInput
@@ -81,7 +104,14 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
         placeholderTextColor={C.muted}
       />
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: 4,
+        }}
+      >
         <TextInput
           value={confirmedStrength}
           onChangeText={onStrengthChange}
@@ -89,7 +119,9 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
           placeholder="Strength (e.g. 500mg)"
           placeholderTextColor={C.muted}
         />
-        {result.form ? <Text style={styles.resultForm}>{result.form}</Text> : null}
+        {result.form ? (
+          <Text style={styles.resultForm}>{result.form}</Text>
+        ) : null}
       </View>
 
       <Text style={styles.editHint}>Tap name or strength to edit</Text>
@@ -111,10 +143,18 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
         </View>
       ) : null}
 
-      <TouchableOpacity style={styles.addButton} onPress={onAdd} activeOpacity={0.8}>
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={onAdd}
+        activeOpacity={0.8}
+      >
         <Text style={styles.addButtonText}>Confirm & Add</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.clearButton} onPress={onClear} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.clearButton}
+        onPress={onClear}
+        activeOpacity={0.7}
+      >
         <Text style={styles.clearButtonText}>Scan another</Text>
       </TouchableOpacity>
     </View>
@@ -125,8 +165,8 @@ function ResultCard({ result, confirmedName, onNameChange, confirmedStrength, on
 
 function BarcodeCamera({ onResult, flash, onScanOverlay }) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [scanned, setScanned]           = useState(false);
-  const [loading, setLoading]           = useState(false);
+  const [scanned, setScanned] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleBarcode = async ({ data }) => {
     if (scanned || loading) return;
@@ -153,23 +193,32 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
         );
       }
     } catch {
-      Alert.alert("Error", "Failed to look up this barcode. Please try again.", [
-        { text: "OK", onPress: () => setScanned(false) },
-      ]);
+      Alert.alert(
+        "Error",
+        "Failed to look up this barcode. Please try again.",
+        [{ text: "OK", onPress: () => setScanned(false) }],
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  if (!permission) return <View style={{ flex: 1, backgroundColor: C.darkBurg }} />;
+  if (!permission)
+    return <View style={{ flex: 1, backgroundColor: C.darkBurg }} />;
 
   if (!permission.granted) {
     return (
       <View style={styles.permissionBox}>
         <Camera size={36} color="rgba(248,233,231,0.5)" />
         <Text style={styles.permissionTitle}>Camera access needed</Text>
-        <Text style={styles.permissionSubtitle}>Allow camera access to scan medication barcodes</Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission} activeOpacity={0.8}>
+        <Text style={styles.permissionSubtitle}>
+          Allow camera access to scan medication barcodes
+        </Text>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={requestPermission}
+          activeOpacity={0.8}
+        >
           <Text style={styles.permissionButtonText}>Grant Access</Text>
         </TouchableOpacity>
       </View>
@@ -182,7 +231,9 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
         style={StyleSheet.absoluteFill}
         facing="back"
         enableTorch={flash}
-        barcodeScannerSettings={{ barcodeTypes: ["ean13", "upc_a", "code128", "code39"] }}
+        barcodeScannerSettings={{
+          barcodeTypes: ["ean13", "upc_a", "code128", "code39"],
+        }}
         onBarcodeScanned={handleBarcode}
       />
 
@@ -207,7 +258,9 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
       {/* Instruction pill */}
       <View style={styles.instructionPill} pointerEvents="none">
         <ScanLine size={13} color={C.orange} />
-        <Text style={styles.instructionText}>Point at the barcode on the medication packaging</Text>
+        <Text style={styles.instructionText}>
+          Point at the barcode on the medication packaging
+        </Text>
       </View>
 
       {loading && (
@@ -218,7 +271,11 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
       )}
 
       {scanned && !loading && (
-        <TouchableOpacity style={styles.rescanButton} onPress={() => setScanned(false)} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.rescanButton}
+          onPress={() => setScanned(false)}
+          activeOpacity={0.8}
+        >
           <Text style={styles.rescanButtonText}>Tap to scan again</Text>
         </TouchableOpacity>
       )}
@@ -231,11 +288,19 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
 function PhotoContent({ onResult }) {
   const [loading, setLoading] = useState(false);
 
-  const pickAndIdentify = async (useCamera: boolean) => {
+  const pickAndIdentify = async (useCamera) => {
     try {
       const result = useCamera
-        ? await ImagePicker.launchCameraAsync({ base64: true, quality: 0.7, mediaTypes: "images" })
-        : await ImagePicker.launchImageLibraryAsync({ base64: true, quality: 0.7, mediaTypes: "images" });
+        ? await ImagePicker.launchCameraAsync({
+            base64: true,
+            quality: 0.7,
+            mediaTypes: "images",
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            base64: true,
+            quality: 0.7,
+            mediaTypes: "images",
+          });
 
       if (result.canceled || !result.assets?.[0]) return;
       const asset = result.assets[0];
@@ -244,7 +309,11 @@ function PhotoContent({ onResult }) {
       const jpeg = await ImageManipulator.manipulateAsync(
         asset.uri,
         [{ resize: { width: 1280 } }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+        {
+          compress: 0.8,
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+        },
       );
 
       if (!jpeg.base64) {
@@ -261,7 +330,10 @@ function PhotoContent({ onResult }) {
         Alert.alert("Couldn't identify", msg);
       } else {
         Sentry.captureException(err);
-        Alert.alert("Error", "Something went wrong. Please try a clearer photo.");
+        Alert.alert(
+          "Error",
+          "Something went wrong. Please try a clearer photo.",
+        );
       }
     } finally {
       setLoading(false);
@@ -273,7 +345,9 @@ function PhotoContent({ onResult }) {
       <View style={styles.loadingBox}>
         <ActivityIndicator color={C.accent} size="large" />
         <Text style={styles.loadingBoxTitle}>Analysing image…</Text>
-        <Text style={styles.loadingBoxSubtitle}>This usually takes 5–10 seconds</Text>
+        <Text style={styles.loadingBoxSubtitle}>
+          This usually takes 5–10 seconds
+        </Text>
       </View>
     );
   }
@@ -282,11 +356,17 @@ function PhotoContent({ onResult }) {
     <View style={{ flex: 1 }}>
       {/* Scrollable steps + tips */}
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 180 }}
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          paddingTop: 24,
+          paddingBottom: 180,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.howTitle}>How it works</Text>
-        <Text style={styles.howSubtitle}>Our AI identifies your medication from a photo.</Text>
+        <Text style={styles.howSubtitle}>
+          Our AI identifies your medication from a photo.
+        </Text>
 
         {/* Steps */}
         <View style={{ marginTop: 24, gap: 20 }}>
@@ -307,7 +387,9 @@ function PhotoContent({ onResult }) {
             </View>
             <View style={{ flex: 1, paddingTop: 2 }}>
               <Text style={styles.stepTitle}>AI Identifies</Text>
-              <Text style={styles.stepBody}>We'll instantly match it to our medical database.</Text>
+              <Text style={styles.stepBody}>
+                We'll instantly match it to our medical database.
+              </Text>
             </View>
           </View>
         </View>
@@ -332,11 +414,19 @@ function PhotoContent({ onResult }) {
         style={styles.ctaGradient}
         pointerEvents="box-none"
       >
-        <TouchableOpacity style={styles.primaryCta} onPress={() => pickAndIdentify(true)} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.primaryCta}
+          onPress={() => pickAndIdentify(true)}
+          activeOpacity={0.8}
+        >
           <Camera size={18} color="#fff" />
           <Text style={styles.primaryCtaText}>Take Photo</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryCta} onPress={() => pickAndIdentify(false)} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.secondaryCta}
+          onPress={() => pickAndIdentify(false)}
+          activeOpacity={0.7}
+        >
           <ImageIcon size={18} color={`${C.textDark}99`} />
           <Text style={styles.secondaryCtaText}>Choose from Library</Text>
         </TouchableOpacity>
@@ -349,14 +439,14 @@ function PhotoContent({ onResult }) {
 
 export default function MedicationScanScreen() {
   const insets = useSafeAreaInsets();
-  const router= useRouter();
-  const [tab, setTab]= useState("barcode");
-  const [flash, setFlash]= useState(false);
-  const [result, setResult]= useState(null);
-  const [confirmedName, setConfirmedName]         = useState("");
+  const router = useRouter();
+  const [tab, setTab] = useState("barcode");
+  const [flash, setFlash] = useState(false);
+  const [result, setResult] = useState(null);
+  const [confirmedName, setConfirmedName] = useState("");
   const [confirmedStrength, setConfirmedStrength] = useState("");
   const [confirmedCategory, setConfirmedCategory] = useState("Supportive");
-  const [enriching, setEnriching]                 = useState(false);
+  const [enriching, setEnriching] = useState(false);
   const userEditedNameRef = useRef(false);
 
   const handlePhotoResult = async (identified) => {
@@ -381,7 +471,10 @@ export default function MedicationScanScreen() {
     if (result._barcodeResult) {
       router.replace({
         pathname: "/add-medication",
-        params: { prefillName: result._barcodeResult.name, prefillCategory: result._barcodeResult.category },
+        params: {
+          prefillName: result._barcodeResult.name,
+          prefillCategory: result._barcodeResult.category,
+        },
       });
     } else {
       router.replace({
@@ -399,29 +492,68 @@ export default function MedicationScanScreen() {
 
   // ── Tabs pill (shared between both modes) ──
   const TabPill = ({ onDark }) => (
-    <View style={[styles.tabPill, onDark ? styles.tabPillDark : styles.tabPillLight]}>
-      {(["barcode", "photo"]).map((t) => {
+    <View
+      style={[
+        styles.tabPill,
+        onDark ? styles.tabPillDark : styles.tabPillLight,
+      ]}
+    >
+      {["barcode", "photo"].map((t) => {
         const active = tab === t;
         return (
           <TouchableOpacity
             key={t}
-            onPress={() => { setTab(t); setResult(null); setFlash(false); }}
+            onPress={() => {
+              setTab(t);
+              setResult(null);
+              setFlash(false);
+            }}
             activeOpacity={0.7}
             style={[
               styles.tabBtn,
-              active && (onDark ? styles.tabBtnActiveDark : styles.tabBtnActiveLight),
+              active &&
+                (onDark ? styles.tabBtnActiveDark : styles.tabBtnActiveLight),
             ]}
           >
-            {t === "barcode"
-              ? <ScanLine size={14} color={active ? (onDark ? C.darkBurg : "#fff") : (onDark ? "rgba(248,233,231,0.55)" : "rgba(9,51,44,0.45)")} />
-              : <Camera   size={14} color={active ? (onDark ? C.darkBurg : "#fff") : (onDark ? "rgba(248,233,231,0.55)" : "rgba(9,51,44,0.45)")} />
-            }
-            <Text style={[
-              styles.tabBtnText,
-              active
-                ? (onDark ? styles.tabBtnTextActiveDark : styles.tabBtnTextActiveLight)
-                : (onDark ? styles.tabBtnTextInactiveDark : styles.tabBtnTextInactiveLight),
-            ]}>
+            {t === "barcode" ? (
+              <ScanLine
+                size={14}
+                color={
+                  active
+                    ? onDark
+                      ? C.darkBurg
+                      : "#fff"
+                    : onDark
+                      ? "rgba(248,233,231,0.55)"
+                      : "rgba(9,51,44,0.45)"
+                }
+              />
+            ) : (
+              <Camera
+                size={14}
+                color={
+                  active
+                    ? onDark
+                      ? C.darkBurg
+                      : "#fff"
+                    : onDark
+                      ? "rgba(248,233,231,0.55)"
+                      : "rgba(9,51,44,0.45)"
+                }
+              />
+            )}
+            <Text
+              style={[
+                styles.tabBtnText,
+                active
+                  ? onDark
+                    ? styles.tabBtnTextActiveDark
+                    : styles.tabBtnTextActiveLight
+                  : onDark
+                    ? styles.tabBtnTextInactiveDark
+                    : styles.tabBtnTextInactiveLight,
+              ]}
+            >
               {t === "barcode" ? "Barcode" : "Photo AI"}
             </Text>
           </TouchableOpacity>
@@ -436,25 +568,38 @@ export default function MedicationScanScreen() {
       <View style={{ flex: 1, backgroundColor: C.bg }}>
         <StatusBar barStyle="dark-content" />
         <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
-          <TouchableOpacity style={styles.iconBtn} onPress={() => setResult(null)} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            onPress={() => setResult(null)}
+            activeOpacity={0.7}
+          >
             <ChevronLeft size={22} color={C.textDark} />
           </TouchableOpacity>
           <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
           <View style={styles.iconBtn} />
         </View>
         <ScrollView
-          contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 24 }}
+          contentContainerStyle={{
+            padding: 16,
+            paddingBottom: insets.bottom + 24,
+          }}
           showsVerticalScrollIndicator={false}
         >
           <ResultCard
             result={result}
             confirmedName={confirmedName}
-            onNameChange={(t) => { userEditedNameRef.current = true; setConfirmedName(t); }}
+            onNameChange={(t) => {
+              userEditedNameRef.current = true;
+              setConfirmedName(t);
+            }}
             confirmedStrength={confirmedStrength}
             onStrengthChange={setConfirmedStrength}
             enriching={enriching}
             onAdd={handleAdd}
-            onClear={() => { setResult(null); setEnriching(false); }}
+            onClear={() => {
+              setResult(null);
+              setEnriching(false);
+            }}
           />
         </ScrollView>
       </View>
@@ -468,7 +613,15 @@ export default function MedicationScanScreen() {
         <StatusBar barStyle="light-content" />
 
         {/* Camera viewfinder */}
-        <View style={{ height: VIEWFINDER_H, overflow: "hidden", borderBottomLeftRadius: 24, borderBottomRightRadius: 24, backgroundColor: C.darkBurg }}>
+        <View
+          style={{
+            height: VIEWFINDER_H,
+            overflow: "hidden",
+            borderBottomLeftRadius: 24,
+            borderBottomRightRadius: 24,
+            backgroundColor: C.darkBurg,
+          }}
+        >
           <BarcodeCamera onResult={setResult} flash={flash} />
         </View>
 
@@ -478,7 +631,11 @@ export default function MedicationScanScreen() {
           style={[styles.floatingHeader, { paddingTop: insets.top + 8 }]}
           pointerEvents="box-none"
         >
-          <TouchableOpacity style={styles.floatIconBtn} onPress={() => router.back()} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.floatIconBtn}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
             <ChevronLeft size={22} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.floatingTitle}>Scan Pill</Text>
@@ -519,7 +676,11 @@ export default function MedicationScanScreen() {
 
       {/* Regular header */}
       <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => router.back()} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.iconBtn}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
           <ChevronLeft size={22} color={C.textDark} />
         </TouchableOpacity>
         <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
@@ -666,10 +827,34 @@ const styles = StyleSheet.create({
     borderColor: "rgba(248,233,231,0.8)",
     borderWidth: 2.5,
   },
-  cornerTL: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0, borderTopLeftRadius: 6 },
-  cornerTR: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0, borderTopRightRadius: 6 },
-  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0, borderBottomLeftRadius: 6 },
-  cornerBR: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0, borderBottomRightRadius: 6 },
+  cornerTL: {
+    top: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    borderTopLeftRadius: 6,
+  },
+  cornerTR: {
+    top: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderBottomWidth: 0,
+    borderTopRightRadius: 6,
+  },
+  cornerBL: {
+    bottom: 0,
+    left: 0,
+    borderRightWidth: 0,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 6,
+  },
+  cornerBR: {
+    bottom: 0,
+    right: 0,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    borderBottomRightRadius: 6,
+  },
   instructionPill: {
     position: "absolute",
     bottom: 72,

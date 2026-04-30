@@ -95,7 +95,7 @@ function getBaseDate(period, offset) {
 }
 
 // logDates: Set<string> of "YYYY-MM-DD" strings from medication_logs
-function getAdherenceChartData(period, med, logDates, baseDate) {
+function getAdherenceChartData(period, med, logDates, baseDate, logCountByDate) {
   const now = baseDate ?? new Date();
   const today = new Date(); // always real today — for med.taken check
   // Normalise to start of local day — created_at timestamps carry a time component
@@ -106,10 +106,25 @@ function getAdherenceChartData(period, med, logDates, baseDate) {
 
   const toDateStr = (d) => d.toISOString().slice(0, 10);
 
+  const dayLogCount = (d) => {
+    if (startDate && d < startDate) return 0;
+
+    const dateStr = toDateStr(d);
+    const countFromHistory = logCountByDate.get(dateStr) ?? 0;
+
+    if (d.toDateString() === today.toDateString()) {
+      const countFromMed = Array.isArray(med.logs) ? med.logs.length : 0;
+      if (countFromMed > 0 || countFromHistory > 0) {
+        return Math.max(countFromMed, countFromHistory);
+      }
+      return med.taken ? 1 : 0;
+    }
+
+    return countFromHistory > 0 || logDates.has(dateStr) ? Math.max(1, countFromHistory) : 0;
+  };
+
   const dayTaken = (d) => {
-    if (startDate && d < startDate) return false;
-    if (d.toDateString() === today.toDateString()) return !!med.taken;
-    return logDates.has(toDateStr(d));
+    return dayLogCount(d) > 0;
   };
 
   const isActive = (d) => !startDate || d >= startDate;
@@ -117,11 +132,10 @@ function getAdherenceChartData(period, med, logDates, baseDate) {
   if (period === "D") {
     const times = parseTimes(med.time);
     const slots = times.length > 0 ? times : ["Today"];
-    const takenDay = dayTaken(now);
-    let takenCount = 0;
+    const todayCount = Math.min(dayLogCount(now), slots.length);
+    const takenCount = todayCount;
     const bars = slots.map((label, i) => {
-      const taken = i === 0 && takenDay;
-      if (taken) takenCount++;
+      const taken = i < todayCount;
       return { value: taken ? 100 : 0, label };
     });
     return {
@@ -510,6 +524,13 @@ export default function MedicationDetailScreen() {
     () => new Set(logHistory.map((l) => l.date)),
     [logHistory],
   );
+  const logCountByDate = useMemo(() => {
+    const counts = new Map();
+    for (const log of logHistory) {
+      counts.set(log.date, (counts.get(log.date) ?? 0) + 1);
+    }
+    return counts;
+  }, [logHistory]);
 
   const baseDate = useMemo(
     () => getBaseDate(adherencePeriod, offset),
@@ -544,8 +565,8 @@ export default function MedicationDetailScreen() {
   ).current;
 
   const adherenceResult = useMemo(
-    () => getAdherenceChartData(adherencePeriod, med, logDates, baseDate),
-    [adherencePeriod, med.id, med.taken, med.startDate, logDates, offset],
+    () => getAdherenceChartData(adherencePeriod, med, logDates, baseDate, logCountByDate),
+    [adherencePeriod, med.id, med.taken, med.startDate, med.logs, logDates, logCountByDate, offset],
   );
   const CHART_WIDTH = SCREEN_WIDTH - 64;
 
@@ -569,9 +590,9 @@ export default function MedicationDetailScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            cancelMedicationNotifications(med.id);
-            deleteMed.mutate(med.id);
+          onPress: async () => {
+            await cancelMedicationNotifications(med.id);
+            await deleteMed.mutateAsync(med.id);
             router.back();
           },
         },
@@ -579,10 +600,10 @@ export default function MedicationDetailScreen() {
     );
   };
 
-  const handleArchive = () => {
+  const handleArchive = async () => {
     sheetRef.current?.close();
-    cancelMedicationNotifications(med.id);
-    updateMed.mutate({ id: med.id, updates: { isActive: false } });
+    await cancelMedicationNotifications(med.id);
+    await updateMed.mutateAsync({ id: med.id, updates: { isActive: false } });
     router.back();
   };
 

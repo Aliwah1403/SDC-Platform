@@ -130,7 +130,7 @@ export function useAddMedicationLogMutation() {
 export function useMedicationHistoryQuery(medicationId) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['medicationHistory', medicationId],
+    queryKey: ['medicationHistory', userId, medicationId],
     queryFn: () => fetchMedicationHistory(userId, medicationId),
     enabled: !!userId && !!medicationId,
     staleTime: 5 * 60 * 1000,
