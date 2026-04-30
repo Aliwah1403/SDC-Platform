@@ -349,6 +349,14 @@ export default function RootLayout() {
             name="crisis-mode"
             options={{ presentation: "modal", gestureEnabled: false }}
           />
+          <Stack.Screen
+            name="help-center"
+            options={{ presentation: "card", headerShown: false }}
+          />
+          <Stack.Screen
+            name="help-center-article"
+            options={{ presentation: "card", headerShown: false }}
+          />
         </Stack>
 
         {/* App Lock overlay — rendered above everything */}

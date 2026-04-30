@@ -755,9 +755,33 @@ export default function ProfileScreen() {
   const allSettings = useMemo(
     () => [
       {
+        key: "full-name",
+        label: "Full Name",
+        section: "My Profile",
+        icon: User,
+        iconColor: "#A9334D",
+        onPress: openFullNameSheet,
+      },
+      {
+        key: "nickname",
+        label: "Nickname",
+        section: "My Profile",
+        icon: AtSign,
+        iconColor: "#A9334D",
+        onPress: openNicknameSheet,
+      },
+      {
+        key: "photo",
+        label: "Profile Photo",
+        section: "My Profile",
+        icon: Camera,
+        iconColor: "#A9334D",
+        onPress: openPhotoSheet,
+      },
+      {
         key: "scd-type",
         label: "SCD Type",
-        section: "My Health",
+        section: "My Profile",
         icon: Dna,
         iconColor: "#A9334D",
         onPress: () => setEditingScd(true),
@@ -765,7 +789,7 @@ export default function ProfileScreen() {
       {
         key: "dob",
         label: "Date of Birth",
-        section: "My Health",
+        section: "My Profile",
         icon: Calendar,
         iconColor: "#781D11",
         onPress: openDobSheet,
@@ -773,7 +797,7 @@ export default function ProfileScreen() {
       {
         key: "height-weight",
         label: "Height & Weight",
-        section: "My Health",
+        section: "My Profile",
         icon: Ruler,
         iconColor: "#059669",
         onPress: () => router.push("/edit-body-stats"),
@@ -785,14 +809,6 @@ export default function ProfileScreen() {
         icon: Pill,
         iconColor: "#A9334D",
         onPress: () => router.push("/(tabs)/care/medications"),
-      },
-      {
-        key: "emergency",
-        label: "Emergency Contacts",
-        section: "Medical",
-        icon: Phone,
-        iconColor: "#DC2626",
-        onPress: () => comingSoon("Emergency Contacts"),
       },
       {
         key: "checkin",
@@ -837,30 +853,7 @@ export default function ProfileScreen() {
             ? router.push("/apple-health-settings")
             : setAppleHealthModalVisible(true),
       },
-      {
-        key: "photo",
-        label: "Profile Photo",
-        section: "Profile",
-        icon: Camera,
-        iconColor: "#A9334D",
-        onPress: openPhotoSheet,
-      },
-      {
-        key: "full-name",
-        label: "Full Name",
-        section: "Profile",
-        icon: User,
-        iconColor: "#A9334D",
-        onPress: openFullNameSheet,
-      },
-      {
-        key: "nickname",
-        label: "Nickname",
-        section: "Profile",
-        icon: AtSign,
-        iconColor: "#A9334D",
-        onPress: openNicknameSheet,
-      },
+
       {
         key: "appearance",
         label: "Appearance",
@@ -899,7 +892,7 @@ export default function ProfileScreen() {
         section: "Support",
         icon: HelpCircle,
         iconColor: "#0EA5E9",
-        onPress: () => comingSoon("Help Center"),
+        onPress: () => router.push("/help-center"),
       },
       {
         key: "feedback",
@@ -909,14 +902,7 @@ export default function ProfileScreen() {
         iconColor: "#F59E0B",
         onPress: () => router.push("/feedback-modal"),
       },
-      {
-        key: "signout",
-        label: "Sign Out",
-        section: "",
-        icon: LogOut,
-        iconColor: "#DC2626",
-        onPress: handleSignOut,
-      },
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     ],
     [],
@@ -1260,7 +1246,27 @@ export default function ProfileScreen() {
 
         {/* ── Settings Sections ── */}
         <View style={{ paddingHorizontal: 16 }}>
-          <SectionCard title="My Health">
+          <SectionCard title="My Profile">
+            <SettingRow
+              icon={User}
+              iconColor="#A9334D"
+              label="Full Name"
+              value={
+                profile?.fullName ??
+                auth?.user?.user_metadata?.full_name ??
+                "Not set"
+              }
+              rightElement="chevron"
+              onPress={openFullNameSheet}
+            />
+            <SettingRow
+              icon={AtSign}
+              iconColor="#A9334D"
+              label="Nickname"
+              value={profile?.nickname || "Not set"}
+              rightElement="chevron"
+              onPress={openNicknameSheet}
+            />
             <SettingRow
               icon={Dna}
               iconColor="#A9334D"
@@ -1294,31 +1300,6 @@ export default function ProfileScreen() {
               }
               rightElement="chevron"
               onPress={() => router.push("/edit-body-stats")}
-            />
-          </SectionCard>
-
-          <SectionCard title="Medical">
-            <SettingRow
-              icon={Pill}
-              iconColor="#A9334D"
-              label="Medications"
-              value={
-                medicationsCount > 0
-                  ? `${medicationsCount} active`
-                  : "None added"
-              }
-              rightElement="chevron"
-              onPress={() => router.push("/(tabs)/care/medications")}
-            />
-            <SettingRow
-              icon={Phone}
-              iconColor="#DC2626"
-              label="Emergency Contacts"
-              value={
-                emergencyCount > 0 ? `${emergencyCount} contacts` : "None added"
-              }
-              rightElement="chevron"
-              onPress={() => comingSoon("Emergency Contacts")}
             />
           </SectionCard>
 
@@ -1366,29 +1347,6 @@ export default function ProfileScreen() {
                   ? router.push("/apple-health-settings")
                   : setAppleHealthModalVisible(true)
               }
-            />
-          </SectionCard>
-
-          <SectionCard title="Profile">
-            <SettingRow
-              icon={User}
-              iconColor="#A9334D"
-              label="Full Name"
-              value={
-                profile?.fullName ??
-                auth?.user?.user_metadata?.full_name ??
-                "Not set"
-              }
-              rightElement="chevron"
-              onPress={openFullNameSheet}
-            />
-            <SettingRow
-              icon={AtSign}
-              iconColor="#A9334D"
-              label="Nickname"
-              value={profile?.nickname || "Not set"}
-              rightElement="chevron"
-              onPress={openNicknameSheet}
             />
           </SectionCard>
 
@@ -1554,7 +1512,7 @@ export default function ProfileScreen() {
               iconColor="#0EA5E9"
               label="Help Center"
               rightElement="chevron"
-              onPress={() => comingSoon("Help Center")}
+              onPress={() => router.push("/help-center")}
             />
             <SettingRow
               icon={Star}
