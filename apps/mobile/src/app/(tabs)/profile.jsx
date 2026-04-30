@@ -62,6 +62,8 @@ import {
   Trash2,
   Shield,
   ShieldHalf,
+  Droplets,
+  AlertCircle,
 } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
@@ -127,6 +129,27 @@ const FREQUENCY_OPTIONS = [
   { label: "Twice a day", value: 2 },
   { label: "3 times a day", value: 3 },
   { label: "5 times a day", value: 5 },
+];
+
+const BLOOD_TYPES = [
+  "A+",
+  "A−",
+  "B+",
+  "B−",
+  "AB+",
+  "AB−",
+  "O+",
+  "O−",
+  "Unknown",
+];
+
+const PRESET_ALLERGIES = [
+  "Penicillin",
+  "NSAIDs",
+  "Aspirin",
+  "Latex",
+  "Codeine",
+  "Sulfa drugs",
 ];
 
 function formatFrequency(val) {
@@ -374,6 +397,11 @@ export default function ProfileScreen() {
   const [editingNickname, setEditingNickname] = useState(false);
   const [editingAppearance, setEditingAppearance] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState(false);
+  const [editingBloodType, setEditingBloodType] = useState(false);
+  const [editingAllergies, setEditingAllergies] = useState(false);
+  const [tempAllergyPresets, setTempAllergyPresets] = useState([]);
+  const [tempAllergyCustom, setTempAllergyCustom] = useState([]);
+  const [tempAllergyInput, setTempAllergyInput] = useState("");
   const [tempFullName, setTempFullName] = useState("");
   const [tempNickname, setTempNickname] = useState("");
   const [tempDay, setTempDay] = useState(1);
@@ -723,6 +751,20 @@ export default function ProfileScreen() {
     setEditingNickname(false);
   };
 
+  const openAllergiesSheet = () => {
+    const current = profile?.allergies ?? [];
+    setTempAllergyPresets(current.filter((a) => PRESET_ALLERGIES.includes(a)));
+    setTempAllergyCustom(current.filter((a) => !PRESET_ALLERGIES.includes(a)));
+    setTempAllergyInput("");
+    setEditingAllergies(true);
+  };
+
+  const saveAllergies = () => {
+    const allergies = [...tempAllergyPresets, ...tempAllergyCustom];
+    updateProfile.mutate({ allergies });
+    setEditingAllergies(false);
+  };
+
   const openSearch = () => {
     setSearchQuery("");
     setSearchVisible(true);
@@ -801,6 +843,22 @@ export default function ProfileScreen() {
         icon: Ruler,
         iconColor: "#059669",
         onPress: () => router.push("/edit-body-stats"),
+      },
+      {
+        key: "blood-type",
+        label: "Blood Type",
+        section: "My Profile",
+        icon: Droplets,
+        iconColor: "#DC2626",
+        onPress: () => !profile?.bloodType && setEditingBloodType(true),
+      },
+      {
+        key: "allergies",
+        label: "Allergies",
+        section: "My Profile",
+        icon: AlertCircle,
+        iconColor: "#F59E0B",
+        onPress: openAllergiesSheet,
       },
       {
         key: "medications",
@@ -1249,7 +1307,7 @@ export default function ProfileScreen() {
           <SectionCard title="My Profile">
             <SettingRow
               icon={User}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="Full Name"
               value={
                 profile?.fullName ??
@@ -1261,7 +1319,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={AtSign}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="Nickname"
               value={profile?.nickname || "Not set"}
               rightElement="chevron"
@@ -1269,7 +1327,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={Dna}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="SCD Type"
               value={scdType || "Not set"}
               rightElement="chevron"
@@ -1277,7 +1335,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={Calendar}
-              iconColor="#781D11"
+              iconColor="#6B7280"
               label="Date of Birth"
               value={
                 profile?.dob
@@ -1291,7 +1349,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={Ruler}
-              iconColor="#059669"
+              iconColor="#6B7280"
               label="Height & Weight"
               value={
                 profile?.height || profile?.weight
@@ -1301,19 +1359,42 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={() => router.push("/edit-body-stats")}
             />
+            <SettingRow
+              icon={Droplets}
+              iconColor="#DC2626"
+              label="Blood Type"
+              value={profile?.bloodType || "Not set"}
+              rightElement={profile?.bloodType ? null : "chevron"}
+              onPress={
+                profile?.bloodType ? undefined : () => setEditingBloodType(true)
+              }
+            />
+            <SettingRow
+              icon={AlertCircle}
+              iconColor="#6B7280"
+              label="Allergies"
+              value={(() => {
+                const a = profile?.allergies ?? [];
+                if (a.length === 0) return "None recorded";
+                if (a.length === 1) return a[0];
+                return `${a.length} recorded`;
+              })()}
+              rightElement="chevron"
+              onPress={openAllergiesSheet}
+            />
           </SectionCard>
 
           <SectionCard title="Reminders">
             <SettingRowToggle
               icon={Bell}
-              iconColor="#F0531C"
+              iconColor="#6B7280"
               label="Notifications"
               value={notificationsEnabled}
               onChange={handleToggleNotifications}
             />
             <SettingRow
               icon={Clock}
-              iconColor="#F0531C"
+              iconColor="#6B7280"
               label="Check-in Frequency"
               value={formatFrequency(profile?.checkInFrequency)}
               rightElement="chevron"
@@ -1324,14 +1405,14 @@ export default function ProfileScreen() {
           <SectionCard title="Data & Reports">
             <SettingRow
               icon={Download}
-              iconColor="#059669"
+              iconColor="#6B7280"
               label="Export Health Data"
               rightElement="chevron"
               onPress={handleExportData}
             />
             <SettingRow
               icon={ShareIcon}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="Share Health Summary"
               rightElement="chevron"
               onPress={handleShareSummary}
@@ -1509,14 +1590,14 @@ export default function ProfileScreen() {
           <SectionCard title="Support">
             <SettingRow
               icon={HelpCircle}
-              iconColor="#0EA5E9"
+              iconColor="#6B7280"
               label="Help Center"
               rightElement="chevron"
               onPress={() => router.push("/help-center")}
             />
             <SettingRow
               icon={Star}
-              iconColor="#F59E0B"
+              iconColor="#6B7280"
               label="Add Feedback"
               rightElement={
                 isFeedbackInitializing ? (
@@ -1533,12 +1614,14 @@ export default function ProfileScreen() {
           <SectionCard title="Legal">
             <SettingRow
               icon={ShieldHalf}
+              iconColor="#6B7280"
               label="Privacy Policy"
               onPress={() => comingSoon("Privacy Policy")}
               rightElement="chevron"
             />
             <SettingRow
               icon={Shield}
+              iconColor="#6B7280"
               label="Terms of Service"
               onPress={() => comingSoon("Terms of Service")}
               rightElement="chevron"
@@ -1706,6 +1789,332 @@ export default function ProfileScreen() {
             ),
           )}
         </View>
+      </Modal>
+
+      {/* ── Blood Type Sheet ── */}
+      <Modal
+        visible={editingBloodType}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingBloodType(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingBloodType(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingBloodType(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Blood Type
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 10,
+              paddingBottom: 4,
+            }}
+          >
+            This cannot be changed once saved. Make sure it's correct.
+          </Text>
+          {BLOOD_TYPES.map((bt, i, arr) => (
+            <React.Fragment key={bt}>
+              <Pressable
+                onPress={() => {
+                  updateProfile.mutate({ bloodType: bt });
+                  setEditingBloodType(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {bt}
+                </Text>
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Allergies Sheet ── */}
+      <Modal
+        visible={editingAllergies}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingAllergies(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingAllergies(false)}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View
+            style={{
+              backgroundColor: "#ffffff",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: insets.bottom + 12,
+              maxHeight: "80%",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: "#F0E4E1",
+              }}
+            >
+              <Pressable
+                onPress={() => setEditingAllergies(false)}
+                hitSlop={12}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 16,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#09332C",
+                }}
+              >
+                Allergies
+              </Text>
+              <Pressable onPress={saveAllergies} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#A9334D",
+                  }}
+                >
+                  Save
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                  marginBottom: 12,
+                }}
+              >
+                Select known allergies or add your own.
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                {PRESET_ALLERGIES.map((p) => {
+                  const selected = tempAllergyPresets.includes(p);
+                  return (
+                    <Pressable
+                      key={p}
+                      onPress={() =>
+                        setTempAllergyPresets((prev) =>
+                          selected ? prev.filter((x) => x !== p) : [...prev, p],
+                        )
+                      }
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 7,
+                        borderRadius: 20,
+                        borderWidth: 1.5,
+                        borderColor: selected ? "#A9334D" : "#F0E4E1",
+                        backgroundColor: selected ? "#A9334D" : "#ffffff",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 14,
+                          color: selected ? "#ffffff" : "#09332C",
+                        }}
+                      >
+                        {p}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                {tempAllergyCustom.map((c) => (
+                  <Pressable
+                    key={c}
+                    onPress={() =>
+                      setTempAllergyCustom((prev) =>
+                        prev.filter((x) => x !== c),
+                      )
+                    }
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: "#A9334D",
+                      backgroundColor: "#A9334D",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 14,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {c} ×
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#F0E4E1",
+                  borderRadius: 12,
+                  backgroundColor: "#F8F4F0",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  gap: 8,
+                }}
+              >
+                <TextInput
+                  value={tempAllergyInput}
+                  onChangeText={setTempAllergyInput}
+                  placeholder="Add allergy…"
+                  placeholderTextColor="#C4A8A4"
+                  returnKeyType="done"
+                  autoCapitalize="words"
+                  onSubmitEditing={() => {
+                    const t = tempAllergyInput.trim();
+                    if (
+                      t &&
+                      !tempAllergyCustom.includes(t) &&
+                      !tempAllergyPresets.includes(t)
+                    ) {
+                      setTempAllergyCustom((prev) => [...prev, t]);
+                    }
+                    setTempAllergyInput("");
+                  }}
+                  style={{
+                    flex: 1,
+                    fontFamily: fonts.regular,
+                    fontSize: 15,
+                    color: "#09332C",
+                    padding: 0,
+                  }}
+                />
+                {tempAllergyInput.trim().length > 0 && (
+                  <Pressable
+                    onPress={() => {
+                      const t = tempAllergyInput.trim();
+                      if (
+                        t &&
+                        !tempAllergyCustom.includes(t) &&
+                        !tempAllergyPresets.includes(t)
+                      ) {
+                        setTempAllergyCustom((prev) => [...prev, t]);
+                      }
+                      setTempAllergyInput("");
+                    }}
+                    hitSlop={8}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 14,
+                        color: "#A9334D",
+                      }}
+                    >
+                      Add
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Date of Birth Sheet ── */}
