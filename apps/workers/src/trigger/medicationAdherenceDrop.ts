@@ -77,10 +77,10 @@ export const medicationAdherenceDrop = schedules.task({
       adherencePercent: number;
     }> = [];
     for (const [userId, medIds] of medsByUser) {
-      const possibleDoses = medIds.length * LOOKBACK_DAYS;
+      const possibleDoses = medIds.length * (LOOKBACK_DAYS - 1);
       let takenCount = 0;
       for (const medId of medIds) {
-        for (let i = 0; i < LOOKBACK_DAYS; i++) {
+        for (let i = 1; i < LOOKBACK_DAYS; i++) {
           const d = new Date(today);
           d.setDate(d.getDate() - i);
           const dateStr = d.toISOString().split("T")[0];

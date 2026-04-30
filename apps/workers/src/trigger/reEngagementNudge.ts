@@ -65,24 +65,45 @@ export const reEngagementNudge = schedules.task({
       (profiles ?? []).map((p) => [p.user_id, p.nickname as string | null])
     );
 
-    const bulkEvents = lapsedIds.map((userId) => {
-      const lastDate = lastLogByUser.get(userId);
-      const daysWithoutLog = lastDate
-        ? Math.floor(
-            (today.getTime() - new Date(lastDate).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        : null;
+    // Guard against task retries causing duplicate sends — only send to users
+    // not already recorded for this workflow+cutoff combination.
+    const { data: insertedNudges, error: nudgeError } = await supabase
+      .from("push_nudges")
+      .upsert(
+        lapsedIds.map((userId) => ({
+          workflow_id: WORKFLOW_ID,
+          user_id: userId,
+          cutoff_date: cutoffStr,
+        })),
+        { onConflict: "workflow_id,user_id,cutoff_date", ignoreDuplicates: true }
+      )
+      .select("user_id");
+    if (nudgeError) throw nudgeError;
 
-      return {
-        workflowId: WORKFLOW_ID,
-        subscriberId: userId,
-        payload: {
-          nickname: nicknameMap.get(userId) ?? "there",
-          daysWithoutLog,
-        },
-      };
-    });
+    const freshUserIds = new Set((insertedNudges ?? []).map((r) => r.user_id as string));
+    if (freshUserIds.size === 0) return { nudged: 0 };
+
+    const bulkEvents = lapsedIds
+      .filter((userId) => freshUserIds.has(userId))
+      .map((userId) => {
+        const lastDate = lastLogByUser.get(userId);
+        const daysWithoutLog = lastDate
+          ? Math.floor(
+              (today.getTime() - new Date(lastDate).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
+          : null;
+
+        return {
+          workflowId: WORKFLOW_ID,
+          subscriberId: userId,
+          payload: {
+            nickname: nicknameMap.get(userId) ?? "there",
+            daysWithoutLog,
+          },
+          idempotencyKey: `${WORKFLOW_ID}-${userId}-${cutoffStr}`,
+        };
+      });
 
     let failedCount = 0;
     try {
@@ -95,7 +116,7 @@ export const reEngagementNudge = schedules.task({
       throw err;
     }
 
-    const nudged = lapsedIds.length - failedCount;
+    const nudged = bulkEvents.length - failedCount;
     console.log(`[re-engagement-nudge] Nudged ${nudged} users`);
     return { nudged };
   },
