@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { usePostHog } from "posthog-react-native";
 import * as Notifications from "expo-notifications";
+import * as Location from "expo-location";
 import {
   View,
   Text,
@@ -276,6 +277,7 @@ function SettingRowToggle({
   icon: Icon,
   iconColor = "#A9334D",
   label,
+  subtitle,
   value,
   onChange,
 }) {
@@ -293,7 +295,6 @@ function SettingRowToggle({
           width: 34,
           height: 34,
           borderRadius: 8,
-          // backgroundColor: `${iconColor}18`,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 12,
@@ -301,16 +302,29 @@ function SettingRowToggle({
       >
         <Icon size={18} color={iconColor} />
       </View>
-      <Text
-        style={{
-          fontFamily: fonts.medium,
-          fontSize: 15,
-          color: "#09332C",
-          flex: 1,
-        }}
-      >
-        {label}
-      </Text>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: fonts.medium,
+            fontSize: 15,
+            color: "#09332C",
+          }}
+        >
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: "#9CA3AF",
+              marginTop: 1,
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
       <Switch
         value={value}
         onValueChange={onChange}
@@ -391,6 +405,8 @@ export default function ProfileScreen() {
       onboardingData?.notificationsEnabled ??
       false,
   );
+  const [locationEnabled, setLocationEnabled] = useState(profile?.locationEnabled ?? false);
+  const [locationLabel, setLocationLabel] = useState(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
@@ -404,6 +420,36 @@ export default function ProfileScreen() {
   const isGoogleLinked = linkedProviders.includes("google");
   const isAppleLinked = linkedProviders.includes("apple");
   const canUnlink = identities.length > 1;
+
+  // Sync location toggle with loaded profile
+  useEffect(() => {
+    if (profile?.locationEnabled !== undefined) {
+      setLocationEnabled(profile.locationEnabled);
+    }
+  }, [profile?.locationEnabled]);
+
+  // When location is enabled, resolve City, Country to show under the toggle
+  useEffect(() => {
+    if (!locationEnabled) {
+      setLocationLabel(null);
+      return;
+    }
+    Location.getForegroundPermissionsAsync().then(({ status }) => {
+      if (status !== "granted") return;
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then(({ coords }) =>
+          Location.reverseGeocodeAsync({ latitude: coords.latitude, longitude: coords.longitude })
+        )
+        .then((results) => {
+          const place = results?.[0];
+          if (!place) return;
+          const city = place.city || place.subregion || place.region;
+          const country = place.country;
+          setLocationLabel([city, country].filter(Boolean).join(", "));
+        })
+        .catch(() => {});
+    });
+  }, [locationEnabled]);
 
   useEffect(() => {
     posthog?.capture("profile_viewed", {});
@@ -484,6 +530,29 @@ export default function ProfileScreen() {
   const userEmail = auth?.user?.email ?? "—";
   const initials = getInitials(profile?.nickname || fullName);
   const healthStreak = streak?.currentStreak ?? 0;
+
+  const handleToggleLocation = async (val) => {
+    if (val) {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status === "denied") {
+        Alert.alert(
+          "Enable Location",
+          "Location access is blocked. Open Settings to turn it on for Hemo.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      if (status !== "granted") {
+        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+        if (newStatus !== "granted") return;
+      }
+    }
+    setLocationEnabled(val);
+    updateProfile.mutate({ locationEnabled: val });
+  };
 
   const handleToggleNotifications = async (val) => {
     if (val) {
@@ -973,6 +1042,14 @@ export default function ProfileScreen() {
         icon: Clock,
         iconColor: "#6B7280",
         onPress: () => setEditingTimezone(true),
+      },
+      {
+        key: "location",
+        label: "Use Location for Hospitals",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => {},
       },
       {
         key: "password",
@@ -1526,6 +1603,14 @@ export default function ProfileScreen() {
                 onPress={() => setEditingTimezone(true)}
               />
             )}
+            <SettingRowToggle
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Use Location for Hospitals"
+              subtitle={locationEnabled && locationLabel ? locationLabel : undefined}
+              value={locationEnabled}
+              onChange={handleToggleLocation}
+            />
           </SectionCard>
 
           <SectionCard title="Account">
