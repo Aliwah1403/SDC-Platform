@@ -351,7 +351,6 @@ export default function HomeScreen() {
         <ContextualCards
           appointments={appointments}
           medications={medications}
-          hasLoggedToday={hasLoggedToday}
         />
 
         <MonthlySummaryCard
