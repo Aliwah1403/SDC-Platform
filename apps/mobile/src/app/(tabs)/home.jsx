@@ -31,6 +31,7 @@ import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { useChartData } from "@/hooks/useChartData";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
+import { toLocalDateStr } from "@/utils/dateUtils";
 
 const ALL_MILESTONES = [
   {
@@ -266,7 +267,7 @@ export default function HomeScreen() {
   });
 
   const hasLoggedToday = (() => {
-    const todayStr = new Date().toISOString().split("T")[0];
+    const todayStr = toLocalDateStr(new Date());
     const todayData = healthData.find((d) => d.date === todayStr);
     return !!(
       todayData &&

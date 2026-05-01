@@ -3,6 +3,7 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useStreakQuery, useMissedDay, useStreakLost } from "@/hooks/queries/useStreakQuery";
 import { useAppStore } from "@/store/appStore";
+import { toLocalDateStr } from "@/utils/dateUtils";
 
 export function useHomeData() {
   const { data: profile } = useProfileQuery();
@@ -31,7 +32,7 @@ export function useHomeData() {
   }, [!!streakLost]);
 
   // Get data for selected date, merging HealthKit (steps, sleep, etc.) the same way Track does
-  const selectedDateStr = selectedDate.toISOString().split("T")[0];
+  const selectedDateStr = toLocalDateStr(selectedDate);
   const base = healthData.find((d) => d.date === selectedDateStr) ?? null;
   const hkDay = healthKitData?.[selectedDateStr];
   const selectedDateData = hkDay
