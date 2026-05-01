@@ -207,71 +207,10 @@ export function HomeHeader({
               </Text>
             </TouchableOpacity>
           )} */}
-
-          {hasLoggedData && (
-            <TouchableOpacity
-              style={{
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 8,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: "#FFFFFF",
-                  marginRight: 4,
-                }}
-              >
-                Keep up the good work!
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#FFFFFF",
-                }}
-              >
-                →
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
 
-        {/* Log Health Button */}
-        {!hasLoggedData && isToday(selectedDate) && (
-          <View style={{ alignItems: "center", paddingBottom: 20 }}>
-            <TouchableOpacity
-              onPress={() => router.push("/log-symptoms")}
-              style={{
-                backgroundColor: "#FFFFFF",
-                paddingHorizontal: 32,
-                paddingVertical: 14,
-                borderRadius: 25,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 16,
-                  color: "#A9334D",
-                }}
-              >
-                Log health
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </LinearGradient>
+      
 
       {/* Curved bottom edge */}
       <Svg

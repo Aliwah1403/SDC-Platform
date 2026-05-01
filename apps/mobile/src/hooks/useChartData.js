@@ -26,10 +26,12 @@ export function useChartData(healthData) {
     let currentStreak = 0;
     let longestStreak = 0;
     chartData.forEach((day) => {
-      if (day.painLevel < 5 && day.painLevel > 0) {
+      if (day.painLevel === 0) {
+        // unlogged day — skip, doesn't count for or against the streak
+      } else if (day.painLevel < 5) {
         currentStreak++;
         longestStreak = Math.max(longestStreak, currentStreak);
-      } else if (day.painLevel >= 5) {
+      } else {
         currentStreak = 0;
       }
     });
