@@ -143,70 +143,72 @@ export function HomeHeader({
           isSelected={isSelected}
         />
 
-        {/* Dynamic Message Section */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 24,
-            paddingBottom: 20,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: 16,
-              color: "#FFFFFF",
-              opacity: 0.9,
-              marginBottom: 8,
-            }}
-          >
-            {message.title}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 40,
-              color: "#FFFFFF",
-              marginBottom: 16,
-            }}
-          >
-            {message.subtitle}
-          </Text>
-
-          {/* {!hasLoggedData && isToday(selectedDate) && (
-            <TouchableOpacity
-              onPress={() => router.push("/log-symptoms")}
+        {/* Today's Forecast */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, alignItems: "center" }}>
+          {message.label && (
+            <View
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 8,
-                flexDirection: "row",
-                alignItems: "center",
+                alignSelf: "center",
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                marginBottom: 10,
               }}
             >
               <Text
                 style={{
                   fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: "#FFFFFF",
-                  marginRight: 4,
+                  fontSize: 11,
+                  color: "rgba(255,255,255,0.9)",
+                  letterSpacing: 0.8,
                 }}
               >
-                Your health data is important
+                {message.label}
               </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#FFFFFF",
-                }}
-              >
-                →
-              </Text>
-            </TouchableOpacity>
-          )} */}
+            </View>
+          )}
+
+          <Text
+            style={{
+              fontFamily: fonts.bold,
+              fontSize: 28,
+              color: "#FFFFFF",
+              lineHeight: 34,
+              marginBottom: 8,
+              textAlign: "center",
+            }}
+          >
+            {message.headline}
+          </Text>
+
+          {message.body && (
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 13,
+                color: "rgba(255,255,255,0.8)",
+                lineHeight: 19,
+                marginBottom: 10,
+                textAlign: "center",
+              }}
+            >
+              {message.body}
+            </Text>
+          )}
+
+          {message.basis && (
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "rgba(255,255,255,0.55)",
+                textAlign: "center",
+              }}
+            >
+              {message.basis}
+            </Text>
+          )}
         </View>
 
       </LinearGradient>

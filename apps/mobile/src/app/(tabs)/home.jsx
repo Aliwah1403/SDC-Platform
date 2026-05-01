@@ -221,12 +221,14 @@ export default function HomeScreen() {
 
   const { chartData, avgPainLevel, avgHydration } = useChartData(healthData);
 
-  const message = getDynamicMessage(
+  const message = getDynamicMessage({
     hasLoggedData,
     healthStreak,
     selectedDate,
     currentUser,
-  );
+    selectedDateData,
+    healthData,
+  });
   const gradientColors = getGradientColors(hasLoggedData);
 
   const compactBarHeight = insets.top + 56;
@@ -325,11 +327,11 @@ export default function HomeScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <TodayContextCard
+        {/* <TodayContextCard
           healthData={healthData}
           healthStreak={healthStreak}
           currentUser={currentUser}
-        />
+        /> */}
 
         <QuickActions medications={medications} />
 
