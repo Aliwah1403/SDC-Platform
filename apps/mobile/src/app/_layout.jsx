@@ -338,6 +338,10 @@ export default function RootLayout() {
             options={{ presentation: "modal" }}
           />
           <Stack.Screen
+            name="metric-preferences"
+            options={{ presentation: "transparentModal" }}
+          />
+          <Stack.Screen
             name="security"
             options={{ presentation: "card" }}
           />
