@@ -1,17 +1,16 @@
 import { useMemo } from "react";
-import { View, Text, TouchableOpacity, Dimensions } from "react-native";
-import { LineChart } from "react-native-gifted-charts";
+import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { HomeLineChart } from "@/components/Charts/line-chart";
 
 function getPainStatus(painLevel) {
-  if (painLevel === 0) return { label: "No data", color: "rgba(255,255,255,0.5)" };
-  if (painLevel <= 3)  return { label: "Low pain",  color: "#D09F9A" };
-  if (painLevel <= 6)  return { label: "Moderate",  color: "#F8E9E7" };
-  if (painLevel <= 8)  return { label: "High",      color: "#F8E9E7" };
-  return                      { label: "Severe",    color: "#F8E9E7" };
+  if (painLevel === 0)
+    return { label: "No data", color: "rgba(255,255,255,0.5)" };
+  if (painLevel <= 3) return { label: "Low pain", color: "#D09F9A" };
+  if (painLevel <= 6) return { label: "Moderate", color: "#F8E9E7" };
+  if (painLevel <= 8) return { label: "High", color: "#F8E9E7" };
+  return { label: "Severe", color: "#F8E9E7" };
 }
 
 function computeScore(data) {
@@ -28,20 +27,17 @@ export function PainStatusTile({ selectedDateData, healthData }) {
   const status = getPainStatus(painLevel);
   const score = computeScore(selectedDateData);
 
-  const sparklineData = useMemo(() => {
+  const chartData = useMemo(() => {
     const today = new Date();
-    const points = [];
-    for (let i = 6; i >= 0; i--) {
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
-      d.setDate(today.getDate() - i);
+      d.setDate(today.getDate() - (6 - i));
       const dateStr = d.toISOString().split("T")[0];
       const entry = healthData.find((e) => e.date === dateStr);
-      points.push({ value: entry?.painLevel ?? 0 });
-    }
-    return points;
+      return { x: i, y: entry?.painLevel ?? 0, label: days[d.getDay()] };
+    });
   }, [healthData]);
-
-  const chartWidth = SCREEN_WIDTH - 32 - 40;
 
   return (
     <TouchableOpacity
@@ -81,7 +77,9 @@ export function PainStatusTile({ selectedDateData, healthData }) {
           marginBottom: 16,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#FFFFFF" }}>
+        <Text
+          style={{ fontFamily: fonts.bold, fontSize: 16, color: "#FFFFFF" }}
+        >
           Pain Status
         </Text>
         {selectedDateData && (
@@ -126,27 +124,24 @@ export function PainStatusTile({ selectedDateData, healthData }) {
                 color: "rgba(255,255,255,0.6)",
               }}
             >
-              {" "}/ 10
+              {" "}
+              / 10
             </Text>
           </Text>
 
           {/* Sparkline */}
           <View style={{ marginLeft: -12, marginBottom: 16 }}>
-            <LineChart
-              data={sparklineData}
-              width={chartWidth}
-              height={60}
-              color="rgba(208,159,154,0.8)"
-              thickness={2}
-              curved
-              hideDataPoints
-              hideYAxisText
-              hideAxesAndRules
-              backgroundColor="transparent"
-              initialSpacing={8}
-              spacing={Math.floor(chartWidth / 8)}
-              maxValue={10}
-              noOfSections={2}
+            <HomeLineChart
+              data={chartData}
+              config={{
+                height: 80,
+                showGrid: false,
+                animated: true,
+                duration: 800,
+                showYLabels: false,
+                showXLabels: false,
+                padding: 16,
+              }}
             />
           </View>
 
