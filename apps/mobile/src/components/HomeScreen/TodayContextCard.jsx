@@ -93,21 +93,14 @@ export function TodayContextCard({ healthData, healthStreak, currentUser }) {
   const s = SEVERITY_STYLE[ctx.severity];
 
   return (
-    <View
-      style={{
-        marginHorizontal: 16,
-        marginBottom: 16,
-        backgroundColor: s.bg,
-        borderRadius: 16,
-        padding: 18,
-      }}
-    >
+    <View style={{ paddingHorizontal: 16, paddingTop: 8, marginBottom: 20 }}>
       <Text
         style={{
           fontFamily: fonts.bold,
-          fontSize: 18,
+          fontSize: 22,
           color: s.headline,
           marginBottom: 4,
+          lineHeight: 28,
         }}
       >
         {ctx.headline}
@@ -116,7 +109,7 @@ export function TodayContextCard({ healthData, healthStreak, currentUser }) {
         style={{
           fontFamily: fonts.regular,
           fontSize: 14,
-          color: s.body,
+          color: "#6B7280",
           lineHeight: 20,
         }}
       >

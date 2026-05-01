@@ -27,42 +27,35 @@ export function MonthlySummaryCard({ chartData, avgPainLevel }) {
   return (
     <View
       style={{
-        marginHorizontal: 16,
+        paddingHorizontal: 16,
+        paddingTop: 4,
         marginBottom: 16,
-        backgroundColor: "#F8F4F0",
-        borderRadius: 16,
-        padding: 18,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 18,
-              color: "#781D11",
-              marginBottom: 4,
-            }}
-          >
-            {monthName}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 13,
-              color: "#6B7280",
-              lineHeight: 18,
-            }}
-          >
-            {parts.join(" · ")}
-          </Text>
-        </View>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 14,
+            color: "#781D11",
+            marginBottom: 2,
+          }}
+        >
+          {monthName}
+        </Text>
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 12,
+            color: "#9CA3AF",
+            lineHeight: 17,
+          }}
+        >
+          {parts.join(" · ")}
+        </Text>
       </View>
 
       <TouchableOpacity
@@ -71,21 +64,10 @@ export function MonthlySummaryCard({ chartData, avgPainLevel }) {
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 6,
-          marginTop: 14,
-          alignSelf: "flex-start",
-          backgroundColor: "#FFFFFF",
-          borderRadius: 100,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 3,
-          elevation: 2,
+          gap: 5,
         }}
       >
-        <TrendingUp size={14} color="#A9334D" strokeWidth={2} />
+        <TrendingUp size={13} color="#A9334D" strokeWidth={2} />
         <Text
           style={{
             fontFamily: fonts.semibold,
@@ -93,7 +75,7 @@ export function MonthlySummaryCard({ chartData, avgPainLevel }) {
             color: "#A9334D",
           }}
         >
-          See full analysis →
+          Full analysis →
         </Text>
       </TouchableOpacity>
     </View>
