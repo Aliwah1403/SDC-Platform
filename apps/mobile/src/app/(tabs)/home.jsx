@@ -27,6 +27,7 @@ import { PainStatusTile } from "@/components/HomeScreen/PainStatusTile";
 import { MetricGrid } from "@/components/HomeScreen/MetricGrid";
 import { ContextualCards } from "@/components/HomeScreen/ContextualCards";
 import { MonthlySummaryCard } from "@/components/HomeScreen/MonthlySummaryCard";
+import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { useChartData } from "@/hooks/useChartData";
@@ -217,6 +218,8 @@ export default function HomeScreen() {
     });
   }, []);
 
+  const alertState = useAppStore((s) => s.computedAlertState);
+
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 
   const { chartData, avgPainLevel, avgHydration } = useChartData(healthData);
@@ -228,6 +231,7 @@ export default function HomeScreen() {
     currentUser,
     selectedDateData,
     healthData,
+    alertState,
   });
   const gradientColors = getGradientColors(hasLoggedData);
 
@@ -334,6 +338,8 @@ export default function HomeScreen() {
         /> */}
 
         <QuickActions medications={medications} />
+
+        <HealthSignalSection alertState={alertState} healthData={healthData} />
 
         <PainStatusTile
           selectedDateData={selectedDateData}

@@ -17,6 +17,7 @@ export function getDynamicMessage({
   currentUser,
   selectedDateData,
   healthData = [],
+  alertState = null,
 }) {
   const today = new Date();
   const todayStr = toLocalDateStr(today);
@@ -88,6 +89,23 @@ export function getDynamicMessage({
 
   // --- Today, logged: priority rules ---
 
+  // Concern-level or VOC risk — highest priority, feeds both forecast and HealthSignalSection
+  if (alertState && (alertState.vocRisk || alertState.level === "concern")) {
+    const triggerReasons = [
+      ...new Set(alertState.triggers?.map((t) => t.reason) ?? []),
+    ].slice(0, 2);
+    return {
+      label: alertState.vocRisk ? "PAIN FLARE RISK" : "PATTERN DETECTED",
+      headline: alertState.vocRisk
+        ? "Early flare pattern detected."
+        : "Your health signals have shifted.",
+      body: alertState.message,
+      basis: triggerReasons.length
+        ? triggerReasons.join(" · ")
+        : "Based on your last 7 days",
+    };
+  }
+
   // High pain + low hydration — crisis risk
   if (pain >= 7 && hydration < 5) {
     return {
@@ -115,6 +133,21 @@ export function getDynamicMessage({
       headline: "Rest and monitor closely.",
       body: `Pain at ${pain}/10 today. Avoid overexertion, stay warm, and keep hydrated. Contact your care team if this level persists or worsens.`,
       basis: "Based on today's log",
+    };
+  }
+
+  // Watch-level alert — a pattern is forming but not yet critical
+  if (alertState?.level === "watch") {
+    const triggerReasons = [
+      ...new Set(alertState.triggers?.map((t) => t.reason) ?? []),
+    ].slice(0, 2);
+    return {
+      label: "TODAY'S FORECAST",
+      headline: "A pattern is forming.",
+      body: alertState.message,
+      basis: triggerReasons.length
+        ? `Watching: ${triggerReasons.join(", ")}`
+        : "Based on your recent data",
     };
   }
 
