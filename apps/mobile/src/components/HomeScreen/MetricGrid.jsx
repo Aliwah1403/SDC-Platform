@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, Dimensions } from "react-native";
-import Svg, { Circle } from "react-native-svg";
+import Svg, { Circle, Rect, Path, G, Defs, ClipPath } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { LayoutGrid } from "lucide-react-native";
@@ -21,89 +21,226 @@ const METRIC_META = [
   { key: "sleep",     label: "Sleep" },
 ];
 
-// ─── Arc ring with value inside ───────────────────────────────────────────────
+// ─── Hydration: vertical fill tank ───────────────────────────────────────────
 
-function ArcRing({ progress, size = 88, valueLine1, valueLine2 }) {
-  const strokeWidth = 8;
-  const r = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * r;
-  const filled = circumference * Math.min(Math.max(progress, 0), 1);
+function HydrationTank({ hydration, goal = 8 }) {
+  const W = 44;
+  const H = 80;
+  const R = 10;
+  const progress = Math.min(hydration / goal, 1);
+  const fillH = H * progress;
+  const fillY = H - fillH;
+
+  return (
+    <View style={{ alignItems: "center", gap: 6 }}>
+      <Svg width={W} height={H}>
+        <Defs>
+          <ClipPath id="tankClip">
+            <Rect x={0} y={0} width={W} height={H} rx={R} ry={R} />
+          </ClipPath>
+        </Defs>
+        {/* Track */}
+        <Rect x={0} y={0} width={W} height={H} rx={R} ry={R} fill="#F8E9E7" />
+        {/* Fill */}
+        {progress > 0 && (
+          <Rect
+            x={0}
+            y={fillY}
+            width={W}
+            height={fillH}
+            rx={progress === 1 ? R : 0}
+            ry={progress === 1 ? R : 0}
+            fill="#A9334D"
+            clipPath="url(#tankClip)"
+          />
+        )}
+        {/* Outline */}
+        <Rect
+          x={1}
+          y={1}
+          width={W - 2}
+          height={H - 2}
+          rx={R - 1}
+          ry={R - 1}
+          fill="none"
+          stroke="#F0E4E1"
+          strokeWidth={2}
+        />
+        {/* Level markers (every 2 glasses) */}
+        {[0.25, 0.5, 0.75].map((frac) => (
+          <Rect
+            key={frac}
+            x={6}
+            y={H * (1 - frac) - 0.5}
+            width={W - 12}
+            height={1}
+            fill={fillY <= H * (1 - frac) ? "#FFFFFF40" : "#D09F9A60"}
+          />
+        ))}
+      </Svg>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#781D11" }}>
+        {hydration > 0 ? `${hydration} / ${goal}` : "—"}
+      </Text>
+    </View>
+  );
+}
+
+// ─── Mood: emoji with colored halo ───────────────────────────────────────────
+
+const MOOD_HALO = {
+  5: "#F8E9E7",
+  4: "#F8E9E7",
+  3: "#FFF8F0",
+  2: "#F8F4F0",
+  1: "#F8F4F0",
+};
+
+function MoodHalo({ mood }) {
+  const emoji = mood >= 5 ? "😄" : mood >= 4 ? "🙂" : mood >= 3 ? "😐" : mood >= 2 ? "😔" : "😞";
+  const haloBg = mood > 0 ? (MOOD_HALO[mood] ?? "#F8E9E7") : "#F3F4F6";
+  const haloSize = 88;
+  const innerSize = 64;
+
+  return (
+    <View style={{ width: haloSize, height: haloSize, alignItems: "center", justifyContent: "center" }}>
+      {/* Outer soft halo */}
+      <View
+        style={{
+          position: "absolute",
+          width: haloSize,
+          height: haloSize,
+          borderRadius: haloSize / 2,
+          backgroundColor: haloBg,
+        }}
+      />
+      {/* Inner ring */}
+      <View
+        style={{
+          position: "absolute",
+          width: innerSize,
+          height: innerSize,
+          borderRadius: innerSize / 2,
+          backgroundColor: mood > 0 ? "#FFFFFF" : "#F8F4F0",
+          shadowColor: "#A9334D",
+          shadowOffset: { width: 0, height: 0 },
+          shadowOpacity: mood > 0 ? 0.1 : 0,
+          shadowRadius: 6,
+          elevation: 0,
+        }}
+      />
+      <Text style={{ fontSize: 36 }}>{mood > 0 ? emoji : "—"}</Text>
+    </View>
+  );
+}
+
+// ─── Steps: semicircle speedometer ───────────────────────────────────────────
+
+function StepsGauge({ steps, goal = 10000 }) {
+  const size = 90;
   const cx = size / 2;
-  const cy = size / 2;
+  const cy = size / 2 + 8; // shift center down so arc sits at bottom
+  const r = 36;
+  const strokeWidth = 8;
+  const progress = Math.min(steps / goal, 1);
+
+  // Half-circle: from 180° to 0° (left to right along the bottom)
+  const startAngle = Math.PI;
+  const endAngle = 0;
+  const totalArc = Math.PI; // 180°
+  const filledArc = totalArc * progress;
+
+  function polarToXY(angle, radius) {
+    return {
+      x: cx + radius * Math.cos(angle),
+      y: cy - radius * Math.sin(angle),
+    };
+  }
+
+  const trackStart = polarToXY(startAngle, r);
+  const trackEnd = polarToXY(endAngle, r);
+  const fillEnd = polarToXY(startAngle + filledArc, r);
+
+  const trackPath = `M ${trackStart.x} ${trackStart.y} A ${r} ${r} 0 0 1 ${trackEnd.x} ${trackEnd.y}`;
+  const fillPath =
+    progress > 0
+      ? `M ${trackStart.x} ${trackStart.y} A ${r} ${r} 0 ${filledArc > Math.PI / 2 ? 1 : 0} 1 ${fillEnd.x} ${fillEnd.y}`
+      : null;
+
+  const shortSteps =
+    steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : steps > 0 ? String(steps) : "—";
+
+  return (
+    <View style={{ width: size, height: size / 2 + 16, alignItems: "center" }}>
+      <Svg width={size} height={size / 2 + 16} style={{ position: "absolute", bottom: 0 }}>
+        <Path d={trackPath} stroke="#F0E4E1" strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
+        {fillPath && (
+          <Path d={fillPath} stroke="#A9334D" strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
+        )}
+      </Svg>
+      <View style={{ position: "absolute", bottom: 14, alignItems: "center" }}>
+        <Text style={{ fontFamily: fonts.extrabold, fontSize: 22, color: "#781D11", lineHeight: 26 }}>
+          {shortSteps}
+        </Text>
+        {steps > 0 && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF" }}>
+            / 10k
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ─── Sleep: crescent moon + stars ────────────────────────────────────────────
+
+function SleepMoon({ hours }) {
+  const size = 88;
+  // Crescent: large circle minus offset circle (clip approach via two circles)
+  const moonR = 28;
+  const moonCx = size / 2;
+  const moonCy = size / 2;
+  const cutCx = moonCx + 14;
+  const cutCy = moonCy - 8;
+  const cutR = 22;
+
+  // Star positions (small dots)
+  const stars = [
+    { x: 68, y: 18, r: 2.5 },
+    { x: 20, y: 24, r: 1.8 },
+    { x: 72, y: 50, r: 1.5 },
+    { x: 14, y: 54, r: 2 },
+    { x: 56, y: 72, r: 1.5 },
+  ];
 
   return (
     <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={{ position: "absolute" }}>
-        <Circle cx={cx} cy={cy} r={r} stroke="#F0E4E1" strokeWidth={strokeWidth} fill="none" />
-        <Circle
-          cx={cx} cy={cy} r={r}
-          stroke="#A9334D"
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={`${filled} ${circumference}`}
-          strokeLinecap="round"
-          rotation={-90}
-          origin={`${cx},${cy}`}
-        />
+      <Svg width={size} height={size}>
+        <Defs>
+          <ClipPath id="moonClip">
+            {/* Full moon circle */}
+            <Circle cx={moonCx} cy={moonCy} r={moonR} />
+          </ClipPath>
+        </Defs>
+        {/* Stars */}
+        {stars.map((s, i) => (
+          <Circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#D09F9A" opacity={0.7} />
+        ))}
+        {/* Moon base */}
+        <Circle cx={moonCx} cy={moonCy} r={moonR} fill="#F8E9E7" />
+        {/* Cut-out to create crescent */}
+        <Circle cx={cutCx} cy={cutCy} r={cutR} fill="#FFFFFF" clipPath="url(#moonClip)" />
+        {/* Moon face glow */}
+        <Circle cx={moonCx - 6} cy={moonCy + 4} r={moonR - 10} fill="#F0E4E1" opacity={0.5} />
       </Svg>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#781D11", lineHeight: 22 }}>
-        {valueLine1}
-      </Text>
-      {valueLine2 ? (
-        <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF" }}>
-          {valueLine2}
+      <View style={{ position: "absolute", alignItems: "center" }}>
+        <Text style={{ fontFamily: fonts.extrabold, fontSize: 20, color: "#781D11", lineHeight: 24 }}>
+          {hours > 0 ? hours : "—"}
         </Text>
-      ) : null}
+        {hours > 0 && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF" }}>hrs</Text>
+        )}
+      </View>
     </View>
-  );
-}
-
-// ─── Mood circle ──────────────────────────────────────────────────────────────
-
-function MoodCircle({ emoji }) {
-  return (
-    <View
-      style={{
-        width: 88,
-        height: 88,
-        borderRadius: 44,
-        backgroundColor: "#F8E9E7",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Text style={{ fontSize: 44 }}>{emoji}</Text>
-    </View>
-  );
-}
-
-// ─── Sleep visual ─────────────────────────────────────────────────────────────
-
-function SleepVisual({ hours }) {
-  return (
-    <View style={{ alignItems: "center", justifyContent: "center", height: 88 }}>
-      <Text style={{ fontSize: 36, fontFamily: fonts.extrabold, color: "#781D11", lineHeight: 42 }}>
-        {hours > 0 ? hours : "—"}
-      </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
-        {hours > 0 ? "hours" : ""}
-      </Text>
-    </View>
-  );
-}
-
-// ─── Steps arc ring ───────────────────────────────────────────────────────────
-
-function StepsArc({ steps }) {
-  const progress = steps / 10000;
-  const shortSteps =
-    steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : steps > 0 ? String(steps) : "—";
-  return (
-    <ArcRing
-      progress={progress}
-      valueLine1={shortSteps}
-      valueLine2={steps > 0 ? "/ 10k" : ""}
-    />
   );
 }
 
@@ -152,14 +289,6 @@ function MetricTile({ title, statusLabel, statusColor, visual, metric, hasData }
 
 // ─── Mood helpers ─────────────────────────────────────────────────────────────
 
-function getMoodEmoji(mood) {
-  if (mood >= 5) return "😄";
-  if (mood >= 4) return "🙂";
-  if (mood >= 3) return "😐";
-  if (mood >= 2) return "😔";
-  return "😞";
-}
-
 function getMoodStatus(mood) {
   if (mood >= 4) return "Good";
   if (mood === 3) return "Fair";
@@ -198,13 +327,7 @@ export function MetricGrid({ selectedDateData }) {
         statusColor={hydration > 0 ? (hydration >= 8 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
         metric="hydration"
         hasData={hydration > 0}
-        visual={
-          <ArcRing
-            progress={hydration / 8}
-            valueLine1={hydration > 0 ? `${hydration}/8` : "—"}
-            valueLine2={hydration > 0 ? "glasses" : ""}
-          />
-        }
+        visual={<HydrationTank hydration={hydration} />}
       />
     ),
     mood: (
@@ -215,7 +338,7 @@ export function MetricGrid({ selectedDateData }) {
         statusColor={mood > 0 ? "#A9334D" : "#D1D5DB"}
         metric="mood"
         hasData={mood > 0}
-        visual={<MoodCircle emoji={mood > 0 ? getMoodEmoji(mood) : "—"} />}
+        visual={<MoodHalo mood={mood} />}
       />
     ),
     steps: (
@@ -226,7 +349,7 @@ export function MetricGrid({ selectedDateData }) {
         statusColor={steps > 0 ? (steps >= 10000 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
         metric="steps"
         hasData={steps > 0}
-        visual={<StepsArc steps={steps} />}
+        visual={<StepsGauge steps={steps} />}
       />
     ),
     sleep: (
@@ -237,7 +360,7 @@ export function MetricGrid({ selectedDateData }) {
         statusColor={sleep > 0 ? (sleep >= 6 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
         metric="sleep"
         hasData={sleep > 0}
-        visual={<SleepVisual hours={sleep} />}
+        visual={<SleepMoon hours={sleep} />}
       />
     ),
   };
@@ -248,7 +371,6 @@ export function MetricGrid({ selectedDateData }) {
 
   return (
     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
-      {/* Section header */}
       <View
         style={{
           flexDirection: "row",
@@ -276,7 +398,6 @@ export function MetricGrid({ selectedDateData }) {
         </TouchableOpacity>
       </View>
 
-      {/* Tile grid */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         {visibleTiles}
       </View>
