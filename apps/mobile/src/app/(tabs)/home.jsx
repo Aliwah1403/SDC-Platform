@@ -30,7 +30,6 @@ import { MonthlySummaryCard } from "@/components/HomeScreen/MonthlySummaryCard";
 import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
-import { useChartData } from "@/hooks/useChartData";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
 import { toLocalDateStr } from "@/utils/dateUtils";
 
@@ -209,10 +208,19 @@ export default function HomeScreen() {
         streakCount: newBadge.type === "streak" ? healthStreak : null,
       });
     }
-  }, [streakLoaded, healthData, healthStreak, pendingMilestone, claimedBadges, totalEntries, symptomsLogged, hydrationDays]);
+  }, [
+    streakLoaded,
+    healthData,
+    healthStreak,
+    pendingMilestone,
+    claimedBadges,
+    totalEntries,
+    symptomsLogged,
+    hydrationDays,
+  ]);
 
   useEffect(() => {
-    posthog?.capture('home_viewed', {
+    posthog?.capture("home_viewed", {
       logged_today: hasLoggedData,
       streak_days: healthStreak ?? 0,
     });
@@ -221,8 +229,6 @@ export default function HomeScreen() {
   const alertState = useAppStore((s) => s.computedAlertState);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
-
-  const { chartData, avgPainLevel, avgHydration } = useChartData(healthData);
 
   const message = getDynamicMessage({
     hasLoggedData,
@@ -348,14 +354,11 @@ export default function HomeScreen() {
 
         <MetricGrid selectedDateData={selectedDateData} />
 
+        <MonthlySummaryCard healthData={healthData} />
+
         <ContextualCards
           appointments={appointments}
           medications={medications}
-        />
-
-        <MonthlySummaryCard
-          chartData={chartData}
-          avgPainLevel={avgPainLevel}
         />
       </Animated.ScrollView>
 
@@ -388,7 +391,7 @@ export default function HomeScreen() {
         healthData={healthData}
         onClaim={() => {
           if (pendingMilestone) {
-            posthog?.capture('milestone_claimed', {
+            posthog?.capture("milestone_claimed", {
               milestone_id: pendingMilestone.milestoneId,
               milestone_type: pendingMilestone.type,
               streak_days: pendingMilestone.streakCount ?? null,
