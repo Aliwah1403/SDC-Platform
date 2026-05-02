@@ -1,11 +1,12 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 
-const SPARK_W = 110;
-const SPARK_H = 44;
+const SPARK_W = 90;
+const SPARK_H = 36;
 
 function toDateStr(d) {
   const y = d.getFullYear();
@@ -61,16 +62,16 @@ function MonthSparkline({ data }) {
 
   return (
     <Svg width={SPARK_W} height={SPARK_H}>
-      <Path d={fillPath} fill="rgba(255,255,255,0.12)" />
+      <Path d={fillPath} fill="rgba(255,255,255,0.1)" />
       <Path
         d={linePath}
-        stroke="rgba(255,255,255,0.75)"
+        stroke="rgba(255,255,255,0.65)"
         strokeWidth={1.5}
         fill="none"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <Circle cx={lastPt.x} cy={lastPt.y} r={2.5} fill="#FFFFFF" opacity={0.9} />
+      <Circle cx={lastPt.x} cy={lastPt.y} r={2.5} fill="#FFFFFF" opacity={0.85} />
     </Svg>
   );
 }
@@ -81,18 +82,18 @@ function StatBlock({ value, label }) {
       style={{
         flex: 1,
         alignItems: "center",
-        backgroundColor: "rgba(255,255,255,0.14)",
-        borderRadius: 14,
-        paddingVertical: 12,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderRadius: 12,
+        paddingVertical: 10,
         paddingHorizontal: 4,
       }}
     >
       <Text
         style={{
           fontFamily: fonts.bold,
-          fontSize: 22,
+          fontSize: 20,
           color: "#FFFFFF",
-          lineHeight: 26,
+          lineHeight: 24,
         }}
       >
         {value}
@@ -101,10 +102,10 @@ function StatBlock({ value, label }) {
         style={{
           fontFamily: fonts.regular,
           fontSize: 10,
-          color: "rgba(255,255,255,0.6)",
+          color: "rgba(255,255,255,0.55)",
           textAlign: "center",
           marginTop: 3,
-          lineHeight: 14,
+          lineHeight: 13,
         }}
       >
         {label}
@@ -171,91 +172,102 @@ export function MonthlySummaryCard({ healthData }) {
         end={{ x: 1, y: 1 }}
         style={{ borderRadius: 22, overflow: "hidden" }}
       >
-        {/* Header */}
+        {/* Abstract floating circles */}
         <View
-          style={{
-            flexDirection: "row",
-            alignItems: "flex-start",
-            justifyContent: "space-between",
-            padding: 20,
-            paddingBottom: 14,
-          }}
+          pointerEvents="none"
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <View style={{ flex: 1 }}>
-            <Text
+          <View style={{ position: "absolute", top: -30, right: -20, width: 150, height: 150, borderRadius: 75, backgroundColor: "rgba(255,255,255,0.10)" }} />
+          <View style={{ position: "absolute", top: 10, right: 90, width: 85, height: 85, borderRadius: 42, backgroundColor: "rgba(208,159,154,0.30)" }} />
+          <View style={{ position: "absolute", top: -15, left: 40, width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(255,255,255,0.07)" }} />
+          <View style={{ position: "absolute", top: 45, left: -25, width: 95, height: 95, borderRadius: 48, backgroundColor: "rgba(255,255,255,0.09)" }} />
+          <View style={{ position: "absolute", top: 55, right: 10, width: 65, height: 65, borderRadius: 32, backgroundColor: "rgba(120,29,17,0.45)" }} />
+          <View style={{ position: "absolute", top: 20, left: 130, width: 55, height: 55, borderRadius: 28, backgroundColor: "rgba(255,255,255,0.13)" }} />
+        </View>
+
+        {/* Spacer — circles-only zone */}
+        <View style={{ height: 110 }} />
+
+        {/* Frosted glass panel */}
+        <BlurView intensity={22} tint="dark" style={{ overflow: "hidden" }}>
+          <View style={{ backgroundColor: "rgba(10,0,4,0.18)", padding: 16 }}>
+
+            {/* Month name + sparkline */}
+            <View
               style={{
-                fontFamily: fonts.bold,
-                fontSize: 24,
-                color: "#FFFFFF",
-                marginBottom: 4,
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                marginBottom: 2,
               }}
             >
-              {prevMonthName}
-            </Text>
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 32,
+                  color: "#FFFFFF",
+                  lineHeight: 36,
+                }}
+              >
+                {prevMonthName}
+              </Text>
+              <View style={{ alignItems: "flex-end", paddingBottom: 2 }}>
+                <MonthSparkline data={data} />
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 9,
+                    color: "rgba(255,255,255,0.4)",
+                    marginTop: 3,
+                  }}
+                >
+                  pain trend
+                </Text>
+              </View>
+            </View>
+
             <Text
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 13,
-                color: "rgba(255,255,255,0.7)",
+                color: "rgba(255,255,255,0.6)",
+                marginBottom: 14,
               }}
             >
               {daysLogged} of {data.length} days logged
             </Text>
-          </View>
 
-          <View style={{ alignItems: "flex-end", paddingTop: 2 }}>
-            <MonthSparkline data={data} />
-            <Text
+            {/* Stat blocks */}
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 14 }}>
+              <StatBlock value={avgPainLevel} label={"avg\npain"} />
+              <StatBlock value={avgHydration} label={"avg\nhydration"} />
+              <StatBlock value={String(goodDays)} label={"low-pain\ndays"} />
+              <StatBlock value={`${bestStreak}d`} label={"best\nstreak"} />
+            </View>
+
+            {/* CTA */}
+            <TouchableOpacity
+              onPress={() => router.push("/health-insights")}
+              activeOpacity={0.8}
               style={{
-                fontFamily: fonts.regular,
-                fontSize: 9,
-                color: "rgba(255,255,255,0.45)",
-                marginTop: 4,
+                backgroundColor: "rgba(255,255,255,0.14)",
+                borderRadius: 12,
+                paddingVertical: 11,
+                alignItems: "center",
               }}
             >
-              {prevMonthName.toLowerCase()} pain trend
-            </Text>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 14,
+                  color: "#FFFFFF",
+                }}
+              >
+                View {prevMonthName} insights →
+              </Text>
+            </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Stat blocks */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: 8,
-            paddingHorizontal: 16,
-            paddingBottom: 14,
-          }}
-        >
-          <StatBlock value={avgPainLevel} label={"avg\npain"} />
-          <StatBlock value={avgHydration} label={"avg\nhydration"} />
-          <StatBlock value={String(goodDays)} label={"low-pain\ndays"} />
-          <StatBlock value={`${bestStreak}d`} label={"best\nstreak"} />
-        </View>
-
-        {/* CTA */}
-        <TouchableOpacity
-          onPress={() => router.push("/health-insights")}
-          activeOpacity={0.8}
-          style={{
-            marginHorizontal: 16,
-            marginBottom: 16,
-            backgroundColor: "rgba(255,255,255,0.18)",
-            borderRadius: 14,
-            paddingVertical: 12,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: fonts.semibold,
-              fontSize: 14,
-              color: "#FFFFFF",
-            }}
-          >
-            View {prevMonthName} insights →
-          </Text>
-        </TouchableOpacity>
+        </BlurView>
       </LinearGradient>
     </View>
   );
