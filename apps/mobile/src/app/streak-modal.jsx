@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Image } from "expo-image";
+import LottieView from "lottie-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -34,8 +35,7 @@ import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
-import { getStreakFireAsset, StreakFireIcon } from "@/utils/streakFire";
-import { MotiView } from "moti";
+import { StreakFireIcon } from "@/utils/streakFire";
 import { mockBadges, mockChallenges } from "@/types";
 
 const { width } = Dimensions.get("window");
@@ -1088,22 +1088,12 @@ export default function StreakModal() {
             }}
           >
             {/* Animated fire */}
-            <MotiView
-              from={{ scale: 1, translateY: 0 }}
-              animate={{ scale: 1.05, translateY: -6 }}
-              transition={{
-                type: "timing",
-                duration: 1000,
-                loop: true,
-                repeatReverse: true,
-              }}
-            >
-              <Image
-                source={getStreakFireAsset(healthStreak)}
-                style={{ width: 150, height: 200 }}
-                contentFit="contain"
-              />
-            </MotiView>
+            <LottieView
+              source={require("../../assets/animations/streak-animation.json")}
+              autoPlay
+              loop
+              style={{ width: 180, height: 220 }}
+            />
 
             {/* Streak number */}
             <Text

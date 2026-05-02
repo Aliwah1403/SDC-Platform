@@ -16,9 +16,9 @@ const DEFAULT_VISIBLE = ["hydration", "mood", "steps", "sleep"];
 
 const METRIC_META = [
   { key: "hydration", label: "Hydration" },
-  { key: "mood",      label: "Mood" },
-  { key: "steps",     label: "Steps" },
-  { key: "sleep",     label: "Sleep" },
+  { key: "mood", label: "Mood" },
+  { key: "steps", label: "Steps" },
+  { key: "sleep", label: "Sleep" },
 ];
 
 // ─── Hydration: vertical fill tank ───────────────────────────────────────────
@@ -96,13 +96,29 @@ const MOOD_HALO = {
 };
 
 function MoodHalo({ mood }) {
-  const emoji = mood >= 5 ? "😄" : mood >= 4 ? "🙂" : mood >= 3 ? "😐" : mood >= 2 ? "😔" : "😞";
+  const emoji =
+    mood >= 5
+      ? "😄"
+      : mood >= 4
+        ? "🙂"
+        : mood >= 3
+          ? "😐"
+          : mood >= 2
+            ? "😔"
+            : "😞";
   const haloBg = mood > 0 ? (MOOD_HALO[mood] ?? "#F8E9E7") : "#F3F4F6";
   const haloSize = 88;
   const innerSize = 64;
 
   return (
-    <View style={{ width: haloSize, height: haloSize, alignItems: "center", justifyContent: "center" }}>
+    <View
+      style={{
+        width: haloSize,
+        height: haloSize,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       {/* Outer soft halo */}
       <View
         style={{
@@ -167,22 +183,55 @@ function StepsGauge({ steps, goal = 10000 }) {
       : null;
 
   const shortSteps =
-    steps >= 1000 ? `${(steps / 1000).toFixed(1)}k` : steps > 0 ? String(steps) : "—";
+    steps >= 1000
+      ? `${(steps / 1000).toFixed(1)}k`
+      : steps > 0
+        ? String(steps)
+        : "—";
 
   return (
     <View style={{ width: size, height: size / 2 + 16, alignItems: "center" }}>
-      <Svg width={size} height={size / 2 + 16} style={{ position: "absolute", bottom: 0 }}>
-        <Path d={trackPath} stroke="#F0E4E1" strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
+      <Svg
+        width={size}
+        height={size / 2 + 16}
+        style={{ position: "absolute", bottom: 0 }}
+      >
+        <Path
+          d={trackPath}
+          stroke="#F0E4E1"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeLinecap="round"
+        />
         {fillPath && (
-          <Path d={fillPath} stroke="#A9334D" strokeWidth={strokeWidth} fill="none" strokeLinecap="round" />
+          <Path
+            d={fillPath}
+            stroke="#A9334D"
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeLinecap="round"
+          />
         )}
       </Svg>
       <View style={{ position: "absolute", bottom: 14, alignItems: "center" }}>
-        <Text style={{ fontFamily: fonts.extrabold, fontSize: 22, color: "#781D11", lineHeight: 26 }}>
+        <Text
+          style={{
+            fontFamily: fonts.extrabold,
+            fontSize: 22,
+            color: "#781D11",
+            lineHeight: 26,
+          }}
+        >
           {shortSteps}
         </Text>
         {steps > 0 && (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF" }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 10,
+              color: "#9CA3AF",
+            }}
+          >
             / 10k
           </Text>
         )}
@@ -213,7 +262,14 @@ function SleepMoon({ hours }) {
   ];
 
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
       <Svg width={size} height={size}>
         <Defs>
           <ClipPath id="moonClip">
@@ -223,21 +279,55 @@ function SleepMoon({ hours }) {
         </Defs>
         {/* Stars */}
         {stars.map((s, i) => (
-          <Circle key={i} cx={s.x} cy={s.y} r={s.r} fill="#D09F9A" opacity={0.7} />
+          <Circle
+            key={i}
+            cx={s.x}
+            cy={s.y}
+            r={s.r}
+            fill="#D09F9A"
+            opacity={0.7}
+          />
         ))}
         {/* Moon base */}
         <Circle cx={moonCx} cy={moonCy} r={moonR} fill="#F8E9E7" />
         {/* Cut-out to create crescent */}
-        <Circle cx={cutCx} cy={cutCy} r={cutR} fill="#FFFFFF" clipPath="url(#moonClip)" />
+        <Circle
+          cx={cutCx}
+          cy={cutCy}
+          r={cutR}
+          fill="#FFFFFF"
+          clipPath="url(#moonClip)"
+        />
         {/* Moon face glow */}
-        <Circle cx={moonCx - 6} cy={moonCy + 4} r={moonR - 10} fill="#F0E4E1" opacity={0.5} />
+        <Circle
+          cx={moonCx - 6}
+          cy={moonCy + 4}
+          r={moonR - 10}
+          fill="#F0E4E1"
+          opacity={0.5}
+        />
       </Svg>
       <View style={{ position: "absolute", alignItems: "center" }}>
-        <Text style={{ fontFamily: fonts.extrabold, fontSize: 20, color: "#781D11", lineHeight: 24 }}>
+        <Text
+          style={{
+            fontFamily: fonts.extrabold,
+            fontSize: 20,
+            color: "#781D11",
+            lineHeight: 24,
+          }}
+        >
           {hours > 0 ? hours : "—"}
         </Text>
         {hours > 0 && (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "#9CA3AF" }}>hrs</Text>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 10,
+              color: "#9CA3AF",
+            }}
+          >
+            hrs
+          </Text>
         )}
       </View>
     </View>
@@ -246,14 +336,22 @@ function SleepMoon({ hours }) {
 
 // ─── Individual tile ──────────────────────────────────────────────────────────
 
-function MetricTile({ title, statusLabel, statusColor, visual, metric, hasData }) {
+function MetricTile({
+  title,
+  statusLabel,
+  statusColor,
+  visual,
+  metric,
+  hasData,
+}) {
   const router = useRouter();
 
   return (
     <TouchableOpacity
       activeOpacity={hasData ? 0.8 : 1}
       onPress={() =>
-        hasData && router.push({ pathname: "/metric-detail", params: { metric } })
+        hasData &&
+        router.push({ pathname: "/metric-detail", params: { metric } })
       }
       style={{
         width: TILE_WIDTH,
@@ -269,8 +367,16 @@ function MetricTile({ title, statusLabel, statusColor, visual, metric, hasData }
         justifyContent: "space-between",
       }}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#6B7280" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Text
+          style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#6B7280" }}
+        >
           {title}
         </Text>
         {hasData && <Text style={{ fontSize: 16, color: "#D09F9A" }}>›</Text>}
@@ -280,7 +386,9 @@ function MetricTile({ title, statusLabel, statusColor, visual, metric, hasData }
         {visual}
       </View>
 
-      <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}>
+      <Text
+        style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}
+      >
         {statusLabel}
       </Text>
     </TouchableOpacity>
@@ -310,13 +418,28 @@ export function MetricGrid({ selectedDateData }) {
   );
 
   const hydration = selectedDateData?.hydration ?? 0;
-  const mood      = selectedDateData?.mood ?? 0;
-  const steps     = selectedDateData?.steps ?? 0;
-  const sleep     = selectedDateData?.sleepHours ?? 0;
+  const mood = selectedDateData?.mood ?? 0;
+  const steps = selectedDateData?.steps ?? 0;
+  const sleep = selectedDateData?.sleepHours ?? 0;
 
-  const hydrationStatus = hydration === 0 ? "No data" : hydration >= 8 ? "At goal" : "Below goal";
-  const stepsStatus     = steps === 0 ? "No data" : steps >= 10000 ? "Goal reached" : steps >= 5000 ? "In progress" : "Below typical";
-  const sleepStatus     = sleep === 0 ? "No data" : sleep >= 8 ? "Well rested" : sleep >= 6 ? "Adequate" : "Short night";
+  const hydrationStatus =
+    hydration === 0 ? "No data" : hydration >= 8 ? "At goal" : "Below goal";
+  const stepsStatus =
+    steps === 0
+      ? "No data"
+      : steps >= 10000
+        ? "Goal reached"
+        : steps >= 5000
+          ? "In progress"
+          : "Below typical";
+  const sleepStatus =
+    sleep === 0
+      ? "No data"
+      : sleep >= 8
+        ? "Well rested"
+        : sleep >= 6
+          ? "Adequate"
+          : "Short night";
 
   const tiles = {
     hydration: (
@@ -324,7 +447,9 @@ export function MetricGrid({ selectedDateData }) {
         key="hydration"
         title="Hydration"
         statusLabel={hydrationStatus}
-        statusColor={hydration > 0 ? (hydration >= 8 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
+        statusColor={
+          hydration > 0 ? (hydration >= 8 ? "#A9334D" : "#D09F9A") : "#D1D5DB"
+        }
         metric="hydration"
         hasData={hydration > 0}
         visual={<HydrationTank hydration={hydration} />}
@@ -346,7 +471,9 @@ export function MetricGrid({ selectedDateData }) {
         key="steps"
         title="Steps"
         statusLabel={stepsStatus}
-        statusColor={steps > 0 ? (steps >= 10000 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
+        statusColor={
+          steps > 0 ? (steps >= 10000 ? "#A9334D" : "#D09F9A") : "#D1D5DB"
+        }
         metric="steps"
         hasData={steps > 0}
         visual={<StepsGauge steps={steps} />}
@@ -357,7 +484,9 @@ export function MetricGrid({ selectedDateData }) {
         key="sleep"
         title="Sleep"
         statusLabel={sleepStatus}
-        statusColor={sleep > 0 ? (sleep >= 6 ? "#A9334D" : "#D09F9A") : "#D1D5DB"}
+        statusColor={
+          sleep > 0 ? (sleep >= 6 ? "#A9334D" : "#D09F9A") : "#D1D5DB"
+        }
         metric="sleep"
         hasData={sleep > 0}
         visual={<SleepMoon hours={sleep} />}
@@ -365,9 +494,9 @@ export function MetricGrid({ selectedDateData }) {
     ),
   };
 
-  const visibleTiles = METRIC_META
-    .filter((m) => visibleMetrics.includes(m.key))
-    .map((m) => tiles[m.key]);
+  const visibleTiles = METRIC_META.filter((m) =>
+    visibleMetrics.includes(m.key),
+  ).map((m) => tiles[m.key]);
 
   return (
     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
@@ -379,7 +508,9 @@ export function MetricGrid({ selectedDateData }) {
           marginBottom: 12,
         }}
       >
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1F2937" }}>
+        <Text
+          style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1F2937" }}
+        >
           Health Metrics
         </Text>
         <TouchableOpacity
