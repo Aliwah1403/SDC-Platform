@@ -36,6 +36,7 @@ const ICON_CONFIG = {
   // Community types
   like: { Component: Heart, color: "#A9334D", fill: true },
   comment: { Component: MessageCircle, color: "#3B82F6", fill: false },
+  reply: { Component: MessageCircle, color: "#A9334D", fill: false },
   category_post: { Component: Bell, color: "#09332C", fill: false },
   system_poll: { Component: Bell, color: "#A9334D", fill: false },
   post_actioned: { Component: ShieldAlert, color: "#781D11", fill: false },
@@ -51,8 +52,21 @@ function buildText(n) {
   // System notifications have explicit title + body
   if (n._source === "system") return { bold: n.title, rest: n.body ? `\n${n.body}` : "" };
 
-  if (n.type === "like") return { bold: n.actorName, rest: " liked your post" };
-  if (n.type === "comment") return { bold: n.actorName, rest: " commented on your post" };
+  if (n.type === "like") {
+    const others = (n.actorCount ?? 1) - 1;
+    const rest = others > 0
+      ? ` and ${others} other${others > 1 ? "s" : ""} liked your post`
+      : " liked your post";
+    return { bold: n.actorName ?? "Someone", rest };
+  }
+  if (n.type === "comment") return { bold: n.actorName ?? "Someone", rest: " commented on your post" };
+  if (n.type === "reply") {
+    const others = (n.actorCount ?? 1) - 1;
+    const rest = others > 0
+      ? ` and ${others} other${others > 1 ? "s" : ""} replied to your comment`
+      : " replied to your comment";
+    return { bold: n.actorName ?? "Someone", rest };
+  }
   if (n.type === "category_post") return { bold: n.categoryName, rest: " posted in this community" };
   if (n.type === "post_actioned")
     return { bold: "Your post was removed", rest: ` · ${n.reason}` };
