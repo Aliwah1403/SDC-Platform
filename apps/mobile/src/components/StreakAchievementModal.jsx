@@ -1,18 +1,21 @@
 import { useMemo, useEffect } from "react";
 import { View, Text, TouchableOpacity, Modal, Dimensions, StatusBar } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { Sparkles } from "lucide-react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useAnimatedSensor,
+  useDerivedValue,
+  SensorType,
   withSpring,
   withDelay,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { Image } from "expo-image";
+import { Canvas, Group, Circle, Shadow, vec } from "@shopify/react-native-skia";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fonts } from "@/utils/fonts";
 
@@ -123,42 +126,54 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
   const badgeScale = useSharedValue(0.5);
   const badgeOpacity = useSharedValue(0);
 
-  // 3D tilt (same as MilestoneModal)
-  const rotateX = useSharedValue(0);
-  const rotateY = useSharedValue(0);
+  // 3D tilt — exact sensor setup from the linear-sensors demo
+  const deviceRotation = useAnimatedSensor(SensorType.ROTATION, { interval: 20 });
+  const deviceGravity  = useAnimatedSensor(SensorType.GRAVITY,  { interval: 20 });
 
-  const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      rotateY.value = interpolate(e.translationX, [-150, 150], [-25, 25], Extrapolation.CLAMP);
-      rotateX.value = interpolate(e.translationY, [-150, 150], [25, -25], Extrapolation.CLAMP);
-    })
-    .onEnd(() => {
-      rotateX.value = withSpring(0, { damping: 14, stiffness: 140 });
-      rotateY.value = withSpring(0, { damping: 14, stiffness: 140 });
-    });
+  const rotateY = useDerivedValue(() =>
+    interpolate(
+      deviceRotation.sensor.value.roll,
+      [-1, 0, 1],
+      [Math.PI / 8, 0, -Math.PI / 8],
+      Extrapolation.CLAMP,
+    )
+  );
 
-  const badgeTiltStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateX: `${rotateX.value}deg` },
-      { rotateY: `${rotateY.value}deg` },
-    ],
-  }));
+  const rotateX = useDerivedValue(() =>
+    interpolate(
+      deviceGravity.sensor.value.z,
+      [-10, -6, -1],
+      [-Math.PI / 8, 0, Math.PI / 8],
+      Extrapolation.CLAMP,
+    )
+  );
 
-  const shineStyle = useAnimatedStyle(() => {
-    const mag = Math.sqrt(rotateX.value ** 2 + rotateY.value ** 2);
-    return {
-      opacity: interpolate(mag, [0, 35], [0, 0.5], Extrapolation.CLAMP),
-      transform: [
-        { translateX: interpolate(rotateY.value, [-25, 25], [60, -60], Extrapolation.CLAMP) },
-        { translateY: interpolate(rotateX.value, [-25, 25], [-60, 60], Extrapolation.CLAMP) },
-      ],
-    };
-  });
+  // Skia Group transform — SharedValue of transforms array
+  const rTransform = useDerivedValue(() => [
+    { perspective: 200 },
+    { rotateY: rotateY.value },
+    { rotateX: rotateX.value },
+  ]);
+
+  // Shadow shifts to simulate a fixed light source
+  const shadowDx = useDerivedValue(() =>
+    interpolate(rotateY.value, [-Math.PI / 8, 0, Math.PI / 8], [10, 0, -10], Extrapolation.CLAMP)
+  );
+  const shadowDy = useDerivedValue(() =>
+    interpolate(rotateX.value, [-Math.PI / 8, 0, Math.PI / 8], [7, 0, 10], Extrapolation.CLAMP)
+  );
 
   const badgeEntranceStyle = useAnimatedStyle(() => ({
     transform: [{ scale: badgeScale.value }],
     opacity: badgeOpacity.value,
+  }));
+
+  const badgeTiltStyle = useAnimatedStyle(() => ({
+    transform: [
+      { perspective: 200 },
+      { rotateX: `${rotateX.value}rad` },
+      { rotateY: `${rotateY.value}rad` },
+    ],
   }));
 
   useEffect(() => {
@@ -168,14 +183,13 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
     } else {
       badgeScale.value = 0.5;
       badgeOpacity.value = 0;
-      rotateX.value = 0;
-      rotateY.value = 0;
     }
   }, [visible]);
 
   if (!milestone) return null;
 
-  const badgeImage = BADGE_MAP[milestone.milestoneId];
+  const badgeSource = BADGE_MAP[milestone.milestoneId];
+
   const isStreak = milestone.type === "streak";
 
   return (
@@ -230,61 +244,27 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
             </Text>
           </MotiView>
 
-          {/* Badge */}
-          <Animated.View style={badgeEntranceStyle}>
-            <GestureDetector gesture={panGesture}>
-              <Animated.View style={[{ width: 200, height: 200 }, badgeTiltStyle]}>
-                {/* Glow ring */}
-                <View
-                  style={{
-                    position: "absolute",
-                    width: 220,
-                    height: 220,
-                    borderRadius: 110,
-                    backgroundColor: "rgba(248,233,231,0.1)",
-                    top: -10,
-                    left: -10,
-                  }}
-                />
-                <View
-                  style={{
-                    position: "absolute",
-                    width: 240,
-                    height: 240,
-                    borderRadius: 120,
-                    backgroundColor: "rgba(248,233,231,0.05)",
-                    top: -20,
-                    left: -20,
-                  }}
-                />
-
-                {badgeImage ? (
-                  <Image
-                    source={badgeImage}
-                    style={{ width: 200, height: 200 }}
-                    contentFit="contain"
-                  />
-                ) : (
-                  <View style={{ width: 200, height: 200, borderRadius: 100, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "rgba(248,233,231,0.3)" }}>
-                    <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#F8E9E7", letterSpacing: 1, textTransform: "uppercase" }}>No Image</Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "rgba(248,233,231,0.6)", marginTop: 4 }}>{milestone.milestoneId}</Text>
-                  </View>
-                )}
-
-                {/* Specular highlight */}
-                <Animated.View
-                  pointerEvents="none"
-                  style={[{ position: "absolute", width: 140, height: 140, borderRadius: 70 }, shineStyle]}
-                >
-                  <LinearGradient
-                    colors={["rgba(255,255,255,0.6)", "rgba(255,255,255,0.1)", "transparent"]}
-                    style={{ width: "100%", height: "100%", borderRadius: 70 }}
-                    start={{ x: 0.1, y: 0.1 }}
-                    end={{ x: 1, y: 1 }}
-                  />
-                </Animated.View>
-              </Animated.View>
-            </GestureDetector>
+          {/* Badge — Skia shadow circle behind, expo-image badge on top, both tilt together */}
+          <Animated.View style={[{ alignItems: "center", justifyContent: "center" }, badgeEntranceStyle]}>
+            {/* Skia Canvas: dynamic shadow that shifts with phone tilt */}
+            <Canvas style={{ position: "absolute", width: 320, height: 320 }}>
+              <Group origin={vec(160, 160)} transform={rTransform}>
+                <Circle cx={160} cy={160} r={145} color="rgba(248,233,231,0.07)">
+                  <Shadow dx={shadowDx} dy={shadowDy} blur={18} color="rgba(0,0,0,0.65)" />
+                  <Shadow dx={0} dy={0} blur={28} color="rgba(240,83,28,0.18)" inner />
+                </Circle>
+              </Group>
+            </Canvas>
+            {/* Badge image with matching CSS 3D tilt */}
+            <Animated.View style={badgeTiltStyle}>
+              {badgeSource ? (
+                <Image source={badgeSource} style={{ width: 260, height: 260 }} contentFit="contain" />
+              ) : (
+                <View style={{ width: 260, height: 260, borderRadius: 130, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "rgba(248,233,231,0.3)" }}>
+                  <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#F8E9E7" }}>{milestone.milestoneId}</Text>
+                </View>
+              )}
+            </Animated.View>
           </Animated.View>
 
           {/* Drag hint */}
@@ -295,7 +275,7 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
             style={{ marginTop: 16 }}
           >
             <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "rgba(248,233,231,0.45)", letterSpacing: 0.5 }}>
-              Drag to tilt
+              Tilt your phone
             </Text>
           </MotiView>
         </LinearGradient>

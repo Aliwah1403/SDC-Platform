@@ -183,10 +183,19 @@ export default function HomeScreen() {
     [healthData],
   );
 
-  // Milestone detection
+  const hasLoggedToday = (() => {
+    const todayStr = toLocalDateStr(new Date());
+    const todayData = healthData.find((d) => d.date === todayStr);
+    return !!(
+      todayData &&
+      (todayData.painLevel > 0 || todayData.mood > 0 || todayData.hydration > 0)
+    );
+  })();
+
+  // Milestone detection — only runs on days the user actually logged
   useEffect(() => {
     if (!streakLoaded) return;
-    if (!healthData.length && !healthStreak) return;
+    if (!hasLoggedToday) return;
     if (pendingMilestone) return;
 
     const earned = ALL_MILESTONES.filter((m) => {
@@ -212,6 +221,7 @@ export default function HomeScreen() {
     }
   }, [
     streakLoaded,
+    hasLoggedToday,
     healthData,
     healthStreak,
     pendingMilestone,
@@ -279,15 +289,6 @@ export default function HomeScreen() {
     );
     return { opacity, transform: [{ translateY }] };
   });
-
-  const hasLoggedToday = (() => {
-    const todayStr = toLocalDateStr(new Date());
-    const todayData = healthData.find((d) => d.date === todayStr);
-    return !!(
-      todayData &&
-      (todayData.painLevel > 0 || todayData.mood > 0 || todayData.hydration > 0)
-    );
-  })();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
