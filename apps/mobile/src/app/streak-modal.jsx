@@ -73,6 +73,7 @@ export default function StreakModal() {
   const currentUser = { name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You" };
   const healthStreak = streak?.currentStreak ?? 0;
   const repairsUsed = streak?.repairsUsed ?? 0;
+  const badgeUnlockDates = streak?.badgeUnlockDates ?? {};
   const [selectedMilestone, setSelectedMilestone] = useState(null);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
 
@@ -390,7 +391,18 @@ export default function StreakModal() {
     },
   ];
 
-  const unlockedCount = milestones.filter((m) => m.unlocked).length;
+  const milestonesWithDates = milestones.map((m) => {
+    const raw = badgeUnlockDates[m.id];
+    if (!raw) return m;
+    const unlockedDate = new Date(raw).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+    return { ...m, unlockedDate };
+  });
+
+  const unlockedCount = milestonesWithDates.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
     posthog?.capture('milestone_tapped', {
@@ -439,7 +451,8 @@ export default function StreakModal() {
     return (
       <TouchableOpacity
         key={milestone.id}
-        onPress={() => handleMilestonePress(milestone)}
+        onPress={() => isUnlocked && handleMilestonePress(milestone)}
+        disabled={!isUnlocked}
         style={{
           width: "48%",
           backgroundColor: "white",
@@ -919,7 +932,7 @@ export default function StreakModal() {
                   color: "#9CA3AF",
                 }}
               >
-                {unlockedCount}/{milestones.length}
+                {unlockedCount}/{milestonesWithDates.length}
               </Text>
             </View>
 
@@ -930,7 +943,7 @@ export default function StreakModal() {
                 justifyContent: "space-between",
               }}
             >
-              {milestones.map((milestone) => renderMilestoneCard(milestone))}
+              {milestonesWithDates.map((milestone) => renderMilestoneCard(milestone))}
             </View>
           </View>
 

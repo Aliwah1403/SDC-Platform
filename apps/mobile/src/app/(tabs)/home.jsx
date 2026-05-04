@@ -165,7 +165,9 @@ export default function HomeScreen() {
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
-  const claimedBadges = streak?.claimedBadges ?? [];
+  const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
+    typeof b === 'object' ? b.id : b
+  );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
   const { data: medications = [] } = useMedicationsQuery();
@@ -396,9 +398,11 @@ export default function HomeScreen() {
               milestone_type: pendingMilestone.type,
               streak_days: pendingMilestone.streakCount ?? null,
             });
-            const updated = [
-              ...new Set([...claimedBadges, pendingMilestone.milestoneId]),
-            ];
+            const existing = streak?.claimedBadges ?? [];
+            const alreadyIds = existing.map((b) => typeof b === 'object' ? b.id : b);
+            const updated = alreadyIds.includes(pendingMilestone.milestoneId)
+              ? existing
+              : [...existing, { id: pendingMilestone.milestoneId, unlockedAt: new Date().toISOString() }];
             saveClaimedBadges(updated);
           }
           clearPendingMilestone();

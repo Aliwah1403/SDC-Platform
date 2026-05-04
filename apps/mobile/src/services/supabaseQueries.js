@@ -502,7 +502,17 @@ export async function fetchStreak(userId) {
     .eq('user_id', userId)
     .single();
   if (error) throw error;
-  return toCamelCase(data);
+
+  const camel = toCamelCase(data);
+
+  // claimed_badges may be legacy string[] or new { id, unlockedAt }[]
+  const badgeUnlockDates = Object.fromEntries(
+    (camel.claimedBadges ?? [])
+      .filter((b) => typeof b === 'object' && b.id && b.unlockedAt)
+      .map((b) => [b.id, b.unlockedAt])
+  );
+
+  return { ...camel, badgeUnlockDates };
 }
 
 /**
@@ -544,10 +554,10 @@ export async function repairStreak(userId) {
   return { restoredStreak: streakRow.current_streak ?? 0 };
 }
 
-export async function updateClaimedBadges(userId, badgeIds) {
+export async function updateClaimedBadges(userId, badges) {
   const { error } = await supabase
     .from('streaks')
-    .update({ claimed_badges: badgeIds, updated_at: new Date().toISOString() })
+    .update({ claimed_badges: badges, updated_at: new Date().toISOString() })
     .eq('user_id', userId);
   if (error) throw error;
 }
