@@ -17,17 +17,8 @@ import {
   Zap,
 } from "lucide-react-native";
 import { BadgeHeroGradient } from "./BadgeHeroGradient";
-import { LinearGradient } from "expo-linear-gradient";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { Image } from "expo-image";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import Animated, {
-  Extrapolation,
-  interpolate,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MILESTONE_ICONS = {
@@ -91,61 +82,6 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
 
   const insets = useSafeAreaInsets();
 
-  const rotateX = useSharedValue(0);
-  const rotateY = useSharedValue(0);
-
-  const panGesture = Gesture.Pan()
-    .onUpdate((e) => {
-      rotateY.value = interpolate(
-        e.translationX,
-        [-150, 150],
-        [-28, 28],
-        Extrapolation.CLAMP,
-      );
-      rotateX.value = interpolate(
-        e.translationY,
-        [-150, 150],
-        [28, -28],
-        Extrapolation.CLAMP,
-      );
-    })
-    .onEnd(() => {
-      rotateX.value = withSpring(0, { damping: 14, stiffness: 140 });
-      rotateY.value = withSpring(0, { damping: 14, stiffness: 140 });
-    });
-
-  const badgeAnimStyle = useAnimatedStyle(() => ({
-    transform: [
-      { perspective: 800 },
-      { rotateX: `${rotateX.value}deg` },
-      { rotateY: `${rotateY.value}deg` },
-    ],
-  }));
-
-  const shineStyle = useAnimatedStyle(() => {
-    const magnitude = Math.sqrt(rotateX.value ** 2 + rotateY.value ** 2);
-    return {
-      opacity: interpolate(magnitude, [0, 40], [0, 0.55], Extrapolation.CLAMP),
-      transform: [
-        {
-          translateX: interpolate(
-            rotateY.value,
-            [-28, 28],
-            [70, -70],
-            Extrapolation.CLAMP,
-          ),
-        },
-        {
-          translateY: interpolate(
-            rotateX.value,
-            [-28, 28],
-            [-70, 70],
-            Extrapolation.CLAMP,
-          ),
-        },
-      ],
-    };
-  });
 
   if (!milestone) return null;
 
@@ -181,38 +117,14 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
               <Text style={s.closeBtnX}>✕</Text>
             </TouchableOpacity>
 
-            {/* Badge — 3D tilt */}
-            <GestureDetector gesture={panGesture}>
-              <Animated.View
-                style={[
-                  s.badgeWrapper,
-                  badgeAnimStyle,
-                  { opacity: milestone.unlocked ? 1 : 0.4 },
-                ]}
-              >
-                <Image
-                  source={badgeImage}
-                  style={s.badgeImage}
-                  contentFit="contain"
-                />
-                {/* Specular highlight */}
-                <Animated.View
-                  pointerEvents="none"
-                  style={[s.shine, shineStyle]}
-                >
-                  <LinearGradient
-                    colors={[
-                      "rgba(255,255,255,0.65)",
-                      "rgba(255,255,255,0.15)",
-                      "transparent",
-                    ]}
-                    style={s.shineFill}
-                    start={{ x: 0.1, y: 0.1 }}
-                    end={{ x: 1, y: 1 }}
-                  />
-                </Animated.View>
-              </Animated.View>
-            </GestureDetector>
+            {/* Badge */}
+            <View style={[s.badgeWrapper, { opacity: milestone.unlocked ? 1 : 0.4 }]}>
+              <Image
+                source={badgeImage}
+                style={s.badgeImage}
+                contentFit="contain"
+              />
+            </View>
           </View>
 
           {/* ── SHEET ─────────────────────────────────────────────────────── */}
@@ -360,18 +272,6 @@ const s = StyleSheet.create({
     width: 260,
     height: 260,
   },
-  shine: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-  },
-  shineFill: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 80,
-  },
-
   // Sheet
   sheet: {
     flex: 1,

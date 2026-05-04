@@ -1,10 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import LottieView from "lottie-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -42,22 +37,22 @@ const HEMO = {
 
 const MILESTONE_BADGE = {
   "onboarding-done": require("../../assets/images/badges/getting-started.svg"),
-  "streak-1":        require("../../assets/images/badges/first-streak.svg"),
-  "streak-3":        require("../../assets/images/badges/on-track.svg"),
-  "streak-7":        require("../../assets/images/badges/habit-builder.png"),
-  "streak-14":       require("../../assets/images/badges/fortnight-fighter.svg"),
-  "streak-30":       require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60":       require("../../assets/images/badges/pattern-seeker.svg"),
-  "hydration-7":     require("../../assets/images/badges/hydration-junkie.png"),
-  "care-10":         require("../../assets/images/badges/self-care.svg"),
-  "learning-5":      require("../../assets/images/badges/knowledge-seeker.svg"),
-  "repair-1":        require("../../assets/images/badges/back-on-track.svg"),
-  "restart-1":       require("../../assets/images/badges/resilient-restart.svg"),
-  "meds-streak-7":   require("../../assets/images/badges/on-time.svg"),
-  "meds-first":      require("../../assets/images/badges/dose-one.svg"),
-  "week-perfect":    require("../../assets/images/badges/perfect-week.svg"),
-  "days-1":          require("../../assets/images/badges/first-streak.svg"),
-  "days-5":          require("../../assets/images/badges/getting-started.svg"),
+  "streak-1": require("../../assets/images/badges/first-streak.svg"),
+  "streak-3": require("../../assets/images/badges/on-track.svg"),
+  "streak-7": require("../../assets/images/badges/habit-builder.png"),
+  "streak-14": require("../../assets/images/badges/fortnight-fighter.svg"),
+  "streak-30": require("../../assets/images/badges/monthly-monster.svg"),
+  "streak-60": require("../../assets/images/badges/pattern-seeker.svg"),
+  "hydration-7": require("../../assets/images/badges/hydration-junkie.png"),
+  "care-10": require("../../assets/images/badges/self-care.svg"),
+  "learning-5": require("../../assets/images/badges/knowledge-seeker.svg"),
+  "repair-1": require("../../assets/images/badges/back-on-track.svg"),
+  "restart-1": require("../../assets/images/badges/resilient-restart.svg"),
+  "meds-streak-7": require("../../assets/images/badges/on-time.svg"),
+  "meds-first": require("../../assets/images/badges/dose-one.svg"),
+  "week-perfect": require("../../assets/images/badges/perfect-week.svg"),
+  "days-1": require("../../assets/images/badges/first-streak.svg"),
+  "days-5": require("../../assets/images/badges/getting-started.svg"),
   // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
 };
 
@@ -70,7 +65,9 @@ export default function StreakModal() {
   const { data: streak } = useStreakQuery();
   const { data: medications = [] } = useMedicationsQuery();
 
-  const currentUser = { name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You" };
+  const currentUser = {
+    name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You",
+  };
   const healthStreak = streak?.currentStreak ?? 0;
   const repairsUsed = streak?.repairsUsed ?? 0;
   const badgeUnlockDates = streak?.badgeUnlockDates ?? {};
@@ -78,7 +75,7 @@ export default function StreakModal() {
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
 
   useEffect(() => {
-    posthog?.capture('streak_modal_viewed', { current_streak: healthStreak });
+    posthog?.capture("streak_modal_viewed", { current_streak: healthStreak });
   }, []);
 
   const getCurrentWeekData = () => {
@@ -405,7 +402,7 @@ export default function StreakModal() {
   const unlockedCount = milestonesWithDates.filter((m) => m.unlocked).length;
 
   const handleMilestonePress = (milestone) => {
-    posthog?.capture('milestone_tapped', {
+    posthog?.capture("milestone_tapped", {
       milestone_id: milestone.id,
       type: milestone.type,
       unlocked: milestone.unlocked,
@@ -479,42 +476,54 @@ export default function StreakModal() {
               contentFit="cover"
             />
           ) : (
-            <View style={{ width: "100%", height: "100%", borderRadius: 12, backgroundColor: "#A9334D", opacity: isUnlocked ? 1 : 0.4, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: fonts.bold, fontSize: 10, color: "#F8E9E7", letterSpacing: 1, textTransform: "uppercase" }}>No Image</Text>
-              <Text style={{ fontFamily: fonts.regular, fontSize: 9, color: "rgba(248,233,231,0.6)", marginTop: 2 }}>{milestone.id}</Text>
-            </View>
-          )}
-          {isUnlocked ? (
             <View
               style={{
-                position: "absolute",
-                bottom: 6,
-                right: 6,
-                width: 28,
-                height: 28,
-                borderRadius: 14,
-                backgroundColor: "rgba(255,255,255,0.9)",
+                width: "100%",
+                height: "100%",
+                borderRadius: 12,
+                backgroundColor: "#A9334D",
+                opacity: isUnlocked ? 1 : 0.4,
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <MilestoneIcon size={16} color={HEMO.wine} strokeWidth={2} />
-            </View>
-          ) : (
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Lock size={32} color="#FFFFFF" strokeWidth={2} />
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 10,
+                  color: "#F8E9E7",
+                  letterSpacing: 1,
+                  textTransform: "uppercase",
+                }}
+              >
+                No Image
+              </Text>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 9,
+                  color: "rgba(248,233,231,0.6)",
+                  marginTop: 2,
+                }}
+              >
+                {milestone.id}
+              </Text>
             </View>
           )}
+
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Lock size={32} color="#FFFFFF" strokeWidth={2} />
+          </View>
         </View>
 
         <Text
@@ -943,7 +952,9 @@ export default function StreakModal() {
                 justifyContent: "space-between",
               }}
             >
-              {milestonesWithDates.map((milestone) => renderMilestoneCard(milestone))}
+              {milestonesWithDates.map((milestone) =>
+                renderMilestoneCard(milestone),
+              )}
             </View>
           </View>
 
