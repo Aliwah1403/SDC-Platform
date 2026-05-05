@@ -22,6 +22,7 @@ import { X, Calendar, Clock, MapPin, User, FileText, Bell, CalendarCheck } from 
 import { useAppointmentsQuery, useAddAppointmentMutation, useUpdateAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
 import { addToDeviceCalendar, scheduleReminders, cancelReminders } from "@/utils/appointmentUtils";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { format } from "date-fns";
 
 const TYPES = [
@@ -52,6 +53,7 @@ export default function AppointmentForm() {
   const { id } = useLocalSearchParams();
 
   const { data: appointments = [] } = useAppointmentsQuery();
+  const { data: profile } = useProfileQuery();
   const addAppt = useAddAppointmentMutation();
   const updateAppt = useUpdateAppointmentMutation();
 
@@ -161,7 +163,7 @@ export default function AppointmentForm() {
     if (existing?.reminderIds?.length) await cancelReminders(existing.reminderIds);
     let reminderIds = [];
     if (remindersOn && status === "upcoming") {
-      reminderIds = await scheduleReminders({ ...apptBase, id: existing?.id ?? "new" }, reminderOffsets);
+      reminderIds = await scheduleReminders({ ...apptBase, id: existing?.id ?? "new" }, reminderOffsets, profile?.nickname ?? "there");
     }
 
     const navigate = () => router.back();

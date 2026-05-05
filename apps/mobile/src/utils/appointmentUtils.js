@@ -1,6 +1,7 @@
 import * as Calendar from "expo-calendar";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import { Sentry } from "@/utils/sentry";
 
 // Convert "10:30 AM" → "10:30" (24h), with optional minuteOffset for end time.
 // Uses regex to handle both regular space and narrow no-break space (U+202F)
@@ -63,6 +64,7 @@ export async function addToDeviceCalendar(appt) {
     return eventId;
   } catch (err) {
     console.error("[Calendar] createEventAsync failed:", err);
+    Sentry.captureException(err);
     return null;
   }
 }
@@ -77,19 +79,19 @@ export async function removeFromDeviceCalendar(calendarEventId) {
   }
 }
 
-function reminderTitle(minutes) {
-  if (minutes === 0) return "Appointment starting now";
-  if (minutes < 60) return `Appointment in ${minutes} minutes`;
-  if (minutes === 60) return "Appointment in 1 hour";
-  if (minutes < 1440) return `Appointment in ${minutes / 60} hours`;
-  if (minutes === 1440) return "Appointment tomorrow";
-  return `Appointment in ${minutes / 1440} days`;
+function minutesToLabel(minutes) {
+  if (minutes === 0) return "now";
+  if (minutes < 60) return `${minutes} minutes`;
+  if (minutes === 60) return "1 hour";
+  if (minutes < 1440) return `${minutes / 60} hours`;
+  if (minutes === 1440) return "1 day";
+  return `${minutes / 1440} days`;
 }
 
 // Schedule push notification reminders for an appointment.
 // minuteOffsets: number[] — how many minutes before the appointment each reminder fires.
 // Returns array of notification IDs (store these to cancel later).
-export async function scheduleReminders(appt, minuteOffsets = []) {
+export async function scheduleReminders(appt, minuteOffsets = [], nickname = "there") {
   const ids = [];
   try {
     const apptDate = new Date(`${appt.date}T${convertTo24h(appt.time)}:00`);
@@ -98,18 +100,22 @@ export async function scheduleReminders(appt, minuteOffsets = []) {
     for (const minutes of minuteOffsets) {
       const trigger = new Date(apptDate.getTime() - minutes * 60 * 1000);
       if (trigger <= now) continue;
+      const timeLabel = minutesToLabel(minutes);
+      const isNow = minutes === 0;
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: reminderTitle(minutes),
-          body: `${appt.title}${appt.doctor ? ` with Dr. ${appt.doctor}` : ""}${appt.facility ? ` at ${appt.facility}` : ""}`,
+          title: isNow ? `Your ${appt.title} is starting now!` : `Heads up — ${appt.title} in ${timeLabel}!`,
+          body: isNow
+            ? `Hey ${nickname}, your appointment is starting. Hope it goes well!`
+            : `Hey ${nickname}, just a friendly reminder about your ${appt.title} appointment. Hope it goes smoothly!`,
           data: { type: "appointment", appointmentId: appt.id },
         },
         trigger,
       });
       ids.push(id);
     }
-  } catch {
-    // Notification scheduling failed (permission denied etc.) — return empty
+  } catch (err) {
+    Sentry.captureException(err);
   }
   return ids;
 }

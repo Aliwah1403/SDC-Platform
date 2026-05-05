@@ -15,7 +15,7 @@ export async function scheduleCheckInReminders(frequency = 2) {
   for (const { hour, minute } of slots) {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Time to log 🩸',
+        title: 'Quick check-in time.',
         body: 'How are you feeling today? Take a moment to log your health check-in.',
         data: { type: NOTIFICATION_TAG },
       },
