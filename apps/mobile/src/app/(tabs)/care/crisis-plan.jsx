@@ -264,7 +264,7 @@ export default function CrisisPlanScreen() {
             width: 100,
             height: 100,
             borderRadius: 999,
-            backgroundColor: "#09332C",
+            backgroundColor: "#1A1A1A",
             opacity: 0.4,
             bottom: -20,
             left: -20,
@@ -720,7 +720,7 @@ const styles = StyleSheet.create({
   infoVal: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     textAlign: "right",
     flex: 1,
   },
@@ -842,7 +842,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#09332C",
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -854,7 +854,7 @@ const styles = StyleSheet.create({
   contactName: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   contactRel: {
     fontFamily: fonts.regular,
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
   hospitalName: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   hospitalAddress: {
     fontFamily: fonts.regular,
@@ -912,7 +912,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 14,
     textTransform: "capitalize",
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   medDosage: {
     fontFamily: fonts.regular,
@@ -959,13 +959,13 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontFamily: fonts.bold,
     fontSize: 20,
-    color: "#09332C",
+    color: "#1A1A1A",
     marginBottom: 20,
   },
   sheetLabel: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     marginBottom: 10,
   },
   sheetHint: {
@@ -997,10 +997,10 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   sheetAddBtn: {
-    backgroundColor: "#09332C",
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 11,
@@ -1019,7 +1019,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     minHeight: 100,
   },
   sheetSaveBtn: {

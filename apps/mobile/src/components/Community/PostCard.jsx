@@ -20,7 +20,7 @@ import { fonts } from "@/utils/fonts";
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { PollBlock } from "@/components/Community/PollBlock";
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
 function avatarColor(name) {
   let hash = 0;
@@ -100,7 +100,7 @@ export function PostCard({
         marginHorizontal: 16,
         marginBottom: 12,
         overflow: "hidden",
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 6,
@@ -172,7 +172,7 @@ export function PostCard({
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 14,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               {post.isSystemPost && systemCategory
@@ -241,7 +241,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 25,
               paddingHorizontal: 16,
               marginBottom: 14,
@@ -300,7 +300,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.regular,
               fontSize: 15,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 22,
               paddingHorizontal: 16,
               marginBottom: 12,
@@ -347,7 +347,7 @@ export function PostCard({
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 11,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               {CATEGORY_LABELS[post.category] ?? post.category}

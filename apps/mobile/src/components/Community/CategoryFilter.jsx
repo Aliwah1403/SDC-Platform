@@ -55,7 +55,7 @@ export function CategoryFilter({ active, onSelect }) {
           >
             <Icon
               size={13}
-              color={isActive ? "#F8E9E7" : "#09332C"}
+              color={isActive ? "#F8E9E7" : "#1A1A1A"}
               strokeWidth={2}
             />
             <Text
@@ -65,7 +65,7 @@ export function CategoryFilter({ active, onSelect }) {
                 fontSize: 13,
                 lineHeight: 17,
                 includeFontPadding: false,
-                color: isActive ? "#F8E9E7" : "#09332C",
+                color: isActive ? "#F8E9E7" : "#1A1A1A",
               }}
             >
               {cat.label}

@@ -71,7 +71,7 @@ export function CategoryCard({
         style={{
           fontFamily: fonts.semibold,
           fontSize: 13,
-          color: "#09332C",
+          color: "#1A1A1A",
           marginTop: 8,
           lineHeight: 18,
         }}

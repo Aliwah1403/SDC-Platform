@@ -72,7 +72,7 @@ const TYPE_CONFIG = {
   [FACILITY_TYPES.HOSPITAL]: { color: "#DC2626", bg: "#FEE2E2" },
   [FACILITY_TYPES.URGENT_CARE]: { color: "#A9334D", bg: "#F8E9E7" },
   [FACILITY_TYPES.CLINIC]: { color: "#059669", bg: "#D1FAE5" },
-  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#09332C", bg: "#F8E9E7" },
+  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#1A1A1A", bg: "#F8E9E7" },
 };
 
 const FILTERS = [
@@ -885,7 +885,7 @@ export default function FacilitiesScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
           >
-            <ChevronLeft size={24} color="#09332C" />
+            <ChevronLeft size={24} color="#1A1A1A" />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Clinics & Hospitals</Text>
@@ -1186,7 +1186,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_700Bold",
     fontSize: 20,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.4,
   },
   viewToggle: {
@@ -1222,7 +1222,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     padding: 0,
   },
 
@@ -1270,7 +1270,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
-    shadowColor: "#09332C",
+    shadowColor: "#1A1A1A",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -1303,7 +1303,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
-    shadowColor: "#09332C",
+    shadowColor: "#1A1A1A",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -1317,7 +1317,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.3,
     marginBottom: 6,
   },
@@ -1356,7 +1356,7 @@ const styles = StyleSheet.create({
   metaChipText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 12,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
 
   // Action buttons
@@ -1428,7 +1428,7 @@ const styles = StyleSheet.create({
   markerLabelText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 10,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
 
   // Load more
@@ -1468,7 +1468,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: "#09332C",
+    shadowColor: "#1A1A1A",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -1489,7 +1489,7 @@ const styles = StyleSheet.create({
   sheetName: {
     fontFamily: "Geist_700Bold",
     fontSize: 19,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.4,
     marginBottom: 6,
   },
@@ -1519,7 +1519,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   sheetRowAction: {
     fontFamily: "Geist_600SemiBold",

@@ -106,8 +106,8 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
         </View>
         {appointment.addedToCalendar && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <CalendarCheck size={12} color="#09332C" />
-            <Text style={{ fontSize: 12, color: "#09332C", fontFamily: "Geist-Regular" }}>In calendar</Text>
+            <CalendarCheck size={12} color="#1A1A1A" />
+            <Text style={{ fontSize: 12, color: "#1A1A1A", fontFamily: "Geist-Regular" }}>In calendar</Text>
           </View>
         )}
       </View>
@@ -202,7 +202,7 @@ export default function AppointmentsScreen() {
 
   const SectionHeader = ({ label, count }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, marginTop: 8 }}>
-      <Text style={{ fontSize: 16, fontWeight: "700", color: "#09332C", fontFamily: "Geist-Bold" }}>{label}</Text>
+      <Text style={{ fontSize: 16, fontWeight: "700", color: "#1A1A1A", fontFamily: "Geist-Bold" }}>{label}</Text>
       <View style={{ backgroundColor: "#F0EDE8", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
         <Text style={{ fontSize: 12, fontWeight: "600", color: "#6B7280", fontFamily: "Geist-SemiBold" }}>{count}</Text>
       </View>

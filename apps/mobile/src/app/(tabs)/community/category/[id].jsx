@@ -145,7 +145,7 @@ export default function CategoryDetailScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
                 marginBottom: 6,
               }}
             >
@@ -274,7 +274,7 @@ function CategoryHeader({
                 style={{
                   fontFamily: fonts.bold,
                   fontSize: 16,
-                  color: isFollowing ? "#FFFFFF" : "#09332C",
+                  color: isFollowing ? "#FFFFFF" : "#1A1A1A",
                 }}
               >
                 {isFollowing ? "Following" : "Follow"}
@@ -322,7 +322,7 @@ function RelatedSection({ relatedCategories, followedCategoryIds, router }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 15,
-            color: "#09332C",
+            color: "#1A1A1A",
             marginBottom: 2,
           }}
         >

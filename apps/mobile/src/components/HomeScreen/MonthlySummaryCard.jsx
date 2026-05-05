@@ -159,7 +159,7 @@ export function MonthlySummaryCard({ healthData }) {
         style={{
           fontFamily: fonts.bold,
           fontSize: 17,
-          color: "#09332C",
+          color: "#1A1A1A",
           marginBottom: 10,
         }}
       >

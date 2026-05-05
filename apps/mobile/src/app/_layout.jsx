@@ -1,5 +1,7 @@
 import { useAuth } from "@/utils/auth/useAuth";
 import { useAuthStore } from "@/utils/auth/store";
+import { useTheme } from "@/hooks/useTheme";
+import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PostHogProvider } from "posthog-react-native";
 import { posthog } from "@/utils/analytics";
@@ -58,6 +60,7 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  const theme = useTheme();
   const { initiate, isReady } = useAuth();
   const router = useRouter();
   const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout } = useAppStore();
@@ -369,6 +372,8 @@ export default function RootLayout() {
           />
         </Stack>
 
+        <StatusBar style={theme.isDark ? "light" : "dark"} />
+
         {/* App Lock overlay — rendered above everything */}
         {isLocked && (
           <View style={lockStyles.overlay}>
@@ -395,7 +400,7 @@ export default function RootLayout() {
 const lockStyles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#09332C',
+    backgroundColor: '#1A1A1A',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 9999,

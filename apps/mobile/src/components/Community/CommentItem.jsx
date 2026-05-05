@@ -4,7 +4,7 @@ import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { fonts } from "@/utils/fonts";
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
 function avatarColor(name) {
   let hash = 0;
@@ -66,7 +66,7 @@ function ReplyRow({ reply, onReply, onLongPress }) {
       />
       <View style={{ flex: 1, marginLeft: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#09332C" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#1A1A1A" }}>
             {reply.author.name}
           </Text>
           <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
@@ -135,7 +135,7 @@ export function CommentItem({ comment, onReply, onLongPress }) {
               marginBottom: 3,
             }}
           >
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#09332C" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#1A1A1A" }}>
               {comment.author.name}
             </Text>
             <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>

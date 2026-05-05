@@ -53,7 +53,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                     flex: 1,
                     fontFamily: isSelected ? fonts.semibold : fonts.regular,
                     fontSize: 14,
-                    color: isSelected ? "#A9334D" : "#09332C",
+                    color: isSelected ? "#A9334D" : "#1A1A1A",
                   }}
                 >
                   {option.text}
@@ -97,7 +97,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   flex: 1,
                   fontFamily: fonts.regular,
                   fontSize: 14,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 {option.text}

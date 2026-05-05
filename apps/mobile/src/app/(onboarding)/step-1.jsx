@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   question: {
     fontFamily: 'Geist_700Bold',
     fontSize: 36,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -1.2,
     lineHeight: 44,
     marginBottom: 36,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'Geist_500Medium',
     fontSize: 28,
-    color: '#09332C',
+    color: '#1A1A1A',
     padding: 0,
     margin: 0,
     letterSpacing: -0.5,

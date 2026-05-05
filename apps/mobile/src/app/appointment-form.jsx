@@ -200,8 +200,8 @@ export default function AppointmentForm() {
 
   const SectionLabel = ({ icon: Icon, label }) => (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 20 }}>
-      <Icon size={16} color="#09332C" strokeWidth={2} />
-      <Text style={{ fontSize: 13, fontWeight: "600", color: "#09332C", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Icon size={16} color="#1A1A1A" strokeWidth={2} />
+      <Text style={{ fontSize: 13, fontWeight: "600", color: "#1A1A1A", textTransform: "uppercase", letterSpacing: 0.5 }}>
         {label}
       </Text>
     </View>
@@ -490,7 +490,7 @@ export default function AppointmentForm() {
                       style={{
                         fontFamily: "Geist_600SemiBold",
                         fontSize: 14,
-                        color: "#09332C",
+                        color: "#1A1A1A",
                       }}
                     >
                       {item.name}
@@ -738,7 +738,7 @@ export default function AppointmentForm() {
           {/* Toggle row */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Bell size={20} color="#09332C" />
+              <Bell size={20} color="#1A1A1A" />
               <View>
                 <Text style={{ fontSize: 15, fontFamily: "Geist-SemiBold", color: "#1a1a1a" }}>Reminders</Text>
                 <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Push notification before appointment</Text>
@@ -881,7 +881,7 @@ export default function AppointmentForm() {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
-              <CalendarCheck size={20} color="#09332C" />
+              <CalendarCheck size={20} color="#1A1A1A" />
               <View>
                 <Text
                   style={{

@@ -103,7 +103,7 @@ export default function AppLockSetupScreen() {
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={22} color="#09332C" strokeWidth={2} />
+          <ArrowLeft size={22} color="#1A1A1A" strokeWidth={2} />
         </Pressable>
         <Text style={styles.headerTitle}>App Lock</Text>
         <View style={{ width: 40 }} />
@@ -145,12 +145,12 @@ function IntroStep({ loading, onGetStarted, insets }) {
               {/* Shackle */}
               <Path
                 d="M14 28V20C14 12.268 20.268 6 28 6h2C37.732 6 44 12.268 44 20v8"
-                stroke="#09332C"
+                stroke="#1A1A1A"
                 strokeWidth={4}
                 strokeLinecap="round"
               />
               {/* Lock body */}
-              <Rect x={7} y={28} width={44} height={32} rx={8} fill="#09332C" />
+              <Rect x={7} y={28} width={44} height={32} rx={8} fill="#1A1A1A" />
               {/* Keyhole circle */}
               <Circle cx={29} cy={42} r={5} fill="#F2EEE8" opacity={0.9} />
               {/* Keyhole stem */}
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: fonts.semibold,
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   illustrationWrap: {
     alignItems: "center",
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     ...Platform.select({
       ios: {
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.09,
         shadowRadius: 20,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   svgWrap: {
     ...Platform.select({
       ios: {
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.18,
         shadowRadius: 6,
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.bold,
     fontSize: 26,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.8,
     textAlign: "center",
     marginBottom: 12,
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     flex: 1,
   },
   enabledBadge: {
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
   optionLabel: {
     fontFamily: fonts.medium,
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   divider: {
     height: 1,

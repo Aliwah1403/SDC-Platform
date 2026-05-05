@@ -135,7 +135,7 @@ function MedsCard({ taken, total, onPress }) {
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}>Medications</Text>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}>Medications</Text>
             {due > 0 && (
               <View style={{ backgroundColor: "#FEE2E2", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
                 <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#DC2626" }}>{due} due</Text>
@@ -163,17 +163,17 @@ function AppointmentsCard({ appointment, onPress }) {
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-          <Calendar size={26} color="#09332C" strokeWidth={2} />
+          <Calendar size={26} color="#1A1A1A" strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C", marginBottom: 3 }}>Appointments</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: appointment ? "#09332C" : "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A", marginBottom: 3 }}>Appointments</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: appointment ? "#1A1A1A" : "#9CA3AF" }}>
             {appointment ? (appointment.doctor || appointment.title) : "No upcoming appointments"}
           </Text>
         </View>
         {appointment && (
           <View style={{ backgroundColor: "#E6F0EF", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#09332C" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#1A1A1A" }}>
               {formatApptDate(appointment.date)}
             </Text>
           </View>
@@ -196,7 +196,7 @@ function CareTeamCard({ contactCount, onPress }) {
         <Users size={24} color="#059669" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 8 }}>Care Team</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 8 }}>Care Team</Text>
         <View style={{ flexDirection: "row", marginBottom: 8 }}>
           {AVATAR_PLACEHOLDERS.map((color, i) => (
             <View
@@ -230,7 +230,7 @@ function CrisisPlanCard({ onPress }) {
         <FileText size={24} color="#DC2626" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 8 }}>Crisis Plan</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 8 }}>Crisis Plan</Text>
         <View style={{ alignSelf: "flex-start", backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 6 }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#059669" }}>Plan ready</Text>
         </View>
@@ -254,7 +254,7 @@ function ClinicsCard({ savedCount, onPress }) {
           <MapPin size={26} color="#F0531C" strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C", marginBottom: 3 }}>Clinics & Hospitals</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A", marginBottom: 3 }}>Clinics & Hospitals</Text>
           <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
             {savedCount > 0 ? `${savedCount} saved nearby` : "Find nearby facilities"}
           </Text>

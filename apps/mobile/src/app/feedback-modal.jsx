@@ -37,7 +37,7 @@ export default function FeedbackModalScreen() {
             justifyContent: "center",
           }}
         >
-          <X size={20} color="#09332C" />
+          <X size={20} color="#1A1A1A" />
         </TouchableOpacity>
 
         <Text
@@ -46,7 +46,7 @@ export default function FeedbackModalScreen() {
             textAlign: "center",
             fontFamily: fonts.semibold,
             fontSize: 16,
-            color: "#09332C",
+            color: "#1A1A1A",
           }}
         >
           Feedback
@@ -69,7 +69,7 @@ export default function FeedbackModalScreen() {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 18,
-              color: "#09332C",
+              color: "#1A1A1A",
               textAlign: "center",
             }}
           >

@@ -46,7 +46,7 @@ import {
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
 function avatarColor(name) {
   let hash = 0;
@@ -206,7 +206,7 @@ export default function PostDetailScreen() {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
         <StatusBar style="dark" />
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#09332C", marginBottom: 8, textAlign: "center" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1A1A1A", marginBottom: 8, textAlign: "center" }}>
           Post not found
         </Text>
         <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B6B6B", textAlign: "center", marginBottom: 24 }}>
@@ -445,7 +445,7 @@ export default function PostDetailScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 15,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 {post.isSystemPost && systemCategory
@@ -516,7 +516,7 @@ export default function PostDetailScreen() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 22,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 30,
               marginBottom: 14,
             }}
@@ -571,7 +571,7 @@ export default function PostDetailScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 16,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 24,
               marginBottom: post.poll ? 12 : post.imageUrl ? 16 : 14,
             }}
@@ -632,7 +632,7 @@ export default function PostDetailScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 12,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               {CATEGORY_LABELS[post.category] ?? post.category}
@@ -718,7 +718,7 @@ export default function PostDetailScreen() {
         style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 }}
       >
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1A1A1A" }}
         >
           {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
         </Text>
@@ -811,7 +811,7 @@ export default function PostDetailScreen() {
               flex: 1,
               fontFamily: fonts.regular,
               fontSize: 15,
-              color: "#09332C",
+              color: "#1A1A1A",
               backgroundColor: "#F8F4F0",
               borderRadius: 20,
               paddingHorizontal: 16,

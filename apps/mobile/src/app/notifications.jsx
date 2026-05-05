@@ -37,14 +37,14 @@ const ICON_CONFIG = {
   like: { Component: Heart, color: "#A9334D", fill: true },
   comment: { Component: MessageCircle, color: "#3B82F6", fill: false },
   reply: { Component: MessageCircle, color: "#A9334D", fill: false },
-  category_post: { Component: Bell, color: "#09332C", fill: false },
+  category_post: { Component: Bell, color: "#1A1A1A", fill: false },
   system_poll: { Component: Bell, color: "#A9334D", fill: false },
   post_actioned: { Component: ShieldAlert, color: "#781D11", fill: false },
   // System types
-  checkin: { Component: Bell, color: "#09332C", fill: false },
+  checkin: { Component: Bell, color: "#1A1A1A", fill: false },
   medication: { Component: Pill, color: "#A9334D", fill: false },
   streak: { Component: Flame, color: "#F0531C", fill: false },
-  appointment: { Component: Calendar, color: "#09332C", fill: false },
+  appointment: { Component: Calendar, color: "#1A1A1A", fill: false },
   health_alert: { Component: AlertTriangle, color: "#DC2626", fill: false },
 };
 
@@ -115,7 +115,7 @@ function NotificationRow({ item }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: "#09332C",
+            color: "#1A1A1A",
             lineHeight: 20,
           }}
         >
@@ -249,7 +249,7 @@ export default function NotificationsScreen() {
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#09332C" strokeWidth={2} />
+          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
@@ -258,7 +258,7 @@ export default function NotificationsScreen() {
             textAlign: "center",
             fontFamily: fonts.bold,
             fontSize: 17,
-            color: "#09332C",
+            color: "#1A1A1A",
           }}
         >
           Notifications
@@ -320,7 +320,7 @@ export default function NotificationsScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
                 marginBottom: 6,
               }}
             >

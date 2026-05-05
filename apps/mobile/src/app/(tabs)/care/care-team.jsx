@@ -80,7 +80,7 @@ function ContactCard({ contact, onPress }) {
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#09332C", marginBottom: 4 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A", marginBottom: 4 }}>
           {contact.name}
         </Text>
         <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
@@ -125,7 +125,7 @@ function EmptyState() {
       }}
     >
       <Users size={36} color="#D09F9A" style={{ marginBottom: 12 }} />
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#09332C", marginBottom: 6 }}>
+      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1A1A1A", marginBottom: 6 }}>
         No contacts yet
       </Text>
       <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", textAlign: "center", lineHeight: 20 }}>
@@ -240,7 +240,7 @@ export default function CareTeamScreen() {
         {!isLoading && contacts.length > 0 && filtered.length === 0 && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
             <Search size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#09332C", marginBottom: 4 }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1A1A1A", marginBottom: 4 }}>
               No results for "{query}"
             </Text>
             <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
@@ -252,7 +252,7 @@ export default function CareTeamScreen() {
         {/* Flat results when searching */}
         {trimmed && filtered.length > 0 && (
           <>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10 }}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10 }}>
               {filtered.length} {filtered.length === 1 ? "result" : "results"}
             </Text>
             {filtered.map((c) => (
@@ -270,7 +270,7 @@ export default function CareTeamScreen() {
           <>
             {primary.length > 0 && (
               <>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10 }}>
                   Primary Contact
                 </Text>
                 {primary.map((c) => (
@@ -285,7 +285,7 @@ export default function CareTeamScreen() {
 
             {others.length > 0 && (
               <>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#09332C", marginBottom: 10, marginTop: primary.length > 0 ? 8 : 0 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10, marginTop: primary.length > 0 ? 8 : 0 }}>
                   Other Contacts
                 </Text>
                 {others.map((c) => (

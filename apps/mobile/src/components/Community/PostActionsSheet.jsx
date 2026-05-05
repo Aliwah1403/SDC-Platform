@@ -173,7 +173,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             >
               <X size={20} color="#6B7280" strokeWidth={2} />
             </TouchableOpacity>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}>
               Report post
             </Text>
           </View>
@@ -241,7 +241,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
                     style={{
                       fontFamily: fonts.semibold,
                       fontSize: 14,
-                      color: isSelected ? "#A9334D" : "#09332C",
+                      color: isSelected ? "#A9334D" : "#1A1A1A",
                     }}
                   >
                     {reason.label}
@@ -280,7 +280,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
               paddingVertical: 12,
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#09332C",
+              color: "#1A1A1A",
               minHeight: 72,
               textAlignVertical: "top",
             }}
@@ -326,7 +326,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             transition={{ type: "spring", damping: 14, stiffness: 160 }}
             style={{ marginBottom: 16, marginTop: 8 }}
           >
-            <CheckCircle2 size={52} color="#09332C" strokeWidth={1.5} />
+            <CheckCircle2 size={52} color="#1A1A1A" strokeWidth={1.5} />
           </MotiView>
 
           <MotiView
@@ -338,7 +338,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 18,
-                color: "#09332C",
+                color: "#1A1A1A",
                 textAlign: "center",
                 marginBottom: 8,
               }}
@@ -364,7 +364,7 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
             onPress={handleClose}
             activeOpacity={0.85}
             style={{
-              backgroundColor: "#09332C",
+              backgroundColor: "#1A1A1A",
               borderRadius: 14,
               paddingVertical: 14,
               paddingHorizontal: 40,
@@ -400,7 +400,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
           style={{
             fontFamily: fonts.semibold,
             fontSize: 15,
-            color: destructive ? "#A9334D" : "#09332C",
+            color: destructive ? "#A9334D" : "#1A1A1A",
           }}
         >
           {label}

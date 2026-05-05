@@ -34,7 +34,7 @@ export function PostSkeleton() {
         marginHorizontal: 16,
         marginBottom: 12,
         padding: 16,
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 6,

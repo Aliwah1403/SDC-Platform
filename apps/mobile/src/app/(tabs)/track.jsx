@@ -747,7 +747,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
         <Text style={{
           fontFamily: fonts.medium,
           fontSize: 14,
-          color: "#09332C",
+          color: "#1A1A1A",
           lineHeight: 20,
           marginBottom: triggerLabels.length ? 10 : 0,
         }}>

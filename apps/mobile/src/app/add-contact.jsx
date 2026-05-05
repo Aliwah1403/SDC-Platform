@@ -56,7 +56,7 @@ const RELATIONSHIPS = [
 const C = {
   bg: "#F8F4F0",
   accent: "#A9334D",
-  dark: "#09332C",
+  dark: "#1A1A1A",
   muted: "#9CA3AF",
   border: "rgba(9,51,44,0.1)",
   inputBg: "#F0EBE5",
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
   gateTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
     textAlign: "center",
   },
   gateBody: {
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     padding: 0,
     margin: 0,
   },
@@ -889,13 +889,13 @@ const styles = StyleSheet.create({
   phoneTextInput: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     height: 52,
   },
   phoneCodeText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   phoneFlagBtn: { backgroundColor: "transparent" },
   relChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -911,7 +911,7 @@ const styles = StyleSheet.create({
   relChipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   relChipTextSelected: { color: "#FFFFFF" },
   modalHeader: {
@@ -926,7 +926,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   searchWrapper: {
     flexDirection: "row",
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     padding: 0,
     margin: 0,
   },
@@ -968,7 +968,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#FFFFFF",
   },
-  rowName: { fontFamily: "Geist_500Medium", fontSize: 15, color: "#09332C" },
+  rowName: { fontFamily: "Geist_500Medium", fontSize: 15, color: "#1A1A1A" },
   rowPhone: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,

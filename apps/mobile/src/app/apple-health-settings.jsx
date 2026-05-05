@@ -175,7 +175,7 @@ export default function AppleHealthSettingsScreen() {
           style={styles.backBtn}
           activeOpacity={0.6}
         >
-          <ChevronLeft size={20} color="#09332C" />
+          <ChevronLeft size={20} color="#1A1A1A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Apple Health</Text>
         <View style={{ width: 36 }} />
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   statusCard: {
     backgroundColor: "#ffffff",
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
   statusLabel: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   statusConnected: {
     fontFamily: "Geist_400Regular",
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   rowDesc: {
     fontFamily: "Geist_400Regular",
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   baselineUnit: {
     fontFamily: "Geist_400Regular",

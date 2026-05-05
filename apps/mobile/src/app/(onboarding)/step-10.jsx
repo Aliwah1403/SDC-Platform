@@ -16,12 +16,12 @@ async function authenticateAsync() {
 function FaceIdGraphic() {
   return (
     <Svg width={80} height={80} viewBox="0 0 80 80" fill="none">
-      <Circle cx="40" cy="40" r="38" stroke="#09332C" strokeWidth="2" strokeOpacity={0.15} />
-      <Circle cx="40" cy="40" r="30" stroke="#09332C" strokeWidth="1.5" strokeOpacity={0.1} />
-      <Path d="M24 36 C24 26 56 26 56 36 L56 46 C56 56 24 56 24 46 Z" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
-      <Circle cx="33" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
-      <Circle cx="47" cy="40" r="2.5" fill="#09332C" fillOpacity={0.7} />
-      <Path d="M33 48 Q40 53 47 48" stroke="#09332C" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Circle cx="40" cy="40" r="38" stroke="#1A1A1A" strokeWidth="2" strokeOpacity={0.15} />
+      <Circle cx="40" cy="40" r="30" stroke="#1A1A1A" strokeWidth="1.5" strokeOpacity={0.1} />
+      <Path d="M24 36 C24 26 56 26 56 36 L56 46 C56 56 24 56 24 46 Z" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
+      <Circle cx="33" cy="40" r="2.5" fill="#1A1A1A" fillOpacity={0.7} />
+      <Circle cx="47" cy="40" r="2.5" fill="#1A1A1A" fillOpacity={0.7} />
+      <Path d="M33 48 Q40 53 47 48" stroke="#1A1A1A" strokeWidth="2" strokeLinecap="round" fill="none" strokeOpacity={0.7} />
       <Path d="M24 28 L24 24 L28 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
       <Path d="M52 28 L52 24 L56 24" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />
       <Path d="M24 52 L24 56 L28 56" stroke="#A9334D" strokeWidth="2" strokeLinecap="round" />

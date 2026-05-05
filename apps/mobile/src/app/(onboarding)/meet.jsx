@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   name: {
     fontFamily: 'Geist_700Bold',
     fontSize: 56,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -2.5,
     lineHeight: 64,
     marginBottom: 18,

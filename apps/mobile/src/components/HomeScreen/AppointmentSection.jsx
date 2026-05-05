@@ -14,7 +14,7 @@ const TYPE_CONFIG = {
   routine: { label: "Routine", color: "#A9334D", bg: "#F8E9E7" },
   "blood-work": { label: "Lab Work", color: "#D09F9A", bg: "#F0E4E1" },
   "follow-up": { label: "Follow-up", color: "#781D11", bg: "#FFF0ED" },
-  specialist: { label: "Specialist", color: "#09332C", bg: "#F8F4F0" },
+  specialist: { label: "Specialist", color: "#1A1A1A", bg: "#F8F4F0" },
 };
 
 function getTypeConfig(type) {
@@ -63,7 +63,7 @@ function AppointmentCard({ appt }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 24,
-            color: "#09332C",
+            color: "#1A1A1A",
             lineHeight: 28,
           }}
         >
@@ -108,7 +108,7 @@ function AppointmentCard({ appt }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 15,
-            color: "#09332C",
+            color: "#1A1A1A",
             marginBottom: 2,
           }}
           numberOfLines={1}
@@ -167,7 +167,7 @@ function AppointmentCard({ appt }) {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 22,
-                color: "#09332C",
+                color: "#1A1A1A",
                 lineHeight: 26,
               }}
             >
@@ -205,7 +205,7 @@ export function AppointmentSection({ appointments }) {
           marginBottom: 10,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}>
           Upcoming Appointments
         </Text>
         <TouchableOpacity

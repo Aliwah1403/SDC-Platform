@@ -234,7 +234,7 @@ function SettingRow({
         style={{
           fontFamily: fonts.medium,
           fontSize: 15,
-          color: "#09332C",
+          color: "#1A1A1A",
           flex: 1,
         }}
       >
@@ -307,7 +307,7 @@ function SettingRowToggle({
           style={{
             fontFamily: fonts.medium,
             fontSize: 15,
-            color: "#09332C",
+            color: "#1A1A1A",
           }}
         >
           {label}
@@ -1142,7 +1142,7 @@ export default function ProfileScreen() {
                 flex: 1,
                 fontFamily: fonts.regular,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
                 padding: 0,
               }}
               returnKeyType="search"
@@ -1155,7 +1155,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Cancel
@@ -1208,7 +1208,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 15,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                   }}
                 >
                   {item.label}
@@ -1286,7 +1286,7 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
             style={styles.headerBtn}
           >
-            <Search size={20} color="#09332C" />
+            <Search size={20} color="#1A1A1A" />
           </TouchableOpacity>
 
           <Animated.Text
@@ -1301,7 +1301,7 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
             style={styles.headerBtn}
           >
-            <QrCode size={20} color="#09332C" />
+            <QrCode size={20} color="#1A1A1A" />
           </TouchableOpacity>
         </View>
       </View>
@@ -1336,7 +1336,7 @@ export default function ProfileScreen() {
                   width: 96,
                   height: 96,
                   borderRadius: 48,
-                  backgroundColor: "#09332C",
+                  backgroundColor: "#1A1A1A",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
@@ -1385,7 +1385,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 22,
-                color: "#09332C",
+                color: "#1A1A1A",
                 marginBottom: 4,
               }}
             >
@@ -1698,12 +1698,12 @@ export default function ProfileScreen() {
                     width={18}
                     height={18}
                     viewBox="0 0 24 24"
-                    fill="#09332C"
+                    fill="#1A1A1A"
                   >
                     <Path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                   </Svg>
                 )}
-                iconColor="#09332C"
+                iconColor="#1A1A1A"
                 label="Apple"
                 // value={isAppleLinked && "Connected"}
                 rightElement={
@@ -1894,7 +1894,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               SCD Type
@@ -1923,7 +1923,7 @@ export default function ProfileScreen() {
                     style={{
                       fontFamily: fonts.medium,
                       fontSize: 16,
-                      color: "#09332C",
+                      color: "#1A1A1A",
                       flex: 1,
                     }}
                   >
@@ -1994,7 +1994,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Blood Type
@@ -2032,7 +2032,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                     flex: 1,
                   }}
                 >
@@ -2106,7 +2106,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 Allergies
@@ -2166,7 +2166,7 @@ export default function ProfileScreen() {
                         style={{
                           fontFamily: fonts.medium,
                           fontSize: 14,
-                          color: selected ? "#ffffff" : "#09332C",
+                          color: selected ? "#ffffff" : "#1A1A1A",
                         }}
                       >
                         {p}
@@ -2238,7 +2238,7 @@ export default function ProfileScreen() {
                     flex: 1,
                     fontFamily: fonts.regular,
                     fontSize: 15,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                     padding: 0,
                   }}
                 />
@@ -2320,7 +2320,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Date of Birth
@@ -2345,7 +2345,7 @@ export default function ProfileScreen() {
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#09332C",
+                color: "#1A1A1A",
                 height: 200,
               }}
             >
@@ -2360,7 +2360,7 @@ export default function ProfileScreen() {
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#09332C",
+                color: "#1A1A1A",
                 height: 200,
               }}
             >
@@ -2388,7 +2388,7 @@ export default function ProfileScreen() {
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#09332C",
+                color: "#1A1A1A",
                 height: 200,
               }}
             >
@@ -2449,7 +2449,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Check-in Frequency
@@ -2497,7 +2497,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                     flex: 1,
                   }}
                 >
@@ -2570,7 +2570,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 Full Name
@@ -2605,7 +2605,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 17,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                   borderWidth: 1,
                   borderColor: "#F0E4E1",
                   borderRadius: 12,
@@ -2668,7 +2668,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 Nickname
@@ -2704,7 +2704,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 17,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                   borderWidth: 1,
                   borderColor: "#F0E4E1",
                   borderRadius: 12,
@@ -2775,7 +2775,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Appearance
@@ -2817,7 +2817,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                     flex: 1,
                   }}
                 >
@@ -2885,7 +2885,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Language
@@ -2917,7 +2917,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
                 flex: 1,
               }}
             >
@@ -2965,7 +2965,7 @@ export default function ProfileScreen() {
                 Cancel
               </Text>
             </Pressable>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1A1A1A" }}>
               Timezone
             </Text>
             <View style={{ width: 60 }} />
@@ -2988,7 +2988,7 @@ export default function ProfileScreen() {
                     backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
                   })}
                 >
-                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#09332C", flex: 1 }}>
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#1A1A1A", flex: 1 }}>
                     {item.label}
                   </Text>
                   {timezone === item.value && <Check size={18} color="#A9334D" />}
@@ -3022,7 +3022,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 17,
-              color: "#09332C",
+              color: "#1A1A1A",
               marginBottom: 16,
             }}
           >
@@ -3058,7 +3058,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Take photo
@@ -3094,7 +3094,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
               }}
             >
               Choose from library
@@ -3205,7 +3205,7 @@ const styles = StyleSheet.create({
   headerNickname: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
     flex: 1,
     textAlign: "center",
     marginHorizontal: 8,

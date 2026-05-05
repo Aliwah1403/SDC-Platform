@@ -280,7 +280,7 @@ export default function HelpCenterScreen() {
             activeOpacity={0.6}
             style={styles.backBtn}
           >
-            <ChevronLeft size={22} color="#09332C" />
+            <ChevronLeft size={22} color="#1A1A1A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Help Center</Text>
           <View style={{ width: 38 }} />
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
     flex: 1,
     textAlign: "center",
   },
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   rowText: {
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     flex: 1,
     lineHeight: 20,
   },

@@ -35,7 +35,7 @@ import { fonts } from "@/utils/fonts";
 
 const MAX_CHARS = 500;
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 function avatarColor(name = "") {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + hash * 31;
@@ -184,11 +184,11 @@ export default function CreatePostScreen() {
               justifyContent: "center",
             }}
           >
-            <X size={18} color="#09332C" strokeWidth={2} />
+            <X size={18} color="#1A1A1A" strokeWidth={2} />
           </TouchableOpacity>
 
           <Text
-            style={{ fontFamily: fonts.bold, fontSize: 16, color: "#09332C" }}
+            style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A" }}
           >
             New Post
           </Text>
@@ -273,7 +273,7 @@ export default function CreatePostScreen() {
                 style={{
                   fontFamily: fonts.bold,
                   fontSize: 15,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 {isAnonymous ? "Anonymous" : nickname}
@@ -331,7 +331,7 @@ export default function CreatePostScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 16,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 24,
               paddingHorizontal: 16,
               minHeight: 120,
@@ -414,12 +414,12 @@ export default function CreatePostScreen() {
                   backgroundColor: "#FAFAFA",
                 }}
               >
-                <Camera size={18} color="#09332C" strokeWidth={1.5} />
+                <Camera size={18} color="#1A1A1A" strokeWidth={1.5} />
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 14,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                   }}
                 >
                   Take photo
@@ -442,12 +442,12 @@ export default function CreatePostScreen() {
                   backgroundColor: "#FAFAFA",
                 }}
               >
-                <ImageIcon size={18} color="#09332C" strokeWidth={1.5} />
+                <ImageIcon size={18} color="#1A1A1A" strokeWidth={1.5} />
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 14,
-                    color: "#09332C",
+                    color: "#1A1A1A",
                   }}
                 >
                   Upload photo
@@ -474,12 +474,12 @@ export default function CreatePostScreen() {
                 backgroundColor: "#FAFAFA",
               }}
             >
-              <ImageIcon size={16} color="#09332C" strokeWidth={1.5} />
+              <ImageIcon size={16} color="#1A1A1A" strokeWidth={1.5} />
               <Text
                 style={{
                   fontFamily: fonts.medium,
                   fontSize: 14,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                 }}
               >
                 Change photo
@@ -509,14 +509,14 @@ export default function CreatePostScreen() {
           >
             <BarChart2
               size={18}
-              color={pollEnabled ? "#A9334D" : "#09332C"}
+              color={pollEnabled ? "#A9334D" : "#1A1A1A"}
               strokeWidth={1.5}
             />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: pollEnabled ? "#A9334D" : "#09332C",
+                color: pollEnabled ? "#A9334D" : "#1A1A1A",
                 flex: 1,
               }}
             >
@@ -546,7 +546,7 @@ export default function CreatePostScreen() {
                       flex: 1,
                       fontFamily: fonts.regular,
                       fontSize: 14,
-                      color: "#09332C",
+                      color: "#1A1A1A",
                       backgroundColor: "#F8F4F0",
                       borderRadius: 10,
                       paddingHorizontal: 14,
@@ -627,7 +627,7 @@ export default function CreatePostScreen() {
                       style={{
                         fontFamily: fonts.medium,
                         fontSize: 13,
-                        color: isActive ? "#FFFFFF" : "#09332C",
+                        color: isActive ? "#FFFFFF" : "#1A1A1A",
                       }}
                     >
                       {f.label}
@@ -672,7 +672,7 @@ export default function CreatePostScreen() {
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#09332C" strokeWidth={2} />
+          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
@@ -681,7 +681,7 @@ export default function CreatePostScreen() {
             textAlign: "center",
             fontFamily: fonts.bold,
             fontSize: 16,
-            color: "#09332C",
+            color: "#1A1A1A",
           }}
         >
           Choose category
@@ -732,7 +732,7 @@ export default function CreatePostScreen() {
                     style={{
                       fontFamily: fonts.medium,
                       fontSize: 15,
-                      color: isSelected ? "#F8E9E7" : "#09332C",
+                      color: isSelected ? "#F8E9E7" : "#1A1A1A",
                     }}
                   >
                     {cat.label}

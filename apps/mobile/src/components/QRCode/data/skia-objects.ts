@@ -4,7 +4,7 @@ import { Skia } from '@shopify/react-native-skia';
 export const reusablePaint = Skia.Paint();
 
 export const reusableBlackPaint = Skia.Paint();
-reusableBlackPaint.setColor(Skia.Color('#09332C'));
+reusableBlackPaint.setColor(Skia.Color('#1A1A1A'));
 
 export const reusableWhiteBgPaint = Skia.Paint();
 

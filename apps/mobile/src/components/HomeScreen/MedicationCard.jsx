@@ -29,7 +29,7 @@ function RingProgress({ taken, total }) {
         />
       </Svg>
       <View style={{ alignItems: "center" }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#09332C", lineHeight: 26 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#1A1A1A", lineHeight: 26 }}>
           {taken}
         </Text>
         <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}>
@@ -78,7 +78,7 @@ function MedRow({ med, isLast }) {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 14,
-              color: "#09332C",
+              color: "#1A1A1A",
               marginBottom: 2,
             }}
           >
@@ -151,7 +151,7 @@ export function MedicationCard({ medications }) {
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#09332C",
+              color: "#1A1A1A",
               marginBottom: 3,
             }}
           >

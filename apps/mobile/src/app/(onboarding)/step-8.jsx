@@ -118,7 +118,7 @@ export default function Step8() {
           ]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
+          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </Pressable>
         <View style={styles.dotsRow}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 30,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.9,
     lineHeight: 36,
     textAlign: "center",
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   mockNotifTopRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
   mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: "rgba(9,51,44,0.45)" },
   mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: "rgba(9,51,44,0.3)" },
-  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#09332C" },
+  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#1A1A1A" },
   mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: "rgba(9,51,44,0.5)", marginTop: 1 },
   appGrid: { gap: 8, paddingTop: 4 },
   appRow: { flexDirection: "row", gap: 8, justifyContent: "space-between" },

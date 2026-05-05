@@ -213,7 +213,7 @@ export default function OnboardingStep({
               ]}
               onPress={onBack}
             >
-              <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
+              <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
             </Pressable>
           ) : (
             <View style={styles.navPlaceholder} />
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 28,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.9,
     lineHeight: 34,
     marginBottom: 6,

@@ -124,7 +124,7 @@ export default function Step3() {
                 selectedValue={cmValue}
                 onValueChange={setCmValue}
                 style={{ height: 216 }}
-                itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+                itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#1A1A1A' }}
               >
                 {cmItems.map((item) => (
                   <Picker.Item key={item.value} label={item.label} value={item.value} />
@@ -136,7 +136,7 @@ export default function Step3() {
                   selectedValue={Math.floor(totalInches / 12)}
                   onValueChange={(ft) => setTotalInches(ft * 12 + (totalInches % 12))}
                   style={styles.imperialPicker}
-                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#1A1A1A' }}
                 >
                   {ftItems.map((item) => (
                     <Picker.Item key={item.value} label={item.label} value={item.value} />
@@ -146,7 +146,7 @@ export default function Step3() {
                   selectedValue={totalInches % 12}
                   onValueChange={(inches) => setTotalInches(Math.floor(totalInches / 12) * 12 + inches)}
                   style={styles.imperialPicker}
-                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+                  itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#1A1A1A' }}
                 >
                   {inItems.map((item) => (
                     <Picker.Item key={item.value} label={item.label} value={item.value} />
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     color: 'rgba(9,51,44,0.5)',
   },
   segmentTextActive: {
-    color: '#09332C',
+    color: '#1A1A1A',
     fontFamily: 'Geist_600SemiBold',
   },
   valueCard: {
@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontFamily: 'Geist_800ExtraBold',
     fontSize: 60,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -2,
   },
   tapHintRow: {

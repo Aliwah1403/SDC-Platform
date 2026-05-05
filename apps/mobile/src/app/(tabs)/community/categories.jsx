@@ -96,7 +96,7 @@ export default function CategoriesScreen() {
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#09332C" strokeWidth={2} />
+          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
@@ -105,7 +105,7 @@ export default function CategoriesScreen() {
             textAlign: "center",
             fontFamily: fonts.bold,
             fontSize: 17,
-            color: "#09332C",
+            color: "#1A1A1A",
           }}
         >
           Communities
@@ -146,7 +146,7 @@ export default function CategoriesScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 13,
-                  color: isActive ? "#F8E9E7" : "#09332C",
+                  color: isActive ? "#F8E9E7" : "#1A1A1A",
                 }}
               >
                 {f.label}
@@ -173,7 +173,7 @@ export default function CategoriesScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: "#1A1A1A",
                 marginBottom: 6,
               }}
             >
@@ -248,7 +248,7 @@ export default function CategoriesScreen() {
                         style={{
                           fontFamily: fonts.semibold,
                           fontSize: 15,
-                          color: "#09332C",
+                          color: "#1A1A1A",
                           marginBottom: 2,
                         }}
                       >
@@ -282,13 +282,13 @@ export default function CategoriesScreen() {
                       }}
                     >
                       {isFollowing && (
-                        <Check size={12} color="#09332C" strokeWidth={2.5} />
+                        <Check size={12} color="#1A1A1A" strokeWidth={2.5} />
                       )}
                       <Text
                         style={{
                           fontFamily: fonts.bold,
                           fontSize: 13,
-                          color: isFollowing ? "#09332C" : "#F8E9E7",
+                          color: isFollowing ? "#1A1A1A" : "#F8E9E7",
                         }}
                       >
                         {isFollowing ? "Following" : "Follow"}

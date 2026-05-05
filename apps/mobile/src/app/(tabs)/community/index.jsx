@@ -108,7 +108,7 @@ export default function CommunityFeedScreen() {
   function renderEmptyFollowing() {
     return (
       <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#09332C", marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#1A1A1A", marginBottom: 8 }}>
           No communities followed yet
         </Text>
         <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 20 }}>
@@ -167,7 +167,7 @@ export default function CommunityFeedScreen() {
                 renderEmptyFollowing()
               ) : (
                 <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#09332C", marginBottom: 8 }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#1A1A1A", marginBottom: 8 }}>
                     Nothing here yet
                   </Text>
                   <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center" }}>

@@ -157,7 +157,7 @@ export function HealthSignalSection({ alertState, healthData }) {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 14,
-                  color: "#09332C",
+                  color: "#1A1A1A",
                   lineHeight: 20,
                 }}
               >

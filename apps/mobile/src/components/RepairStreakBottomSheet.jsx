@@ -158,7 +158,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               </View>
 
               {/* Title */}
-              <Text style={{ fontFamily: fonts.extrabold, fontSize: 24, color: "#09332C", marginBottom: 6 }}>
+              <Text style={{ fontFamily: fonts.extrabold, fontSize: 24, color: "#1A1A1A", marginBottom: 6 }}>
                 Streak at Risk
               </Text>
 
@@ -179,7 +179,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
             >
               {/* Streak stat */}
               <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: "#EDE8E3" }}>
-                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: "#09332C", lineHeight: 34 }}>
+                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: "#1A1A1A", lineHeight: 34 }}>
                   {healthStreak}
                 </Text>
                 <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
@@ -210,7 +210,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                   ? `Use 1 repair to fill the gap and keep your `
                   : "You've used all your repairs. Log today to start a fresh streak."}
                 {canRepair && (
-                  <Text style={{ fontFamily: fonts.bold, color: "#09332C" }}>
+                  <Text style={{ fontFamily: fonts.bold, color: "#1A1A1A" }}>
                     {healthStreak} day streak
                   </Text>
                 )}
@@ -259,7 +259,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               }}
             >
               <LinearGradient
-                colors={["#09332C", "#1A5C52"]}
+                colors={["#1A1A1A", "#1A5C52"]}
                 style={{
                   width: 100,
                   height: 100,
@@ -272,7 +272,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                 <Shield size={48} color="#F8E9E7" strokeWidth={1.8} />
               </LinearGradient>
 
-              <Text style={{ fontFamily: fonts.extrabold, fontSize: 28, color: "#09332C", marginBottom: 8 }}>
+              <Text style={{ fontFamily: fonts.extrabold, fontSize: 28, color: "#1A1A1A", marginBottom: 8 }}>
                 Streak Saved!
               </Text>
               <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "#7A6F6A", textAlign: "center" }}>

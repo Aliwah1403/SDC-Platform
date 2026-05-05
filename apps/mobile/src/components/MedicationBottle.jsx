@@ -78,7 +78,7 @@ function PillBottle({ color, drugName, subIcon, width = 120, height = 160 }) {
         textAnchor="middle"
         fontSize={label.length > 8 ? "7.5" : "9"}
         fontWeight="600"
-        fill="#09332C"
+        fill="#1A1A1A"
         letterSpacing="0.3"
       >
         {label}
@@ -178,7 +178,7 @@ function LiquidBottle({ color, drugName, width = 120, height = 160 }) {
         textAnchor="middle"
         fontSize={label.length > 8 ? "7.5" : "9"}
         fontWeight="600"
-        fill="#09332C"
+        fill="#1A1A1A"
         letterSpacing="0.3"
       >
         {label}
@@ -216,7 +216,7 @@ function OintmentTube({ color, drugName, width = 120, height = 160 }) {
         textAnchor="middle"
         fontSize={label.length > 8 ? "7" : "8.5"}
         fontWeight="600"
-        fill="#09332C"
+        fill="#1A1A1A"
         letterSpacing="0.3"
       >
         {label}
@@ -283,7 +283,7 @@ function Inhaler({ color, drugName, width = 120, height = 160 }) {
         textAnchor="middle"
         fontSize={label.length > 7 ? "6.5" : "7.5"}
         fontWeight="600"
-        fill="#09332C"
+        fill="#1A1A1A"
         letterSpacing="0.2"
       >
         {label}
@@ -357,7 +357,7 @@ function InjectionVial({ color, drugName, width = 120, height = 160 }) {
         textAnchor="middle"
         fontSize={label.length > 8 ? "6.5" : "7.5"}
         fontWeight="600"
-        fill="#09332C"
+        fill="#1A1A1A"
         letterSpacing="0.2"
       >
         {label}
