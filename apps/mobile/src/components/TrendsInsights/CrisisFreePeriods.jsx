@@ -29,13 +29,13 @@ export function CrisisFreePeriods({ crisisPeriods }) {
         </Text>
         <View
           style={{
-            backgroundColor: "#D1FAE5",
+            backgroundColor: "#F8E9E7",
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#059669" }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
             Low pain days
           </Text>
         </View>
@@ -51,18 +51,18 @@ export function CrisisFreePeriods({ crisisPeriods }) {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#ECFDF5",
+              backgroundColor: "#F8E9E7",
               justifyContent: "center",
               alignItems: "center",
               borderWidth: 4,
-              borderColor: "#10B981",
+              borderColor: "#A9334D",
             }}
           >
             <Text
               style={{
                 fontSize: 32,
                 fontWeight: "700",
-                color: "#059669",
+                color: "#781D11",
               }}
             >
               {crisisPeriods.current}
@@ -89,18 +89,18 @@ export function CrisisFreePeriods({ crisisPeriods }) {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#FEF3C7",
+              backgroundColor: "#F8F4F0",
               justifyContent: "center",
               alignItems: "center",
               borderWidth: 4,
-              borderColor: "#F59E0B",
+              borderColor: "#D09F9A",
             }}
           >
             <Text
               style={{
                 fontSize: 32,
                 fontWeight: "700",
-                color: "#D97706",
+                color: "#781D11",
               }}
             >
               {crisisPeriods.longest}
@@ -132,8 +132,8 @@ export function CrisisFreePeriods({ crisisPeriods }) {
       >
         <Text style={{ fontSize: 13, color: "#4B5563", textAlign: "center" }}>
           {crisisPeriods.current > 0
-            ? `🎉 You're doing great! ${crisisPeriods.current} crisis-free days and counting!`
-            : "Keep tracking to build your crisis-free streak"}
+            ? `${crisisPeriods.current} crisis-free days and counting. Keep it going.`
+            : "Keep tracking to build your crisis-free streak."}
         </Text>
       </View>
     </View>

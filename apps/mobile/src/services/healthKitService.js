@@ -637,9 +637,8 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
             if (value != null) onNewData(key, { [metricKey]: value });
           }
 
-          // Persist the anchor before alert logic — if notification throws,
-          // the same samples won't be reprocessed on the next observer fire
-          await saveAlertState({ ...alertState, [anchorKey(type)]: newAnchor });
+          // Mutate local alert state and persist once after alert evaluation
+          const nextAlertState = { ...alertState, [anchorKey(type)]: newAnchor };
 
           // Most recent value — used for lastValue / re-entry recovery tracking
           const sorted = [...samples].sort(
@@ -649,14 +648,33 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
 
           // Most severe value — drives alert evaluation so a brief dangerous dip
           // (e.g. SpO2 91% sandwiched between 98% readings) is never silently missed
-          const severityScore = (raw) => {
-            const v = normalise(raw);
-            if (type === QT.SPO2)        return -v;       // lower is worse
-            if (type === QT.TEMPERATURE) return v;         // higher is worse
-            return Math.abs(v - 80);                      // distance from midpoint
+          const severityScore = (sample) => {
+            const v = normalise(sample.quantity.quantity);
+            const sampleInDanger = isInDangerZone(metricKey, v);
+            const DANGER_BASE = 1000;
+
+            if (type === QT.SPO2) {
+              // Below 92 is dangerous; otherwise values closer to 92 are more severe.
+              return (sampleInDanger ? DANGER_BASE : 0) + (92 - v);
+            }
+
+            if (type === QT.TEMPERATURE) {
+              // 38.0C+ is dangerous; otherwise values closer to 38.0C are more severe.
+              return (sampleInDanger ? DANGER_BASE : 0) + (v - 38.0);
+            }
+
+            // Heart rate danger zone: <50 or >120 bpm.
+            // In danger, score by distance beyond nearest threshold.
+            // In safe range, values closer to a bound are treated as more severe.
+            let hrSeverity = 0;
+            if (v < 50) hrSeverity = 50 - v;
+            else if (v > 120) hrSeverity = v - 120;
+            else hrSeverity = -Math.min(v - 50, 120 - v);
+
+            return (sampleInDanger ? DANGER_BASE : 0) + hrSeverity;
           };
           const mostSevere = samples.reduce((worst, s) =>
-            severityScore(s.quantity.quantity) > severityScore(worst.quantity.quantity) ? s : worst
+            severityScore(s) > severityScore(worst) ? s : worst
           );
           const alertValue = normalise(mostSevere.quantity.quantity);
 
@@ -670,21 +688,20 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
             : `Heart rate ${alertValue} bpm has shifted significantly. Contact your care team.`;
 
           if (!inDanger && mostRecentValue != null) {
-            const freshState = await loadAlertState();
-            const prev = freshState[metricKey] ?? {};
-            await saveAlertState({ ...freshState, [metricKey]: { ...prev, lastValue: mostRecentValue } });
+            const prev = nextAlertState[metricKey] ?? {};
+            nextAlertState[metricKey] = { ...prev, lastValue: mostRecentValue };
           }
 
           if (urgentMsg) {
-            const freshState = await loadAlertState();
-            const prev            = freshState[metricKey] ?? {};
+            const prev            = nextAlertState[metricKey] ?? {};
             const prevInDanger    = isInDangerZone(metricKey, prev.lastValue ?? null);
             const cooldownExpired = !prev.lastAlertAt || (Date.now() - prev.lastAlertAt) >= ALERT_COOLDOWN_MS;
             const isCrossing      = !prevInDanger;
 
             if (!isCrossing && !cooldownExpired) {
-              await saveAlertState({ ...freshState, [metricKey]: { ...prev, lastValue: alertValue } });
+              nextAlertState[metricKey] = { ...prev, lastValue: alertValue };
             } else {
+              const alertAt = Date.now();
               await Notifications.scheduleNotificationAsync({
                 content: {
                   title: "Health Alert",
@@ -694,10 +711,11 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
                 trigger: null,
               });
 
-              await saveAlertState({
-                ...freshState,
-                [metricKey]: { lastAlertAt: Date.now(), lastValue: alertValue },
-              });
+              nextAlertState[metricKey] = {
+                ...prev,
+                lastAlertAt: alertAt,
+                lastValue: alertValue,
+              };
 
               try {
                 const { data: { user } } = await supabase.auth.getUser();
@@ -721,6 +739,8 @@ export async function setupBackgroundDelivery(onNewData, prefs = {}) {
               }
             }
           }
+
+          await saveAlertState(nextAlertState);
         } catch {}
       });
     } catch {}

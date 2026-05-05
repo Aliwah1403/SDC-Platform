@@ -1,6 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
-import { triggerNovu } from "../lib/novu";
+import { triggerNovuBulk } from "../lib/novu";
+import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-adherence-drop";
 const ADHERENCE_THRESHOLD = 0.7;
@@ -12,6 +13,7 @@ export const medicationAdherenceDrop = schedules.task({
   cron: "0 8 * * 1",
   run: async () => {
     const today = new Date();
+    const runDateStr = today.toISOString().split("T")[0];
     const weekAgo = new Date(today);
     weekAgo.setDate(weekAgo.getDate() - LOOKBACK_DAYS);
     const weekAgoStr = weekAgo.toISOString().split("T")[0];
@@ -69,12 +71,16 @@ export const medicationAdherenceDrop = schedules.task({
       (profiles ?? []).map((p) => [p.user_id, p.nickname as string | null])
     );
 
-    let nudged = 0;
+    const lowAdherencePayloads: Array<{
+      userId: string;
+      nickname: string;
+      adherencePercent: number;
+    }> = [];
     for (const [userId, medIds] of medsByUser) {
-      const possibleDoses = medIds.length * LOOKBACK_DAYS;
+      const possibleDoses = medIds.length * (LOOKBACK_DAYS - 1);
       let takenCount = 0;
       for (const medId of medIds) {
-        for (let i = 0; i < LOOKBACK_DAYS; i++) {
+        for (let i = 1; i < LOOKBACK_DAYS; i++) {
           const d = new Date(today);
           d.setDate(d.getDate() - i);
           const dateStr = d.toISOString().split("T")[0];
@@ -85,13 +91,32 @@ export const medicationAdherenceDrop = schedules.task({
       const adherence = possibleDoses > 0 ? takenCount / possibleDoses : 1;
       if (adherence >= ADHERENCE_THRESHOLD) continue;
 
-      await triggerNovu(WORKFLOW_ID, userId, {
+      lowAdherencePayloads.push({
+        userId,
         nickname: nicknameMap.get(userId) ?? "there",
         adherencePercent: Math.round(adherence * 100),
       });
-      nudged++;
     }
 
+    const bulkEvents = lowAdherencePayloads.map(({ userId, nickname, adherencePercent }) => ({
+      workflowId: WORKFLOW_ID,
+      subscriberId: userId,
+      payload: { nickname, adherencePercent },
+      idempotencyKey: `${WORKFLOW_ID}:${userId}:${runDateStr}`,
+    }));
+
+    let failedCount = 0;
+    try {
+      ({ failedCount } = await triggerNovuBulk(bulkEvents));
+      if (failedCount > 0) {
+        console.error(`[medication-adherence-drop] ${failedCount} partial failures in bulk send`);
+      }
+    } catch (err) {
+      Sentry.captureException(err, { tags: { task: "medication-adherence-drop" } });
+      throw err;
+    }
+
+    const nudged = lowAdherencePayloads.length - failedCount;
     console.log(`[medication-adherence-drop] Nudged ${nudged} users`);
     return { nudged };
   },

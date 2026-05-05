@@ -16,7 +16,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
-import { fetchProfile } from "@/services/supabaseQueries";
+import { fetchProfile, updateProfile } from "@/services/supabaseQueries";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
 import '@/utils/backgroundNotificationRefresh';
 import { registerNotificationRefreshTask } from "@/utils/backgroundNotificationRefresh";
@@ -155,10 +155,14 @@ export default function RootLayout() {
         if (wasBackgrounded && healthKitConnected) {
           const minutesSinceFetch = (Date.now() - lastHKFetchAt.current) / 1000 / 60;
           if (minutesSinceFetch >= 15) {
-            lastHKFetchAt.current = Date.now();
             fetchHealthKitRange(30, healthKitPreferences)
-              .then((rangeData) => setHealthKitRange(rangeData))
-              .catch(() => {});
+              .then((rangeData) => {
+                setHealthKitRange(rangeData);
+                lastHKFetchAt.current = Date.now();
+              })
+              .catch((err) => {
+                console.error("[HealthKit] Failed to refresh range after background:", err);
+              });
           }
         }
       }
@@ -225,6 +229,10 @@ export default function RootLayout() {
         if (profile?.notificationsEnabled) {
           scheduleCheckInReminders(profile.checkInFrequency ?? 2);
         }
+        // Keep timezone current when user travels (only when auto is on)
+        if (profile?.timezoneAuto !== false) {
+          updateProfile(userId, { timezone: Intl.DateTimeFormat().resolvedOptions().timeZone }).catch(() => {});
+        }
       })
       .catch(() => {});
     registerNotificationRefreshTask().catch(() => {});
@@ -245,6 +253,8 @@ export default function RootLayout() {
         router.push("/(tabs)/home");
       } else if (data.type === "appointment") {
         router.push("/(tabs)/care/appointments");
+      } else if (data.type === "community") {
+        router.push(data.postId ? `/(tabs)/community/${data.postId}` : "/notifications");
       } else if (data.screen === "metric-detail" && data.metric) {
         router.push(`/metric-detail?metric=${data.metric}`);
       }
@@ -330,6 +340,10 @@ export default function RootLayout() {
             options={{ presentation: "modal" }}
           />
           <Stack.Screen
+            name="metric-preferences"
+            options={{ presentation: "transparentModal" }}
+          />
+          <Stack.Screen
             name="security"
             options={{ presentation: "card" }}
           />
@@ -344,6 +358,14 @@ export default function RootLayout() {
           <Stack.Screen
             name="crisis-mode"
             options={{ presentation: "modal", gestureEnabled: false }}
+          />
+          <Stack.Screen
+            name="help-center"
+            options={{ presentation: "card", headerShown: false }}
+          />
+          <Stack.Screen
+            name="help-center-article"
+            options={{ presentation: "card", headerShown: false }}
           />
         </Stack>
 

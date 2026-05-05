@@ -1,7 +1,14 @@
+import "dotenv/config";
 import { defineConfig } from "@trigger.dev/sdk";
 
+const triggerProject = process.env.TRIGGER_PROJECT_ID;
+
+if (!triggerProject) {
+  throw new Error("TRIGGER_PROJECT_ID required");
+}
+
 export default defineConfig({
-  project: "proj_vpubthrmfojwpyyfujpj",
+  project: triggerProject,
   dirs: ["./src/trigger"],
   maxDuration: 300,
   retries: {

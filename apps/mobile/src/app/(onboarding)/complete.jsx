@@ -33,23 +33,27 @@ export default function OnboardingComplete() {
   }, []);
 
   const handleGetStarted = () => {
-    completeOnboardingMutation.mutate(onboardingData, {
+    const dataWithTimezone = {
+      ...onboardingData,
+      timezone: onboardingData.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+    completeOnboardingMutation.mutate(dataWithTimezone, {
       onSuccess: () => {
         posthog?.capture('onboarding_completed', {
-          has_scd_type: Boolean(onboardingData.scdType),
-          has_emergency_contacts: (onboardingData.emergencyContacts?.length ?? 0) > 0,
-          notifications_enabled: onboardingData.notificationsEnabled,
-          biometrics_enabled: onboardingData.biometricsEnabled,
-          skipped_hospital: !onboardingData.preferredHospital,
-          skipped_medications: !(onboardingData.medications?.length),
+          has_scd_type: Boolean(dataWithTimezone.scdType),
+          has_emergency_contacts: (dataWithTimezone.emergencyContacts?.length ?? 0) > 0,
+          notifications_enabled: dataWithTimezone.notificationsEnabled,
+          biometrics_enabled: dataWithTimezone.biometricsEnabled,
+          skipped_hospital: !dataWithTimezone.preferredHospital,
+          skipped_medications: !(dataWithTimezone.medications?.length),
         });
         // Set profile traits now that onboarding is complete
         if (auth?.user?.id) {
           posthog?.identify(auth.user.id, {
-            notifications_enabled: onboardingData.notificationsEnabled,
+            notifications_enabled: dataWithTimezone.notificationsEnabled,
           });
         }
-        if (onboardingData.notificationsEnabled) {
+        if (dataWithTimezone.notificationsEnabled) {
           scheduleCheckInReminders(2); // default twice-daily; user can adjust in profile
         }
         resetOnboarding();

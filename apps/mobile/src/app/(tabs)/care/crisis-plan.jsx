@@ -92,17 +92,6 @@ const ESCALATION_TIERS = [
   },
 ];
 
-const BLOOD_TYPES = [
-  "A+",
-  "A−",
-  "B+",
-  "B−",
-  "AB+",
-  "AB−",
-  "O+",
-  "O−",
-  "I don't know",
-];
 const PRESET_ALLERGIES = [
   "Penicillin",
   "NSAIDs",
@@ -182,8 +171,8 @@ export default function CrisisPlanScreen() {
   const { data: profile = [] } = useProfileQuery();
 
   const scdType = profile?.scdType || null;
-  const bloodType = crisisPlan?.bloodType || null;
-  const allergies = crisisPlan?.allergies || [];
+  const bloodType = profile?.bloodType || null;
+  const allergies = profile?.allergies ?? [];
 
   const crisisMeds = medications.filter(
     (m) =>
@@ -195,12 +184,11 @@ export default function CrisisPlanScreen() {
   );
 
   // ── Edit sheet state ─────────────────────────────────────────────
-  const [editBloodType, setEditBloodType] = useState(crisisPlan.bloodType);
   const [editPresets, setEditPresets] = useState(
-    crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
+    allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
   );
   const [editCustom, setEditCustom] = useState(
-    crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
+    allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
   );
   const [editAllergyInput, setEditAllergyInput] = useState("");
   const [editNotes, setEditNotes] = useState(crisisPlan.erNotes);
@@ -223,29 +211,24 @@ export default function CrisisPlanScreen() {
   };
 
   const handleSaveEdit = () => {
-    const allergies = [...editPresets, ...editCustom];
-    updateCrisisPlan({
-      bloodType: editBloodType,
-      allergies,
-      erNotes: editNotes,
-    });
-    updateProfileMutation.mutate({ bloodType: editBloodType, allergies });
+    const updatedAllergies = [...editPresets, ...editCustom];
+    updateCrisisPlan({ allergies: updatedAllergies, erNotes: editNotes });
+    updateProfileMutation.mutate({ allergies: updatedAllergies });
     sheetRef.current?.close();
   };
 
   const openSheet = () => {
-    setEditBloodType(crisisPlan.bloodType);
     setEditPresets(
-      crisisPlan.allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
+      allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
     );
     setEditCustom(
-      crisisPlan.allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
+      allergies.filter((a) => !PRESET_ALLERGIES.includes(a)),
     );
     setEditNotes(crisisPlan.erNotes);
     sheetRef.current?.expand();
   };
 
-  const allAllergies = [...allergies];
+  const allAllergies = allergies;
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
@@ -591,23 +574,7 @@ export default function CrisisPlanScreen() {
         >
           <Text style={styles.sheetTitle}>Edit Crisis Plan</Text>
 
-          <Text style={styles.sheetLabel}>Blood Type</Text>
-          <View style={styles.chipWrap}>
-            {BLOOD_TYPES.map((bt) => (
-              <CheckboxChip
-                key={bt}
-                label={bt}
-                checked={editBloodType === bt}
-                onPress={() =>
-                  setEditBloodType(editBloodType === bt ? null : bt)
-                }
-              />
-            ))}
-          </View>
-
-          <Text style={[styles.sheetLabel, { marginTop: 24 }]}>
-            Known Allergies
-          </Text>
+          <Text style={styles.sheetLabel}>Known Allergies</Text>
           <View style={styles.chipWrap}>
             {PRESET_ALLERGIES.map((p) => (
               <CheckboxChip

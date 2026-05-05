@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { Smile, Meh, Frown } from "lucide-react-native";
@@ -22,11 +23,11 @@ function getMoodInsight(chartData) {
 }
 
 export function MoodChart({ moodData, chartData }) {
-  const giftedData = moodData.map((d, i) => ({
+  const giftedData = useMemo(() => moodData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
     labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-  }));
+  })), [moodData]);
 
   return (
     <View
@@ -56,13 +57,13 @@ export function MoodChart({ moodData, chartData }) {
         </Text>
         <View
           style={{
-            backgroundColor: "#FEF3C7",
+            backgroundColor: "#F8E9E7",
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#D97706" }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: "#781D11" }}>
             Last 30 days
           </Text>
         </View>
@@ -77,10 +78,10 @@ export function MoodChart({ moodData, chartData }) {
           data={giftedData}
           width={CHART_WIDTH}
           height={160}
-          color="#10B981"
+          color="#A9334D"
           thickness={2}
           curved
-          dataPointsColor="#10B981"
+          dataPointsColor="#A9334D"
           dataPointsRadius={3}
           hideDataPoints={false}
           noOfSections={5}
@@ -112,28 +113,28 @@ export function MoodChart({ moodData, chartData }) {
       >
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-            <Smile size={13} color="#10B981" strokeWidth={2} />
+            <Smile size={13} color="#A9334D" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: "#6B7280" }}>Excellent</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#10B981" }}>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: "#A9334D" }}>
             {chartData.filter((d) => d.mood === 5).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-            <Meh size={13} color="#F59E0B" strokeWidth={2} />
+            <Meh size={13} color="#D09F9A" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: "#6B7280" }}>Fair</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#F59E0B" }}>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: "#D09F9A" }}>
             {chartData.filter((d) => d.mood === 3).length}d
           </Text>
         </View>
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
-            <Frown size={13} color="#DC2626" strokeWidth={2} />
+            <Frown size={13} color="#781D11" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: "#6B7280" }}>Poor</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#DC2626" }}>
+          <Text style={{ fontSize: 16, fontWeight: "700", color: "#781D11" }}>
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
           </Text>
         </View>

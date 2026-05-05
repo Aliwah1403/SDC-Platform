@@ -143,135 +143,76 @@ export function HomeHeader({
           isSelected={isSelected}
         />
 
-        {/* Dynamic Message Section */}
-        <View
-          style={{
-            paddingHorizontal: 20,
-            paddingTop: 24,
-            paddingBottom: 20,
-            alignItems: "center",
-          }}
-        >
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: 16,
-              color: "#FFFFFF",
-              opacity: 0.9,
-              marginBottom: 8,
-            }}
-          >
-            {message.title}
-          </Text>
+        {/* Today's Forecast */}
+        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, alignItems: "center" }}>
+          {message.label && (
+            <View
+              style={{
+                alignSelf: "center",
+                backgroundColor: "rgba(255,255,255,0.2)",
+                borderRadius: 20,
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                marginBottom: 10,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 11,
+                  color: "rgba(255,255,255,0.9)",
+                  letterSpacing: 0.8,
+                }}
+              >
+                {message.label}
+              </Text>
+            </View>
+          )}
+
           <Text
             style={{
               fontFamily: fonts.bold,
-              fontSize: 40,
+              fontSize: 28,
               color: "#FFFFFF",
-              marginBottom: 16,
+              lineHeight: 34,
+              marginBottom: 8,
+              textAlign: "center",
             }}
           >
-            {message.subtitle}
+            {message.headline}
           </Text>
 
-          {/* {!hasLoggedData && isToday(selectedDate) && (
-            <TouchableOpacity
-              onPress={() => router.push("/log-symptoms")}
+          {message.body && (
+            <Text
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 8,
-                flexDirection: "row",
-                alignItems: "center",
+                fontFamily: fonts.regular,
+                fontSize: 13,
+                color: "rgba(255,255,255,0.8)",
+                lineHeight: 19,
+                marginBottom: 10,
+                textAlign: "center",
               }}
             >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: "#FFFFFF",
-                  marginRight: 4,
-                }}
-              >
-                Your health data is important
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#FFFFFF",
-                }}
-              >
-                →
-              </Text>
-            </TouchableOpacity>
-          )} */}
+              {message.body}
+            </Text>
+          )}
 
-          {hasLoggedData && (
-            <TouchableOpacity
+          {message.basis && (
+            <Text
               style={{
-                backgroundColor: "rgba(255, 255, 255, 0.3)",
-                paddingHorizontal: 14,
-                paddingVertical: 10,
-                borderRadius: 8,
-                flexDirection: "row",
-                alignItems: "center",
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "rgba(255,255,255,0.55)",
+                textAlign: "center",
               }}
             >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: "#FFFFFF",
-                  marginRight: 4,
-                }}
-              >
-                Keep up the good work!
-              </Text>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: "#FFFFFF",
-                }}
-              >
-                →
-              </Text>
-            </TouchableOpacity>
+              {message.basis}
+            </Text>
           )}
         </View>
 
-        {/* Log Health Button */}
-        {!hasLoggedData && isToday(selectedDate) && (
-          <View style={{ alignItems: "center", paddingBottom: 20 }}>
-            <TouchableOpacity
-              onPress={() => router.push("/log-symptoms")}
-              style={{
-                backgroundColor: "#FFFFFF",
-                paddingHorizontal: 32,
-                paddingVertical: 14,
-                borderRadius: 25,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 16,
-                  color: "#A9334D",
-                }}
-              >
-                Log health
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </LinearGradient>
+      
 
       {/* Curved bottom edge */}
       <Svg

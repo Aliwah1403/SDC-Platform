@@ -47,7 +47,11 @@ export async function scheduleMedicationNotifications(med) {
 
   const isWeekly = med.frequency === 'Weekly';
   // Sunday = 1 in expo-notifications weekday convention
-  const baseWeekday = new Date().getDay() + 1;
+  const fallbackWeekday = new Date().getDay() + 1;
+  const baseWeekday =
+    Number.isInteger(med.weekday) && med.weekday >= 1 && med.weekday <= 7
+      ? med.weekday
+      : fallbackWeekday;
   const times = med.time.split(',').map((t) => t.trim()).filter(Boolean);
 
   for (const timeStr of times) {

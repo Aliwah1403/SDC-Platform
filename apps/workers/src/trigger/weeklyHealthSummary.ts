@@ -1,6 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
 import { triggerNovu } from "../lib/novu";
+import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-weekly-summary";
 const LOOKBACK_DAYS = 7;
@@ -94,14 +95,22 @@ export const weeklyHealthSummary = schedules.task({
             ) / 10
           : null;
 
-      await triggerNovu(WORKFLOW_ID, userId, {
-        nickname: nicknameMap.get(userId) ?? "there",
-        streak,
-        logsThisWeek: rows.length,
-        avgPain,
-        avgHydration,
-      });
-      nudged++;
+      try {
+        await triggerNovu(WORKFLOW_ID, userId, {
+          nickname: nicknameMap.get(userId) ?? "there",
+          streak,
+          logsThisWeek: rows.length,
+          avgPain,
+          avgHydration,
+        });
+        nudged++;
+      } catch (err) {
+        console.error(`[weeklyHealthSummary] error for user ${userId}:`, err);
+        Sentry.captureException(err, {
+          tags: { task: "weekly-health-summary" },
+          extra: { userId },
+        });
+      }
     }
 
     console.log(`[weekly-health-summary] Sent to ${nudged} users`);

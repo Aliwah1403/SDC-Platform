@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usePostHog } from "posthog-react-native";
 import { View } from "react-native";
 import Animated, {
@@ -17,21 +17,21 @@ import {
   useStreakQuery,
   useClaimBadgeMutation,
 } from "@/hooks/queries/useStreakQuery";
+import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
-import { DailyInsights } from "@/components/DailyInsights/DailyInsights";
-import { HealthStats } from "@/components/HealthStats/HealthStats";
-import { TodayHealthCard } from "@/components/HealthStats/TodayHealthCard";
-import { TrendsInsights } from "@/components/TrendsInsights/TrendsInsights";
-import { LearnSection } from "@/components/LearnSection/LearnSection";
+import { TodayContextCard } from "@/components/HomeScreen/TodayContextCard";
+import { QuickActions } from "@/components/HomeScreen/QuickActions";
+import { PainStatusTile } from "@/components/HomeScreen/PainStatusTile";
+import { MetricGrid } from "@/components/HomeScreen/MetricGrid";
+import { ContextualCards } from "@/components/HomeScreen/ContextualCards";
+import { MonthlySummaryCard } from "@/components/HomeScreen/MonthlySummaryCard";
+import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
-import { useChartData } from "@/hooks/useChartData";
-import {
-  getDynamicMessage,
-  getGradientColors,
-  getInsightCards,
-} from "@/utils/homeHelpers";
+import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
+import { toLocalDateStr } from "@/utils/dateUtils";
 
 const ALL_MILESTONES = [
   {
@@ -158,6 +158,7 @@ export default function HomeScreen() {
     lostStreakVisible,
     setLostStreakVisible,
     streakLost,
+    weather,
   } = useHomeData();
 
   const pendingMilestone = useAppStore((s) => s.pendingMilestone);
@@ -165,8 +166,13 @@ export default function HomeScreen() {
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
-  const claimedBadges = streak?.claimedBadges ?? [];
+  const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
+    typeof b === 'object' ? b.id : b
+  );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
+
+  const { data: medications = [] } = useMedicationsQuery();
+  const { data: appointments = [] } = useAppointmentsQuery();
 
   const totalEntries = healthData.length;
   const symptomsLogged = useMemo(
@@ -178,9 +184,19 @@ export default function HomeScreen() {
     [healthData],
   );
 
+  const hasLoggedToday = (() => {
+    const todayStr = toLocalDateStr(new Date());
+    const todayData = healthData.find((d) => d.date === todayStr);
+    return !!(
+      todayData &&
+      (todayData.painLevel > 0 || todayData.mood > 0 || todayData.hydration > 0)
+    );
+  })();
+
+  // Milestone detection — only runs on days the user actually logged
   useEffect(() => {
     if (!streakLoaded) return;
-    if (!healthData.length && !healthStreak) return;
+    if (!hasLoggedToday) return;
     if (pendingMilestone) return;
 
     const earned = ALL_MILESTONES.filter((m) => {
@@ -204,54 +220,47 @@ export default function HomeScreen() {
         streakCount: newBadge.type === "streak" ? healthStreak : null,
       });
     }
-  }, [streakLoaded, healthData, healthStreak, pendingMilestone, claimedBadges, totalEntries, symptomsLogged, hydrationDays]);
+  }, [
+    streakLoaded,
+    hasLoggedToday,
+    healthData,
+    healthStreak,
+    pendingMilestone,
+    claimedBadges,
+    totalEntries,
+    symptomsLogged,
+    hydrationDays,
+  ]);
 
-  // Track home screen view on mount
   useEffect(() => {
-    posthog?.capture('home_viewed', {
+    posthog?.capture("home_viewed", {
       logged_today: hasLoggedData,
       streak_days: healthStreak ?? 0,
     });
   }, []);
 
+  const alertState = useAppStore((s) => s.computedAlertState);
+
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
 
-  const {
-    painLevelData,
-    hydrationData,
-    moodData,
-    chartData,
-    crisisPeriods,
-    avgPainLevel,
-    avgHydration,
-  } = useChartData(healthData);
-
-  const message = getDynamicMessage(
+  const message = getDynamicMessage({
     hasLoggedData,
     healthStreak,
     selectedDate,
     currentUser,
-  );
-  const gradientColors = getGradientColors(hasLoggedData);
-  const insightCards = getInsightCards(
-    healthStreak,
-    selectedDate,
     selectedDateData,
-    avgPainLevel,
-    avgHydration,
-  );
+    healthData,
+    alertState,
+    weather,
+  });
+  const gradientColors = getGradientColors(hasLoggedData);
 
-  // Compact bar height = safe area + content row
   const compactBarHeight = insets.top + 56;
-
-  // Measured full header height (defaults to 350 to avoid flash before onLayout fires)
   const [headerHeight, setHeaderHeight] = useState(350);
 
-  // Shared values for animation
   const scrollY = useSharedValue(0);
   const collapsibleHeightSV = useSharedValue(350 - compactBarHeight);
 
-  // Keep collapsibleHeightSV in sync when headerHeight is measured
   useEffect(() => {
     collapsibleHeightSV.value = Math.max(0, headerHeight - compactBarHeight);
   }, [headerHeight, compactBarHeight]);
@@ -260,7 +269,6 @@ export default function HomeScreen() {
     scrollY.value = event.contentOffset.y;
   });
 
-  // Full header slides up as user scrolls
   const headerAnimStyle = useAnimatedStyle(() => {
     const translateY = interpolate(
       scrollY.value,
@@ -271,7 +279,6 @@ export default function HomeScreen() {
     return { transform: [{ translateY }] };
   });
 
-  // Compact navbar fades + slides down into view
   const compactNavAnimStyle = useAnimatedStyle(() => {
     const start = collapsibleHeightSV.value * 0.5;
     const end = collapsibleHeightSV.value;
@@ -289,7 +296,6 @@ export default function HomeScreen() {
     <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
       <StatusBar style="light" />
 
-      {/* Full header — absolutely positioned, slides up on scroll */}
       <Animated.View
         style={[
           { position: "absolute", top: 0, left: 0, right: 0, zIndex: 10 },
@@ -312,7 +318,6 @@ export default function HomeScreen() {
         />
       </Animated.View>
 
-      {/* Compact glassmorphism navbar — fades in as header collapses */}
       <Animated.View
         pointerEvents="box-none"
         style={[
@@ -327,7 +332,6 @@ export default function HomeScreen() {
         />
       </Animated.View>
 
-      {/* Scrollable content — paddingTop reserves space for the full header */}
       <Animated.ScrollView
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -338,25 +342,28 @@ export default function HomeScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <DailyInsights insightCards={insightCards} />
+        {/* <TodayContextCard
+          healthData={healthData}
+          healthStreak={healthStreak}
+          currentUser={currentUser}
+        /> */}
 
-        <TodayHealthCard />
+        <QuickActions medications={medications} />
 
-        <HealthStats
-          hasLoggedData={hasLoggedData}
+        <HealthSignalSection alertState={alertState} healthData={healthData} />
+
+        <PainStatusTile
           selectedDateData={selectedDateData}
+          healthData={healthData}
         />
 
-        <LearnSection />
+        <MetricGrid selectedDateData={selectedDateData} />
 
-        <TrendsInsights
-          painLevelData={painLevelData}
-          hydrationData={hydrationData}
-          moodData={moodData}
-          chartData={chartData}
-          avgPainLevel={avgPainLevel}
-          avgHydration={avgHydration}
-          crisisPeriods={crisisPeriods}
+        <MonthlySummaryCard healthData={healthData} />
+
+        <ContextualCards
+          appointments={appointments}
+          medications={medications}
         />
       </Animated.ScrollView>
 
@@ -376,11 +383,11 @@ export default function HomeScreen() {
           onClose={() => setRepairVisible(false)}
         />
 
-      <LostStreakModal
-        visible={lostStreakVisible}
-        lostStreak={streakLost?.lostStreak ?? 0}
-        onClose={() => setLostStreakVisible(false)}
-      />
+        <LostStreakModal
+          visible={lostStreakVisible}
+          lostStreak={streakLost?.lostStreak ?? 0}
+          onClose={() => setLostStreakVisible(false)}
+        />
       </View>
 
       <StreakAchievementModal
@@ -389,14 +396,16 @@ export default function HomeScreen() {
         healthData={healthData}
         onClaim={() => {
           if (pendingMilestone) {
-            posthog?.capture('milestone_claimed', {
+            posthog?.capture("milestone_claimed", {
               milestone_id: pendingMilestone.milestoneId,
               milestone_type: pendingMilestone.type,
               streak_days: pendingMilestone.streakCount ?? null,
             });
-            const updated = [
-              ...new Set([...claimedBadges, pendingMilestone.milestoneId]),
-            ];
+            const existing = streak?.claimedBadges ?? [];
+            const alreadyIds = existing.map((b) => typeof b === 'object' ? b.id : b);
+            const updated = alreadyIds.includes(pendingMilestone.milestoneId)
+              ? existing
+              : [...existing, { id: pendingMilestone.milestoneId, unlockedAt: new Date().toISOString() }];
             saveClaimedBadges(updated);
           }
           clearPendingMilestone();

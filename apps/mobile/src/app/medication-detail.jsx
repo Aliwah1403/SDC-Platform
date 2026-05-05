@@ -591,9 +591,13 @@ export default function MedicationDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            await cancelMedicationNotifications(med.id);
-            await deleteMed.mutateAsync(med.id);
-            router.back();
+            try {
+              await cancelMedicationNotifications(med.id);
+              await deleteMed.mutateAsync(med.id);
+              router.back();
+            } catch (err) {
+              Alert.alert("Delete failed", String(err || "Unknown error"));
+            }
           },
         },
       ],
@@ -602,9 +606,13 @@ export default function MedicationDetailScreen() {
 
   const handleArchive = async () => {
     sheetRef.current?.close();
-    await cancelMedicationNotifications(med.id);
-    await updateMed.mutateAsync({ id: med.id, updates: { isActive: false } });
-    router.back();
+    try {
+      await cancelMedicationNotifications(med.id);
+      await updateMed.mutateAsync({ id: med.id, updates: { isActive: false } });
+      router.back();
+    } catch (err) {
+      Alert.alert("Archive failed", String(err || "Unknown error"));
+    }
   };
 
   const handleMore = () => {

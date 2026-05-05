@@ -48,6 +48,7 @@ import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
 import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
 import { fetchWorkoutsForDate } from "@/services/healthKitService";
+import { toLocalDateStr } from "@/utils/dateUtils";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -72,12 +73,7 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-function dateToStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
+const dateToStr = toLocalDateStr;
 
 function getCalendarGrid(year, month) {
   const firstDay = new Date(year, month, 1);

@@ -1,6 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { supabase } from "../lib/supabase";
-import { triggerNovu } from "../lib/novu";
+import { triggerNovuBulk } from "../lib/novu";
+import { Sentry } from "../lib/sentry";
 
 const WORKFLOW_ID = "hemo-re-engagement";
 const GAP_DAYS = 3;
@@ -40,17 +41,17 @@ export const reEngagementNudge = schedules.task({
     if (lapsedIds.length === 0) return { nudged: 0 };
 
     // Get last log date for each lapsed user to compute exact day count
+    // (one row per user, reduced at the DB level)
     const { data: lastLogs, error: lastLogError } = await supabase
       .from("health_logs")
-      .select("user_id, date")
-      .in("user_id", lapsedIds)
-      .order("date", { ascending: false });
+      .select("user_id, last_date:date.max()")
+      .in("user_id", lapsedIds);
     if (lastLogError) throw lastLogError;
 
     const lastLogByUser = new Map<string, string>();
     for (const row of lastLogs ?? []) {
-      if (!lastLogByUser.has(row.user_id)) {
-        lastLogByUser.set(row.user_id, row.date as string);
+      if (row.last_date) {
+        lastLogByUser.set(row.user_id as string, row.last_date as string);
       }
     }
 
@@ -64,23 +65,58 @@ export const reEngagementNudge = schedules.task({
       (profiles ?? []).map((p) => [p.user_id, p.nickname as string | null])
     );
 
-    let nudged = 0;
-    for (const userId of lapsedIds) {
-      const lastDate = lastLogByUser.get(userId);
-      const daysWithoutLog = lastDate
-        ? Math.floor(
-            (today.getTime() - new Date(lastDate).getTime()) /
-              (1000 * 60 * 60 * 24)
-          )
-        : null;
+    // Guard against task retries causing duplicate sends — only send to users
+    // not already recorded for this workflow+cutoff combination.
+    const { data: insertedNudges, error: nudgeError } = await supabase
+      .from("push_nudges")
+      .upsert(
+        lapsedIds.map((userId) => ({
+          workflow_id: WORKFLOW_ID,
+          user_id: userId,
+          cutoff_date: cutoffStr,
+        })),
+        { onConflict: "workflow_id,user_id,cutoff_date", ignoreDuplicates: true }
+      )
+      .select("user_id");
+    if (nudgeError) throw nudgeError;
 
-      await triggerNovu(WORKFLOW_ID, userId, {
-        nickname: nicknameMap.get(userId) ?? "there",
-        daysWithoutLog,
+    const freshUserIds = new Set((insertedNudges ?? []).map((r) => r.user_id as string));
+    if (freshUserIds.size === 0) return { nudged: 0 };
+
+    const bulkEvents = lapsedIds
+      .filter((userId) => freshUserIds.has(userId))
+      .map((userId) => {
+        const lastDate = lastLogByUser.get(userId);
+        const daysWithoutLog = lastDate
+          ? Math.floor(
+              (today.getTime() - new Date(lastDate).getTime()) /
+                (1000 * 60 * 60 * 24)
+            )
+          : null;
+
+        return {
+          workflowId: WORKFLOW_ID,
+          subscriberId: userId,
+          payload: {
+            nickname: nicknameMap.get(userId) ?? "there",
+            daysWithoutLog,
+          },
+          idempotencyKey: `${WORKFLOW_ID}-${userId}-${cutoffStr}`,
+        };
       });
-      nudged++;
+
+    let failedCount = 0;
+    try {
+      ({ failedCount } = await triggerNovuBulk(bulkEvents));
+      if (failedCount > 0) {
+        console.error(`[re-engagement-nudge] ${failedCount} partial failures in bulk send`);
+      }
+    } catch (err) {
+      Sentry.captureException(err, { tags: { task: "re-engagement-nudge" } });
+      throw err;
     }
 
+    const nudged = bulkEvents.length - failedCount;
     console.log(`[re-engagement-nudge] Nudged ${nudged} users`);
     return { nudged };
   },

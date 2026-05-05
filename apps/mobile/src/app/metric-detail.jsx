@@ -934,7 +934,7 @@ export default function MetricDetailScreen() {
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginBottom: 16 }}>
               <Text style={{
                 fontFamily: fonts.bold,
-                fontSize: 28,
+                fontSize: 23,
                 color: trendDelta > 0
                   ? (meta.lowerIsBetter ? "#DC2626" : "#059669")
                   : (meta.lowerIsBetter ? "#059669" : "#DC2626"),
@@ -942,7 +942,7 @@ export default function MetricDetailScreen() {
                 {trendDelta > 0 ? "▲" : "▼"} {Math.abs(trendDelta).toFixed(1)}
               </Text>
               {meta.unit && (
-                <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: "#9CA3AF" }}>
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#9CA3AF" }}>
                   {meta.unit}
                 </Text>
               )}

@@ -2,13 +2,19 @@ import { useState, useEffect } from "react";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useStreakQuery, useMissedDay, useStreakLost } from "@/hooks/queries/useStreakQuery";
+import { useAppStore } from "@/store/appStore";
+import { toLocalDateStr } from "@/utils/dateUtils";
+import { useWeatherData } from "@/hooks/useWeatherData";
 
 export function useHomeData() {
   const { data: profile } = useProfileQuery();
+  const locationEnabled = profile?.locationEnabled ?? false;
+  const { weather } = useWeatherData(locationEnabled);
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: streak } = useStreakQuery();
   const missedDay = useMissedDay();
   const streakLost = useStreakLost();
+  const { healthKitData } = useAppStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [repairVisible, setRepairVisible] = useState(false);
@@ -28,10 +34,15 @@ export function useHomeData() {
     }
   }, [!!streakLost]);
 
-  // Get data for selected date
-  const selectedDateStr = selectedDate.toISOString().split("T")[0];
-  const selectedDateData =
-    healthData.find((d) => d.date === selectedDateStr) ?? null;
+  // Get data for selected date, merging HealthKit (steps, sleep, etc.) the same way Track does
+  const selectedDateStr = toLocalDateStr(selectedDate);
+  const base = healthData.find((d) => d.date === selectedDateStr) ?? null;
+  const hkDay = healthKitData?.[selectedDateStr];
+  const selectedDateData = hkDay
+    ? base
+      ? { ...base, ...hkDay }
+      : { date: selectedDateStr, ...hkDay }
+    : base;
   const hasLoggedData =
     selectedDateData &&
     (selectedDateData.painLevel > 0 ||
@@ -52,5 +63,6 @@ export function useHomeData() {
     lostStreakVisible,
     setLostStreakVisible,
     streakLost,
+    weather,
   };
 }

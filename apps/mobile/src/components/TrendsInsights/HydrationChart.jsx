@@ -24,7 +24,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
     labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    frontColor: d.value >= 8 ? "#2563EB" : "#93C5FD",
+    frontColor: d.value >= 8 ? "#A9334D" : "#D09F9A",
   }));
 
   const barWidth = Math.max(3, Math.floor(CHART_WIDTH / 35));
@@ -60,13 +60,13 @@ export function HydrationChart({ hydrationData, avgHydration }) {
         </Text>
         <View
           style={{
-            backgroundColor: "#DBEAFE",
+            backgroundColor: "#F8E9E7",
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#2563EB" }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
             Last 30 days
           </Text>
         </View>
@@ -87,7 +87,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           style={{
             width: 20,
             height: 2,
-            backgroundColor: "#2563EB",
+            backgroundColor: "#A9334D",
             marginRight: 6,
             borderRadius: 1,
           }}
@@ -116,7 +116,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           backgroundColor="transparent"
           yAxisLabelWidth={24}
           referenceLine1Config={{
-            color: "#2563EB",
+            color: "#A9334D",
             dashWidth: 4,
             dashGap: 4,
             thickness: 1,
@@ -149,7 +149,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
             Goal
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#2563EB" }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
             8
           </Text>
         </View>
@@ -157,7 +157,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
             Days at goal
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#10B981" }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
             {daysAtGoal}
           </Text>
         </View>

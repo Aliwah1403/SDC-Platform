@@ -69,13 +69,13 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
         </Text>
         <View
           style={{
-            backgroundColor: "#FEE2E2",
+            backgroundColor: "#F8E9E7",
             paddingHorizontal: 10,
             paddingVertical: 4,
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#DC2626" }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
             Last 30 days
           </Text>
         </View>
@@ -143,7 +143,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
             Lowest
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#10B981" }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
             {isFinite(lowestLogged) ? lowestLogged : 0}
           </Text>
         </View>

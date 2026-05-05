@@ -5,6 +5,11 @@ import { X, TrendingUp, TrendingDown } from "lucide-react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { useAuthStore } from "@/utils/auth/store";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useChartData } from "@/hooks/useChartData";
+import { PainLevelChart } from "@/components/TrendsInsights/PainLevelChart";
+import { HydrationChart } from "@/components/TrendsInsights/HydrationChart";
+import { MoodChart } from "@/components/TrendsInsights/MoodChart";
+import { CrisisFreePeriods } from "@/components/TrendsInsights/CrisisFreePeriods";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -336,6 +341,10 @@ export default function HealthInsightsScreen() {
   const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
 
   const insights = buildInsights(healthData, firstName);
+  const { painLevelData, hydrationData, moodData, chartData, crisisPeriods, avgPainLevel, avgHydration } =
+    useChartData(healthData);
+
+  const graphWidth = Dimensions.get("window").width - 80;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
@@ -375,6 +384,40 @@ export default function HealthInsightsScreen() {
         {insights.map((insight) => (
           <InsightCard key={insight.id} insight={insight} />
         ))}
+
+        {/* 30-day trend charts */}
+        <Text
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 22,
+            color: "#111827",
+            marginTop: 8,
+            marginBottom: 16,
+          }}
+        >
+          30-Day Trends
+        </Text>
+
+        <PainLevelChart
+          painLevelData={painLevelData}
+          graphWidth={graphWidth}
+          avgPainLevel={avgPainLevel}
+          chartData={chartData}
+        />
+
+        <HydrationChart
+          hydrationData={hydrationData}
+          graphWidth={graphWidth}
+          avgHydration={avgHydration}
+        />
+
+        <MoodChart
+          moodData={moodData}
+          graphWidth={graphWidth}
+          chartData={chartData}
+        />
+
+        <CrisisFreePeriods crisisPeriods={crisisPeriods} />
 
         {/* Done button */}
         <TouchableOpacity

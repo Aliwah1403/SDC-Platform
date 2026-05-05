@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { usePostHog } from "posthog-react-native";
 import * as Notifications from "expo-notifications";
+import * as Location from "expo-location";
 import {
   View,
   Text,
@@ -48,7 +49,6 @@ import {
   User,
   Lock,
   HelpCircle,
-  Info,
   LogOut,
   Fingerprint,
   Search,
@@ -61,6 +61,10 @@ import {
   PenLine,
   Images,
   Trash2,
+  Shield,
+  ShieldHalf,
+  Droplets,
+  AlertCircle,
 } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
@@ -88,7 +92,10 @@ import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";
-import { scheduleCheckInReminders, cancelCheckInReminders } from "@/utils/checkInNotifications";
+import {
+  scheduleCheckInReminders,
+  cancelCheckInReminders,
+} from "@/utils/checkInNotifications";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -119,10 +126,57 @@ function formatDob(dob) {
   });
 }
 
+const TIMEZONE_LIST = [
+  { value: 'Pacific/Honolulu',    label: 'Hawaii (UTC−10)' },
+  { value: 'America/Anchorage',   label: 'Alaska (UTC−9)' },
+  { value: 'America/Los_Angeles', label: 'Pacific Time (UTC−8/−7)' },
+  { value: 'America/Denver',      label: 'Mountain Time (UTC−7/−6)' },
+  { value: 'America/Chicago',     label: 'Central Time (UTC−6/−5)' },
+  { value: 'America/New_York',    label: 'Eastern Time (UTC−5/−4)' },
+  { value: 'America/Sao_Paulo',   label: 'Brazil (UTC−3)' },
+  { value: 'Atlantic/Azores',     label: 'Azores (UTC−1)' },
+  { value: 'Europe/London',       label: 'London / Dublin (UTC±0/+1)' },
+  { value: 'Europe/Paris',        label: 'Central Europe (UTC+1/+2)' },
+  { value: 'Europe/Helsinki',     label: 'Eastern Europe (UTC+2/+3)' },
+  { value: 'Africa/Lagos',        label: 'West Africa (UTC+1)' },
+  { value: 'Africa/Nairobi',      label: 'East Africa (UTC+3)' },
+  { value: 'Asia/Dubai',          label: 'Gulf / UAE (UTC+4)' },
+  { value: 'Asia/Karachi',        label: 'Pakistan (UTC+5)' },
+  { value: 'Asia/Kolkata',        label: 'India (UTC+5:30)' },
+  { value: 'Asia/Dhaka',          label: 'Bangladesh (UTC+6)' },
+  { value: 'Asia/Bangkok',        label: 'Indochina (UTC+7)' },
+  { value: 'Asia/Singapore',      label: 'Singapore / Malaysia (UTC+8)' },
+  { value: 'Asia/Tokyo',          label: 'Japan / Korea (UTC+9)' },
+  { value: 'Australia/Sydney',    label: 'Sydney (UTC+10/+11)' },
+  { value: 'Pacific/Auckland',    label: 'New Zealand (UTC+12/+13)' },
+];
+const TIMEZONE_DISPLAY = Object.fromEntries(TIMEZONE_LIST.map((t) => [t.value, t.label]));
+
 const FREQUENCY_OPTIONS = [
   { label: "Twice a day", value: 2 },
   { label: "3 times a day", value: 3 },
   { label: "5 times a day", value: 5 },
+];
+
+const BLOOD_TYPES = [
+  "A+",
+  "A−",
+  "B+",
+  "B−",
+  "AB+",
+  "AB−",
+  "O+",
+  "O−",
+  "Unknown",
+];
+
+const PRESET_ALLERGIES = [
+  "Penicillin",
+  "NSAIDs",
+  "Aspirin",
+  "Latex",
+  "Codeine",
+  "Sulfa drugs",
 ];
 
 function formatFrequency(val) {
@@ -223,6 +277,7 @@ function SettingRowToggle({
   icon: Icon,
   iconColor = "#A9334D",
   label,
+  subtitle,
   value,
   onChange,
 }) {
@@ -240,7 +295,6 @@ function SettingRowToggle({
           width: 34,
           height: 34,
           borderRadius: 8,
-          // backgroundColor: `${iconColor}18`,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 12,
@@ -248,16 +302,29 @@ function SettingRowToggle({
       >
         <Icon size={18} color={iconColor} />
       </View>
-      <Text
-        style={{
-          fontFamily: fonts.medium,
-          fontSize: 15,
-          color: "#09332C",
-          flex: 1,
-        }}
-      >
-        {label}
-      </Text>
+      <View style={{ flex: 1 }}>
+        <Text
+          style={{
+            fontFamily: fonts.medium,
+            fontSize: 15,
+            color: "#09332C",
+          }}
+        >
+          {label}
+        </Text>
+        {subtitle ? (
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 12,
+              color: "#9CA3AF",
+              marginTop: 1,
+            }}
+          >
+            {subtitle}
+          </Text>
+        ) : null}
+      </View>
       <Switch
         value={value}
         onValueChange={onChange}
@@ -338,6 +405,8 @@ export default function ProfileScreen() {
       onboardingData?.notificationsEnabled ??
       false,
   );
+  const [locationEnabled, setLocationEnabled] = useState(profile?.locationEnabled ?? false);
+  const [locationLabel, setLocationLabel] = useState(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
@@ -352,8 +421,38 @@ export default function ProfileScreen() {
   const isAppleLinked = linkedProviders.includes("apple");
   const canUnlink = identities.length > 1;
 
+  // Sync location toggle with loaded profile
   useEffect(() => {
-    posthog?.capture('profile_viewed', {});
+    if (profile?.locationEnabled !== undefined) {
+      setLocationEnabled(profile.locationEnabled);
+    }
+  }, [profile?.locationEnabled]);
+
+  // When location is enabled, resolve City, Country to show under the toggle
+  useEffect(() => {
+    if (!locationEnabled) {
+      setLocationLabel(null);
+      return;
+    }
+    Location.getForegroundPermissionsAsync().then(({ status }) => {
+      if (status !== "granted") return;
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+        .then(({ coords }) =>
+          Location.reverseGeocodeAsync({ latitude: coords.latitude, longitude: coords.longitude })
+        )
+        .then((results) => {
+          const place = results?.[0];
+          if (!place) return;
+          const city = place.city || place.subregion || place.region;
+          const country = place.country;
+          setLocationLabel([city, country].filter(Boolean).join(", "));
+        })
+        .catch(() => {});
+    });
+  }, [locationEnabled]);
+
+  useEffect(() => {
+    posthog?.capture("profile_viewed", {});
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const currentSession = useAuthStore.getState().auth?.session;
@@ -370,6 +469,12 @@ export default function ProfileScreen() {
   const [editingNickname, setEditingNickname] = useState(false);
   const [editingAppearance, setEditingAppearance] = useState(false);
   const [editingLanguage, setEditingLanguage] = useState(false);
+  const [editingTimezone, setEditingTimezone] = useState(false);
+  const [editingBloodType, setEditingBloodType] = useState(false);
+  const [editingAllergies, setEditingAllergies] = useState(false);
+  const [tempAllergyPresets, setTempAllergyPresets] = useState([]);
+  const [tempAllergyCustom, setTempAllergyCustom] = useState([]);
+  const [tempAllergyInput, setTempAllergyInput] = useState("");
   const [tempFullName, setTempFullName] = useState("");
   const [tempNickname, setTempNickname] = useState("");
   const [tempDay, setTempDay] = useState(1);
@@ -410,6 +515,9 @@ export default function ProfileScreen() {
     ],
   }));
 
+  const timezoneAuto = profile?.timezoneAuto ?? true;
+  const timezone = profile?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+
   const scdType = profile?.scdType;
   const age = formatAge(profile?.dob);
   const medicationsCount = medications.filter((m) => m.isActive).length;
@@ -422,6 +530,29 @@ export default function ProfileScreen() {
   const userEmail = auth?.user?.email ?? "—";
   const initials = getInitials(profile?.nickname || fullName);
   const healthStreak = streak?.currentStreak ?? 0;
+
+  const handleToggleLocation = async (val) => {
+    if (val) {
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status === "denied") {
+        Alert.alert(
+          "Enable Location",
+          "Location access is blocked. Open Settings to turn it on for Hemo.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      if (status !== "granted") {
+        const { status: newStatus } = await Location.requestForegroundPermissionsAsync();
+        if (newStatus !== "granted") return;
+      }
+    }
+    setLocationEnabled(val);
+    updateProfile.mutate({ locationEnabled: val });
+  };
 
   const handleToggleNotifications = async (val) => {
     if (val) {
@@ -446,17 +577,20 @@ export default function ProfileScreen() {
         if (newStatus !== "granted") return;
       }
     }
-    posthog?.capture('notifications_toggled', { enabled: val });
+    posthog?.capture("notifications_toggled", { enabled: val });
     setNotificationsEnabled(val);
-    updateProfile.mutate({ notificationsEnabled: val }, {
-      onSuccess: () => {
-        if (val) {
-          scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
-        } else {
-          cancelCheckInReminders();
-        }
+    updateProfile.mutate(
+      { notificationsEnabled: val },
+      {
+        onSuccess: () => {
+          if (val) {
+            scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
+          } else {
+            cancelCheckInReminders();
+          }
+        },
       },
-    });
+    );
   };
   const appLockLabel = appLockEnabled
     ? `On · ${appLockTimeout === 0 ? "Immediately" : appLockTimeout === 1 ? "1 min" : appLockTimeout === 60 ? "1 hour" : `${appLockTimeout} min`}`
@@ -567,7 +701,7 @@ export default function ProfileScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          posthog?.capture('sign_out', {});
+          posthog?.capture("sign_out", {});
           await signOut();
           router.replace("/(auth)/welcome");
         },
@@ -716,6 +850,20 @@ export default function ProfileScreen() {
     setEditingNickname(false);
   };
 
+  const openAllergiesSheet = () => {
+    const current = profile?.allergies ?? [];
+    setTempAllergyPresets(current.filter((a) => PRESET_ALLERGIES.includes(a)));
+    setTempAllergyCustom(current.filter((a) => !PRESET_ALLERGIES.includes(a)));
+    setTempAllergyInput("");
+    setEditingAllergies(true);
+  };
+
+  const saveAllergies = () => {
+    const allergies = [...tempAllergyPresets, ...tempAllergyCustom];
+    updateProfile.mutate({ allergies });
+    setEditingAllergies(false);
+  };
+
   const openSearch = () => {
     setSearchQuery("");
     setSearchVisible(true);
@@ -748,9 +896,33 @@ export default function ProfileScreen() {
   const allSettings = useMemo(
     () => [
       {
+        key: "full-name",
+        label: "Full Name",
+        section: "My Profile",
+        icon: User,
+        iconColor: "#A9334D",
+        onPress: openFullNameSheet,
+      },
+      {
+        key: "nickname",
+        label: "Nickname",
+        section: "My Profile",
+        icon: AtSign,
+        iconColor: "#A9334D",
+        onPress: openNicknameSheet,
+      },
+      {
+        key: "photo",
+        label: "Profile Photo",
+        section: "My Profile",
+        icon: Camera,
+        iconColor: "#A9334D",
+        onPress: openPhotoSheet,
+      },
+      {
         key: "scd-type",
         label: "SCD Type",
-        section: "My Health",
+        section: "My Profile",
         icon: Dna,
         iconColor: "#A9334D",
         onPress: () => setEditingScd(true),
@@ -758,7 +930,7 @@ export default function ProfileScreen() {
       {
         key: "dob",
         label: "Date of Birth",
-        section: "My Health",
+        section: "My Profile",
         icon: Calendar,
         iconColor: "#781D11",
         onPress: openDobSheet,
@@ -766,10 +938,26 @@ export default function ProfileScreen() {
       {
         key: "height-weight",
         label: "Height & Weight",
-        section: "My Health",
+        section: "My Profile",
         icon: Ruler,
         iconColor: "#059669",
         onPress: () => router.push("/edit-body-stats"),
+      },
+      {
+        key: "blood-type",
+        label: "Blood Type",
+        section: "My Profile",
+        icon: Droplets,
+        iconColor: "#DC2626",
+        onPress: () => !profile?.bloodType && setEditingBloodType(true),
+      },
+      {
+        key: "allergies",
+        label: "Allergies",
+        section: "My Profile",
+        icon: AlertCircle,
+        iconColor: "#F59E0B",
+        onPress: openAllergiesSheet,
       },
       {
         key: "medications",
@@ -778,14 +966,6 @@ export default function ProfileScreen() {
         icon: Pill,
         iconColor: "#A9334D",
         onPress: () => router.push("/(tabs)/care/medications"),
-      },
-      {
-        key: "emergency",
-        label: "Emergency Contacts",
-        section: "Medical",
-        icon: Phone,
-        iconColor: "#DC2626",
-        onPress: () => comingSoon("Emergency Contacts"),
       },
       {
         key: "checkin",
@@ -830,30 +1010,7 @@ export default function ProfileScreen() {
             ? router.push("/apple-health-settings")
             : setAppleHealthModalVisible(true),
       },
-      {
-        key: "photo",
-        label: "Profile Photo",
-        section: "Profile",
-        icon: Camera,
-        iconColor: "#A9334D",
-        onPress: openPhotoSheet,
-      },
-      {
-        key: "full-name",
-        label: "Full Name",
-        section: "Profile",
-        icon: User,
-        iconColor: "#A9334D",
-        onPress: openFullNameSheet,
-      },
-      {
-        key: "nickname",
-        label: "Nickname",
-        section: "Profile",
-        icon: AtSign,
-        iconColor: "#A9334D",
-        onPress: openNicknameSheet,
-      },
+
       {
         key: "appearance",
         label: "Appearance",
@@ -869,6 +1026,30 @@ export default function ProfileScreen() {
         icon: Globe,
         iconColor: "#6B7280",
         onPress: () => setEditingLanguage(true),
+      },
+      {
+        key: "timezone-auto",
+        label: "Automatic Timezone",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => {},
+      },
+      {
+        key: "timezone",
+        label: "Timezone",
+        section: "Preferences",
+        icon: Clock,
+        iconColor: "#6B7280",
+        onPress: () => setEditingTimezone(true),
+      },
+      {
+        key: "location",
+        label: "Use Location for Hospitals",
+        section: "Preferences",
+        icon: Globe,
+        iconColor: "#6B7280",
+        onPress: () => {},
       },
       {
         key: "password",
@@ -892,7 +1073,7 @@ export default function ProfileScreen() {
         section: "Support",
         icon: HelpCircle,
         iconColor: "#0EA5E9",
-        onPress: () => comingSoon("Help Center"),
+        onPress: () => router.push("/help-center"),
       },
       {
         key: "feedback",
@@ -902,22 +1083,7 @@ export default function ProfileScreen() {
         iconColor: "#F59E0B",
         onPress: () => router.push("/feedback-modal"),
       },
-      {
-        key: "about",
-        label: "About Hemo",
-        section: "Support",
-        icon: Info,
-        iconColor: "#6B7280",
-        onPress: () => comingSoon("About Hemo"),
-      },
-      {
-        key: "signout",
-        label: "Sign Out",
-        section: "",
-        icon: LogOut,
-        iconColor: "#DC2626",
-        onPress: handleSignOut,
-      },
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
     ],
     [],
@@ -1142,7 +1308,7 @@ export default function ProfileScreen() {
 
       <Animated.ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -1261,10 +1427,30 @@ export default function ProfileScreen() {
 
         {/* ── Settings Sections ── */}
         <View style={{ paddingHorizontal: 16 }}>
-          <SectionCard title="My Health">
+          <SectionCard title="My Profile">
+            <SettingRow
+              icon={User}
+              iconColor="#6B7280"
+              label="Full Name"
+              value={
+                profile?.fullName ??
+                auth?.user?.user_metadata?.full_name ??
+                "Not set"
+              }
+              rightElement="chevron"
+              onPress={openFullNameSheet}
+            />
+            <SettingRow
+              icon={AtSign}
+              iconColor="#6B7280"
+              label="Nickname"
+              value={profile?.nickname || "Not set"}
+              rightElement="chevron"
+              onPress={openNicknameSheet}
+            />
             <SettingRow
               icon={Dna}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="SCD Type"
               value={scdType || "Not set"}
               rightElement="chevron"
@@ -1272,7 +1458,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={Calendar}
-              iconColor="#781D11"
+              iconColor="#6B7280"
               label="Date of Birth"
               value={
                 profile?.dob
@@ -1286,7 +1472,7 @@ export default function ProfileScreen() {
             />
             <SettingRow
               icon={Ruler}
-              iconColor="#059669"
+              iconColor="#6B7280"
               label="Height & Weight"
               value={
                 profile?.height || profile?.weight
@@ -1296,44 +1482,42 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={() => router.push("/edit-body-stats")}
             />
-          </SectionCard>
-
-          <SectionCard title="Medical">
             <SettingRow
-              icon={Pill}
-              iconColor="#A9334D"
-              label="Medications"
-              value={
-                medicationsCount > 0
-                  ? `${medicationsCount} active`
-                  : "None added"
+              icon={Droplets}
+              iconColor="#DC2626"
+              label="Blood Type"
+              value={profile?.bloodType || "Not set"}
+              rightElement={profile?.bloodType ? null : "chevron"}
+              onPress={
+                profile?.bloodType ? undefined : () => setEditingBloodType(true)
               }
-              rightElement="chevron"
-              onPress={() => router.push("/(tabs)/care/medications")}
             />
             <SettingRow
-              icon={Phone}
-              iconColor="#DC2626"
-              label="Emergency Contacts"
-              value={
-                emergencyCount > 0 ? `${emergencyCount} contacts` : "None added"
-              }
+              icon={AlertCircle}
+              iconColor="#6B7280"
+              label="Allergies"
+              value={(() => {
+                const a = profile?.allergies ?? [];
+                if (a.length === 0) return "None recorded";
+                if (a.length === 1) return a[0];
+                return `${a.length} recorded`;
+              })()}
               rightElement="chevron"
-              onPress={() => comingSoon("Emergency Contacts")}
+              onPress={openAllergiesSheet}
             />
           </SectionCard>
 
           <SectionCard title="Reminders">
             <SettingRowToggle
               icon={Bell}
-              iconColor="#F0531C"
+              iconColor="#6B7280"
               label="Notifications"
               value={notificationsEnabled}
               onChange={handleToggleNotifications}
             />
             <SettingRow
               icon={Clock}
-              iconColor="#F0531C"
+              iconColor="#6B7280"
               label="Check-in Frequency"
               value={formatFrequency(profile?.checkInFrequency)}
               rightElement="chevron"
@@ -1344,14 +1528,14 @@ export default function ProfileScreen() {
           <SectionCard title="Data & Reports">
             <SettingRow
               icon={Download}
-              iconColor="#059669"
+              iconColor="#6B7280"
               label="Export Health Data"
               rightElement="chevron"
               onPress={handleExportData}
             />
             <SettingRow
               icon={ShareIcon}
-              iconColor="#A9334D"
+              iconColor="#6B7280"
               label="Share Health Summary"
               rightElement="chevron"
               onPress={handleShareSummary}
@@ -1367,29 +1551,6 @@ export default function ProfileScreen() {
                   ? router.push("/apple-health-settings")
                   : setAppleHealthModalVisible(true)
               }
-            />
-          </SectionCard>
-
-          <SectionCard title="Profile">
-            <SettingRow
-              icon={User}
-              iconColor="#A9334D"
-              label="Full Name"
-              value={
-                profile?.fullName ??
-                auth?.user?.user_metadata?.full_name ??
-                "Not set"
-              }
-              rightElement="chevron"
-              onPress={openFullNameSheet}
-            />
-            <SettingRow
-              icon={AtSign}
-              iconColor="#A9334D"
-              label="Nickname"
-              value={profile?.nickname || "Not set"}
-              rightElement="chevron"
-              onPress={openNicknameSheet}
             />
           </SectionCard>
 
@@ -1415,6 +1576,40 @@ export default function ProfileScreen() {
               value="English"
               rightElement="chevron"
               onPress={() => setEditingLanguage(true)}
+            />
+            <SettingRowToggle
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Automatic Timezone"
+              value={timezoneAuto}
+              onChange={(val) => {
+                if (val) {
+                  updateProfile.mutate({
+                    timezoneAuto: true,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  });
+                } else {
+                  updateProfile.mutate({ timezoneAuto: false });
+                }
+              }}
+            />
+            {!timezoneAuto && (
+              <SettingRow
+                icon={Clock}
+                iconColor="#6B7280"
+                label="Timezone"
+                value={TIMEZONE_DISPLAY[timezone] ?? timezone}
+                rightElement="chevron"
+                onPress={() => setEditingTimezone(true)}
+              />
+            )}
+            <SettingRowToggle
+              icon={Globe}
+              iconColor="#6B7280"
+              label="Use Location for Hospitals"
+              subtitle={locationEnabled && locationLabel ? locationLabel : undefined}
+              value={locationEnabled}
+              onChange={handleToggleLocation}
             />
           </SectionCard>
 
@@ -1552,14 +1747,14 @@ export default function ProfileScreen() {
           <SectionCard title="Support">
             <SettingRow
               icon={HelpCircle}
-              iconColor="#0EA5E9"
+              iconColor="#6B7280"
               label="Help Center"
               rightElement="chevron"
-              onPress={() => comingSoon("Help Center")}
+              onPress={() => router.push("/help-center")}
             />
             <SettingRow
               icon={Star}
-              iconColor="#F59E0B"
+              iconColor="#6B7280"
               label="Add Feedback"
               rightElement={
                 isFeedbackInitializing ? (
@@ -1571,13 +1766,22 @@ export default function ProfileScreen() {
               disabled={isFeedbackInitializing}
               onPress={handleStartFeedback}
             />
+          </SectionCard>
+
+          <SectionCard title="Legal">
             <SettingRow
-              icon={Info}
+              icon={ShieldHalf}
               iconColor="#6B7280"
-              label="About Hemo"
-              value="v1.0.0"
+              label="Privacy Policy"
+              onPress={() => comingSoon("Privacy Policy")}
               rightElement="chevron"
-              onPress={() => comingSoon("About Hemo")}
+            />
+            <SettingRow
+              icon={Shield}
+              iconColor="#6B7280"
+              label="Terms of Service"
+              onPress={() => comingSoon("Terms of Service")}
+              rightElement="chevron"
             />
           </SectionCard>
 
@@ -1590,25 +1794,55 @@ export default function ProfileScreen() {
             />
           </SectionCard>
 
+          {/* Profile Footer */}
           <View style={{ alignItems: "center", marginTop: 4 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 5,
+              }}
+            >
+              <Image
+                source={require("../../../assets/images/icon.png")}
+                style={{ width: 70, height: 50, borderRadius: 10 }}
+              />
+            </View>
             <Text
               style={{
-                fontFamily: fonts.semibold,
+                fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "#A9334D",
+                color: "#9CA3AF",
                 marginBottom: 2,
               }}
             >
-              Hemo
+              © {new Date().getFullYear()} Hemo. All Rights Reserved.
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "#9CA3AF",
+                marginBottom: 2,
+              }}
+            >
+              {" "}
+              v1.0.0
             </Text>
             <Text
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 11,
                 color: "#C4A8A4",
+                textAlign: "center",
+                paddingHorizontal: 32,
+                marginTop: 6,
+                lineHeight: 16,
               }}
             >
-              Your sickle cell companion
+              Hemo is not a substitute for professional medical advice. Always
+              consult your physician first.
             </Text>
           </View>
         </View>
@@ -1712,6 +1946,332 @@ export default function ProfileScreen() {
             ),
           )}
         </View>
+      </Modal>
+
+      {/* ── Blood Type Sheet ── */}
+      <Modal
+        visible={editingBloodType}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingBloodType(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingBloodType(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingBloodType(false)} hitSlop={12}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 16,
+                  color: "rgba(9,51,44,0.45)",
+                }}
+              >
+                Cancel
+              </Text>
+            </Pressable>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 16,
+                color: "#09332C",
+              }}
+            >
+              Blood Type
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: "#9CA3AF",
+              paddingHorizontal: 20,
+              paddingTop: 10,
+              paddingBottom: 4,
+            }}
+          >
+            This cannot be changed once saved. Make sure it's correct.
+          </Text>
+          {BLOOD_TYPES.map((bt, i, arr) => (
+            <React.Fragment key={bt}>
+              <Pressable
+                onPress={() => {
+                  updateProfile.mutate({ bloodType: bt });
+                  setEditingBloodType(false);
+                }}
+                style={({ pressed }) => ({
+                  flexDirection: "row",
+                  alignItems: "center",
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                })}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 16,
+                    color: "#09332C",
+                    flex: 1,
+                  }}
+                >
+                  {bt}
+                </Text>
+              </Pressable>
+              {i < arr.length - 1 && (
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#F0E4E1",
+                    marginLeft: 20,
+                  }}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </Modal>
+
+      {/* ── Allergies Sheet ── */}
+      <Modal
+        visible={editingAllergies}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingAllergies(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingAllergies(false)}
+        />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+        >
+          <View
+            style={{
+              backgroundColor: "#ffffff",
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: insets.bottom + 12,
+              maxHeight: "80%",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: "#F0E4E1",
+              }}
+            >
+              <Pressable
+                onPress={() => setEditingAllergies(false)}
+                hitSlop={12}
+              >
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 16,
+                    color: "#9CA3AF",
+                  }}
+                >
+                  Cancel
+                </Text>
+              </Pressable>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: "#09332C",
+                }}
+              >
+                Allergies
+              </Text>
+              <Pressable onPress={saveAllergies} hitSlop={12}>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 16,
+                    color: "#A9334D",
+                  }}
+                >
+                  Save
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={{ paddingHorizontal: 20, paddingTop: 16 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 13,
+                  color: "#9CA3AF",
+                  marginBottom: 12,
+                }}
+              >
+                Select known allergies or add your own.
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  gap: 8,
+                  marginBottom: 16,
+                }}
+              >
+                {PRESET_ALLERGIES.map((p) => {
+                  const selected = tempAllergyPresets.includes(p);
+                  return (
+                    <Pressable
+                      key={p}
+                      onPress={() =>
+                        setTempAllergyPresets((prev) =>
+                          selected ? prev.filter((x) => x !== p) : [...prev, p],
+                        )
+                      }
+                      style={{
+                        paddingHorizontal: 14,
+                        paddingVertical: 7,
+                        borderRadius: 20,
+                        borderWidth: 1.5,
+                        borderColor: selected ? "#A9334D" : "#F0E4E1",
+                        backgroundColor: selected ? "#A9334D" : "#ffffff",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 14,
+                          color: selected ? "#ffffff" : "#09332C",
+                        }}
+                      >
+                        {p}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+                {tempAllergyCustom.map((c) => (
+                  <Pressable
+                    key={c}
+                    onPress={() =>
+                      setTempAllergyCustom((prev) =>
+                        prev.filter((x) => x !== c),
+                      )
+                    }
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: "#A9334D",
+                      backgroundColor: "#A9334D",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 14,
+                        color: "#ffffff",
+                      }}
+                    >
+                      {c} ×
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderWidth: 1,
+                  borderColor: "#F0E4E1",
+                  borderRadius: 12,
+                  backgroundColor: "#F8F4F0",
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  gap: 8,
+                }}
+              >
+                <TextInput
+                  value={tempAllergyInput}
+                  onChangeText={setTempAllergyInput}
+                  placeholder="Add allergy…"
+                  placeholderTextColor="#C4A8A4"
+                  returnKeyType="done"
+                  autoCapitalize="words"
+                  onSubmitEditing={() => {
+                    const t = tempAllergyInput.trim();
+                    if (
+                      t &&
+                      !tempAllergyCustom.includes(t) &&
+                      !tempAllergyPresets.includes(t)
+                    ) {
+                      setTempAllergyCustom((prev) => [...prev, t]);
+                    }
+                    setTempAllergyInput("");
+                  }}
+                  style={{
+                    flex: 1,
+                    fontFamily: fonts.regular,
+                    fontSize: 15,
+                    color: "#09332C",
+                    padding: 0,
+                  }}
+                />
+                {tempAllergyInput.trim().length > 0 && (
+                  <Pressable
+                    onPress={() => {
+                      const t = tempAllergyInput.trim();
+                      if (
+                        t &&
+                        !tempAllergyCustom.includes(t) &&
+                        !tempAllergyPresets.includes(t)
+                      ) {
+                        setTempAllergyCustom((prev) => [...prev, t]);
+                      }
+                      setTempAllergyInput("");
+                    }}
+                    hitSlop={8}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 14,
+                        color: "#A9334D",
+                      }}
+                    >
+                      Add
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* ── Date of Birth Sheet ── */}
@@ -1912,10 +2472,17 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
-                  posthog?.capture('check_in_frequency_changed', { frequency: opt.value });
-                  updateProfile.mutate({ checkInFrequency: opt.value }, {
-                    onSuccess: () => notificationsEnabled && scheduleCheckInReminders(opt.value),
+                  posthog?.capture("check_in_frequency_changed", {
+                    frequency: opt.value,
                   });
+                  updateProfile.mutate(
+                    { checkInFrequency: opt.value },
+                    {
+                      onSuccess: () =>
+                        notificationsEnabled &&
+                        scheduleCheckInReminders(opt.value),
+                    },
+                  );
                   setEditingFrequency(false);
                 }}
                 style={({ pressed }) => ({
@@ -2358,6 +2925,80 @@ export default function ProfileScreen() {
             </Text>
             <Check size={18} color="#A9334D" />
           </Pressable>
+        </View>
+      </Modal>
+
+      {/* ── Timezone Picker Sheet ── */}
+      <Modal
+        visible={editingTimezone}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setEditingTimezone(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={() => setEditingTimezone(false)}
+        />
+        <View
+          style={{
+            backgroundColor: "#ffffff",
+            borderTopLeftRadius: 20,
+            borderTopRightRadius: 20,
+            paddingBottom: insets.bottom + 12,
+            maxHeight: "70%",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingHorizontal: 20,
+              paddingTop: 16,
+              paddingBottom: 12,
+              borderBottomWidth: 1,
+              borderBottomColor: "rgba(9,51,44,0.07)",
+            }}
+          >
+            <Pressable onPress={() => setEditingTimezone(false)} hitSlop={12}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#09332C" }}>
+              Timezone
+            </Text>
+            <View style={{ width: 60 }} />
+          </View>
+          <FlatList
+            data={TIMEZONE_LIST}
+            keyExtractor={(item) => item.value}
+            renderItem={({ item, index }) => (
+              <React.Fragment>
+                <Pressable
+                  onPress={() => {
+                    updateProfile.mutate({ timezone: item.value });
+                    setEditingTimezone(false);
+                  }}
+                  style={({ pressed }) => ({
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingVertical: 14,
+                    paddingHorizontal: 20,
+                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  })}
+                >
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#09332C", flex: 1 }}>
+                    {item.label}
+                  </Text>
+                  {timezone === item.value && <Check size={18} color="#A9334D" />}
+                </Pressable>
+                {index < TIMEZONE_LIST.length - 1 && (
+                  <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
+                )}
+              </React.Fragment>
+            )}
+          />
         </View>
       </Modal>
 
