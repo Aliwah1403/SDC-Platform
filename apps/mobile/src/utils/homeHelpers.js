@@ -18,6 +18,7 @@ export function getDynamicMessage({
   selectedDateData,
   healthData = [],
   alertState = null,
+  weather = null,
 }) {
   const today = new Date();
   const todayStr = toLocalDateStr(today);
@@ -42,6 +43,15 @@ export function getDynamicMessage({
     last3.length
       ? last3.reduce((s, d) => s + (d.painLevel || 0), 0) / last3.length
       : null;
+
+  // Weather context suffix for logged-today basis fields
+  const weatherBasis = (() => {
+    if (!weather || !isToday || !hasLoggedData) return null;
+    const { feelsLike, temp, humidity } = weather;
+    if (feelsLike < 10 && pain >= 4) return 'Cold weather may be contributing to pain';
+    if (temp > 30 && humidity > 70 && hydration < 5) return 'Heat + humidity increases dehydration risk';
+    return null;
+  })();
 
   // --- Past date ---
   if (!isToday) {
@@ -78,6 +88,66 @@ export function getDynamicMessage({
 
   // --- Today, not logged ---
   if (!hasLoggedData) {
+    if (weather) {
+      const { feelsLike, temp, humidity, condition, cityName } = weather;
+      const src = cityName ? `${cityName} · Live weather` : 'Live weather';
+
+      if (feelsLike <= 0) {
+        return {
+          label: 'WEATHER ALERT',
+          headline: 'Freezing conditions today.',
+          body: `Feels like ${Math.round(feelsLike)}°C. Extreme cold is a significant VOC trigger — dress in warm layers and cover your extremities.`,
+          basis: src,
+        };
+      }
+
+      if (condition === 'Snow') {
+        return {
+          label: 'WEATHER ALERT',
+          headline: 'Snow in the forecast.',
+          body: 'Cold and wet conditions increase vasoconstriction risk. Stay warm and dry, and limit outdoor exposure.',
+          basis: src,
+        };
+      }
+
+      if (feelsLike < 10) {
+        return {
+          label: "TODAY'S FORECAST",
+          headline: 'Cold outside — layer up.',
+          body: `Feels like ${Math.round(feelsLike)}°C. Cold is a common SCD trigger. An extra layer and warm drinks will help keep your circulation steady.`,
+          basis: src,
+        };
+      }
+
+      if (condition === 'Thunderstorm') {
+        return {
+          label: "TODAY'S FORECAST",
+          headline: 'Storms bring pressure changes.',
+          body: 'Barometric pressure shifts can trigger pain episodes. Take it steady and keep your medications close.',
+          basis: src,
+        };
+      }
+
+      if (temp > 35) {
+        return {
+          label: 'WEATHER ALERT',
+          headline: 'Extreme heat today.',
+          body: `${Math.round(temp)}°C outside. Heat and dehydration sharply raise crisis risk. Stay indoors, drink frequently, and avoid direct sun.`,
+          basis: src,
+        };
+      }
+
+      if (temp > 30 && humidity > 70) {
+        return {
+          label: "TODAY'S FORECAST",
+          headline: 'Hot and humid — hydrate early.',
+          body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least 8 glasses today.`,
+          basis: src,
+        };
+      }
+    }
+
+    // Fallback — no weather data or no significant condition
     const tip = SCD_TIPS[today.getDay() % SCD_TIPS.length];
     return {
       label: "TODAY'S FORECAST",
@@ -112,7 +182,7 @@ export function getDynamicMessage({
       label: "WATCH OUT",
       headline: "High pain with low hydration.",
       body: `Pain at ${pain}/10 with only ${hydration} of 8 glasses logged. This combination raises your crisis risk. Rest, hydrate, and contact your care team if pain worsens.`,
-      basis: "Based on today's log",
+      basis: weatherBasis ? `Based on today's log · ${weatherBasis}` : "Based on today's log",
     };
   }
 
@@ -122,7 +192,7 @@ export function getDynamicMessage({
       label: "TODAY'S FORECAST",
       headline: "Hydration needs attention.",
       body: `You've logged ${hydration} of your 8 daily glasses. Dehydration is one of the most common triggers for a sickle cell crisis — keep a bottle close.`,
-      basis: "Based on today's log",
+      basis: weatherBasis ? `Based on today's log · ${weatherBasis}` : "Based on today's log",
     };
   }
 

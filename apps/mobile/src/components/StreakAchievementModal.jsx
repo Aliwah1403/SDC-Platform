@@ -1,5 +1,12 @@
 import { useMemo, useEffect } from "react";
-import { View, Text, TouchableOpacity, Modal, Dimensions, StatusBar } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  Dimensions,
+  StatusBar,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { Sparkles } from "lucide-react-native";
@@ -24,21 +31,28 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 // ── Badge images ─────────────────────────────────────────────────────────────
 
 const BADGE_MAP = {
-  "streak-1":      require("../../assets/images/badges/first-streak.svg"),
-  "streak-3":      require("../../assets/images/badges/on-track.svg"),
-  "streak-7":      require("../../assets/images/badges/habit-builder.png"),
-  "streak-14":     require("../../assets/images/badges/fortnight-fighter.svg"),
-  "streak-30":     require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60":     require("../../assets/images/badges/pattern-seeker.svg"),
-  "days-1":        require("../../assets/images/badges/first-streak.svg"),
-  "days-5":        require("../../assets/images/badges/getting-started.svg"),
-  "hydration-7":   require("../../assets/images/badges/hydration-junkie.png"),
+  "streak-1": require("../../assets/images/badges/first-streak.svg"),
+  "streak-3": require("../../assets/images/badges/on-track.svg"),
+  "streak-7": require("../../assets/images/badges/habit-builder.png"),
+  "streak-14": require("../../assets/images/badges/fortnight-fighter.svg"),
+  "streak-30": require("../../assets/images/badges/monthly-monster.svg"),
+  "streak-60": require("../../assets/images/badges/pattern-seeker.svg"),
+  "days-1": require("../../assets/images/badges/first-streak.svg"),
+  "days-5": require("../../assets/images/badges/getting-started.svg"),
+  "hydration-7": require("../../assets/images/badges/hydration-junkie.png"),
   // TODO: add images for symptoms-10, symptoms-25, days-10, days-25, days-50, days-100
 };
 
 // ── Confetti ──────────────────────────────────────────────────────────────────
 
-const CONFETTI_COLORS = ["#A9334D", "#F0531C", "#DC2626", "#F8E9E7", "#781D11", "#D09F9A"];
+const CONFETTI_COLORS = [
+  "#A9334D",
+  "#F0531C",
+  "#DC2626",
+  "#F8E9E7",
+  "#781D11",
+  "#D09F9A",
+];
 
 const CONFETTI_PIECES = Array.from({ length: 36 }, (_, i) => ({
   key: i,
@@ -55,7 +69,11 @@ function ConfettiPiece({ x, color, size, delay, rotation, duration, isRect }) {
   return (
     <MotiView
       from={{ translateY: -30, opacity: 1, rotate: `${rotation}deg` }}
-      animate={{ translateY: SCREEN_H * 0.65, opacity: 0, rotate: `${rotation + 270}deg` }}
+      animate={{
+        translateY: SCREEN_H * 0.65,
+        opacity: 0,
+        rotate: `${rotation + 270}deg`,
+      }}
       transition={{ type: "timing", duration, delay }}
       style={{
         position: "absolute",
@@ -89,10 +107,23 @@ function WeekStrip({ healthData }) {
   }, [healthData]);
 
   return (
-    <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 24 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 6,
+        marginBottom: 24,
+      }}
+    >
       {days.map((day, idx) => (
         <View key={idx} style={{ alignItems: "center", gap: 5 }}>
-          <Text style={{ fontSize: 10, color: "#9CA3AF", fontFamily: fonts.semibold }}>
+          <Text
+            style={{
+              fontSize: 10,
+              color: "#9CA3AF",
+              fontFamily: fonts.semibold,
+            }}
+          >
             {day.letter}
           </Text>
           <View
@@ -100,7 +131,7 @@ function WeekStrip({ healthData }) {
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: day.hasData ? "#09332C" : "transparent",
+              backgroundColor: day.hasData ? "#A9334D" : "transparent",
               borderWidth: day.hasData ? 0 : 1.5,
               borderColor: "#E5E0DB",
               alignItems: "center",
@@ -108,7 +139,14 @@ function WeekStrip({ healthData }) {
             }}
           >
             {day.hasData && (
-              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: "#F8E9E7" }} />
+              <View
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: "#F8E9E7",
+                }}
+              />
             )}
           </View>
         </View>
@@ -119,7 +157,12 @@ function WeekStrip({ healthData }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function StreakAchievementModal({ visible, milestone, healthData, onClaim }) {
+export default function StreakAchievementModal({
+  visible,
+  milestone,
+  healthData,
+  onClaim,
+}) {
   const insets = useSafeAreaInsets();
 
   // Badge spring entrance
@@ -127,8 +170,10 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
   const badgeOpacity = useSharedValue(0);
 
   // 3D tilt — exact sensor setup from the linear-sensors demo
-  const deviceRotation = useAnimatedSensor(SensorType.ROTATION, { interval: 20 });
-  const deviceGravity  = useAnimatedSensor(SensorType.GRAVITY,  { interval: 20 });
+  const deviceRotation = useAnimatedSensor(SensorType.ROTATION, {
+    interval: 20,
+  });
+  const deviceGravity = useAnimatedSensor(SensorType.GRAVITY, { interval: 20 });
 
   const rotateY = useDerivedValue(() =>
     interpolate(
@@ -136,7 +181,7 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
       [-1, 0, 1],
       [Math.PI / 8, 0, -Math.PI / 8],
       Extrapolation.CLAMP,
-    )
+    ),
   );
 
   const rotateX = useDerivedValue(() =>
@@ -145,7 +190,7 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
       [-10, -6, -1],
       [-Math.PI / 8, 0, Math.PI / 8],
       Extrapolation.CLAMP,
-    )
+    ),
   );
 
   // Skia Group transform — SharedValue of transforms array
@@ -157,10 +202,20 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
 
   // Shadow shifts to simulate a fixed light source
   const shadowDx = useDerivedValue(() =>
-    interpolate(rotateY.value, [-Math.PI / 8, 0, Math.PI / 8], [10, 0, -10], Extrapolation.CLAMP)
+    interpolate(
+      rotateY.value,
+      [-Math.PI / 8, 0, Math.PI / 8],
+      [10, 0, -10],
+      Extrapolation.CLAMP,
+    ),
   );
   const shadowDy = useDerivedValue(() =>
-    interpolate(rotateX.value, [-Math.PI / 8, 0, Math.PI / 8], [7, 0, 10], Extrapolation.CLAMP)
+    interpolate(
+      rotateX.value,
+      [-Math.PI / 8, 0, Math.PI / 8],
+      [7, 0, 10],
+      Extrapolation.CLAMP,
+    ),
   );
 
   const badgeEntranceStyle = useAnimatedStyle(() => ({
@@ -178,7 +233,10 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
 
   useEffect(() => {
     if (visible) {
-      badgeScale.value = withDelay(250, withSpring(1, { damping: 11, stiffness: 170 }));
+      badgeScale.value = withDelay(
+        250,
+        withSpring(1, { damping: 11, stiffness: 170 }),
+      );
       badgeOpacity.value = withDelay(200, withSpring(1, { damping: 20 }));
     } else {
       badgeScale.value = 0.5;
@@ -200,7 +258,11 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
       statusBarTranslucent
       onRequestClose={onClaim}
     >
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+      <StatusBar
+        barStyle="light-content"
+        translucent
+        backgroundColor="transparent"
+      />
 
       <View style={{ flex: 1, backgroundColor: "#781D11" }}>
         {/* ── Gradient hero section ── */}
@@ -211,12 +273,54 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
           {/* Decorative circles */}
-          <View style={{ position: "absolute", width: 300, height: 300, borderRadius: 150, borderWidth: 1, borderColor: "rgba(248,233,231,0.08)", top: insets.top + 20, right: -80 }} />
-          <View style={{ position: "absolute", width: 200, height: 200, borderRadius: 100, borderWidth: 1, borderColor: "rgba(248,233,231,0.06)", bottom: 40, left: -60 }} />
-          <View style={{ position: "absolute", width: 120, height: 120, borderRadius: 60, backgroundColor: "rgba(248,233,231,0.04)", top: insets.top + 60, left: 30 }} />
+          <View
+            style={{
+              position: "absolute",
+              width: 300,
+              height: 300,
+              borderRadius: 150,
+              borderWidth: 1,
+              borderColor: "rgba(248,233,231,0.08)",
+              top: insets.top + 20,
+              right: -80,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              width: 200,
+              height: 200,
+              borderRadius: 100,
+              borderWidth: 1,
+              borderColor: "rgba(248,233,231,0.06)",
+              bottom: 40,
+              left: -60,
+            }}
+          />
+          <View
+            style={{
+              position: "absolute",
+              width: 120,
+              height: 120,
+              borderRadius: 60,
+              backgroundColor: "rgba(248,233,231,0.04)",
+              top: insets.top + 60,
+              left: 30,
+            }}
+          />
 
           {/* Confetti — only in hero area */}
-          <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden" }} pointerEvents="none">
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              overflow: "hidden",
+            }}
+            pointerEvents="none"
+          >
             {CONFETTI_PIECES.map(({ key, ...p }) => (
               <ConfettiPiece key={key} {...p} />
             ))}
@@ -239,29 +343,81 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
             }}
           >
             <Sparkles size={13} color="#F8E9E7" strokeWidth={2} />
-            <Text style={{ fontFamily: fonts.bold, fontSize: 12, color: "#F8E9E7", letterSpacing: 1.5, textTransform: "uppercase" }}>
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 12,
+                color: "#F8E9E7",
+                letterSpacing: 1.5,
+                textTransform: "uppercase",
+              }}
+            >
               Achievement Unlocked
             </Text>
           </MotiView>
 
           {/* Badge — Skia shadow circle behind, expo-image badge on top, both tilt together */}
-          <Animated.View style={[{ alignItems: "center", justifyContent: "center" }, badgeEntranceStyle]}>
+          <Animated.View
+            style={[
+              { alignItems: "center", justifyContent: "center" },
+              badgeEntranceStyle,
+            ]}
+          >
             {/* Skia Canvas: dynamic shadow that shifts with phone tilt */}
             <Canvas style={{ position: "absolute", width: 320, height: 320 }}>
               <Group origin={vec(160, 160)} transform={rTransform}>
-                <Circle cx={160} cy={160} r={145} color="rgba(248,233,231,0.07)">
-                  <Shadow dx={shadowDx} dy={shadowDy} blur={18} color="rgba(0,0,0,0.65)" />
-                  <Shadow dx={0} dy={0} blur={28} color="rgba(240,83,28,0.18)" inner />
+                <Circle
+                  cx={160}
+                  cy={160}
+                  r={145}
+                  color="rgba(248,233,231,0.07)"
+                >
+                  <Shadow
+                    dx={shadowDx}
+                    dy={shadowDy}
+                    blur={18}
+                    color="rgba(0,0,0,0.65)"
+                  />
+                  <Shadow
+                    dx={0}
+                    dy={0}
+                    blur={28}
+                    color="rgba(240,83,28,0.18)"
+                    inner
+                  />
                 </Circle>
               </Group>
             </Canvas>
             {/* Badge image with matching CSS 3D tilt */}
             <Animated.View style={badgeTiltStyle}>
               {badgeSource ? (
-                <Image source={badgeSource} style={{ width: 260, height: 260 }} contentFit="contain" />
+                <Image
+                  source={badgeSource}
+                  style={{ width: 260, height: 260 }}
+                  contentFit="contain"
+                />
               ) : (
-                <View style={{ width: 260, height: 260, borderRadius: 130, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center", borderWidth: 3, borderColor: "rgba(248,233,231,0.3)" }}>
-                  <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#F8E9E7" }}>{milestone.milestoneId}</Text>
+                <View
+                  style={{
+                    width: 260,
+                    height: 260,
+                    borderRadius: 130,
+                    backgroundColor: "#A9334D",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 3,
+                    borderColor: "rgba(248,233,231,0.3)",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.bold,
+                      fontSize: 13,
+                      color: "#F8E9E7",
+                    }}
+                  >
+                    {milestone.milestoneId}
+                  </Text>
                 </View>
               )}
             </Animated.View>
@@ -274,7 +430,14 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
             transition={{ type: "timing", duration: 500, delay: 900 }}
             style={{ marginTop: 16 }}
           >
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "rgba(248,233,231,0.45)", letterSpacing: 0.5 }}>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 12,
+                color: "rgba(248,233,231,0.45)",
+                letterSpacing: 0.5,
+              }}
+            >
               Tilt your phone
             </Text>
           </MotiView>
@@ -284,7 +447,12 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
         <MotiView
           from={{ translateY: 40, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
-          transition={{ type: "spring", damping: 20, stiffness: 180, delay: 150 }}
+          transition={{
+            type: "spring",
+            damping: 20,
+            stiffness: 180,
+            delay: 150,
+          }}
           style={{
             backgroundColor: "#F8F4F0",
             borderTopLeftRadius: 32,
@@ -296,12 +464,30 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
           }}
         >
           {/* Title */}
-          <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: "#09332C", textAlign: "center", marginBottom: 8, letterSpacing: -0.5 }}>
+          <Text
+            style={{
+              fontFamily: fonts.extrabold,
+              fontSize: 30,
+              color: "#09332C",
+              textAlign: "center",
+              marginBottom: 8,
+              letterSpacing: -0.5,
+            }}
+          >
             {milestone.title}
           </Text>
 
           {/* Subtitle */}
-          <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: "#9CA3AF", textAlign: "center", lineHeight: 22, marginBottom: 20 }}>
+          <Text
+            style={{
+              fontFamily: fonts.regular,
+              fontSize: 15,
+              color: "#9CA3AF",
+              textAlign: "center",
+              lineHeight: 22,
+              marginBottom: 20,
+            }}
+          >
             {milestone.subtitle}
           </Text>
 
@@ -313,13 +499,20 @@ export default function StreakAchievementModal({ visible, milestone, healthData,
             onPress={onClaim}
             activeOpacity={0.88}
             style={{
-              backgroundColor: "#F0531C",
+              backgroundColor: "#A9334D",
               borderRadius: 18,
               paddingVertical: 17,
               alignItems: "center",
             }}
           >
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#fff", letterSpacing: 0.3 }}>
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 17,
+                color: "#fff",
+                letterSpacing: 0.3,
+              }}
+            >
               Claim Reward
             </Text>
           </TouchableOpacity>

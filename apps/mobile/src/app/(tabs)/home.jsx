@@ -158,6 +158,7 @@ export default function HomeScreen() {
     lostStreakVisible,
     setLostStreakVisible,
     streakLost,
+    weather,
   } = useHomeData();
 
   const pendingMilestone = useAppStore((s) => s.pendingMilestone);
@@ -250,6 +251,7 @@ export default function HomeScreen() {
     selectedDateData,
     healthData,
     alertState,
+    weather,
   });
   const gradientColors = getGradientColors(hasLoggedData);
 

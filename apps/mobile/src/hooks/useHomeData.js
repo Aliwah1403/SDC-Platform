@@ -4,9 +4,12 @@ import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useStreakQuery, useMissedDay, useStreakLost } from "@/hooks/queries/useStreakQuery";
 import { useAppStore } from "@/store/appStore";
 import { toLocalDateStr } from "@/utils/dateUtils";
+import { useWeatherData } from "@/hooks/useWeatherData";
 
 export function useHomeData() {
   const { data: profile } = useProfileQuery();
+  const locationEnabled = profile?.locationEnabled ?? false;
+  const { weather } = useWeatherData(locationEnabled);
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: streak } = useStreakQuery();
   const missedDay = useMissedDay();
@@ -60,5 +63,6 @@ export function useHomeData() {
     lostStreakVisible,
     setLostStreakVisible,
     streakLost,
+    weather,
   };
 }
