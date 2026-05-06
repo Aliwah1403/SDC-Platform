@@ -296,7 +296,7 @@ export default function HomeScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
-      <StatusBar style="light" />
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       <Animated.View
         style={[

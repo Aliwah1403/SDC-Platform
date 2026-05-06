@@ -6,8 +6,10 @@ import Svg, {
   Rect,
   Circle,
 } from "react-native-svg";
+import { useTheme } from "@/hooks/useTheme";
 
 export function BadgeHeroGradient({ width, height }) {
+  const t = useTheme();
   const blobTRcx = width - 104;
   const blobTRcy = 104;
   const blobTRr = 144;
@@ -32,9 +34,9 @@ export function BadgeHeroGradient({ width, height }) {
           x2={width * 0.3}
           y2={height}
         >
-          <Stop offset="0" stopColor="#F2EEE8" stopOpacity="1" />
-          <Stop offset="0.6" stopColor="#EDE0DA" stopOpacity="1" />
-          <Stop offset="1" stopColor="#E2CCC6" stopOpacity="1" />
+          <Stop offset="0" stopColor={t.isDark ? "#1A0F0F" : "#F2EEE8"} stopOpacity="1" />
+          <Stop offset="0.6" stopColor={t.isDark ? "#221219" : "#EDE0DA"} stopOpacity="1" />
+          <Stop offset="1" stopColor={t.isDark ? "#1A1020" : "#E2CCC6"} stopOpacity="1" />
         </SvgLinear>
 
         <RadialGradient

@@ -10,11 +10,13 @@ import { useRouter } from "expo-router";
 import { X, Gift, Wrench, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
+import { useTheme } from "@/hooks/useTheme";
 
 const { height } = Dimensions.get("window");
 
 export default function StreakRepairsScreen() {
   const router = useRouter();
+  const t = useTheme();
   const { data: streak } = useStreakQuery();
 
   const daysTarget = streak?.daysUntilNextRepair ?? 30;
@@ -31,7 +33,7 @@ export default function StreakRepairsScreen() {
   const progressPercentage = Math.min((repairProgress / daysTarget) * 100, 100);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <View
         style={{
@@ -43,7 +45,7 @@ export default function StreakRepairsScreen() {
         }}
       >
         <View style={{ width: 40 }} />
-        <Text style={{ fontSize: 22, fontWeight: "700", color: "#1a1a1a" }}>
+        <Text style={{ fontSize: 22, fontWeight: "700", color: t.text }}>
           Repair Details
         </Text>
         <TouchableOpacity
@@ -52,12 +54,12 @@ export default function StreakRepairsScreen() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: "#F3F4F6",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <X size={24} color="#666" />
+          <X size={24} color={t.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -102,7 +104,7 @@ export default function StreakRepairsScreen() {
           style={{
             fontSize: 32,
             fontWeight: "800",
-            color: "#1a1a1a",
+            color: t.text,
             textAlign: "center",
             marginBottom: 8,
           }}
@@ -113,7 +115,7 @@ export default function StreakRepairsScreen() {
         <Text
           style={{
             fontSize: 16,
-            color: "#666",
+            color: t.textSecondary,
             textAlign: "center",
             marginBottom: 32,
           }}
@@ -124,7 +126,7 @@ export default function StreakRepairsScreen() {
         {/* Stats Cards */}
         <View
           style={{
-            backgroundColor: "#F9FAFB",
+            backgroundColor: t.surface,
             borderRadius: 20,
             padding: 20,
             flexDirection: "row",
@@ -160,12 +162,12 @@ export default function StreakRepairsScreen() {
                 <CheckCircle2 size={18} color="#059669" />
               </View>
               <Text
-                style={{ fontSize: 36, fontWeight: "800", color: "#1a1a1a" }}
+                style={{ fontSize: 36, fontWeight: "800", color: t.text }}
               >
                 {repairs.available}
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: "#999", fontWeight: "500" }}>
+            <Text style={{ fontSize: 13, color: t.textSecondary, fontWeight: "500" }}>
               available
             </Text>
           </View>
@@ -193,12 +195,12 @@ export default function StreakRepairsScreen() {
                 <AlertTriangle size={18} color="#F59E0B" />
               </View>
               <Text
-                style={{ fontSize: 36, fontWeight: "800", color: "#1a1a1a" }}
+                style={{ fontSize: 36, fontWeight: "800", color: t.text }}
               >
                 {repairs.totalUsed}
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: "#999", fontWeight: "500" }}>
+            <Text style={{ fontSize: 13, color: t.textSecondary, fontWeight: "500" }}>
               total used
             </Text>
           </View>
@@ -226,12 +228,12 @@ export default function StreakRepairsScreen() {
                 <Sparkles size={18} color="#A9334D" />
               </View>
               <Text
-                style={{ fontSize: 36, fontWeight: "800", color: "#1a1a1a" }}
+                style={{ fontSize: 36, fontWeight: "800", color: t.text }}
               >
                 {repairs.totalEarned}
               </Text>
             </View>
-            <Text style={{ fontSize: 13, color: "#999", fontWeight: "500" }}>
+            <Text style={{ fontSize: 13, color: t.textSecondary, fontWeight: "500" }}>
               total earned
             </Text>
           </View>
@@ -240,7 +242,7 @@ export default function StreakRepairsScreen() {
         {/* Next Repair Progress */}
         <View
           style={{
-            backgroundColor: "#F9FAFB",
+            backgroundColor: t.surface,
             borderRadius: 20,
             padding: 20,
             marginBottom: 24,
@@ -259,10 +261,10 @@ export default function StreakRepairsScreen() {
               marginBottom: 16,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: "700", color: "#1a1a1a" }}>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
               Next Repair Progress
             </Text>
-            <Text style={{ fontSize: 16, fontWeight: "600", color: "#999" }}>
+            <Text style={{ fontSize: 16, fontWeight: "600", color: t.textSecondary }}>
               {repairs.nextRepairProgress}/{repairs.daysUntilNext} days
             </Text>
           </View>
@@ -270,7 +272,7 @@ export default function StreakRepairsScreen() {
           <View
             style={{
               height: 12,
-              backgroundColor: "#E5E7EB",
+              backgroundColor: t.border,
               borderRadius: 6,
               overflow: "hidden",
               marginBottom: 12,
@@ -286,7 +288,7 @@ export default function StreakRepairsScreen() {
             />
           </View>
 
-          <Text style={{ fontSize: 14, color: "#999" }}>
+          <Text style={{ fontSize: 14, color: t.textSecondary }}>
             {repairs.daysUntilNext - repairs.nextRepairProgress} days left to
             earn next repair
           </Text>
@@ -295,7 +297,7 @@ export default function StreakRepairsScreen() {
         {/* How Repairs Work */}
         <View
           style={{
-            backgroundColor: "#F9FAFB",
+            backgroundColor: t.surface,
             borderRadius: 20,
             padding: 20,
             shadowColor: "#000",
@@ -309,7 +311,7 @@ export default function StreakRepairsScreen() {
             style={{
               fontSize: 20,
               fontWeight: "700",
-              color: "#1a1a1a",
+              color: t.text,
               marginBottom: 20,
             }}
           >
@@ -340,7 +342,7 @@ export default function StreakRepairsScreen() {
               style={{
                 flex: 1,
                 fontSize: 15,
-                color: "#1a1a1a",
+                color: t.text,
                 lineHeight: 22,
                 paddingTop: 4,
               }}
@@ -373,7 +375,7 @@ export default function StreakRepairsScreen() {
               style={{
                 flex: 1,
                 fontSize: 15,
-                color: "#1a1a1a",
+                color: t.text,
                 lineHeight: 22,
                 paddingTop: 4,
               }}
@@ -400,7 +402,7 @@ export default function StreakRepairsScreen() {
               style={{
                 flex: 1,
                 fontSize: 15,
-                color: "#1a1a1a",
+                color: t.text,
                 lineHeight: 22,
                 paddingTop: 4,
               }}

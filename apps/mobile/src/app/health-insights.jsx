@@ -11,6 +11,7 @@ import { HydrationChart } from "@/components/TrendsInsights/HydrationChart";
 import { MoodChart } from "@/components/TrendsInsights/MoodChart";
 import { CrisisFreePeriods } from "@/components/TrendsInsights/CrisisFreePeriods";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_PADDING = 20;
@@ -164,6 +165,7 @@ function buildInsights(healthData, firstName) {
 // ─── InsightCard ──────────────────────────────────────────────────────────────
 
 function InsightCard({ insight }) {
+  const t = useTheme();
   const { isPositive, pctChange, hasHistory } = insight;
   const showBadge = pctChange !== null;
   const trendColor = isPositive ? "#059669" : "#DC2626";
@@ -176,7 +178,7 @@ function InsightCard({ insight }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 24,
         padding: CARD_PADDING,
         marginBottom: 20,
@@ -192,7 +194,7 @@ function InsightCard({ insight }) {
         style={{
           fontFamily: fonts.bold,
           fontSize: 22,
-          color: "#111827",
+          color: t.text,
           marginBottom: 10,
         }}
       >
@@ -204,7 +206,7 @@ function InsightCard({ insight }) {
         style={{
           fontFamily: fonts.regular,
           fontSize: 15,
-          color: "#4B5563",
+          color: t.textSecondary,
           lineHeight: 23,
           marginBottom: 20,
         }}
@@ -217,7 +219,7 @@ function InsightCard({ insight }) {
         style={{
           fontFamily: fonts.semibold,
           fontSize: 11,
-          color: "#9CA3AF",
+          color: t.textSecondary,
           textTransform: "uppercase",
           letterSpacing: 1,
           marginBottom: 10,
@@ -250,7 +252,7 @@ function InsightCard({ insight }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               marginTop: 4,
             }}
           >
@@ -263,7 +265,7 @@ function InsightCard({ insight }) {
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 42,
-              color: "#1F2937",
+              color: t.text,
               lineHeight: 46,
               opacity: hasHistory ? 1 : 0.25,
             }}
@@ -274,7 +276,7 @@ function InsightCard({ insight }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               marginTop: 4,
             }}
           >
@@ -318,8 +320,8 @@ function InsightCard({ insight }) {
           noOfSections={4}
           maxValue={insight.maxValue}
           yAxisColor="transparent"
-          xAxisColor="#F3F4F6"
-          rulesColor="#F9FAFB"
+          xAxisColor={t.border}
+          rulesColor={t.divider}
           rulesType="solid"
           initialSpacing={spacing}
           yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
@@ -336,6 +338,7 @@ function InsightCard({ insight }) {
 
 export default function HealthInsightsScreen() {
   const router = useRouter();
+  const t = useTheme();
   const { auth } = useAuthStore();
   const { data: healthData = [] } = useHealthDataQuery();
   const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
@@ -347,7 +350,7 @@ export default function HealthInsightsScreen() {
   const graphWidth = Dimensions.get("window").width - 80;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <View
         style={{
@@ -359,7 +362,7 @@ export default function HealthInsightsScreen() {
           paddingBottom: 16,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 30, color: "#111827" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 30, color: t.text }}>
           Insights
         </Text>
         <TouchableOpacity
@@ -368,12 +371,12 @@ export default function HealthInsightsScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F3F4F6",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <X size={18} color="#374151" />
+          <X size={18} color={t.text} />
         </TouchableOpacity>
       </View>
 
@@ -390,7 +393,7 @@ export default function HealthInsightsScreen() {
           style={{
             fontFamily: fonts.bold,
             fontSize: 22,
-            color: "#111827",
+            color: t.text,
             marginTop: 8,
             marginBottom: 16,
           }}
@@ -423,7 +426,7 @@ export default function HealthInsightsScreen() {
         <TouchableOpacity
           onPress={() => router.back()}
           style={{
-            backgroundColor: "#FFFFFF",
+            backgroundColor: t.surface,
             borderRadius: 100,
             paddingVertical: 16,
             alignItems: "center",
@@ -436,7 +439,7 @@ export default function HealthInsightsScreen() {
             marginBottom: 16,
           }}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#111827" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
             Done
           </Text>
         </TouchableOpacity>
