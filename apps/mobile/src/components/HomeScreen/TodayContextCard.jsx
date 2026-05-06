@@ -1,5 +1,6 @@
 import { View, Text } from "react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 function computeContext(healthData, healthStreak, currentUser) {
   const today = new Date();
@@ -89,6 +90,7 @@ const SEVERITY_STYLE = {
 };
 
 export function TodayContextCard({ healthData, healthStreak, currentUser }) {
+  const t = useTheme();
   const ctx = computeContext(healthData, healthStreak, currentUser);
   const s = SEVERITY_STYLE[ctx.severity];
 
@@ -109,7 +111,7 @@ export function TodayContextCard({ healthData, healthStreak, currentUser }) {
         style={{
           fontFamily: fonts.regular,
           fontSize: 14,
-          color: "#6B7280",
+          color: t.textSecondary,
           lineHeight: 20,
         }}
       >

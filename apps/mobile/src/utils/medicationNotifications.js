@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import * as Notifications from "expo-notifications";
 
 function parseTimeToHourMinute(timeStr) {
   const match = timeStr?.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -6,8 +6,8 @@ function parseTimeToHourMinute(timeStr) {
   let hour = parseInt(match[1], 10);
   const minute = parseInt(match[2], 10);
   const period = match[3].toUpperCase();
-  if (period === 'PM' && hour !== 12) hour += 12;
-  if (period === 'AM' && hour === 12) hour = 0;
+  if (period === "PM" && hour !== 12) hour += 12;
+  if (period === "AM" && hour === 12) hour = 0;
   return { hour, minute };
 }
 
@@ -43,16 +43,19 @@ export async function scheduleMedicationNotifications(med) {
   await cancelMedicationNotifications(med.id);
 
   // "As needed" meds have no fixed schedule
-  if (!med.time || med.frequency === 'As needed') return;
+  if (!med.time || med.frequency === "As needed") return;
 
-  const isWeekly = med.frequency === 'Weekly';
+  const isWeekly = med.frequency === "Weekly";
   // Sunday = 1 in expo-notifications weekday convention
   const fallbackWeekday = new Date().getDay() + 1;
   const baseWeekday =
     Number.isInteger(med.weekday) && med.weekday >= 1 && med.weekday <= 7
       ? med.weekday
       : fallbackWeekday;
-  const times = med.time.split(',').map((t) => t.trim()).filter(Boolean);
+  const times = med.time
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
 
   for (const timeStr of times) {
     const parsed = parseTimeToHourMinute(timeStr);
@@ -67,8 +70,8 @@ export async function scheduleMedicationNotifications(med) {
       identifier: `med-${med.id}-${timeStr}-dose`,
       content: {
         title: `Time for ${med.name}`,
-        body: med.dosage ? `Take your ${med.dosage} dose` : 'Take your dose',
-        data: { type: 'medication', medicationId: med.id },
+        body: med.dosage ? `Take your ${med.dosage} dose` : "Take your dose",
+        data: { type: "medication", medicationId: med.id },
         sound: true,
       },
       trigger,
@@ -77,15 +80,16 @@ export async function scheduleMedicationNotifications(med) {
     const reminders = Array.isArray(med.reminders) ? med.reminders : [];
 
     // "Remind before" notifications
-    for (const r of reminders.filter((r) => r.direction === 'before')) {
+    for (const r of reminders.filter((r) => r.direction === "before")) {
       const t = offsetTime(parsed, -r.offsetMinutes);
-      const reminderWeekday = ((baseWeekday - 1 + t.dayShift) % 7 + 7) % 7 + 1;
+      const reminderWeekday =
+        ((((baseWeekday - 1 + t.dayShift) % 7) + 7) % 7) + 1;
       await Notifications.scheduleNotificationAsync({
         identifier: `med-${med.id}-${timeStr}-before-${r.offsetMinutes}`,
         content: {
           title: `${med.name} in ${r.offsetMinutes} min`,
           body: `A gentle reminder: your dose is soon.`,
-          data: { type: 'medication', medicationId: med.id },
+          data: { type: "medication", medicationId: med.id },
           sound: true,
         },
         trigger: isWeekly
@@ -95,15 +99,16 @@ export async function scheduleMedicationNotifications(med) {
     }
 
     // "Remind if missed" notifications
-    for (const r of reminders.filter((r) => r.direction === 'after')) {
+    for (const r of reminders.filter((r) => r.direction === "after")) {
       const t = offsetTime(parsed, r.offsetMinutes);
-      const reminderWeekday = ((baseWeekday - 1 + t.dayShift) % 7 + 7) % 7 + 1;
+      const reminderWeekday =
+        ((((baseWeekday - 1 + t.dayShift) % 7) + 7) % 7) + 1;
       await Notifications.scheduleNotificationAsync({
         identifier: `med-${med.id}-${timeStr}-after-${r.offsetMinutes}`,
         content: {
           title: `Did you take ${med.name}?`,
-          body: `Just checking in on your dose.`,
-          data: { type: 'medication', medicationId: med.id },
+          body: `Just checking in on your ${timeStr} dose.`,
+          data: { type: "medication", medicationId: med.id },
           sound: true,
         },
         trigger: isWeekly
@@ -119,5 +124,7 @@ export async function cancelMedicationNotifications(medId) {
   const toCancel = scheduled
     .filter((n) => n.content.data?.medicationId === medId)
     .map((n) => n.identifier);
-  await Promise.all(toCancel.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+  await Promise.all(
+    toCancel.map((id) => Notifications.cancelScheduledNotificationAsync(id)),
+  );
 }

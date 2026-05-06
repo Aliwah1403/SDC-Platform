@@ -40,6 +40,7 @@ import {
   unlinkProvider,
 } from "@/utils/auth/supabase";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 // ─── brand icons ─────────────────────────────────────────────────────────────
 
@@ -210,6 +211,7 @@ function Row({
 export default function SecurityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const t = useTheme();
   const { auth } = useAuthStore();
   const user = auth?.user;
 
@@ -397,8 +399,8 @@ export default function SecurityScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* ── Header ── */}
       <View

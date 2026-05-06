@@ -20,6 +20,7 @@ import { BadgeHeroGradient } from "./BadgeHeroGradient";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/hooks/useTheme";
 
 const MILESTONE_ICONS = {
   days: Trophy,
@@ -76,12 +77,12 @@ const RARITY_SEGMENTS = {
 };
 
 export default function MilestoneModal({ visible, milestone, onClose }) {
+  const t = useTheme();
   const { width: SCREEN_W, height: SCREEN_H } = useWindowDimensions();
   const CONTENT_H = SCREEN_H * 0.9;
   const HERO_H = CONTENT_H * 0.44;
 
   const insets = useSafeAreaInsets();
-
 
   if (!milestone) return null;
 
@@ -106,7 +107,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
         />
 
         {/* Main content card */}
-        <View style={[s.card, { height: CONTENT_H }]}>
+        <View style={[s.card, { height: CONTENT_H, backgroundColor: t.surface }]}>
           {/* ── HERO ──────────────────────────────────────────────────────── */}
           <View style={[s.hero, { height: HERO_H }]}>
             {/* SVG background — true radial blobs + 160° linear gradient */}
@@ -128,22 +129,22 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
           </View>
 
           {/* ── SHEET ─────────────────────────────────────────────────────── */}
-          <View style={[s.sheet, { paddingBottom: insets.bottom + 32 }]}>
+          <View style={[s.sheet, { paddingBottom: insets.bottom + 32, backgroundColor: t.surface }]}>
             {/* Handle */}
-            <View style={s.handle} />
+            <View style={[s.handle, { backgroundColor: t.border }]} />
 
             {/* Inner content */}
             <View style={s.sheetContent}>
               {/* Title */}
-              <Text style={s.title}>{milestone.name}</Text>
+              <Text style={[s.title, { color: t.text }]}>{milestone.name}</Text>
 
               {/* Description */}
-              <Text style={s.description}>{milestone.description}</Text>
+              <Text style={[s.description, { color: t.textSecondary }]}>{milestone.description}</Text>
 
               {/* Rarity bar */}
               <View style={s.raritySection}>
                 <View style={s.rarityRow}>
-                  <Text style={s.rarityLabel}>Rarity</Text>
+                  <Text style={[s.rarityLabel, { color: t.textSecondary }]}>Rarity</Text>
                   <Text style={s.rarityValue}>{milestone.rarity}</Text>
                 </View>
                 <View style={s.rarityBar}>
@@ -154,7 +155,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                         s.raritySegment,
                         {
                           backgroundColor:
-                            n <= segments ? "#F0531C" : "#F0E4E1",
+                            n <= segments ? "#F0531C" : t.border,
                         },
                       ]}
                     />
@@ -163,7 +164,7 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
               </View>
 
               {/* Requirement */}
-              <View style={s.requirementCard}>
+              <View style={[s.requirementCard, { backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0", borderColor: t.border }]}>
                 <View
                   style={[
                     s.requirementIconBox,
@@ -173,8 +174,8 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                   <Icon size={20} color={colors.primary} strokeWidth={2} />
                 </View>
                 <View style={s.requirementText}>
-                  <Text style={s.requirementLabel}>Requirement met</Text>
-                  <Text style={s.requirementValue}>
+                  <Text style={[s.requirementLabel, { color: t.textSecondary }]}>Requirement met</Text>
+                  <Text style={[s.requirementValue, { color: t.text }]}>
                     {milestone.requirement}
                   </Text>
                 </View>
@@ -185,18 +186,18 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
 
               {/* Bottom: unlock date or progress */}
               {milestone.unlocked && milestone.unlockedDate ? (
-                <View style={s.unlockRow}>
+                <View style={[s.unlockRow, { borderTopColor: t.border }]}>
                   <View style={s.unlockDot} />
-                  <Text style={s.unlockLabel}>Unlocked</Text>
-                  <Text style={s.unlockDate}>{milestone.unlockedDate}</Text>
+                  <Text style={[s.unlockLabel, { color: t.textSecondary }]}>Unlocked</Text>
+                  <Text style={[s.unlockDate, { color: t.text }]}>{milestone.unlockedDate}</Text>
                 </View>
               ) : milestone.progress !== undefined ? (
-                <View style={s.progressSection}>
+                <View style={[s.progressSection, { borderTopColor: t.border }]}>
                   <View style={s.progressHeader}>
-                    <Text style={s.requirementLabel}>Progress</Text>
+                    <Text style={[s.requirementLabel, { color: t.textSecondary }]}>Progress</Text>
                     <Text style={s.rarityValue}>{milestone.progress}%</Text>
                   </View>
-                  <View style={s.progressTrack}>
+                  <View style={[s.progressTrack, { backgroundColor: t.border }]}>
                     <View
                       style={[
                         s.progressFill,
@@ -262,6 +263,7 @@ const s = StyleSheet.create({
     color: "#1A1A1A",
     fontWeight: "600",
   },
+  // Note: dynamic colors (card bg, sheet bg, handle, text) applied via inline overrides using useTheme()
   badgeWrapper: {
     width: 260,
     height: 260,
@@ -299,7 +301,7 @@ const s = StyleSheet.create({
   },
   description: {
     fontSize: 14,
-    color: "rgba(9,51,44,0.65)",
+    color: "#9CA3AF",
     lineHeight: 21,
     marginBottom: 24,
   },
@@ -317,7 +319,7 @@ const s = StyleSheet.create({
   rarityLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "rgba(9,51,44,0.40)",
+    color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
@@ -361,7 +363,7 @@ const s = StyleSheet.create({
   requirementLabel: {
     fontSize: 11,
     fontWeight: "700",
-    color: "rgba(9,51,44,0.40)",
+    color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
     marginBottom: 3,
@@ -390,7 +392,7 @@ const s = StyleSheet.create({
   unlockLabel: {
     fontSize: 13,
     fontWeight: "500",
-    color: "rgba(9,51,44,0.45)",
+    color: "#9CA3AF",
   },
   unlockDate: {
     fontSize: 13,

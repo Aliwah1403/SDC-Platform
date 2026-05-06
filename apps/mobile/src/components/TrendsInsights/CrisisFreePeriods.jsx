@@ -1,11 +1,13 @@
 import React from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { View, Text } from "react-native";
 
 export function CrisisFreePeriods({ crisisPeriods }) {
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 20,
         marginBottom: 16,
@@ -24,7 +26,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#1F2937" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
           Crisis-Free Periods
         </Text>
         <View
@@ -40,7 +42,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
           </Text>
         </View>
       </View>
-      <Text style={{ fontSize: 13, color: "#6B7280", marginBottom: 24 }}>
+      <Text style={{ fontSize: 13, color: t.textSecondary, marginBottom: 24 }}>
         Days with pain level below 5
       </Text>
 
@@ -67,7 +69,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             >
               {crisisPeriods.current}
             </Text>
-            <Text style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
+            <Text style={{ fontSize: 11, color: t.textSecondary, marginTop: 2 }}>
               days
             </Text>
           </View>
@@ -75,7 +77,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             style={{
               fontSize: 13,
               fontWeight: "600",
-              color: "#1F2937",
+              color: t.text,
               marginTop: 12,
             }}
           >
@@ -89,7 +91,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
               width: 100,
               height: 100,
               borderRadius: 50,
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
               justifyContent: "center",
               alignItems: "center",
               borderWidth: 4,
@@ -105,7 +107,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             >
               {crisisPeriods.longest}
             </Text>
-            <Text style={{ fontSize: 11, color: "#6B7280", marginTop: 2 }}>
+            <Text style={{ fontSize: 11, color: t.textSecondary, marginTop: 2 }}>
               days
             </Text>
           </View>
@@ -113,7 +115,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             style={{
               fontSize: 13,
               fontWeight: "600",
-              color: "#1F2937",
+              color: t.text,
               marginTop: 12,
             }}
           >
@@ -126,11 +128,11 @@ export function CrisisFreePeriods({ crisisPeriods }) {
         style={{
           marginTop: 20,
           padding: 16,
-          backgroundColor: "#F9FAFB",
+          backgroundColor: t.isDark ? t.surfaceElevated : "#F9FAFB",
           borderRadius: 12,
         }}
       >
-        <Text style={{ fontSize: 13, color: "#4B5563", textAlign: "center" }}>
+        <Text style={{ fontSize: 13, color: t.textSecondary, textAlign: "center" }}>
           {crisisPeriods.current > 0
             ? `${crisisPeriods.current} crisis-free days and counting. Keep it going.`
             : "Keep tracking to build your crisis-free streak."}

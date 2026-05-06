@@ -3,8 +3,10 @@ import { useRouter } from "expo-router";
 import { CategoryCard } from "./CategoryCard";
 import { ALL_CATEGORIES } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export function CategoriesCarousel({ communityPosts, followedCategoryIds }) {
+  const t = useTheme();
   const router = useRouter();
 
   function postCountFor(categoryId) {
@@ -25,7 +27,7 @@ export function CategoriesCarousel({ communityPosts, followedCategoryIds }) {
         }}
       >
         <Text
-          style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A" }}
+          style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}
         >
           Communities
         </Text>
@@ -66,7 +68,7 @@ export function CategoriesCarousel({ communityPosts, followedCategoryIds }) {
       <View
         style={{
           height: 1,
-          backgroundColor: "#EDE8E5",
+          backgroundColor: t.divider,
           marginHorizontal: 16,
           marginTop: 16,
           marginBottom: 4,

@@ -361,11 +361,11 @@ function MetricTile({
         backgroundColor: t.surface,
         borderRadius: 20,
         padding: 14,
-        shadowColor: "#000",
+        shadowColor: t.isDark ? t.background : t.text,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
+        shadowOpacity: t.isDark ? 0.02 : 0.06,
         shadowRadius: 10,
-        elevation: 3,
+        elevation: t.isDark ? 0 : 3,
         justifyContent: "space-between",
       }}
     >

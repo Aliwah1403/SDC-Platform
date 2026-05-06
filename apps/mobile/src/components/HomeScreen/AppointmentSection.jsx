@@ -12,16 +12,21 @@ function daysUntil(dateStr) {
 }
 
 const TYPE_CONFIG = {
-  routine: { label: "Routine", color: "#A9334D", bg: "#F8E9E7" },
-  "blood-work": { label: "Lab Work", color: "#D09F9A", bg: "#F0E4E1" },
-  "follow-up": { label: "Follow-up", color: "#781D11", bg: "#FFF0ED" },
-  specialist: { label: "Specialist", color: "#1A1A1A", bg: "#F8F4F0" },
+  routine: { label: "Routine", color: "#A9334D" },
+  "blood-work": { label: "Lab Work", color: "#D09F9A" },
+  "follow-up": { label: "Follow-up", color: "#781D11" },
+  specialist: { label: "Specialist", color: "#1A1A1A" },
 };
 
-function getTypeConfig(type) {
-  return (
-    TYPE_CONFIG[type] ?? { label: "Appointment", color: "#9CA3AF", bg: "#F5F5F5" }
-  );
+function getTintedPillBg(color, isDark) {
+  return `${color}${isDark ? "33" : "1A"}`;
+}
+
+function getTypeConfig(type, t) {
+  const base = TYPE_CONFIG[type] ?? { label: "Appointment", color: t.textSecondary };
+  const color = type === "specialist" ? t.text : base.color;
+  const bg = t.typePills?.[type]?.bg ?? getTintedPillBg(color, t.isDark);
+  return { ...base, color, bg };
 }
 
 function AppointmentCard({ appt }) {
@@ -32,7 +37,7 @@ function AppointmentCard({ appt }) {
   const monthStr = dateObj
     .toLocaleDateString("en-US", { month: "short" })
     .toUpperCase();
-  const typeConfig = getTypeConfig(appt.type);
+  const typeConfig = getTypeConfig(appt.type, t);
 
   const subLine = appt.doctor || appt.specialty || null;
   const detailLine = [appt.time, appt.facility].filter(Boolean).join(" · ");

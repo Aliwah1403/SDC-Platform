@@ -175,8 +175,8 @@ function AppointmentsCard({ appointment, onPress }) {
           </Text>
         </View>
         {appointment && (
-          <View style={{ backgroundColor: "#E6F0EF", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#1A1A1A" }}>
+          <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : "#E6F0EF", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.text }}>
               {formatApptDate(appointment.date)}
             </Text>
           </View>

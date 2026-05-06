@@ -11,6 +11,7 @@ import {
 import { Droplets, X } from "lucide-react-native";
 import OnboardingStep from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
+import { useTheme } from "@/hooks/useTheme";
 
 const BLOOD_TYPES = ["A+", "A−", "B+", "B−", "AB+", "AB−", "O+", "O−", "I don't know"];
 
@@ -25,6 +26,8 @@ const PRESET_ALLERGIES = [
 
 export default function Step6() {
   const posthog = usePostHog();
+  const t = useTheme();
+  const styles = getStyles(t);
   const { setOnboardingField, updateCrisisPlan } = useAppStore();
 
   const [bloodType, setBloodType] = useState(null);
@@ -136,7 +139,7 @@ export default function Step6() {
                   {preset}
                 </Text>
                 {selected && (
-                  <X size={12} color="#FFFFFF" strokeWidth={2.5} style={styles.allergyChipX} />
+                  <X size={12} color={styles.selectedContentColor} strokeWidth={2.5} style={styles.allergyChipX} />
                 )}
               </Pressable>
             );
@@ -150,7 +153,7 @@ export default function Step6() {
               onPress={() => removeCustomAllergy(allergy)}
             >
               <Text style={styles.allergyChipTextSelected}>{allergy}</Text>
-              <X size={12} color="#FFFFFF" strokeWidth={2.5} style={styles.allergyChipX} />
+              <X size={12} color={styles.selectedContentColor} strokeWidth={2.5} style={styles.allergyChipX} />
             </Pressable>
           ))}
         </View>
@@ -160,7 +163,7 @@ export default function Step6() {
           <TextInput
             style={styles.allergyInput}
             placeholder="Add another allergy…"
-            placeholderTextColor="rgba(9,51,44,0.35)"
+            placeholderTextColor={t.textSecondary}
             value={allergyInput}
             onChangeText={setAllergyInput}
             onSubmitEditing={addCustomAllergy}
@@ -184,109 +187,113 @@ export default function Step6() {
   );
 }
 
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: 28,
-    gap: 8,
-  },
-  sectionLabel: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 16,
-    color: "#1A1A1A",
-  },
-  sectionHint: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: "rgba(9,51,44,0.55)",
-    lineHeight: 19,
-    marginBottom: 4,
-  },
-  chipGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
-    backgroundColor: "#FFFFFF",
-  },
-  chipSelected: {
-    backgroundColor: "#A9334D",
-    borderColor: "#A9334D",
-  },
-  chipText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 14,
-    color: "#1A1A1A",
-  },
-  chipTextSelected: {
-    color: "#FFFFFF",
-    fontFamily: "Geist_600SemiBold",
-  },
-  allergyChips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  allergyChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
-    backgroundColor: "#FFFFFF",
-  },
-  allergyChipSelected: {
-    backgroundColor: "#A9334D",
-    borderColor: "#A9334D",
-  },
-  allergyChipText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: "#1A1A1A",
-  },
-  allergyChipTextSelected: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: "#FFFFFF",
-  },
-  allergyChipX: {
-    marginLeft: 2,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  allergyInput: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: "Geist_400Regular",
-    fontSize: 14,
-    color: "#1A1A1A",
-  },
-  addBtn: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  addBtnText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 14,
-    color: "#F8E9E7",
-  },
-});
+function getStyles(t) {
+  const selectedContentColor = "#FFFFFF";
+  const styles = StyleSheet.create({
+    section: {
+      marginBottom: 28,
+      gap: 8,
+    },
+    sectionLabel: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 16,
+      color: t.text,
+    },
+    sectionHint: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 13,
+      color: t.textSecondary,
+      lineHeight: 19,
+      marginBottom: 4,
+    },
+    chipGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    chip: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      backgroundColor: t.surface,
+    },
+    chipSelected: {
+      backgroundColor: t.accent,
+      borderColor: t.accent,
+    },
+    chipText: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 14,
+      color: t.text,
+    },
+    chipTextSelected: {
+      color: selectedContentColor,
+      fontFamily: "Geist_600SemiBold",
+    },
+    allergyChips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    allergyChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      backgroundColor: t.surface,
+    },
+    allergyChipSelected: {
+      backgroundColor: t.accent,
+      borderColor: t.accent,
+    },
+    allergyChipText: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 13,
+      color: t.text,
+    },
+    allergyChipTextSelected: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 13,
+      color: selectedContentColor,
+    },
+    allergyChipX: {
+      marginLeft: 2,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 4,
+    },
+    allergyInput: {
+      flex: 1,
+      backgroundColor: t.surface,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontFamily: "Geist_400Regular",
+      fontSize: 14,
+      color: t.text,
+    },
+    addBtn: {
+      backgroundColor: t.accent,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    addBtnText: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 14,
+      color: selectedContentColor,
+    },
+  });
+  return { ...styles, selectedContentColor };
+}

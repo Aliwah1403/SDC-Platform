@@ -88,7 +88,7 @@ const FILTERS = [
 // ── Search result card ────────────────────────────────────────────────────────
 function SearchResultCard({ facility, userLocation, isSaved, onAdd, onPress }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -164,7 +164,7 @@ function FacilityCard({
   onPress,
 }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -280,7 +280,7 @@ function FacilityCard({
 // ── Facility map marker ───────────────────────────────────────────────────────
 function FacilityMarker({ facility, isSelected, showLabel }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const pulseScale = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0.6)).current;
@@ -379,7 +379,7 @@ function FacilitySheetContent({
   onNavigateToDetail,
 }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -623,7 +623,7 @@ function FacilitySheetContent({
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function FacilitiesScreen() {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const {
@@ -1564,7 +1564,7 @@ function createStyles(t) { return StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 11,
   },
-  sheetHoursRowToday: { backgroundColor: "#FFF5F5" },
+  sheetHoursRowToday: { backgroundColor: t.isDark ? "rgba(169,51,77,0.12)" : "#FFF5F5" },
   viewProfileBtn: {
     flexDirection: "row",
     alignItems: "center",

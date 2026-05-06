@@ -1,6 +1,7 @@
 import { TouchableOpacity, View, Text, ImageBackground } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export function CategoryCard({
   category,
@@ -8,6 +9,7 @@ export function CategoryCard({
   isFollowing = false,
   onPress,
 }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -71,7 +73,7 @@ export function CategoryCard({
         style={{
           fontFamily: fonts.semibold,
           fontSize: 13,
-          color: "#1A1A1A",
+          color: t.text,
           marginTop: 8,
           lineHeight: 18,
         }}
@@ -82,7 +84,7 @@ export function CategoryCard({
         style={{
           fontFamily: fonts.regular,
           fontSize: 11,
-          color: "#9C8D8A",
+          color: t.textSecondary,
           marginTop: 2,
         }}
       >

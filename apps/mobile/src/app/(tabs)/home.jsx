@@ -168,7 +168,7 @@ export default function HomeScreen() {
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
   const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
-    typeof b === 'object' ? b.id : b
+    typeof b === "object" ? b.id : b,
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
@@ -404,10 +404,18 @@ export default function HomeScreen() {
               streak_days: pendingMilestone.streakCount ?? null,
             });
             const existing = streak?.claimedBadges ?? [];
-            const alreadyIds = existing.map((b) => typeof b === 'object' ? b.id : b);
+            const alreadyIds = existing.map((b) =>
+              typeof b === "object" ? b.id : b,
+            );
             const updated = alreadyIds.includes(pendingMilestone.milestoneId)
               ? existing
-              : [...existing, { id: pendingMilestone.milestoneId, unlockedAt: new Date().toISOString() }];
+              : [
+                  ...existing,
+                  {
+                    id: pendingMilestone.milestoneId,
+                    unlockedAt: new Date().toISOString(),
+                  },
+                ];
             saveClaimedBadges(updated);
           }
           clearPendingMilestone();

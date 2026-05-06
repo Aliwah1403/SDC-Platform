@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   Linking,
   Pressable,
@@ -106,7 +106,7 @@ const PRESET_ALLERGIES = [
 
 function SectionLabel({ label }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
@@ -114,7 +114,7 @@ function SectionLabel({ label }) {
 
 function TierRow({ tier }) {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable
@@ -160,7 +160,7 @@ function TierRow({ tier }) {
 
 export default function CrisisPlanScreen() {
   const t = useTheme();
-  const styles = createStyles(t);
+  const styles = useMemo(() => createStyles(t), [t]);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const sheetRef = useRef(null);
@@ -238,7 +238,7 @@ export default function CrisisPlanScreen() {
   const allAllergies = allergies;
 
   return (
-    <View style={{ flex: 1, backgroundColor: t.surface }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       {/* Header */}
