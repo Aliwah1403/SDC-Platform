@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import Svg, {
   Path, Circle, Ellipse, Rect, Line, G,
   Text as SvgText, Defs, LinearGradient, Stop, ClipPath,
@@ -18,23 +18,23 @@ function truncate(str, max) {
 }
 
 // ── Pill Bottle (tablet / capsule / softgel) ─────────────────────────────────
-function PillBottle({ color, drugName, subIcon, width = 120, height = 160 }) {
+function PillBottle({ color, drugName, subIcon, width = 120, height = 160, idPrefix }) {
   const light = lighten(color, 0.72);
   const mid = lighten(color, 0.45);
   const label = truncate(drugName, 11);
   return (
     <Svg width={width} height={height} viewBox="0 0 120 160">
       <Defs>
-        <LinearGradient id="bottleGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}bottleGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={mid} stopOpacity="1" />
           <Stop offset="0.45" stopColor={light} stopOpacity="1" />
           <Stop offset="1" stopColor={mid} stopOpacity="1" />
         </LinearGradient>
-        <LinearGradient id="capGrad" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={`${idPrefix}capGrad`} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color} stopOpacity="1" />
           <Stop offset="1" stopColor={mid} stopOpacity="1" />
         </LinearGradient>
-        <ClipPath id="bodyClip">
+        <ClipPath id={`${idPrefix}bodyClip`}>
           <Rect x="26" y="50" width="68" height="100" rx="16" />
         </ClipPath>
       </Defs>
@@ -43,7 +43,7 @@ function PillBottle({ color, drugName, subIcon, width = 120, height = 160 }) {
       <Rect x="28" y="54" width="68" height="100" rx="16" fill={color} opacity="0.10" />
 
       {/* Bottle body */}
-      <Rect x="26" y="50" width="68" height="100" rx="16" fill="url(#bottleGrad)" />
+      <Rect x="26" y="50" width="68" height="100" rx="16" fill={`url(#${idPrefix}bottleGrad)`} />
 
       {/* Shine strip on body */}
       <Rect x="30" y="55" width="12" height="88" rx="6" fill="#fff" opacity="0.22" />
@@ -53,7 +53,7 @@ function PillBottle({ color, drugName, subIcon, width = 120, height = 160 }) {
       <Rect x="40" y="36" width="10" height="16" rx="5" fill="#fff" opacity="0.18" />
 
       {/* Cap */}
-      <Rect x="30" y="14" width="60" height="24" rx="10" fill="url(#capGrad)" />
+      <Rect x="30" y="14" width="60" height="24" rx="10" fill={`url(#${idPrefix}capGrad)`} />
       {/* Cap grip lines */}
       <Line x1="38" y1="18" x2="38" y2="34" stroke="#fff" strokeWidth="2" strokeOpacity="0.25" />
       <Line x1="47" y1="18" x2="47" y2="34" stroke="#fff" strokeWidth="2" strokeOpacity="0.25" />
@@ -87,20 +87,20 @@ function PillBottle({ color, drugName, subIcon, width = 120, height = 160 }) {
   );
 }
 
-function TabletBottle({ color, drugName, width, height }) {
+function TabletBottle({ color, drugName, width, height, idPrefix }) {
   const c = color;
   const lc = lighten(color, 0.5);
   const subIcon = (
     <G>
       <Circle cx="60" cy="93" r="10" fill={lc} />
-      <Path d="M60 83 A10 10 0 0 0 60 103 Z" fill={c} clipPath="url(#bodyClip)" />
+      <Path d="M60 83 A10 10 0 0 0 60 103 Z" fill={c} clipPath={`url(#${idPrefix}bodyClip)`} />
       <Circle cx="60" cy="93" r="10" fill="none" stroke={c} strokeWidth="1" />
     </G>
   );
-  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} />;
+  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} idPrefix={idPrefix} />;
 }
 
-function CapsuleBottle({ color, drugName, width, height }) {
+function CapsuleBottle({ color, drugName, width, height, idPrefix }) {
   const lc = lighten(color, 0.5);
   const subIcon = (
     <G>
@@ -109,33 +109,33 @@ function CapsuleBottle({ color, drugName, width, height }) {
       <Rect x="46" y="87" width="28" height="12" rx="6" fill="none" stroke={color} strokeWidth="1" />
     </G>
   );
-  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} />;
+  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} idPrefix={idPrefix} />;
 }
 
-function SoftgelBottle({ color, drugName, width, height }) {
+function SoftgelBottle({ color, drugName, width, height, idPrefix }) {
   const subIcon = (
     <G>
       <Ellipse cx="60" cy="93" rx="12" ry="8" fill={color} opacity="0.85" />
       <Path d="M52 89 Q56 86 62 88" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeOpacity="0.6" fill="none" />
     </G>
   );
-  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} />;
+  return <PillBottle color={color} drugName={drugName} subIcon={subIcon} width={width} height={height} idPrefix={idPrefix} />;
 }
 
 // ── Liquid Bottle ─────────────────────────────────────────────────────────────
-function LiquidBottle({ color, drugName, width = 120, height = 160 }) {
+function LiquidBottle({ color, drugName, width = 120, height = 160, idPrefix }) {
   const light = lighten(color, 0.72);
   const mid = lighten(color, 0.4);
   const label = truncate(drugName, 11);
   return (
     <Svg width={width} height={height} viewBox="0 0 120 160">
       <Defs>
-        <LinearGradient id="liqBodyGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}liqBodyGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={mid} stopOpacity="1" />
           <Stop offset="0.4" stopColor={light} stopOpacity="1" />
           <Stop offset="1" stopColor={mid} stopOpacity="1" />
         </LinearGradient>
-        <ClipPath id="liqBodyClip">
+        <ClipPath id={`${idPrefix}liqBodyClip`}>
           <Rect x="16" y="52" width="88" height="98" rx="22" />
         </ClipPath>
       </Defs>
@@ -144,10 +144,10 @@ function LiquidBottle({ color, drugName, width = 120, height = 160 }) {
       <Rect x="18" y="56" width="88" height="98" rx="22" fill={color} opacity="0.08" />
 
       {/* Body */}
-      <Rect x="16" y="52" width="88" height="98" rx="22" fill="url(#liqBodyGrad)" />
+      <Rect x="16" y="52" width="88" height="98" rx="22" fill={`url(#${idPrefix}liqBodyGrad)`} />
 
       {/* Liquid fill */}
-      <Rect x="16" y="108" width="88" height="42" rx="22" fill={color} opacity="0.45" clipPath="url(#liqBodyClip)" />
+      <Rect x="16" y="108" width="88" height="42" rx="22" fill={color} opacity="0.45" clipPath={`url(#${idPrefix}liqBodyClip)`} />
       {/* Liquid surface wave */}
       <Path d="M16 108 Q32 103 52 108 Q72 113 88 108 L104 108" stroke={lighten(color, 0.3)} strokeWidth="1.5" fill="none" />
 
@@ -188,14 +188,14 @@ function LiquidBottle({ color, drugName, width = 120, height = 160 }) {
 }
 
 // ── Ointment Tube ─────────────────────────────────────────────────────────────
-function OintmentTube({ color, drugName, width = 120, height = 160 }) {
+function OintmentTube({ color, drugName, width = 120, height = 160, idPrefix }) {
   const light = lighten(color, 0.65);
   const mid = lighten(color, 0.35);
   const label = truncate(drugName, 10);
   return (
     <Svg width={width} height={height} viewBox="0 0 120 160">
       <Defs>
-        <LinearGradient id="tubeGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}tubeGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={mid} />
           <Stop offset="0.5" stopColor={light} />
           <Stop offset="1" stopColor={mid} />
@@ -203,7 +203,7 @@ function OintmentTube({ color, drugName, width = 120, height = 160 }) {
       </Defs>
 
       {/* Tube body (vertical) */}
-      <Rect x="36" y="40" width="48" height="88" rx="10" fill="url(#tubeGrad)" />
+      <Rect x="36" y="40" width="48" height="88" rx="10" fill={`url(#${idPrefix}tubeGrad)`} />
       {/* Body shine */}
       <Rect x="40" y="46" width="10" height="74" rx="5" fill="#fff" opacity="0.22" />
 
@@ -240,19 +240,19 @@ function OintmentTube({ color, drugName, width = 120, height = 160 }) {
 }
 
 // ── Inhaler ───────────────────────────────────────────────────────────────────
-function Inhaler({ color, drugName, width = 120, height = 160 }) {
+function Inhaler({ color, drugName, width = 120, height = 160, idPrefix }) {
   const light = lighten(color, 0.65);
   const mid = lighten(color, 0.35);
   const label = truncate(drugName, 9);
   return (
     <Svg width={width} height={height} viewBox="0 0 120 160">
       <Defs>
-        <LinearGradient id="canGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}canGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={mid} />
           <Stop offset="0.5" stopColor={light} />
           <Stop offset="1" stopColor={mid} />
         </LinearGradient>
-        <LinearGradient id="bodyGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}bodyGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={lighten(color, 0.2)} />
           <Stop offset="0.5" stopColor={mid} />
           <Stop offset="1" stopColor={lighten(color, 0.2)} />
@@ -260,7 +260,7 @@ function Inhaler({ color, drugName, width = 120, height = 160 }) {
       </Defs>
 
       {/* Actuator body (main housing) */}
-      <Rect x="28" y="72" width="64" height="76" rx="14" fill="url(#bodyGrad)" />
+      <Rect x="28" y="72" width="64" height="76" rx="14" fill={`url(#${idPrefix}bodyGrad)`} />
       {/* Body shine */}
       <Rect x="32" y="78" width="10" height="62" rx="5" fill="#fff" opacity="0.18" />
 
@@ -268,7 +268,7 @@ function Inhaler({ color, drugName, width = 120, height = 160 }) {
       <Rect x="44" y="72" width="32" height="14" rx="4" fill={lighten(color, 0.15)} />
 
       {/* Metal canister */}
-      <Rect x="40" y="18" width="40" height="60" rx="12" fill="url(#canGrad)" />
+      <Rect x="40" y="18" width="40" height="60" rx="12" fill={`url(#${idPrefix}canGrad)`} />
       <Ellipse cx="60" cy="18" rx="20" ry="8" fill={lighten(color, 0.55)} />
       <Rect x="44" y="20" width="12" height="50" rx="6" fill="#fff" opacity="0.18" />
       {/* Canister base ring */}
@@ -303,30 +303,30 @@ function Inhaler({ color, drugName, width = 120, height = 160 }) {
 }
 
 // ── Injection Vial ────────────────────────────────────────────────────────────
-function InjectionVial({ color, drugName, width = 120, height = 160 }) {
+function InjectionVial({ color, drugName, width = 120, height = 160, idPrefix }) {
   const light = lighten(color, 0.75);
   const mid = lighten(color, 0.4);
   const label = truncate(drugName, 10);
   return (
     <Svg width={width} height={height} viewBox="0 0 120 160">
       <Defs>
-        <LinearGradient id="vialGrad" x1="0" y1="0" x2="1" y2="0">
+        <LinearGradient id={`${idPrefix}vialGrad`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={mid} stopOpacity="0.25" />
           <Stop offset="0.35" stopColor={light} stopOpacity="0.6" />
           <Stop offset="1" stopColor={mid} stopOpacity="0.25" />
         </LinearGradient>
-        <ClipPath id="vialClip">
+        <ClipPath id={`${idPrefix}vialClip`}>
           <Rect x="34" y="50" width="52" height="100" rx="10" />
         </ClipPath>
       </Defs>
 
       {/* Vial glass body */}
       <Rect x="34" y="50" width="52" height="100" rx="10" fill="#E8F4F1" />
-      <Rect x="34" y="50" width="52" height="100" rx="10" fill="url(#vialGrad)" />
+      <Rect x="34" y="50" width="52" height="100" rx="10" fill={`url(#${idPrefix}vialGrad)`} />
       <Rect x="34" y="50" width="52" height="100" rx="10" fill="none" stroke={mid} strokeWidth="1.5" />
 
       {/* Liquid inside vial */}
-      <Rect x="36" y="100" width="48" height="48" rx="9" fill={color} opacity="0.25" clipPath="url(#vialClip)" />
+      <Rect x="36" y="100" width="48" height="48" rx="9" fill={color} opacity="0.25" clipPath={`url(#${idPrefix}vialClip)`} />
       {/* Liquid surface */}
       <Path d="M36 100 Q60 96 84 100" stroke={mid} strokeWidth="1.2" fill="none" />
 
@@ -391,10 +391,12 @@ const BOTTLES = {
  *   size     — rendered size in points (default 200); maintains 120:160 aspect ratio
  */
 export default function MedicationBottle({ type = "tablet", color = "#A9334D", drugName = "", size = 200 }) {
+  const id = useId();
+  const idPrefix = `${id.replace(/:/g, "")}-`;
   const Bottle = BOTTLES[type] ?? BOTTLES.tablet;
   // All bottles use a 120x160 viewBox; scale to requested size
   const width = size * (120 / 160);
   const height = size;
   // Clone with overridden width/height by passing props
-  return <Bottle color={color} drugName={drugName} width={width} height={height} />;
+  return <Bottle color={color} drugName={drugName} width={width} height={height} idPrefix={idPrefix} />;
 }
