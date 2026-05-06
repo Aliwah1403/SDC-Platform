@@ -6,21 +6,23 @@ import { X, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { fonts } from "@/utils/fonts";
 import { FEATUREBASE_URL } from "@/constants/feedback";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function FeedbackModalScreen() {
   const router = useRouter();
+  const t = useTheme();
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
+    <View style={{ flex: 1, backgroundColor: t.surface }}>
       <StatusBar style="auto" />
 
       <View
         style={{
           height: 56,
           borderBottomWidth: 1,
-          borderBottomColor: "#F0E4E1",
+          borderBottomColor: t.border,
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 12,
@@ -37,7 +39,7 @@ export default function FeedbackModalScreen() {
             justifyContent: "center",
           }}
         >
-          <X size={20} color="#1A1A1A" />
+          <X size={20} color={t.text} />
         </TouchableOpacity>
 
         <Text
@@ -46,7 +48,7 @@ export default function FeedbackModalScreen() {
             textAlign: "center",
             fontFamily: fonts.semibold,
             fontSize: 16,
-            color: "#1A1A1A",
+            color: t.text,
           }}
         >
           Feedback
@@ -69,7 +71,7 @@ export default function FeedbackModalScreen() {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 18,
-              color: "#1A1A1A",
+              color: t.text,
               textAlign: "center",
             }}
           >
@@ -79,7 +81,7 @@ export default function FeedbackModalScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#6B7280",
+              color: t.textSecondary,
               textAlign: "center",
             }}
           >
@@ -96,7 +98,7 @@ export default function FeedbackModalScreen() {
               flexDirection: "row",
               alignItems: "center",
               gap: 8,
-              backgroundColor: "#A9334D",
+              backgroundColor: t.accent,
               borderRadius: 999,
               paddingHorizontal: 16,
               paddingVertical: 10,
