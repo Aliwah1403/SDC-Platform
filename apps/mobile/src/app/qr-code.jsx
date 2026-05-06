@@ -8,10 +8,12 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useAuthStore } from "@/utils/auth/store";
 import { HemoQRCode } from "@/components/QRCode";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function QRCodeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
 
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
@@ -24,8 +26,8 @@ export default function QRCodeScreen() {
   const qrData = `HEMO:${userName}|SCD:${scdType}|APP:Hemo`;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -50,19 +52,19 @@ export default function QRCodeScreen() {
             width: 40,
             height: 40,
             borderRadius: 20,
-            backgroundColor: "rgba(9,51,44,0.08)",
+            backgroundColor: `${t.text}14`,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
+          <ArrowLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1A1A1A" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>
             Emergency Card
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 1 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 1 }}>
             Tap the button below to reveal your QR code
           </Text>
         </View>
