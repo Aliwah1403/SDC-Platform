@@ -28,14 +28,9 @@ import {
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
+import { useTheme } from "@/hooks/useTheme";
 
-const C = {
-  bg: "#F8F4F0",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  divider: "#F8E9E7",
-  dark: "#1A1A1A",
-  muted: "#9CA3AF",
+const C_BRAND = {
   accent: "#A9334D",
   success: "#059669",
   warning: "#DC2626",
@@ -94,12 +89,13 @@ function buildGroups(meds) {
 }
 
 function SectionLabel({ title }) {
+  const t = useTheme();
   return (
     <Text
       style={{
         fontFamily: fonts.semibold,
         fontSize: 11,
-        color: C.muted,
+        color: t.textSecondary,
         letterSpacing: 0.8,
         textTransform: "uppercase",
         marginBottom: 6,
@@ -112,12 +108,14 @@ function SectionLabel({ title }) {
 }
 
 function Divider() {
+  const t = useTheme();
   return (
-    <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 76 }} />
+    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 76 }} />
   );
 }
 
 function GroupHeader({ group, onLogAll, allTaken }) {
+  const t = useTheme();
   return (
     <View
       style={{
@@ -133,7 +131,7 @@ function GroupHeader({ group, onLogAll, allTaken }) {
           width: 36,
           height: 36,
           borderRadius: 10,
-          backgroundColor: "#F2EFEC",
+          backgroundColor: t.isDark ? t.surfaceElevated : "#F2EFEC",
           alignItems: "center",
           justifyContent: "center",
           marginRight: 10,
@@ -143,7 +141,7 @@ function GroupHeader({ group, onLogAll, allTaken }) {
       </View>
       <View style={{ flex: 1 }}>
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 15, color: C.dark }}
+          style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}
         >
           {group.label}
         </Text>
@@ -152,7 +150,7 @@ function GroupHeader({ group, onLogAll, allTaken }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: C.muted,
+              color: t.textSecondary,
               marginTop: 1,
             }}
           >
@@ -166,18 +164,18 @@ function GroupHeader({ group, onLogAll, allTaken }) {
         activeOpacity={0.7}
         style={{
           borderWidth: 1,
-          borderColor: allTaken ? C.divider : C.border,
+          borderColor: allTaken ? t.divider : t.border,
           borderRadius: 20,
           paddingHorizontal: 14,
           paddingVertical: 6,
-          backgroundColor: allTaken ? C.bg : C.card,
+          backgroundColor: allTaken ? t.background : t.surface,
         }}
       >
         <Text
           style={{
             fontFamily: fonts.medium,
             fontSize: 13,
-            color: allTaken ? C.muted : C.dark,
+            color: allTaken ? t.textSecondary : t.text,
           }}
         >
           {allTaken ? "All done ✓" : "Log all"}
@@ -188,7 +186,8 @@ function GroupHeader({ group, onLogAll, allTaken }) {
 }
 
 function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
-  const color = CATEGORY_COLORS[medication.category] ?? C.accent;
+  const t = useTheme();
+  const color = CATEGORY_COLORS[medication.category] ?? C_BRAND.accent;
   return (
     <MotiView
       from={{ opacity: 0, translateY: 6 }}
@@ -231,7 +230,7 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
               fontFamily: fonts.semibold,
               fontSize: 15,
               textTransform: "capitalize",
-              color: medication.taken ? C.muted : C.dark,
+              color: medication.taken ? t.textSecondary : t.text,
               textDecorationLine: medication.taken ? "line-through" : "none",
             }}
           >
@@ -241,7 +240,7 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: C.muted,
+              color: t.textSecondary,
               marginTop: 2,
             }}
           >
@@ -253,7 +252,7 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: C.muted,
+              color: t.textSecondary,
               marginTop: 1,
               opacity: 0.75,
             }}
@@ -271,8 +270,8 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             height: 32,
             borderRadius: 16,
             borderWidth: medication.taken ? 0 : 1.5,
-            borderColor: medication.taken ? "transparent" : "#D1D5DB",
-            backgroundColor: medication.taken ? C.success : "transparent",
+            borderColor: medication.taken ? "transparent" : t.border,
+            backgroundColor: medication.taken ? C_BRAND.success : "transparent",
             alignItems: "center",
             justifyContent: "center",
           }}
@@ -280,7 +279,7 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
           {medication.taken ? (
             <Check size={16} color="#fff" strokeWidth={2.5} />
           ) : (
-            <Plus size={16} color={C.muted} strokeWidth={2} />
+            <Plus size={16} color={t.textSecondary} strokeWidth={2} />
           )}
         </TouchableOpacity>
       </TouchableOpacity>
@@ -289,17 +288,18 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
 }
 
 function MedicationGridCard({ medication, onPress }) {
-  const color = CATEGORY_COLORS[medication.category] ?? C.accent;
+  const t = useTheme();
+  const color = CATEGORY_COLORS[medication.category] ?? C_BRAND.accent;
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.7}
       style={{
         width: CARD_WIDTH,
-        backgroundColor: C.card,
+        backgroundColor: t.surface,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: C.border,
+        borderColor: t.border,
         overflow: "hidden",
       }}
     >
@@ -327,7 +327,7 @@ function MedicationGridCard({ medication, onPress }) {
             fontFamily: fonts.semibold,
             fontSize: 14,
             textTransform: "capitalize",
-            color: C.dark,
+            color: t.text,
             marginBottom: 2,
           }}
         >
@@ -339,7 +339,7 @@ function MedicationGridCard({ medication, onPress }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: C.muted,
+              color: t.textSecondary,
               marginBottom: 8,
             }}
           >
@@ -376,6 +376,7 @@ function MedicationGridCard({ medication, onPress }) {
 }
 
 export default function MedicationsScreen() {
+  const t = useTheme();
   const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -391,7 +392,7 @@ export default function MedicationsScreen() {
   const groups = buildGroups(active);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <LinearGradient
         colors={["#D09F9A", "#A9334D", "#781D11"]}
@@ -488,10 +489,10 @@ export default function MedicationsScreen() {
         {/* Today's Progress */}
         <View
           style={{
-            backgroundColor: C.card,
+            backgroundColor: t.surface,
             borderRadius: 14,
             borderWidth: 1,
-            borderColor: C.border,
+            borderColor: t.border,
             padding: 16,
             marginBottom: 24,
           }}
@@ -508,7 +509,7 @@ export default function MedicationsScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 15,
-                color: C.dark,
+                color: t.text,
               }}
             >
               Today's Progress
@@ -526,7 +527,7 @@ export default function MedicationsScreen() {
                   style={{
                     fontFamily: fonts.semibold,
                     fontSize: 12,
-                    color: C.warning,
+                    color: C_BRAND.warning,
                   }}
                 >
                   {dueCount} due
@@ -545,7 +546,7 @@ export default function MedicationsScreen() {
                   style={{
                     fontFamily: fonts.semibold,
                     fontSize: 12,
-                    color: C.success,
+                    color: C_BRAND.success,
                   }}
                 >
                   All done
@@ -556,7 +557,7 @@ export default function MedicationsScreen() {
           <View
             style={{
               height: 6,
-              backgroundColor: "#F3F4F6",
+              backgroundColor: t.surfaceElevated,
               borderRadius: 3,
               overflow: "hidden",
             }}
@@ -565,7 +566,7 @@ export default function MedicationsScreen() {
               style={{
                 height: "100%",
                 width: `${progressPct * 100}%`,
-                backgroundColor: progressPct === 1 ? C.success : C.accent,
+                backgroundColor: progressPct === 1 ? C_BRAND.success : C_BRAND.accent,
                 borderRadius: 3,
               }}
             />
@@ -574,7 +575,7 @@ export default function MedicationsScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: C.muted,
+              color: t.textSecondary,
               marginTop: 8,
             }}
           >
@@ -587,21 +588,21 @@ export default function MedicationsScreen() {
         {active.length === 0 ? (
           <View
             style={{
-              backgroundColor: C.card,
+              backgroundColor: t.surface,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: C.border,
+              borderColor: t.border,
               padding: 32,
               alignItems: "center",
               marginBottom: 24,
             }}
           >
-            <Pill size={28} color={C.muted} />
+            <Pill size={28} color={t.textSecondary} />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 15,
-                color: C.muted,
+                color: t.textSecondary,
                 marginTop: 10,
                 textAlign: "center",
               }}
@@ -612,7 +613,7 @@ export default function MedicationsScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 13,
-                color: C.muted,
+                color: t.textSecondary,
                 marginTop: 4,
                 textAlign: "center",
               }}
@@ -630,10 +631,10 @@ export default function MedicationsScreen() {
               <View
                 key={group.key}
                 style={{
-                  backgroundColor: C.card,
+                  backgroundColor: t.surface,
                   borderRadius: 14,
                   borderWidth: 1,
-                  borderColor: C.border,
+                  borderColor: t.border,
                   overflow: "hidden",
                   marginBottom: 16,
                 }}
@@ -643,7 +644,7 @@ export default function MedicationsScreen() {
                   allTaken={allTaken}
                   onLogAll={() => markGroupTaken.mutate(untakenIds)}
                 />
-                <View style={{ height: 1, backgroundColor: C.divider }} />
+                <View style={{ height: 1, backgroundColor: t.divider }} />
                 {group.meds.map((med, i) => (
                   <React.Fragment key={med.id}>
                     <MedicationScheduleRow
@@ -701,7 +702,7 @@ export default function MedicationsScreen() {
           }}
           activeOpacity={0.8}
           style={{
-            backgroundColor: C.accent,
+            backgroundColor: C_BRAND.accent,
             borderRadius: 14,
             paddingVertical: 16,
             alignItems: "center",
@@ -729,13 +730,13 @@ export default function MedicationsScreen() {
             borderStyle: "dashed",
             paddingVertical: 14,
             borderWidth: 1.5,
-            borderColor: C.border,
+            borderColor: t.border,
             gap: 8,
           }}
         >
-          <Camera size={18} color={C.dark} />
+          <Camera size={18} color={t.text} />
           <Text
-            style={{ fontFamily: fonts.medium, fontSize: 15, color: C.dark }}
+            style={{ fontFamily: fonts.medium, fontSize: 15, color: t.text }}
           >
             Scan Pill
           </Text>

@@ -32,6 +32,7 @@ import { useAppStore } from "@/store/appStore";
 import { useCreatePostMutation } from "@/hooks/queries/useCommunityMutations";
 import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const MAX_CHARS = 500;
 
@@ -51,6 +52,7 @@ const FLAIR_OPTIONS = [
 ];
 
 export default function CreatePostScreen() {
+  const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -153,10 +155,10 @@ export default function CreatePostScreen() {
   if (step === 1) {
     return (
       <KeyboardAvoidingView
-        style={{ flex: 1, backgroundColor: "#FFFFFF" }}
+        style={{ flex: 1, backgroundColor: t.surface }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <StatusBar style="dark" />
+        <StatusBar style={t.isDark ? "light" : "dark"} />
 
         {/* Header */}
         <View
@@ -168,8 +170,8 @@ export default function CreatePostScreen() {
             alignItems: "center",
             justifyContent: "space-between",
             borderBottomWidth: 1,
-            borderBottomColor: "#F0EAE8",
-            backgroundColor: "#FFFFFF",
+            borderBottomColor: t.border,
+            backgroundColor: t.surface,
           }}
         >
           <TouchableOpacity
@@ -179,16 +181,16 @@ export default function CreatePostScreen() {
               width: 36,
               height: 36,
               borderRadius: 18,
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.background,
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <X size={18} color="#1A1A1A" strokeWidth={2} />
+            <X size={18} color={t.text} strokeWidth={2} />
           </TouchableOpacity>
 
           <Text
-            style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A" }}
+            style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}
           >
             New Post
           </Text>
@@ -239,12 +241,12 @@ export default function CreatePostScreen() {
                   width: 46,
                   height: 46,
                   borderRadius: 23,
-                  backgroundColor: "#E5E0DD",
+                  backgroundColor: t.surfaceElevated,
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <UserCircle size={26} color="#9C8D8A" strokeWidth={1.5} />
+                <UserCircle size={26} color={t.textSecondary} strokeWidth={1.5} />
               </View>
             ) : (
               <View
@@ -273,7 +275,7 @@ export default function CreatePostScreen() {
                 style={{
                   fontFamily: fonts.bold,
                   fontSize: 15,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 {isAnonymous ? "Anonymous" : nickname}
@@ -283,7 +285,7 @@ export default function CreatePostScreen() {
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 12,
-                    color: "#9C8D8A",
+                    color: t.textSecondary,
                   }}
                 >
                   {scdType}
@@ -306,14 +308,14 @@ export default function CreatePostScreen() {
           >
             <Lock
               size={13}
-              color={isAnonymous ? "#A9334D" : "#9C8D8A"}
+              color={isAnonymous ? "#A9334D" : t.textSecondary}
               strokeWidth={2}
             />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: isAnonymous ? "#A9334D" : "#9C8D8A",
+                color: isAnonymous ? "#A9334D" : t.textSecondary,
               }}
             >
               {isAnonymous ? "Posting anonymously" : "Post anonymously"}
@@ -323,7 +325,7 @@ export default function CreatePostScreen() {
           {/* Text input */}
           <TextInput
             value={content}
-            onChangeText={(t) => t.length <= MAX_CHARS && setContent(t)}
+            onChangeText={(val) => val.length <= MAX_CHARS && setContent(val)}
             placeholder="Share an experience, tip, question or win with the community…"
             placeholderTextColor="#C4B5B2"
             multiline
@@ -331,7 +333,7 @@ export default function CreatePostScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 16,
-              color: "#1A1A1A",
+              color: t.text,
               lineHeight: 24,
               paddingHorizontal: 16,
               minHeight: 120,
@@ -344,7 +346,7 @@ export default function CreatePostScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: charsLeft < 50 ? "#DC2626" : "#9C8D8A",
+                color: charsLeft < 50 ? "#DC2626" : t.textSecondary,
                 textAlign: "right",
                 paddingHorizontal: 16,
                 marginTop: 4,
@@ -410,16 +412,16 @@ export default function CreatePostScreen() {
                   padding: 14,
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: "#E2D9D6",
-                  backgroundColor: "#FAFAFA",
+                  borderColor: t.border,
+                  backgroundColor: t.background,
                 }}
               >
-                <Camera size={18} color="#1A1A1A" strokeWidth={1.5} />
+                <Camera size={18} color={t.text} strokeWidth={1.5} />
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 14,
-                    color: "#1A1A1A",
+                    color: t.text,
                   }}
                 >
                   Take photo
@@ -438,16 +440,16 @@ export default function CreatePostScreen() {
                   padding: 14,
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: "#E2D9D6",
-                  backgroundColor: "#FAFAFA",
+                  borderColor: t.border,
+                  backgroundColor: t.background,
                 }}
               >
-                <ImageIcon size={18} color="#1A1A1A" strokeWidth={1.5} />
+                <ImageIcon size={18} color={t.text} strokeWidth={1.5} />
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 14,
-                    color: "#1A1A1A",
+                    color: t.text,
                   }}
                 >
                   Upload photo
@@ -470,16 +472,16 @@ export default function CreatePostScreen() {
                 padding: 12,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#E2D9D6",
-                backgroundColor: "#FAFAFA",
+                borderColor: t.border,
+                backgroundColor: t.background,
               }}
             >
-              <ImageIcon size={16} color="#1A1A1A" strokeWidth={1.5} />
+              <ImageIcon size={16} color={t.text} strokeWidth={1.5} />
               <Text
                 style={{
                   fontFamily: fonts.medium,
                   fontSize: 14,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 Change photo
@@ -509,14 +511,14 @@ export default function CreatePostScreen() {
           >
             <BarChart2
               size={18}
-              color={pollEnabled ? "#A9334D" : "#1A1A1A"}
+              color={pollEnabled ? "#A9334D" : t.text}
               strokeWidth={1.5}
             />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: pollEnabled ? "#A9334D" : "#1A1A1A",
+                color: pollEnabled ? "#A9334D" : t.text,
                 flex: 1,
               }}
             >
@@ -538,7 +540,7 @@ export default function CreatePostScreen() {
                 >
                   <TextInput
                     value={opt}
-                    onChangeText={(t) => updatePollOption(index, t)}
+                    onChangeText={(val) => updatePollOption(index, val)}
                     placeholder={`Option ${index + 1}`}
                     placeholderTextColor="#C4B5B2"
                     maxLength={80}
@@ -546,8 +548,8 @@ export default function CreatePostScreen() {
                       flex: 1,
                       fontFamily: fonts.regular,
                       fontSize: 14,
-                      color: "#1A1A1A",
-                      backgroundColor: "#F8F4F0",
+                      color: t.text,
+                      backgroundColor: t.background,
                       borderRadius: 10,
                       paddingHorizontal: 14,
                       paddingVertical: 12,
@@ -560,7 +562,7 @@ export default function CreatePostScreen() {
                       onPress={() => removePollOption(index)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <X size={16} color="#9C8D8A" strokeWidth={2} />
+                      <X size={16} color={t.textSecondary} strokeWidth={2} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -598,7 +600,7 @@ export default function CreatePostScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 12,
-                color: "#9C8D8A",
+                color: t.textSecondary,
                 marginBottom: 8,
               }}
             >
@@ -620,14 +622,14 @@ export default function CreatePostScreen() {
                       paddingHorizontal: 14,
                       paddingVertical: 7,
                       borderRadius: 20,
-                      backgroundColor: isActive ? f.color : "#F8F4F0",
+                      backgroundColor: isActive ? f.color : t.background,
                     }}
                   >
                     <Text
                       style={{
                         fontFamily: fonts.medium,
                         fontSize: 13,
-                        color: isActive ? "#FFFFFF" : "#1A1A1A",
+                        color: isActive ? "#FFFFFF" : t.text,
                       }}
                     >
                       {f.label}
@@ -644,8 +646,8 @@ export default function CreatePostScreen() {
 
   // ── Step 2: Category picker ────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.surface }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -656,8 +658,8 @@ export default function CreatePostScreen() {
           flexDirection: "row",
           alignItems: "center",
           borderBottomWidth: 1,
-          borderBottomColor: "#F0EAE8",
-          backgroundColor: "#FFFFFF",
+          borderBottomColor: t.border,
+          backgroundColor: t.surface,
         }}
       >
         <TouchableOpacity
@@ -667,12 +669,12 @@ export default function CreatePostScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
+          <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
@@ -681,7 +683,7 @@ export default function CreatePostScreen() {
             textAlign: "center",
             fontFamily: fonts.bold,
             fontSize: 16,
-            color: "#1A1A1A",
+            color: t.text,
           }}
         >
           Choose category
@@ -701,7 +703,7 @@ export default function CreatePostScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 11,
-                color: "#9C8D8A",
+                color: t.textSecondary,
                 letterSpacing: 0.8,
                 textTransform: "uppercase",
                 paddingHorizontal: 20,
@@ -725,14 +727,14 @@ export default function CreatePostScreen() {
                     paddingHorizontal: 18,
                     paddingVertical: 16,
                     borderRadius: 14,
-                    backgroundColor: isSelected ? "#A9334D" : "#F8F4F0",
+                    backgroundColor: isSelected ? "#A9334D" : t.background,
                   }}
                 >
                   <Text
                     style={{
                       fontFamily: fonts.medium,
                       fontSize: 15,
-                      color: isSelected ? "#F8E9E7" : "#1A1A1A",
+                      color: isSelected ? "#F8E9E7" : t.text,
                     }}
                   >
                     {cat.label}
@@ -754,9 +756,9 @@ export default function CreatePostScreen() {
           paddingHorizontal: 20,
           paddingBottom: insets.bottom,
           paddingTop: 16,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           borderTopWidth: 1,
-          borderTopColor: "#F0EAE8",
+          borderTopColor: t.border,
         }}
       >
         <TouchableOpacity

@@ -49,13 +49,13 @@ import { useAppStore } from "@/store/appStore";
 import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
 import { fetchWorkoutsForDate } from "@/services/healthKitService";
 import { toLocalDateStr } from "@/utils/dateUtils";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
 const WEEK_HEIGHT = 82;
 const MONTH_HEIGHT = 334;
 
-const DARK_TEXT = "#781D11";
 const ORANGE = "#F0531C";
 const WINE = "#A9334D";
 const GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
@@ -226,13 +226,14 @@ function ExpandableCalendar({ selectedDate, setSelectedDate, loggedDates, isToda
 
 function LogTodayCard() {
   const router = useRouter();
+  const t = useTheme();
   return (
     <MotiView
       from={{ opacity: 0, translateY: -8 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 300 }}
       style={{
-        backgroundColor: "#F8E9E7",
+        backgroundColor: t.isDark ? t.surface : "#F8E9E7",
         borderRadius: 16,
         padding: 16,
         marginHorizontal: 16,
@@ -243,10 +244,10 @@ function LogTodayCard() {
       }}
     >
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#781D11", marginBottom: 2 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: t.isDark ? t.text : "#781D11", marginBottom: 2 }}>
           How are you feeling today?
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
           Log your symptoms now
         </Text>
       </View>
@@ -273,30 +274,31 @@ function LogTodayCard() {
 // ─── Medications ──────────────────────────────────────────────────────────────
 
 function MedicationItem({ medication, taken, onToggle }) {
+  const t = useTheme();
   return (
     <View style={{
       flexDirection: "row",
       alignItems: "center",
-      backgroundColor: "#fff",
+      backgroundColor: t.surface,
       borderRadius: 14,
       padding: 14,
       marginBottom: 10,
       borderLeftWidth: 3,
-      borderLeftColor: taken ? WINE : "#E5D5D3",
+      borderLeftColor: taken ? WINE : t.border,
     }}>
       <View style={{
         width: 36, height: 36, borderRadius: 10,
-        backgroundColor: taken ? "#FBE8EC" : "#F3F4F6",
+        backgroundColor: taken ? "#FBE8EC" : t.surfaceElevated,
         alignItems: "center", justifyContent: "center",
         marginRight: 12,
       }}>
         <Pill color={taken ? WINE : "#9CA3AF"} size={18} strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: DARK_TEXT, marginBottom: 1 }}>
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 1 }}>
           {medication.name}
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
           {medication.dosage} · {medication.time}
         </Text>
       </View>
@@ -320,13 +322,14 @@ function MedicationsSection({ selectedDate }) {
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
   const posthog = usePostHog();
+  const t = useTheme();
   const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   return (
     <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT }}>Medications due</Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>{dateLabel}</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>Medications due</Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>{dateLabel}</Text>
       </View>
       {active.map((med) => (
         <MedicationItem
@@ -449,6 +452,7 @@ function MiniSparkline({ data, color, maxValue }) {
 function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   const router = useRouter();
   const posthog = usePostHog();
+  const t = useTheme();
   const config = METRIC_CONFIG_MAP[metricKey];
   const rawValue = config.getValue(entry);
   const hasValue = rawValue !== null && rawValue !== undefined;
@@ -480,7 +484,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
         }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
-          backgroundColor: "#fff",
+          backgroundColor: t.surface,
           borderRadius: 20,
           padding: 18,
           marginBottom: 12,
@@ -494,12 +498,12 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
         {/* Top row: icon + label + AH badge */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 16 }}>
           <config.icon color={config.color} size={13} strokeWidth={2.5} />
-          <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#9CA3AF", flex: 1 }}>
+          <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textSecondary, flex: 1 }}>
             {config.label}
           </Text>
           {config.source === "apple" && (
-            <View style={{ backgroundColor: "#F3F4F6", borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
-              <Text style={{ fontFamily: fonts.medium, fontSize: 9, color: "#9CA3AF" }}>AH</Text>
+            <View style={{ backgroundColor: t.surfaceElevated, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 2 }}>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 9, color: t.textSecondary }}>AH</Text>
             </View>
           )}
         </View>
@@ -514,13 +518,13 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
                 <Text style={{
                   fontFamily: fonts.bold,
                   fontSize: hasValue ? ((displayValue?.length ?? 0) > 4 ? 28 : 34) : 28,
-                  color: hasValue ? "#1F2937" : "#D1D5DB",
+                  color: hasValue ? t.text : t.textTertiary,
                 }}>
                   {displayValue}
                 </Text>
               )}
               {hasValue && config.unit && metricKey !== "mood" && (
-                <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#9CA3AF", marginBottom: 3 }}>
+                <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginBottom: 3 }}>
                   {config.unit}
                 </Text>
               )}
@@ -530,7 +534,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
                 {status.label}
               </Text>
             ) : (
-              <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#D1D5DB", marginTop: 5 }}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textTertiary, marginTop: 5 }}>
                 Not logged
               </Text>
             )}
@@ -569,6 +573,7 @@ function workoutStyle(activityType) {
 }
 
 function WorkoutItem({ workout, index, isLast }) {
+  const t = useTheme();
   const { Icon, color } = workoutStyle(workout.activityType);
 
   return (
@@ -580,7 +585,7 @@ function WorkoutItem({ workout, index, isLast }) {
       <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14 }}>
         <View style={{
           width: 44, height: 44, borderRadius: 12,
-          backgroundColor: "#F2EFEC",
+          backgroundColor: t.isDark ? t.surfaceElevated : "#F2EFEC",
           alignItems: "center", justifyContent: "center",
           marginRight: 12,
         }}>
@@ -588,18 +593,18 @@ function WorkoutItem({ workout, index, isLast }) {
         </View>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1F2937", marginBottom: 2 }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 2 }}>
             {workout.label}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginBottom: 8 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginBottom: 8 }}>
             {workout.timeLabel}
           </Text>
 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
             {workout.durationMins > 0 && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Timer size={12} color="#9CA3AF" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                <Timer size={12} color={t.textSecondary} strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textSecondary }}>
                   {workout.durationMins} min
                 </Text>
               </View>
@@ -607,15 +612,15 @@ function WorkoutItem({ workout, index, isLast }) {
             {workout.calories != null && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
                 <Flame size={12} color="#F0531C" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textSecondary }}>
                   {workout.calories} kcal
                 </Text>
               </View>
             )}
             {workout.distanceKm != null && (
               <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Footprints size={12} color="#6B7280" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#6B7280" }}>
+                <Footprints size={12} color={t.textSecondary} strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textSecondary }}>
                   {workout.distanceKm} km
                 </Text>
               </View>
@@ -624,37 +629,38 @@ function WorkoutItem({ workout, index, isLast }) {
         </View>
       </View>
 
-      {!isLast && <View style={{ height: 1, backgroundColor: "#F5EFEE", marginLeft: 72 }} />}
+      {!isLast && <View style={{ height: 1, backgroundColor: t.border, marginLeft: 72 }} />}
     </MotiView>
   );
 }
 
 function ActivitySection({ workouts = [], hkConnected, loading }) {
+  const t = useTheme();
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT }}>Activity</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>Activity</Text>
         {hkConnected && (
-          <View style={{ backgroundColor: "#F3F4F6", borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: "#9CA3AF" }}>Apple Health</Text>
+          <View style={{ backgroundColor: t.surfaceElevated, borderRadius: 6, paddingHorizontal: 7, paddingVertical: 3 }}>
+            <Text style={{ fontFamily: fonts.medium, fontSize: 10, color: t.textSecondary }}>Apple Health</Text>
           </View>
         )}
       </View>
 
       <View style={{
-        backgroundColor: "#fff", borderRadius: 20, overflow: "hidden",
+        backgroundColor: t.surface, borderRadius: 20, overflow: "hidden",
         shadowColor: "#000", shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.06, shadowRadius: 8, elevation: 2,
       }}>
         {loading ? (
           <View style={{ alignItems: "center", paddingVertical: 24 }}>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#D1D5DB" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textTertiary }}>
               Loading workouts…
             </Text>
           </View>
         ) : workouts.length === 0 ? (
           <View style={{ alignItems: "center", paddingVertical: 24, paddingHorizontal: 16 }}>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#9CA3AF", textAlign: "center" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center" }}>
               {hkConnected
                 ? "No workouts recorded in Apple Health for this day"
                 : "Connect Apple Health in your profile to see workout data"}
@@ -687,12 +693,13 @@ const PATTERN_LABEL = {
 };
 
 function HealthAlertCard({ alertState, onLogSymptoms }) {
+  const t = useTheme();
   // Urgent is handled by push notification — never show the card for it
   if (!alertState || alertState.level === "urgent") return null;
 
   const accent = PATTERN_ACCENT[alertState.level];
   const label  = PATTERN_LABEL[alertState.level];
-  const triggerLabels = [...new Set(alertState.triggers.map((t) => t.reason))].slice(0, 4);
+  const triggerLabels = [...new Set(alertState.triggers.map((tr) => tr.reason))].slice(0, 4);
 
   return (
     <MotiView
@@ -703,7 +710,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
         marginHorizontal: 16,
         marginTop: 16,
         marginBottom: 4,
-        backgroundColor: "#ffffff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
@@ -747,7 +754,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
         <Text style={{
           fontFamily: fonts.medium,
           fontSize: 14,
-          color: "#1A1A1A",
+          color: t.text,
           lineHeight: 20,
           marginBottom: triggerLabels.length ? 10 : 0,
         }}>
@@ -757,7 +764,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
         {/* Trigger indicators */}
         {triggerLabels.length > 0 && (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
-            {triggerLabels.map((t, i) => (
+            {triggerLabels.map((tr, i) => (
               <View key={i} style={{
                 flexDirection: "row",
                 alignItems: "center",
@@ -773,9 +780,9 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
                 <Text style={{
                   fontFamily: fonts.regular,
                   fontSize: 12,
-                  color: "#6B7280",
+                  color: t.textSecondary,
                 }}>
-                  {t}
+                  {tr}
                 </Text>
               </View>
             ))}
@@ -802,10 +809,11 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
 // ─── Metrics Grid ─────────────────────────────────────────────────────────────
 
 function MetricsGrid({ entry, healthData, hkConnected }) {
+  const t = useTheme();
   const rows = hkConnected ? [...BASE_METRIC_ROWS, ...HK_METRIC_ROWS] : BASE_METRIC_ROWS;
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 24, marginBottom: 8 }}>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: DARK_TEXT, marginBottom: 14 }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, marginBottom: 14 }}>
         Health Metrics
       </Text>
       {rows.map((row, rowIdx) => {
@@ -838,6 +846,7 @@ export default function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
+  const t = useTheme();
   const { data: healthData = [] } = useHealthDataQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
   const { healthKitData, healthKitConnected } = useAppStore();
@@ -882,7 +891,7 @@ export default function TrackScreen() {
   }, [selectedDate, healthKitConnected]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Fixed top: header + calendar */}
       <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         {/* Decorative abstract shapes */}

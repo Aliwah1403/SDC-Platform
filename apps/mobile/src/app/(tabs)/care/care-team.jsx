@@ -8,6 +8,7 @@ import { ChevronLeft, Plus, Users, Search, X } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { fonts } from "@/utils/fonts";
 import { useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 
 const RELATIONSHIP_COLORS = {
   doctor:    { color: "#2563EB", bg: "#DBEAFE" },
@@ -36,6 +37,7 @@ function initials(name = "") {
 }
 
 function ContactCard({ contact, onPress }) {
+  const t = useTheme();
   const { color, bg } = getAccent(contact.relationship);
 
   return (
@@ -43,12 +45,12 @@ function ContactCard({ contact, onPress }) {
       onPress={onPress}
       activeOpacity={0.85}
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 18,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: "#F0EDE8",
+        borderColor: t.border,
         flexDirection: "row",
         alignItems: "center",
       }}
@@ -59,7 +61,7 @@ function ContactCard({ contact, onPress }) {
           width: 52,
           height: 52,
           borderRadius: 26,
-          backgroundColor: bg,
+          backgroundColor: t.isDark ? t.surfaceElevated : bg,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 14,
@@ -80,55 +82,56 @@ function ContactCard({ contact, onPress }) {
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A", marginBottom: 4 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text, marginBottom: 4 }}>
           {contact.name}
         </Text>
         <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap" }}>
           {contact.relationship ? (
-            <View style={{ backgroundColor: bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : bg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
               <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color, textTransform: "capitalize" }}>
                 {contact.relationship}
               </Text>
             </View>
           ) : null}
           {contact.isPrimary ? (
-            <View style={{ backgroundColor: "#FEF3C7", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+            <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : "#FEF3C7", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
               <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#92400E" }}>Primary</Text>
             </View>
           ) : null}
         </View>
         {contact.phone ? (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", marginTop: 4 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginTop: 4 }}>
             {contact.phone}
           </Text>
         ) : null}
       </View>
 
       {/* Chevron */}
-      <ChevronLeft size={18} color="#D1D5DB" style={{ transform: [{ rotate: "180deg" }] }} />
+      <ChevronLeft size={18} color={t.border} style={{ transform: [{ rotate: "180deg" }] }} />
     </TouchableOpacity>
   );
 }
 
 function EmptyState() {
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 32,
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#F0EDE8",
+        borderColor: t.border,
         borderStyle: "dashed",
         marginTop: 8,
       }}
     >
       <Users size={36} color="#D09F9A" style={{ marginBottom: 12 }} />
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1A1A1A", marginBottom: 6 }}>
+      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 6 }}>
         No contacts yet
       </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", textAlign: "center", lineHeight: 20 }}>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, textAlign: "center", lineHeight: 20 }}>
         Add emergency contacts so they can be reached quickly in a crisis.
       </Text>
     </View>
@@ -136,6 +139,7 @@ function EmptyState() {
 }
 
 export default function CareTeamScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: contacts = [], isLoading } = useEmergencyContactsQuery();
@@ -155,7 +159,7 @@ export default function CareTeamScreen() {
   const others = filtered.filter((c) => !c.isPrimary);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       {/* Header */}
@@ -240,10 +244,10 @@ export default function CareTeamScreen() {
         {!isLoading && contacts.length > 0 && filtered.length === 0 && (
           <View style={{ alignItems: "center", marginTop: 32 }}>
             <Search size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#1A1A1A", marginBottom: 4 }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 4 }}>
               No results for "{query}"
             </Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
               Try searching by name, relationship, or phone
             </Text>
           </View>
@@ -252,7 +256,7 @@ export default function CareTeamScreen() {
         {/* Flat results when searching */}
         {trimmed && filtered.length > 0 && (
           <>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10 }}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 10 }}>
               {filtered.length} {filtered.length === 1 ? "result" : "results"}
             </Text>
             {filtered.map((c) => (
@@ -270,7 +274,7 @@ export default function CareTeamScreen() {
           <>
             {primary.length > 0 && (
               <>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 10 }}>
                   Primary Contact
                 </Text>
                 {primary.map((c) => (
@@ -285,7 +289,7 @@ export default function CareTeamScreen() {
 
             {others.length > 0 && (
               <>
-                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 10, marginTop: primary.length > 0 ? 8 : 0 }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 10, marginTop: primary.length > 0 ? 8 : 0 }}>
                   Other Contacts
                 </Text>
                 {others.map((c) => (

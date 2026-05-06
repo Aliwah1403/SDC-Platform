@@ -3,8 +3,10 @@ import Svg, { Circle } from "react-native-svg";
 import { Check, Pill } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 function RingProgress({ taken, total }) {
+  const t = useTheme();
   const SIZE = 76;
   const SW = 6;
   const r = (SIZE - SW) / 2;
@@ -14,7 +16,7 @@ function RingProgress({ taken, total }) {
   return (
     <View style={{ width: SIZE, height: SIZE, alignItems: "center", justifyContent: "center" }}>
       <Svg width={SIZE} height={SIZE} style={{ position: "absolute" }}>
-        <Circle cx={SIZE / 2} cy={SIZE / 2} r={r} stroke="#F0E4E1" strokeWidth={SW} fill="none" />
+        <Circle cx={SIZE / 2} cy={SIZE / 2} r={r} stroke={t.border} strokeWidth={SW} fill="none" />
         <Circle
           cx={SIZE / 2}
           cy={SIZE / 2}
@@ -29,10 +31,10 @@ function RingProgress({ taken, total }) {
         />
       </Svg>
       <View style={{ alignItems: "center" }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: "#1A1A1A", lineHeight: 26 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 22, color: t.text, lineHeight: 26 }}>
           {taken}
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>
           of {total}
         </Text>
       </View>
@@ -49,6 +51,7 @@ function StatusPill({ label, color, bg }) {
 }
 
 function MedRow({ med, isLast }) {
+  const t = useTheme();
   const taken = med.taken;
   const timeStr = med.time ?? med.nextDose ?? null;
   const detail = [timeStr, med.dosage, med.type].filter(Boolean).join(" · ");
@@ -78,14 +81,14 @@ function MedRow({ med, isLast }) {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 14,
-              color: "#1A1A1A",
+              color: t.text,
               marginBottom: 2,
             }}
           >
             {med.name}
           </Text>
           {detail.length > 0 && (
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
               {detail}
             </Text>
           )}
@@ -99,13 +102,14 @@ function MedRow({ med, isLast }) {
           <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#D1D5DB" }}>—</Text>
         )}
       </View>
-      {!isLast && <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 54 }} />}
+      {!isLast && <View style={{ height: 1, backgroundColor: t.border, marginLeft: 54 }} />}
     </View>
   );
 }
 
 export function MedicationCard({ medications }) {
   const router = useRouter();
+  const t = useTheme();
 
   if (!medications || medications.length === 0) return null;
 
@@ -127,10 +131,10 @@ export function MedicationCard({ medications }) {
       activeOpacity={0.95}
       onPress={() => router.push("/care/medications")}
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: "#F0E4E1",
+        borderColor: t.border,
         overflow: "hidden",
       }}
     >
@@ -151,7 +155,7 @@ export function MedicationCard({ medications }) {
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#1A1A1A",
+              color: t.text,
               marginBottom: 3,
             }}
           >
@@ -161,7 +165,7 @@ export function MedicationCard({ medications }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               marginBottom: 10,
             }}
           >
@@ -183,7 +187,7 @@ export function MedicationCard({ medications }) {
       </View>
 
       {/* Divider */}
-      <View style={{ height: 1, backgroundColor: "#F0E4E1", marginHorizontal: 16 }} />
+      <View style={{ height: 1, backgroundColor: t.border, marginHorizontal: 16 }} />
 
       {/* Medication list */}
       <View style={{ paddingHorizontal: 16 }}>

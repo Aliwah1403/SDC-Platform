@@ -33,6 +33,7 @@ import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 // base: scrollview pad 20*2 + card pad 20*2 - marginLeft offset 8 = 72; add labelWidth per metric
@@ -328,6 +329,7 @@ function ScdAlertBanner({ metric, value, status, compositeAlert }) {
 // ─── Dot Range Indicator ─────────────────────────────────────────────────────
 
 function DotRange({ value, rangeMin, rangeMax, color }) {
+  const t = useTheme();
   const DOTS = 36;
   if (!value) return null;
   const clamped = Math.min(Math.max(value, rangeMin), rangeMax);
@@ -348,7 +350,7 @@ function DotRange({ value, rangeMin, rangeMax, color }) {
                 width: isCurrent ? 10 : 7,
                 height: isCurrent ? 10 : 7,
                 borderRadius: 999,
-                backgroundColor: isFilled ? color : "#E5E7EB",
+                backgroundColor: isFilled ? color : t.surfaceElevated,
                 opacity: isFilled ? (0.3 + progress * 0.7) : 1,
               }}
             />
@@ -356,8 +358,8 @@ function DotRange({ value, rangeMin, rangeMax, color }) {
         })}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}>{rangeMin}</Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}>{rangeMax}</Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>{rangeMin}</Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>{rangeMax}</Text>
       </View>
     </View>
   );
@@ -604,10 +606,11 @@ function getInsights(metric, currentValue, statusLabel, trendDelta, lowerIsBette
 // ─── Insights Card ───────────────────────────────────────────────────────────
 
 function InsightsCard({ insights, color }) {
+  const t = useTheme();
   if (!insights) return null;
   return (
     <View style={{
-      backgroundColor: "#fff",
+      backgroundColor: t.surface,
       borderRadius: 20,
       padding: 20,
       marginBottom: 14,
@@ -620,23 +623,23 @@ function InsightsCard({ insights, color }) {
       {/* Header row */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Sparkles size={13} color="#9CA3AF" strokeWidth={2} />
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#9CA3AF", letterSpacing: 1, textTransform: "uppercase" }}>
+          <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
             Insights
           </Text>
         </View>
       </View>
 
       {/* Headline */}
-      <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1F2937", lineHeight: 25, marginBottom: 6 }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, lineHeight: 25, marginBottom: 6 }}>
         {insights.headline}
       </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", lineHeight: 20, marginBottom: 18 }}>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 20, marginBottom: 18 }}>
         {insights.subtitle}
       </Text>
 
       {/* Divider */}
-      <View style={{ height: 1, backgroundColor: "#F3F4F6", marginBottom: 18 }} />
+      <View style={{ height: 1, backgroundColor: t.divider, marginBottom: 18 }} />
 
       {/* Section title */}
       <Text style={{ fontFamily: fonts.bold, fontSize: 15, color, marginBottom: 16 }}>
@@ -646,13 +649,13 @@ function InsightsCard({ insights, color }) {
       {/* Tips */}
       {insights.tips.map((tip, ti) => (
         <View key={ti} style={{ marginBottom: ti < insights.tips.length - 1 ? 20 : 0 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1F2937", marginBottom: 10 }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 10 }}>
             {tip.heading}
           </Text>
           {tip.bullets.map((b, bi) => (
             <View key={bi} style={{ flexDirection: "row", marginBottom: bi < tip.bullets.length - 1 ? 8 : 0 }}>
               <View style={{ width: 3, borderRadius: 2, backgroundColor: color, opacity: 0.5, marginRight: 12, marginTop: 2 }} />
-              <Text style={{ flex: 1, fontFamily: fonts.regular, fontSize: 14, color: "#374151", lineHeight: 21 }}>
+              <Text style={{ flex: 1, fontFamily: fonts.regular, fontSize: 14, color: t.text, lineHeight: 21 }}>
                 <Text style={{ fontFamily: fonts.semibold }}>{b.label}</Text>
                 {" "}{b.text}
               </Text>
@@ -667,6 +670,7 @@ function InsightsCard({ insights, color }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function MetricDetailScreen() {
+  const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
@@ -735,7 +739,7 @@ export default function MetricDetailScreen() {
       value,
       label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
       tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
+      labelTextStyle: { color: t.textSecondary, fontSize: 9 },
       ...(meta.chartType === "bar" && {
         frontColor: goal && value >= goal ? meta.color : meta.color + "88",
       }),
@@ -745,7 +749,7 @@ export default function MetricDetailScreen() {
   const IconComp = meta.icon;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9F9F7" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <View style={{
         paddingTop: insets.top + 8,
@@ -753,24 +757,24 @@ export default function MetricDetailScreen() {
         paddingHorizontal: 16,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#F9F9F7",
+        backgroundColor: t.background,
       }}>
         <TouchableOpacity
           onPress={() => router.back()}
           style={{
             width: 36, height: 36, borderRadius: 18,
-            backgroundColor: "#EFEFED",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center", justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#1F2937" strokeWidth={2} />
+          <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1F2937" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
             {meta.label}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
             Last {range} days
           </Text>
         </View>
@@ -780,11 +784,11 @@ export default function MetricDetailScreen() {
             onPress={() => router.push(`/metric-goal?metric=${metric}`)}
             style={{
               width: 36, height: 36, borderRadius: 18,
-              backgroundColor: "#EFEFED",
+              backgroundColor: t.surfaceElevated,
               alignItems: "center", justifyContent: "center",
             }}
           >
-            <Settings size={18} color="#1F2937" strokeWidth={2} />
+            <Settings size={18} color={t.text} strokeWidth={2} />
           </TouchableOpacity>
         ) : (
           <View style={{ width: 36 }} />
@@ -815,13 +819,13 @@ export default function MetricDetailScreen() {
                   paddingHorizontal: 14,
                   paddingVertical: 6,
                   borderRadius: 20,
-                  backgroundColor: range === r ? "#1F2937" : "#EFEFED",
+                  backgroundColor: range === r ? t.text : t.surfaceElevated,
                 }}
               >
                 <Text style={{
                   fontFamily: fonts.semibold,
                   fontSize: 12,
-                  color: range === r ? "#fff" : "#9CA3AF",
+                  color: range === r ? t.surface : t.textSecondary,
                 }}>
                   {r}d
                 </Text>
@@ -831,11 +835,11 @@ export default function MetricDetailScreen() {
 
           {/* Big value */}
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 64, color: "#1F2937", lineHeight: 70 }}>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 64, color: t.text, lineHeight: 70 }}>
               {currentDisplay}
             </Text>
             {currentValue != null && meta.unit && (
-              <Text style={{ fontFamily: fonts.medium, fontSize: 22, color: "#9CA3AF", marginBottom: 6 }}>
+              <Text style={{ fontFamily: fonts.medium, fontSize: 22, color: t.textSecondary, marginBottom: 6 }}>
                 {meta.unit}
               </Text>
             )}
@@ -873,7 +877,7 @@ export default function MetricDetailScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 80, type: "timing", duration: 280 }}
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: t.surface,
             borderRadius: 20,
             padding: 20,
             marginBottom: 14,
@@ -886,15 +890,15 @@ export default function MetricDetailScreen() {
         >
           {/* Section label */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
-            <AlignLeft size={13} color="#9CA3AF" strokeWidth={2} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#9CA3AF", letterSpacing: 1, textTransform: "uppercase" }}>
+            <AlignLeft size={13} color={t.textSecondary} strokeWidth={2} />
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
               About
             </Text>
           </View>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1F2937", lineHeight: 26, marginBottom: 10 }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, lineHeight: 26, marginBottom: 10 }}>
             {meta.aboutTitle}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", lineHeight: 22 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 22 }}>
             {meta.about}
           </Text>
         </MotiView>
@@ -905,7 +909,7 @@ export default function MetricDetailScreen() {
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 160, type: "timing", duration: 280 }}
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: t.surface,
             borderRadius: 20,
             padding: 20,
             marginBottom: 14,
@@ -919,12 +923,12 @@ export default function MetricDetailScreen() {
           {/* Section label row */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <TrendingUp size={13} color="#9CA3AF" strokeWidth={2} />
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#9CA3AF", letterSpacing: 1, textTransform: "uppercase" }}>
+              <TrendingUp size={13} color={t.textSecondary} strokeWidth={2} />
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
                 Trend
               </Text>
             </View>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
               {startDate} – {endDate}
             </Text>
           </View>
@@ -942,7 +946,7 @@ export default function MetricDetailScreen() {
                 {trendDelta > 0 ? "▲" : "▼"} {Math.abs(trendDelta).toFixed(1)}
               </Text>
               {meta.unit && (
-                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "#9CA3AF" }}>
+                <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textSecondary }}>
                   {meta.unit}
                 </Text>
               )}
@@ -970,12 +974,12 @@ export default function MetricDetailScreen() {
                 noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
-                xAxisColor="#E5E7EB"
-                rulesColor="#EBEBEB"
+                xAxisColor={t.border}
+                rulesColor={t.divider}
                 rulesType="solid"
                 initialSpacing={8}
                 spacing={Math.max(4, Math.floor(chartWidth / (range + 2)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
+                yAxisTextStyle={{ color: t.textSecondary, fontSize: 11 }}
                 backgroundColor="transparent"
                 yAxisLabelWidth={yAxis.labelWidth}
                 {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
@@ -1028,12 +1032,12 @@ export default function MetricDetailScreen() {
                 noOfSections={yAxis.sections}
                 maxValue={meta.max}
                 yAxisColor="transparent"
-                xAxisColor="#E5E7EB"
-                rulesColor="#EBEBEB"
+                xAxisColor={t.border}
+                rulesColor={t.divider}
                 initialSpacing={8}
                 barWidth={Math.max(6, Math.floor(chartWidth / (range * 1.6)))}
                 spacing={Math.max(3, Math.floor(chartWidth / (range * 3)))}
-                yAxisTextStyle={{ color: "#9CA3AF", fontSize: 11 }}
+                yAxisTextStyle={{ color: t.textSecondary, fontSize: 11 }}
                 backgroundColor="transparent"
                 yAxisLabelWidth={yAxis.labelWidth}
                 {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
@@ -1070,7 +1074,7 @@ export default function MetricDetailScreen() {
           {goal && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 }}>
               <View style={{ width: 18, height: 2, backgroundColor: meta.color, opacity: 0.6 }} />
-              <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>
                 Daily goal ({goal} {meta.unit ?? ""})
               </Text>
             </View>

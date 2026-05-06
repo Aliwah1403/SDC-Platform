@@ -16,8 +16,10 @@ import {
   MapPin,
   Users,
 } from "lucide-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function EmergencyScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -32,7 +34,7 @@ export default function EmergencyScreen() {
     <TouchableOpacity
       onPress={() => phone && Linking.openURL(`tel:${phone}`)}
       style={{
-        backgroundColor: "#ffffff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 20,
         marginBottom: 16,
@@ -67,7 +69,7 @@ export default function EmergencyScreen() {
             style={{
               fontSize: 18,
               fontWeight: "700",
-              color: "#1a1a1a",
+              color: t.text,
               marginBottom: 4,
             }}
           >
@@ -76,7 +78,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: "#666",
+              color: t.textSecondary,
             }}
           >
             {subtitle}
@@ -112,8 +114,8 @@ export default function EmergencyScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -121,9 +123,9 @@ export default function EmergencyScreen() {
           paddingTop: insets.top + 16,
           paddingHorizontal: 20,
           paddingBottom: 16,
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#F3F4F6",
+          borderBottomColor: t.border,
         }}
       >
         <View
@@ -138,13 +140,13 @@ export default function EmergencyScreen() {
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: "#F9FAFB",
+              backgroundColor: t.background,
               alignItems: "center",
               justifyContent: "center",
               marginRight: 12,
             }}
           >
-            <ChevronLeft size={24} color="#1a1a1a" />
+            <ChevronLeft size={24} color={t.text} />
           </TouchableOpacity>
 
           <View style={{ flex: 1 }}>
@@ -152,7 +154,7 @@ export default function EmergencyScreen() {
               style={{
                 fontSize: 28,
                 fontWeight: "700",
-                color: "#1a1a1a",
+                color: t.text,
               }}
             >
               Emergency Help
@@ -212,7 +214,7 @@ export default function EmergencyScreen() {
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: "#1a1a1a",
+            color: t.text,
             marginBottom: 16,
           }}
         >
@@ -250,7 +252,7 @@ export default function EmergencyScreen() {
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: "#1a1a1a",
+            color: t.text,
             marginTop: 24,
             marginBottom: 16,
           }}
@@ -278,11 +280,11 @@ export default function EmergencyScreen() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: "#F9FAFB",
+            backgroundColor: t.background,
             borderRadius: 16,
             padding: 20,
             borderWidth: 2,
-            borderColor: "#E5E7EB",
+            borderColor: t.border,
             borderStyle: "dashed",
             alignItems: "center",
             marginBottom: 16,
@@ -292,7 +294,7 @@ export default function EmergencyScreen() {
             style={{
               fontSize: 16,
               fontWeight: "600",
-              color: "#666",
+              color: t.textSecondary,
             }}
           >
             + Add Emergency Contact
@@ -303,7 +305,7 @@ export default function EmergencyScreen() {
           style={{
             fontSize: 20,
             fontWeight: "700",
-            color: "#1a1a1a",
+            color: t.text,
             marginTop: 24,
             marginBottom: 16,
           }}
@@ -313,11 +315,11 @@ export default function EmergencyScreen() {
 
         <TouchableOpacity
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             borderRadius: 16,
             padding: 20,
             borderWidth: 1,
-            borderColor: "#F3F4F6",
+            borderColor: t.border,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.06,
@@ -337,7 +339,7 @@ export default function EmergencyScreen() {
                 width: 48,
                 height: 48,
                 borderRadius: 24,
-                backgroundColor: "#F2EFEC",
+                backgroundColor: t.isDark ? t.surfaceElevated : "#F2EFEC",
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 16,
@@ -351,7 +353,7 @@ export default function EmergencyScreen() {
                 style={{
                   fontSize: 18,
                   fontWeight: "700",
-                  color: "#1a1a1a",
+                  color: t.text,
                   marginBottom: 4,
                 }}
               >
@@ -360,7 +362,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  color: "#666",
+                  color: t.textSecondary,
                 }}
               >
                 2.3 miles away • Open 24/7
@@ -371,7 +373,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 14,
-              color: "#666",
+              color: t.textSecondary,
               marginBottom: 12,
             }}
           >

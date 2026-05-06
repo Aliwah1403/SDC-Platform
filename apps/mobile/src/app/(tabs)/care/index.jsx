@@ -7,6 +7,7 @@ import { usePostHog } from "posthog-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 import { useAppStore } from "@/store/appStore";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
@@ -120,6 +121,7 @@ function EmergencyButton({ onPress, isActive }) {
 }
 
 function MedsCard({ taken, total, onPress }) {
+  const t = useTheme();
   const pct = total > 0 ? taken / total : 0;
   const due = total - taken;
 
@@ -127,7 +129,7 @@ function MedsCard({ taken, total, onPress }) {
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
+      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
     >
       <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
         <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14, marginTop: 2 }}>
@@ -135,17 +137,17 @@ function MedsCard({ taken, total, onPress }) {
         </View>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}>Medications</Text>
+            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>Medications</Text>
             {due > 0 && (
               <View style={{ backgroundColor: "#FEE2E2", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
                 <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#DC2626" }}>{due} due</Text>
               </View>
             )}
           </View>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", marginBottom: 12 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginBottom: 12 }}>
             {total > 0 ? `${taken} of ${total} taken today` : "No medications added"}
           </Text>
-          <View style={{ height: 6, backgroundColor: "#F3F4F6", borderRadius: 3, overflow: "hidden" }}>
+          <View style={{ height: 6, backgroundColor: t.surfaceElevated, borderRadius: 3, overflow: "hidden" }}>
             <View style={{ height: "100%", width: `${pct * 100}%`, backgroundColor: "#A9334D", borderRadius: 3 }} />
           </View>
         </View>
@@ -155,19 +157,20 @@ function MedsCard({ taken, total, onPress }) {
 }
 
 function AppointmentsCard({ appointment, onPress }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
+      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-          <Calendar size={26} color="#1A1A1A" strokeWidth={2} />
+          <Calendar size={26} color={t.text} strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A", marginBottom: 3 }}>Appointments</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: appointment ? "#1A1A1A" : "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 3 }}>Appointments</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: appointment ? t.text : t.textSecondary }}>
             {appointment ? (appointment.doctor || appointment.title) : "No upcoming appointments"}
           </Text>
         </View>
@@ -186,17 +189,18 @@ function AppointmentsCard({ appointment, onPress }) {
 const AVATAR_PLACEHOLDERS = ["#A9334D", "#059669", "#2563EB", "#7C3AED"];
 
 function CareTeamCard({ contactCount, onPress }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ width: HALF_CARD, backgroundColor: "#FFFFFF", borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
+      style={{ width: HALF_CARD, backgroundColor: t.surface, borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
     >
       <View style={{ marginBottom: 12 }}>
         <Users size={24} color="#059669" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 8 }}>Care Team</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 8 }}>Care Team</Text>
         <View style={{ flexDirection: "row", marginBottom: 8 }}>
           {AVATAR_PLACEHOLDERS.map((color, i) => (
             <View
@@ -206,12 +210,12 @@ function CareTeamCard({ contactCount, onPress }) {
                 backgroundColor: color,
                 marginLeft: i === 0 ? 0 : -8,
                 zIndex: AVATAR_PLACEHOLDERS.length - i,
-                borderWidth: 2, borderColor: "#FFFFFF",
+                borderWidth: 2, borderColor: t.surface,
               }}
             />
           ))}
         </View>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
           {contactCount} {contactCount === 1 ? "contact" : "contacts"}
         </Text>
       </View>
@@ -220,21 +224,22 @@ function CareTeamCard({ contactCount, onPress }) {
 }
 
 function CrisisPlanCard({ onPress }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ width: HALF_CARD, backgroundColor: "#FFFFFF", borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
+      style={{ width: HALF_CARD, backgroundColor: t.surface, borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
     >
       <View style={{ marginBottom: 12 }}>
         <FileText size={24} color="#DC2626" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#1A1A1A", marginBottom: 8 }}>Crisis Plan</Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 8 }}>Crisis Plan</Text>
         <View style={{ alignSelf: "flex-start", backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 6 }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#059669" }}>Plan ready</Text>
         </View>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
           View your personalized plan
         </Text>
       </View>
@@ -243,19 +248,20 @@ function CrisisPlanCard({ onPress }) {
 }
 
 function ClinicsCard({ savedCount, onPress }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       activeOpacity={0.75}
-      style={{ backgroundColor: "#FFFFFF", borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
+      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
     >
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
           <MapPin size={26} color="#F0531C" strokeWidth={2} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A", marginBottom: 3 }}>Clinics & Hospitals</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 3 }}>Clinics & Hospitals</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
             {savedCount > 0 ? `${savedCount} saved nearby` : "Find nearby facilities"}
           </Text>
         </View>
@@ -276,6 +282,7 @@ export default function CareMenuScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const posthog = usePostHog();
+  const t = useTheme();
 
   const crisisMode = useAppStore((s) => s.crisisMode);
 
@@ -310,7 +317,7 @@ export default function CareMenuScreen() {
   ].join("  ·  ");
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       {/* Header */}

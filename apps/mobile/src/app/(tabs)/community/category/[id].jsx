@@ -27,11 +27,13 @@ import { PostSkeleton } from "@/components/Community/PostSkeleton";
 import { CategoryCard } from "@/components/Community/CategoryCard";
 import { CATEGORY_MAP, getRelatedCategories } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const RELATED_INSERT_AFTER = 2; // inject "You may also like" after this post index
 const SKELETON_DATA = Array.from({ length: 4 }, (_, i) => ({ id: `_sk_${i}`, _type: "skeleton" }));
 
 export default function CategoryDetailScreen() {
+  const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
@@ -76,7 +78,7 @@ export default function CategoryDetailScreen() {
   if (!category) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ fontFamily: fonts.regular, color: "#6B7280" }}>
+        <Text style={{ fontFamily: fonts.regular, color: t.textSecondary }}>
           Category not found.
         </Text>
       </View>
@@ -113,7 +115,7 @@ export default function CategoryDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       <FlatList
@@ -145,7 +147,7 @@ export default function CategoryDetailScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
                 marginBottom: 6,
               }}
             >
@@ -155,7 +157,7 @@ export default function CategoryDetailScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
                 textAlign: "center",
               }}
             >
@@ -312,6 +314,7 @@ function CategoryHeader({
 }
 
 function RelatedSection({ relatedCategories, followedCategoryIds, router }) {
+  const t = useTheme();
   if (relatedCategories.length === 0) return null;
 
   return (
@@ -322,7 +325,7 @@ function RelatedSection({ relatedCategories, followedCategoryIds, router }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 15,
-            color: "#1A1A1A",
+            color: t.text,
             marginBottom: 2,
           }}
         >
@@ -332,7 +335,7 @@ function RelatedSection({ relatedCategories, followedCategoryIds, router }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 12,
-            color: "#6B7280",
+            color: t.textSecondary,
           }}
         >
           Similar communities you might enjoy

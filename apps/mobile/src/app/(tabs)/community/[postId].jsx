@@ -45,6 +45,7 @@ import {
 } from "@/hooks/queries/useCategoryPrefsQuery";
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
@@ -86,14 +87,16 @@ const FLAIR_CONFIG = {
 };
 
 function SkeletonBox({ opacity, style }) {
+  const t = useTheme();
   return (
     <Animated.View
-      style={[{ backgroundColor: "#E8E0DC", borderRadius: 6, opacity }, style]}
+      style={[{ backgroundColor: t.isDark ? t.surfaceElevated : "#E8E0DC", borderRadius: 6, opacity }, style]}
     />
   );
 }
 
 function PostDetailSkeleton({ insets }) {
+  const t = useTheme();
   const pulse = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
@@ -106,7 +109,7 @@ function PostDetailSkeleton({ insets }) {
   }, [pulse]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <View style={{ flex: 1, backgroundColor: t.surface }}>
       <StatusBar style="light" />
       {/* Gradient header placeholder */}
       <View
@@ -149,7 +152,7 @@ function PostDetailSkeleton({ insets }) {
       </View>
 
       {/* Divider */}
-      <View style={{ height: 1, backgroundColor: "#F0EAE7", marginHorizontal: 16 }} />
+      <View style={{ height: 1, backgroundColor: t.divider, marginHorizontal: 16 }} />
 
       {/* Comment placeholders */}
       {[0, 1, 2].map((i) => (
@@ -167,6 +170,7 @@ function PostDetailSkeleton({ insets }) {
 }
 
 export default function PostDetailScreen() {
+  const t = useTheme();
   const { postId } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -204,12 +208,12 @@ export default function PostDetailScreen() {
 
   if (isError || (!isLoading && !post)) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#fff", justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
-        <StatusBar style="dark" />
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1A1A1A", marginBottom: 8, textAlign: "center" }}>
+      <View style={{ flex: 1, backgroundColor: t.surface, justifyContent: "center", alignItems: "center", paddingHorizontal: 32 }}>
+        <StatusBar style={t.isDark ? "light" : "dark"} />
+        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, marginBottom: 8, textAlign: "center" }}>
           Post not found
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B6B6B", textAlign: "center", marginBottom: 24 }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", marginBottom: 24 }}>
           This post may have been removed or is no longer available.
         </Text>
         <TouchableOpacity
@@ -379,7 +383,7 @@ export default function PostDetailScreen() {
       </LinearGradient>
 
       {/* Post body */}
-      <View style={{ backgroundColor: "#fff", paddingHorizontal: 8, paddingVertical: 20, marginBottom: 8 }}>
+      <View style={{ backgroundColor: t.surface, paddingHorizontal: 8, paddingVertical: 20, marginBottom: 8 }}>
         {/* Author row */}
         <View
           style={{
@@ -407,13 +411,13 @@ export default function PostDetailScreen() {
                 width: 44,
                 height: 44,
                 borderRadius: 22,
-                backgroundColor: "#E5E0DD",
+                backgroundColor: t.surfaceElevated,
                 alignItems: "center",
                 justifyContent: "center",
                 marginRight: 12,
               }}
             >
-              <UserCircle size={24} color="#9C8D8A" strokeWidth={1.5} />
+              <UserCircle size={24} color={t.textSecondary} strokeWidth={1.5} />
             </View>
           ) : (
             <View
@@ -445,7 +449,7 @@ export default function PostDetailScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 15,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 {post.isSystemPost && systemCategory
@@ -500,7 +504,7 @@ export default function PostDetailScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 13,
-                  color: "#6B7280",
+                  color: t.textSecondary,
                   marginTop: 2,
                 }}
               >
@@ -516,7 +520,7 @@ export default function PostDetailScreen() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 22,
-              color: "#1A1A1A",
+              color: t.text,
               lineHeight: 30,
               marginBottom: 14,
             }}
@@ -571,7 +575,7 @@ export default function PostDetailScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 16,
-              color: "#1A1A1A",
+              color: t.text,
               lineHeight: 24,
               marginBottom: post.poll ? 12 : post.imageUrl ? 16 : 14,
             }}
@@ -622,7 +626,7 @@ export default function PostDetailScreen() {
         >
           <View
             style={{
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.background,
               borderRadius: 10,
               paddingHorizontal: 10,
               paddingVertical: 4,
@@ -632,7 +636,7 @@ export default function PostDetailScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 12,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               {CATEGORY_LABELS[post.category] ?? post.category}
@@ -667,7 +671,7 @@ export default function PostDetailScreen() {
             alignItems: "center",
             gap: 24,
             borderTopWidth: 1,
-            borderTopColor: "#F0EAE8",
+            borderTopColor: t.border,
             paddingTop: 12,
           }}
         >
@@ -680,7 +684,7 @@ export default function PostDetailScreen() {
           >
             <Heart
               size={20}
-              color={isLiked ? "#A9334D" : "#9CA3AF"}
+              color={isLiked ? "#A9334D" : t.textSecondary}
               fill={isLiked ? "#A9334D" : "transparent"}
               strokeWidth={2}
             />
@@ -688,7 +692,7 @@ export default function PostDetailScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: isLiked ? "#A9334D" : "#6B7280",
+                color: isLiked ? "#A9334D" : t.textSecondary,
               }}
             >
               {displayLikes}
@@ -699,12 +703,12 @@ export default function PostDetailScreen() {
             onPress={handleShare}
             style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
           >
-            <Share2 size={20} color="#9CA3AF" strokeWidth={2} />
+            <Share2 size={20} color={t.textSecondary} strokeWidth={2} />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
               }}
             >
               Share
@@ -718,7 +722,7 @@ export default function PostDetailScreen() {
         style={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 }}
       >
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1A1A1A" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}
         >
           {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
         </Text>
@@ -727,7 +731,7 @@ export default function PostDetailScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       <KeyboardAvoidingView
@@ -757,9 +761,9 @@ export default function PostDetailScreen() {
         {/* Comment input */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: t.surface,
             borderTopWidth: 1,
-            borderTopColor: "#F0EAE8",
+            borderTopColor: t.border,
           }}
         >
           {/* Replying-to chip */}
@@ -778,7 +782,7 @@ export default function PostDetailScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 13,
-                  color: "#6B7280",
+                  color: t.textSecondary,
                 }}
               >
                 Replying to{" "}
@@ -790,7 +794,7 @@ export default function PostDetailScreen() {
                 onPress={() => setReplyingTo(null)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <X size={14} color="#9CA3AF" strokeWidth={2} />
+                <X size={14} color={t.textSecondary} strokeWidth={2} />
               </TouchableOpacity>
             </View>
           )}
@@ -811,15 +815,15 @@ export default function PostDetailScreen() {
               flex: 1,
               fontFamily: fonts.regular,
               fontSize: 15,
-              color: "#1A1A1A",
-              backgroundColor: "#F8F4F0",
+              color: t.text,
+              backgroundColor: t.background,
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 10,
               maxHeight: 100,
             }}
             placeholder={replyingTo ? `Reply to @${replyingTo.authorName}…` : "Add a comment…"}
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={t.textTertiary}
             multiline
             value={inputText}
             onChangeText={setInputText}
@@ -828,7 +832,7 @@ export default function PostDetailScreen() {
             onPress={handleSubmitComment}
             disabled={!inputText.trim()}
             style={{
-              backgroundColor: inputText.trim() ? "#A9334D" : "#E5E7EB",
+              backgroundColor: inputText.trim() ? "#A9334D" : t.surfaceElevated,
               borderRadius: 20,
               width: 40,
               height: 40,

@@ -25,6 +25,7 @@ import {
 } from "@/hooks/queries/useCategoryPrefsQuery";
 import { useCommunityNotificationsQuery } from "@/hooks/queries/useCommunityNotificationsQuery";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const SKELETON_DATA = [
   { id: "sk1", _skeleton: true },
@@ -44,6 +45,7 @@ export default function CommunityFeedScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
+  const t = useTheme();
   const [activeFeed, setActiveFeed] = useState("popular");
   const [searchQuery, setSearchQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -108,10 +110,10 @@ export default function CommunityFeedScreen() {
   function renderEmptyFollowing() {
     return (
       <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#1A1A1A", marginBottom: 8 }}>
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: t.text, marginBottom: 8 }}>
           No communities followed yet
         </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center", marginBottom: 20 }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", marginBottom: 20 }}>
           Follow communities to see their posts here.
         </Text>
         <TouchableOpacity
@@ -132,7 +134,7 @@ export default function CommunityFeedScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       <CommunityHeader
@@ -167,10 +169,10 @@ export default function CommunityFeedScreen() {
                 renderEmptyFollowing()
               ) : (
                 <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: "#1A1A1A", marginBottom: 8 }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: t.text, marginBottom: 8 }}>
                     Nothing here yet
                   </Text>
-                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#6B7280", textAlign: "center" }}>
+                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center" }}>
                     {searchQuery
                       ? `No results for "${searchQuery}"`
                       : EMPTY_MESSAGES[activeFeed]}

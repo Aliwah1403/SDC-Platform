@@ -79,6 +79,7 @@ import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQ
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAuthStore } from "@/utils/auth/store";
 import { useAppearanceStore } from "@/store/appearanceStore";
+import { useTheme } from "@/hooks/useTheme";
 import { fonts } from "@/utils/fonts";
 import { useRouter } from "expo-router";
 import {
@@ -194,8 +195,9 @@ function formatAge(dob) {
 // ─── primitive components ────────────────────────────────────────────────────
 
 function Divider() {
+  const t = useTheme();
   return (
-    <View style={{ height: 1, backgroundColor: "#F8E9E7", marginLeft: 54 }} />
+    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 54 }} />
   );
 }
 
@@ -208,6 +210,7 @@ function SettingRow({
   onPress,
   disabled = false,
 }) {
+  const t = useTheme();
   const content = (
     <View
       style={{
@@ -222,7 +225,6 @@ function SettingRow({
           width: 34,
           height: 34,
           borderRadius: 8,
-          // backgroundColor: `${iconColor}18`,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 12,
@@ -234,7 +236,7 @@ function SettingRow({
         style={{
           fontFamily: fonts.medium,
           fontSize: 15,
-          color: "#1A1A1A",
+          color: t.text,
           flex: 1,
         }}
       >
@@ -245,7 +247,7 @@ function SettingRow({
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: "#9CA3AF",
+            color: t.textSecondary,
             marginRight: rightElement === "chevron" ? 4 : 0,
           }}
         >
@@ -253,7 +255,7 @@ function SettingRow({
         </Text>
       ) : null}
       {rightElement === "chevron" ? (
-        <ChevronRight size={18} color="#C4A8A4" />
+        <ChevronRight size={18} color={t.textTertiary} />
       ) : (
         rightElement || null
       )}
@@ -281,6 +283,7 @@ function SettingRowToggle({
   value,
   onChange,
 }) {
+  const t = useTheme();
   return (
     <View
       style={{
@@ -307,7 +310,7 @@ function SettingRowToggle({
           style={{
             fontFamily: fonts.medium,
             fontSize: 15,
-            color: "#1A1A1A",
+            color: t.text,
           }}
         >
           {label}
@@ -317,7 +320,7 @@ function SettingRowToggle({
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               marginTop: 1,
             }}
           >
@@ -328,15 +331,16 @@ function SettingRowToggle({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: "#E5E7EB", true: "#A9334D" }}
+        trackColor={{ false: t.border, true: "#A9334D" }}
         thumbColor="#ffffff"
-        ios_backgroundColor="#E5E7EB"
+        ios_backgroundColor={t.border}
       />
     </View>
   );
 }
 
 function SectionCard({ title, children }) {
+  const t = useTheme();
   return (
     <View style={{ marginBottom: 24 }}>
       {title ? (
@@ -344,7 +348,7 @@ function SectionCard({ title, children }) {
           style={{
             fontFamily: fonts.semibold,
             fontSize: 11,
-            color: "#9CA3AF",
+            color: t.textSecondary,
             letterSpacing: 0.8,
             textTransform: "uppercase",
             marginBottom: 6,
@@ -356,10 +360,10 @@ function SectionCard({ title, children }) {
       ) : null}
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderRadius: 14,
           borderWidth: 1,
-          borderColor: "#F0E4E1",
+          borderColor: t.border,
           overflow: "hidden",
         }}
       >
@@ -399,6 +403,7 @@ export default function ProfileScreen() {
     healthKitConnected: appleHealthConnected,
   } = useAppStore();
   const { theme, setTheme } = useAppearanceStore();
+  const t = useTheme();
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     profile?.notificationsEnabled ??
@@ -703,7 +708,7 @@ export default function ProfileScreen() {
         onPress: async () => {
           posthog?.capture("sign_out", {});
           await signOut();
-          router.replace("/(auth)/welcome");
+          setTimeout(() => router.replace("/(auth)/welcome"), 100);
         },
       },
     ]);
@@ -1102,13 +1107,13 @@ export default function ProfileScreen() {
   // ── Search Overlay ─────────────────────────────────────────────────────────
   if (searchVisible) {
     return (
-      <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-        <StatusBar style="dark" />
+      <View style={{ flex: 1, backgroundColor: t.background }}>
+        <StatusBar style={t.isDark ? "light" : "dark"} />
 
         {/* Search bar row */}
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             paddingTop: insets.top + 10,
             paddingBottom: 12,
             paddingHorizontal: 16,
@@ -1116,7 +1121,7 @@ export default function ProfileScreen() {
             alignItems: "center",
             gap: 10,
             borderBottomWidth: 1,
-            borderBottomColor: "#F0E4E1",
+            borderBottomColor: t.border,
           }}
         >
           <View
@@ -1124,25 +1129,25 @@ export default function ProfileScreen() {
               flex: 1,
               flexDirection: "row",
               alignItems: "center",
-              backgroundColor: "#F0EFEF",
+              backgroundColor: t.isDark ? "#2A2A2A" : "#F0EFEF",
               borderRadius: 12,
               paddingHorizontal: 12,
               paddingVertical: 9,
               gap: 8,
             }}
           >
-            <Search size={16} color="#9CA3AF" />
+            <Search size={16} color={t.textSecondary} />
             <TextInput
               ref={searchInputRef}
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder="Search"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={t.textSecondary}
               style={{
                 flex: 1,
                 fontFamily: fonts.regular,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
                 padding: 0,
               }}
               returnKeyType="search"
@@ -1155,7 +1160,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Cancel
@@ -1171,7 +1176,7 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           ItemSeparatorComponent={() => (
             <View
-              style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 62 }}
+              style={{ height: 1, backgroundColor: t.border, marginLeft: 62 }}
             />
           )}
           renderItem={({ item }) => (
@@ -1186,7 +1191,7 @@ export default function ProfileScreen() {
                 alignItems: "center",
                 paddingVertical: 13,
                 paddingHorizontal: 16,
-                backgroundColor: "#ffffff",
+                backgroundColor: t.surface,
               }}
             >
               <View
@@ -1208,7 +1213,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 15,
-                    color: "#1A1A1A",
+                    color: t.text,
                   }}
                 >
                   {item.label}
@@ -1218,7 +1223,7 @@ export default function ProfileScreen() {
                     style={{
                       fontFamily: fonts.regular,
                       fontSize: 12,
-                      color: "#9CA3AF",
+                      color: t.textSecondary,
                       marginTop: 1,
                     }}
                   >
@@ -1227,7 +1232,7 @@ export default function ProfileScreen() {
                 ) : null}
               </View>
 
-              <ChevronRight size={18} color="#C4A8A4" />
+              <ChevronRight size={18} color={t.textTertiary} />
             </TouchableOpacity>
           )}
           ListEmptyComponent={
@@ -1236,7 +1241,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 15,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 No results for "{searchQuery}"
@@ -1250,8 +1255,8 @@ export default function ProfileScreen() {
 
   // ── Main Profile Screen ────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* ── Sticky top bar ── */}
       <View style={styles.header}>
@@ -1263,22 +1268,22 @@ export default function ProfileScreen() {
           {Platform.OS === "ios" ? (
             <BlurView
               intensity={80}
-              tint="systemChromeMaterial"
+              tint={t.isDark ? "systemChromeMaterialDark" : "systemChromeMaterial"}
               style={StyleSheet.absoluteFill}
             />
           ) : (
             <View
-              style={[StyleSheet.absoluteFill, { backgroundColor: "#ffffff" }]}
+              style={[StyleSheet.absoluteFill, { backgroundColor: t.surface }]}
             />
           )}
           {/* Border fades in with the background */}
-          <View style={styles.headerBorder} />
+          <View style={[styles.headerBorder, { backgroundColor: t.border }]} />
         </Animated.View>
 
         <View
           style={[
             styles.headerContent,
-            { paddingTop: insets.top + 10, backgroundColor: "#ffffff" },
+            { paddingTop: insets.top + 10, backgroundColor: t.surface },
           ]}
         >
           <TouchableOpacity
@@ -1286,11 +1291,11 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
             style={styles.headerBtn}
           >
-            <Search size={20} color="#1A1A1A" />
+            <Search size={20} color={t.text} />
           </TouchableOpacity>
 
           <Animated.Text
-            style={[styles.headerNickname, nicknameAnimStyle]}
+            style={[styles.headerNickname, nicknameAnimStyle, { color: t.text }]}
             numberOfLines={1}
           >
             {displayNickname !== "—" ? displayNickname : "Profile"}
@@ -1301,7 +1306,7 @@ export default function ProfileScreen() {
             activeOpacity={0.6}
             style={styles.headerBtn}
           >
-            <QrCode size={20} color="#1A1A1A" />
+            <QrCode size={20} color={t.text} />
           </TouchableOpacity>
         </View>
       </View>
@@ -1316,11 +1321,11 @@ export default function ProfileScreen() {
         {/* ── Profile card ── */}
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             paddingBottom: 24,
             paddingTop: 28,
             borderBottomWidth: 1,
-            borderBottomColor: "#F0E4E1",
+            borderBottomColor: t.border,
             marginBottom: 24,
           }}
         >
@@ -1385,7 +1390,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 22,
-                color: "#1A1A1A",
+                color: t.text,
                 marginBottom: 4,
               }}
             >
@@ -1395,7 +1400,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 13,
-                color: "#9CA3AF",
+                color: t.textSecondary,
                 marginBottom: 10,
               }}
             >
@@ -1698,12 +1703,12 @@ export default function ProfileScreen() {
                     width={18}
                     height={18}
                     viewBox="0 0 24 24"
-                    fill="#1A1A1A"
+                    fill={t.text}
                   >
                     <Path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                   </Svg>
                 )}
-                iconColor="#1A1A1A"
+                iconColor={t.text}
                 label="Apple"
                 // value={isAppleLinked && "Connected"}
                 rightElement={
@@ -1813,7 +1818,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "#9CA3AF",
+                color: t.textSecondary,
                 marginBottom: 2,
               }}
             >
@@ -1823,7 +1828,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "#9CA3AF",
+                color: t.textSecondary,
                 marginBottom: 2,
               }}
             >
@@ -1834,7 +1839,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 11,
-                color: "#C4A8A4",
+                color: t.textTertiary,
                 textAlign: "center",
                 paddingHorizontal: 32,
                 marginTop: 6,
@@ -1856,12 +1861,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingScd(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingScd(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -1876,7 +1881,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "rgba(9,51,44,0.07)",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingScd(false)} hitSlop={12}>
@@ -1884,7 +1889,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "rgba(9,51,44,0.45)",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -1894,7 +1899,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               SCD Type
@@ -1916,14 +1921,14 @@ export default function ProfileScreen() {
                     alignItems: "center",
                     paddingVertical: 14,
                     paddingHorizontal: 20,
-                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                    backgroundColor: pressed ? t.background : t.surfaceElevated,
                   })}
                 >
                   <Text
                     style={{
                       fontFamily: fonts.medium,
                       fontSize: 16,
-                      color: "#1A1A1A",
+                      color: t.text,
                       flex: 1,
                     }}
                   >
@@ -1937,7 +1942,7 @@ export default function ProfileScreen() {
                   <View
                     style={{
                       height: 1,
-                      backgroundColor: "#F0E4E1",
+                      backgroundColor: t.border,
                       marginLeft: 20,
                     }}
                   />
@@ -1956,12 +1961,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingBloodType(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingBloodType(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -1976,7 +1981,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "rgba(9,51,44,0.07)",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingBloodType(false)} hitSlop={12}>
@@ -1984,7 +1989,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "rgba(9,51,44,0.45)",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -1994,7 +1999,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Blood Type
@@ -2005,7 +2010,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               paddingHorizontal: 20,
               paddingTop: 10,
               paddingBottom: 4,
@@ -2025,14 +2030,14 @@ export default function ProfileScreen() {
                   alignItems: "center",
                   paddingVertical: 14,
                   paddingHorizontal: 20,
-                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  backgroundColor: pressed ? t.background : t.surfaceElevated,
                 })}
               >
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#1A1A1A",
+                    color: t.text,
                     flex: 1,
                   }}
                 >
@@ -2043,7 +2048,7 @@ export default function ProfileScreen() {
                 <View
                   style={{
                     height: 1,
-                    backgroundColor: "#F0E4E1",
+                    backgroundColor: t.border,
                     marginLeft: 20,
                   }}
                 />
@@ -2061,7 +2066,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingAllergies(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingAllergies(false)}
         />
         <KeyboardAvoidingView
@@ -2069,7 +2074,7 @@ export default function ProfileScreen() {
         >
           <View
             style={{
-              backgroundColor: "#ffffff",
+              backgroundColor: t.surfaceElevated,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               paddingBottom: insets.bottom + 12,
@@ -2085,7 +2090,7 @@ export default function ProfileScreen() {
                 paddingTop: 16,
                 paddingBottom: 12,
                 borderBottomWidth: 1,
-                borderBottomColor: "#F0E4E1",
+                borderBottomColor: t.border,
               }}
             >
               <Pressable
@@ -2096,7 +2101,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#9CA3AF",
+                    color: t.textSecondary,
                   }}
                 >
                   Cancel
@@ -2106,7 +2111,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 Allergies
@@ -2129,7 +2134,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 13,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                   marginBottom: 12,
                 }}
               >
@@ -2158,15 +2163,15 @@ export default function ProfileScreen() {
                         paddingVertical: 7,
                         borderRadius: 20,
                         borderWidth: 1.5,
-                        borderColor: selected ? "#A9334D" : "#F0E4E1",
-                        backgroundColor: selected ? "#A9334D" : "#ffffff",
+                        borderColor: selected ? "#A9334D" : t.border,
+                        backgroundColor: selected ? "#A9334D" : t.surfaceElevated,
                       }}
                     >
                       <Text
                         style={{
                           fontFamily: fonts.medium,
                           fontSize: 14,
-                          color: selected ? "#ffffff" : "#1A1A1A",
+                          color: selected ? "#ffffff" : t.text,
                         }}
                       >
                         {p}
@@ -2208,9 +2213,9 @@ export default function ProfileScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   borderWidth: 1,
-                  borderColor: "#F0E4E1",
+                  borderColor: t.border,
                   borderRadius: 12,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
                   gap: 8,
@@ -2220,17 +2225,17 @@ export default function ProfileScreen() {
                   value={tempAllergyInput}
                   onChangeText={setTempAllergyInput}
                   placeholder="Add allergy…"
-                  placeholderTextColor="#C4A8A4"
+                  placeholderTextColor={t.textTertiary}
                   returnKeyType="done"
                   autoCapitalize="words"
                   onSubmitEditing={() => {
-                    const t = tempAllergyInput.trim();
+                    const trimmed = tempAllergyInput.trim();
                     if (
-                      t &&
-                      !tempAllergyCustom.includes(t) &&
-                      !tempAllergyPresets.includes(t)
+                      trimmed &&
+                      !tempAllergyCustom.includes(trimmed) &&
+                      !tempAllergyPresets.includes(trimmed)
                     ) {
-                      setTempAllergyCustom((prev) => [...prev, t]);
+                      setTempAllergyCustom((prev) => [...prev, trimmed]);
                     }
                     setTempAllergyInput("");
                   }}
@@ -2238,7 +2243,7 @@ export default function ProfileScreen() {
                     flex: 1,
                     fontFamily: fonts.regular,
                     fontSize: 15,
-                    color: "#1A1A1A",
+                    color: t.text,
                     padding: 0,
                   }}
                 />
@@ -2282,12 +2287,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingDob(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingDob(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -2302,7 +2307,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 8,
               borderBottomWidth: 1,
-              borderBottomColor: "rgba(9,51,44,0.07)",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingDob(false)} hitSlop={12}>
@@ -2310,7 +2315,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "rgba(9,51,44,0.45)",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -2320,7 +2325,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Date of Birth
@@ -2342,10 +2347,11 @@ export default function ProfileScreen() {
               selectedValue={tempDay}
               onValueChange={setTempDay}
               style={{ flex: 1, height: 200 }}
+              themeVariant={t.isDark ? "dark" : "light"}
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#1A1A1A",
+                color: t.text,
                 height: 200,
               }}
             >
@@ -2357,10 +2363,11 @@ export default function ProfileScreen() {
               selectedValue={tempMonth}
               onValueChange={setTempMonth}
               style={{ flex: 1.6, height: 200 }}
+              themeVariant={t.isDark ? "dark" : "light"}
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#1A1A1A",
+                color: t.text,
                 height: 200,
               }}
             >
@@ -2385,10 +2392,11 @@ export default function ProfileScreen() {
               selectedValue={tempYear}
               onValueChange={setTempYear}
               style={{ flex: 1, height: 200 }}
+              themeVariant={t.isDark ? "dark" : "light"}
               itemStyle={{
                 fontFamily: fonts.regular,
                 fontSize: 18,
-                color: "#1A1A1A",
+                color: t.text,
                 height: 200,
               }}
             >
@@ -2411,12 +2419,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingFrequency(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingFrequency(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -2431,7 +2439,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingFrequency(false)} hitSlop={12}>
@@ -2439,7 +2447,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -2449,7 +2457,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Check-in Frequency
@@ -2460,7 +2468,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               paddingHorizontal: 20,
               paddingTop: 12,
               paddingBottom: 4,
@@ -2490,14 +2498,14 @@ export default function ProfileScreen() {
                   alignItems: "center",
                   paddingVertical: 14,
                   paddingHorizontal: 20,
-                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  backgroundColor: pressed ? t.background : t.surfaceElevated,
                 })}
               >
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#1A1A1A",
+                    color: t.text,
                     flex: 1,
                   }}
                 >
@@ -2511,7 +2519,7 @@ export default function ProfileScreen() {
                 <View
                   style={{
                     height: 1,
-                    backgroundColor: "#F0E4E1",
+                    backgroundColor: t.border,
                     marginLeft: 20,
                   }}
                 />
@@ -2529,7 +2537,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingFullName(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingFullName(false)}
         />
         <KeyboardAvoidingView
@@ -2537,7 +2545,7 @@ export default function ProfileScreen() {
         >
           <View
             style={{
-              backgroundColor: "#ffffff",
+              backgroundColor: t.surfaceElevated,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               paddingBottom: insets.bottom + 12,
@@ -2552,7 +2560,7 @@ export default function ProfileScreen() {
                 paddingTop: 16,
                 paddingBottom: 12,
                 borderBottomWidth: 1,
-                borderBottomColor: "#F0E4E1",
+                borderBottomColor: t.border,
               }}
             >
               <Pressable onPress={() => setEditingFullName(false)} hitSlop={12}>
@@ -2560,7 +2568,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#9CA3AF",
+                    color: t.textSecondary,
                   }}
                 >
                   Cancel
@@ -2570,7 +2578,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 Full Name
@@ -2598,20 +2606,21 @@ export default function ProfileScreen() {
                 value={tempFullName}
                 onChangeText={setTempFullName}
                 placeholder="Your full name"
-                placeholderTextColor="#C4A8A4"
+                placeholderTextColor={t.textTertiary}
                 autoFocus
                 returnKeyType="done"
                 onSubmitEditing={saveFullName}
+                keyboardAppearance={t.isDark ? "dark" : "light"}
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 17,
-                  color: "#1A1A1A",
+                  color: t.text,
                   borderWidth: 1,
-                  borderColor: "#F0E4E1",
+                  borderColor: t.border,
                   borderRadius: 12,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                 }}
               />
             </View>
@@ -2627,7 +2636,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingNickname(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingNickname(false)}
         />
         <KeyboardAvoidingView
@@ -2635,7 +2644,7 @@ export default function ProfileScreen() {
         >
           <View
             style={{
-              backgroundColor: "#ffffff",
+              backgroundColor: t.surfaceElevated,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               paddingBottom: insets.bottom + 12,
@@ -2650,7 +2659,7 @@ export default function ProfileScreen() {
                 paddingTop: 16,
                 paddingBottom: 12,
                 borderBottomWidth: 1,
-                borderBottomColor: "#F0E4E1",
+                borderBottomColor: t.border,
               }}
             >
               <Pressable onPress={() => setEditingNickname(false)} hitSlop={12}>
@@ -2658,7 +2667,7 @@ export default function ProfileScreen() {
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#9CA3AF",
+                    color: t.textSecondary,
                   }}
                 >
                   Cancel
@@ -2668,7 +2677,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 16,
-                  color: "#1A1A1A",
+                  color: t.text,
                 }}
               >
                 Nickname
@@ -2696,28 +2705,29 @@ export default function ProfileScreen() {
                 value={tempNickname}
                 onChangeText={setTempNickname}
                 placeholder="e.g. Alex"
-                placeholderTextColor="#C4A8A4"
+                placeholderTextColor={t.textTertiary}
                 autoFocus
                 maxLength={20}
                 returnKeyType="done"
                 onSubmitEditing={saveNickname}
+                keyboardAppearance={t.isDark ? "dark" : "light"}
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 17,
-                  color: "#1A1A1A",
+                  color: t.text,
                   borderWidth: 1,
-                  borderColor: "#F0E4E1",
+                  borderColor: t.border,
                   borderRadius: 12,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                 }}
               />
               <Text
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 12,
-                  color: "#C4A8A4",
+                  color: t.textTertiary,
                   marginTop: 6,
                   textAlign: "right",
                 }}
@@ -2737,12 +2747,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingAppearance(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingAppearance(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -2757,7 +2767,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingAppearance(false)} hitSlop={12}>
@@ -2765,7 +2775,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -2775,7 +2785,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Appearance
@@ -2786,7 +2796,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               paddingHorizontal: 20,
               paddingTop: 12,
               paddingBottom: 4,
@@ -2810,14 +2820,14 @@ export default function ProfileScreen() {
                   alignItems: "center",
                   paddingVertical: 14,
                   paddingHorizontal: 20,
-                  backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                  backgroundColor: pressed ? t.background : t.surfaceElevated,
                 })}
               >
                 <Text
                   style={{
                     fontFamily: fonts.medium,
                     fontSize: 16,
-                    color: "#1A1A1A",
+                    color: t.text,
                     flex: 1,
                   }}
                 >
@@ -2829,7 +2839,7 @@ export default function ProfileScreen() {
                 <View
                   style={{
                     height: 1,
-                    backgroundColor: "#F0E4E1",
+                    backgroundColor: t.border,
                     marginLeft: 20,
                   }}
                 />
@@ -2847,12 +2857,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingLanguage(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingLanguage(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -2867,7 +2877,7 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingLanguage(false)} hitSlop={12}>
@@ -2875,7 +2885,7 @@ export default function ProfileScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -2885,7 +2895,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Language
@@ -2896,7 +2906,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               paddingHorizontal: 20,
               paddingTop: 12,
               paddingBottom: 4,
@@ -2910,14 +2920,14 @@ export default function ProfileScreen() {
               alignItems: "center",
               paddingVertical: 14,
               paddingHorizontal: 20,
-              backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+              backgroundColor: pressed ? t.background : t.surfaceElevated,
             })}
           >
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
                 flex: 1,
               }}
             >
@@ -2936,12 +2946,12 @@ export default function ProfileScreen() {
         onRequestClose={() => setEditingTimezone(false)}
       >
         <Pressable
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
+          style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingTimezone(false)}
         />
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surfaceElevated,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -2957,15 +2967,15 @@ export default function ProfileScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "rgba(9,51,44,0.07)",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={() => setEditingTimezone(false)} hitSlop={12}>
-              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "rgba(9,51,44,0.45)" }}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: t.textSecondary }}>
                 Cancel
               </Text>
             </Pressable>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1A1A1A" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}>
               Timezone
             </Text>
             <View style={{ width: 60 }} />
@@ -2985,16 +2995,16 @@ export default function ProfileScreen() {
                     alignItems: "center",
                     paddingVertical: 14,
                     paddingHorizontal: 20,
-                    backgroundColor: pressed ? "#F8F4F0" : "#ffffff",
+                    backgroundColor: pressed ? t.background : t.surfaceElevated,
                   })}
                 >
-                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: "#1A1A1A", flex: 1 }}>
+                  <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: t.text, flex: 1 }}>
                     {item.label}
                   </Text>
                   {timezone === item.value && <Check size={18} color="#A9334D" />}
                 </Pressable>
                 {index < TIMEZONE_LIST.length - 1 && (
-                  <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
+                  <View style={{ height: 1, backgroundColor: t.border, marginLeft: 20 }} />
                 )}
               </React.Fragment>
             )}
@@ -3008,8 +3018,8 @@ export default function ProfileScreen() {
         index={-1}
         snapPoints={profile?.avatarUrl ? ["30%"] : ["22%"]}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: "#fff", borderRadius: 24 }}
-        handleIndicatorStyle={{ backgroundColor: "#D1D5DB", width: 36 }}
+        backgroundStyle={{ backgroundColor: t.surfaceElevated, borderRadius: 24 }}
+        handleIndicatorStyle={{ backgroundColor: t.border, width: 36 }}
       >
         <BottomSheetView
           style={{
@@ -3022,7 +3032,7 @@ export default function ProfileScreen() {
             style={{
               fontFamily: fonts.semibold,
               fontSize: 17,
-              color: "#1A1A1A",
+              color: t.text,
               marginBottom: 16,
             }}
           >
@@ -3038,7 +3048,7 @@ export default function ProfileScreen() {
               gap: 14,
               paddingVertical: 13,
               borderTopWidth: 1,
-              borderTopColor: "#F3F4F6",
+              borderTopColor: t.divider,
             }}
             activeOpacity={0.6}
           >
@@ -3047,7 +3057,7 @@ export default function ProfileScreen() {
                 width: 38,
                 height: 38,
                 borderRadius: 19,
-                backgroundColor: "#F8F4F0",
+                backgroundColor: t.background,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -3058,7 +3068,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Take photo
@@ -3074,7 +3084,7 @@ export default function ProfileScreen() {
               gap: 14,
               paddingVertical: 13,
               borderTopWidth: 1,
-              borderTopColor: "#F3F4F6",
+              borderTopColor: t.divider,
             }}
             activeOpacity={0.6}
           >
@@ -3083,7 +3093,7 @@ export default function ProfileScreen() {
                 width: 38,
                 height: 38,
                 borderRadius: 19,
-                backgroundColor: "#F8F4F0",
+                backgroundColor: t.background,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -3094,7 +3104,7 @@ export default function ProfileScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Choose from library
@@ -3111,7 +3121,7 @@ export default function ProfileScreen() {
                 gap: 14,
                 paddingVertical: 13,
                 borderTopWidth: 1,
-                borderTopColor: "#F3F4F6",
+                borderTopColor: t.divider,
               }}
               activeOpacity={0.6}
             >
@@ -3205,7 +3215,6 @@ const styles = StyleSheet.create({
   headerNickname: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#1A1A1A",
     flex: 1,
     textAlign: "center",
     marginHorizontal: 8,

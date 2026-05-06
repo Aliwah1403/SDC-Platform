@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 function daysUntil(dateStr) {
   const today = new Date();
@@ -24,6 +25,7 @@ function getTypeConfig(type) {
 }
 
 function AppointmentCard({ appt }) {
+  const t = useTheme();
   const days = daysUntil(appt.date);
   const dateObj = new Date(appt.date);
   const dayNum = dateObj.getDate();
@@ -38,10 +40,10 @@ function AppointmentCard({ appt }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#F0E4E1",
+        borderColor: t.border,
         padding: 16,
         flexDirection: "row",
         alignItems: "center",
@@ -53,7 +55,7 @@ function AppointmentCard({ appt }) {
         style={{
           width: 52,
           alignItems: "center",
-          backgroundColor: "#F8F4F0",
+          backgroundColor: t.background,
           borderRadius: 12,
           paddingVertical: 8,
           paddingHorizontal: 4,
@@ -63,7 +65,7 @@ function AppointmentCard({ appt }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 24,
-            color: "#1A1A1A",
+            color: t.text,
             lineHeight: 28,
           }}
         >
@@ -73,7 +75,7 @@ function AppointmentCard({ appt }) {
           style={{
             fontFamily: fonts.medium,
             fontSize: 11,
-            color: "#9CA3AF",
+            color: t.textSecondary,
             letterSpacing: 0.5,
           }}
         >
@@ -108,7 +110,7 @@ function AppointmentCard({ appt }) {
           style={{
             fontFamily: fonts.bold,
             fontSize: 15,
-            color: "#1A1A1A",
+            color: t.text,
             marginBottom: 2,
           }}
           numberOfLines={1}
@@ -121,7 +123,7 @@ function AppointmentCard({ appt }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               marginBottom: 1,
             }}
           >
@@ -131,7 +133,7 @@ function AppointmentCard({ appt }) {
 
         {detailLine.length > 0 && (
           <Text
-            style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}
+            style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}
             numberOfLines={1}
           >
             {detailLine}
@@ -144,7 +146,7 @@ function AppointmentCard({ appt }) {
         style={{
           width: 52,
           alignItems: "center",
-          backgroundColor: "#F8F4F0",
+          backgroundColor: t.background,
           borderRadius: 12,
           paddingVertical: 8,
           paddingHorizontal: 4,
@@ -167,14 +169,14 @@ function AppointmentCard({ appt }) {
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 22,
-                color: "#1A1A1A",
+                color: t.text,
                 lineHeight: 26,
               }}
             >
               {days}
             </Text>
             <Text
-              style={{ fontFamily: fonts.regular, fontSize: 11, color: "#9CA3AF" }}
+              style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}
             >
               {days === 1 ? "day" : "days"}
             </Text>
@@ -187,6 +189,7 @@ function AppointmentCard({ appt }) {
 
 export function AppointmentSection({ appointments }) {
   const router = useRouter();
+  const t = useTheme();
 
   const upcoming = appointments
     .filter((a) => daysUntil(a.date) >= 0 && a.status !== "completed")
@@ -205,7 +208,7 @@ export function AppointmentSection({ appointments }) {
           marginBottom: 10,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
           Upcoming Appointments
         </Text>
         <TouchableOpacity

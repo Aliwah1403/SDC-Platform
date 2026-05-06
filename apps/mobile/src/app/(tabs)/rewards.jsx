@@ -20,10 +20,12 @@ import {
 import { useAuthStore } from "../../utils/auth/store";
 import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width } = Dimensions.get("window");
 
 export default function RewardsScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("challenges"); // challenges, badges, leaderboard
 
@@ -45,12 +47,12 @@ export default function RewardsScreen() {
         borderBottomColor: isActive ? "#DC2626" : "transparent",
       }}
     >
-      <Icon size={18} color={isActive ? "#DC2626" : "#6B7280"} />
+      <Icon size={18} color={isActive ? "#DC2626" : t.textSecondary} />
       <Text
         style={{
           fontSize: 14,
           fontWeight: isActive ? "600" : "400",
-          color: isActive ? "#DC2626" : "#6B7280",
+          color: isActive ? "#DC2626" : t.textSecondary,
           marginLeft: 6,
         }}
       >
@@ -65,7 +67,7 @@ export default function RewardsScreen() {
     return (
       <View
         style={{
-          backgroundColor: "#F3F4F6",
+          backgroundColor: t.surfaceElevated,
           borderRadius: 8,
           height: 8,
           overflow: "hidden",
@@ -101,19 +103,19 @@ export default function RewardsScreen() {
         case "monthly":
           return "#F59E0B";
         default:
-          return "#6B7280";
+          return t.textSecondary;
       }
     };
 
     return (
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderRadius: 12,
           padding: 16,
           marginBottom: 12,
           borderWidth: 1,
-          borderColor: "#F3F4F6",
+          borderColor: t.border,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.05,
@@ -182,7 +184,7 @@ export default function RewardsScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: "#111827",
+                color: t.text,
                 marginBottom: 4,
               }}
             >
@@ -192,7 +194,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 13,
-                color: "#6B7280",
+                color: t.textSecondary,
                 lineHeight: 18,
               }}
             >
@@ -226,7 +228,7 @@ export default function RewardsScreen() {
             style={{
               fontSize: 14,
               fontWeight: "500",
-              color: "#111827",
+              color: t.text,
             }}
           >
             Progress: {challenge.progress}/{challenge.target}
@@ -239,11 +241,11 @@ export default function RewardsScreen() {
                 alignItems: "center",
               }}
             >
-              <Clock size={12} color="#6B7280" />
+              <Clock size={12} color={t.textSecondary} />
               <Text
                 style={{
                   fontSize: 12,
-                  color: "#6B7280",
+                  color: t.textSecondary,
                   marginLeft: 4,
                 }}
               >
@@ -269,14 +271,14 @@ export default function RewardsScreen() {
     return (
       <View
         style={{
-          backgroundColor: isUnlocked ? "#ffffff" : "#F9FAFB",
+          backgroundColor: isUnlocked ? t.surface : (t.isDark ? t.surfaceElevated : "#F9FAFB"),
           borderRadius: 12,
           padding: size === "large" ? 20 : 16,
           marginRight: 12,
           width: cardWidth,
           alignItems: "center",
           borderWidth: 1,
-          borderColor: isUnlocked ? "#F3F4F6" : "#E5E7EB",
+          borderColor: t.border,
           opacity: isUnlocked ? 1 : 0.6,
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
@@ -300,7 +302,7 @@ export default function RewardsScreen() {
           style={{
             fontSize: size === "large" ? 14 : 12,
             fontWeight: "600",
-            color: "#111827",
+            color: t.text,
             textAlign: "center",
             marginBottom: 4,
           }}
@@ -311,7 +313,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: size === "large" ? 12 : 10,
-            color: "#6B7280",
+            color: t.textSecondary,
             textAlign: "center",
             marginBottom: size === "large" ? 8 : 4,
             lineHeight: size === "large" ? 16 : 14,
@@ -336,7 +338,7 @@ export default function RewardsScreen() {
           <Text
             style={{
               fontSize: 10,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               fontStyle: "italic",
             }}
           >
@@ -356,12 +358,12 @@ export default function RewardsScreen() {
   }) => (
     <View
       style={{
-        backgroundColor: isCurrentUser ? "#FEF3F2" : "#ffffff",
+        backgroundColor: t.isDark ? t.surface : (isCurrentUser ? "#FEF3F2" : "#FFFFFF"),
         borderRadius: 12,
         padding: 16,
         marginBottom: 8,
         borderWidth: 1,
-        borderColor: isCurrentUser ? "#DC2626" : "#F3F4F6",
+        borderColor: isCurrentUser ? "#DC2626" : t.border,
         flexDirection: "row",
         alignItems: "center",
         shadowColor: "#000",
@@ -373,7 +375,7 @@ export default function RewardsScreen() {
     >
       <View
         style={{
-          backgroundColor: rank <= 3 ? "#F59E0B" : "#F3F4F6",
+          backgroundColor: rank <= 3 ? "#F59E0B" : t.surfaceElevated,
           borderRadius: 20,
           width: 32,
           height: 32,
@@ -386,7 +388,7 @@ export default function RewardsScreen() {
           style={{
             fontSize: 14,
             fontWeight: "bold",
-            color: rank <= 3 ? "#ffffff" : "#6B7280",
+            color: rank <= 3 ? "#ffffff" : t.textSecondary,
           }}
         >
           #{rank}
@@ -398,7 +400,7 @@ export default function RewardsScreen() {
           style={{
             fontSize: 16,
             fontWeight: "600",
-            color: "#111827",
+            color: t.text,
             marginBottom: 2,
           }}
         >
@@ -423,7 +425,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 12,
-                color: "#6B7280",
+                color: t.textSecondary,
                 marginLeft: 4,
               }}
             >
@@ -441,7 +443,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 12,
-                color: "#6B7280",
+                color: t.textSecondary,
                 marginLeft: 4,
               }}
             >
@@ -473,8 +475,8 @@ export default function RewardsScreen() {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -482,16 +484,16 @@ export default function RewardsScreen() {
           paddingTop: insets.top + 20,
           paddingHorizontal: 20,
           paddingBottom: 0,
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#F3F4F6",
+          borderBottomColor: t.border,
         }}
       >
         <Text
           style={{
             fontSize: 28,
             fontWeight: "bold",
-            color: "#111827",
+            color: t.text,
             marginBottom: 4,
           }}
         >
@@ -501,7 +503,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: 16,
-            color: "#6B7280",
+            color: t.textSecondary,
             marginBottom: 20,
           }}
         >
@@ -565,7 +567,7 @@ export default function RewardsScreen() {
         <View
           style={{
             flexDirection: "row",
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
           }}
         >
           <TabButton
@@ -612,7 +614,7 @@ export default function RewardsScreen() {
                 style={{
                   fontSize: 18,
                   fontWeight: "600",
-                  color: "#111827",
+                  color: t.text,
                 }}
               >
                 Active Challenges
@@ -696,7 +698,7 @@ export default function RewardsScreen() {
               style={{
                 fontSize: 18,
                 fontWeight: "600",
-                color: "#111827",
+                color: t.text,
                 marginBottom: 16,
               }}
             >
@@ -713,7 +715,7 @@ export default function RewardsScreen() {
                 style={{
                   fontSize: 16,
                   fontWeight: "600",
-                  color: "#111827",
+                  color: t.text,
                   marginBottom: 12,
                 }}
               >
@@ -738,7 +740,7 @@ export default function RewardsScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: "#111827",
+                color: t.text,
                 marginBottom: 12,
               }}
             >
@@ -775,7 +777,7 @@ export default function RewardsScreen() {
                 style={{
                   fontSize: 18,
                   fontWeight: "600",
-                  color: "#111827",
+                  color: t.text,
                 }}
               >
                 Community Leaderboard
@@ -804,7 +806,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
                 marginBottom: 20,
                 lineHeight: 20,
               }}
@@ -827,19 +829,19 @@ export default function RewardsScreen() {
             {/* Community Stats */}
             <View
               style={{
-                backgroundColor: "#ffffff",
+                backgroundColor: t.surface,
                 borderRadius: 12,
                 padding: 16,
                 marginTop: 16,
                 borderWidth: 1,
-                borderColor: "#F3F4F6",
+                borderColor: t.border,
               }}
             >
               <Text
                 style={{
                   fontSize: 16,
                   fontWeight: "600",
-                  color: "#111827",
+                  color: t.text,
                   marginBottom: 12,
                 }}
               >
@@ -865,7 +867,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#6B7280",
+                      color: t.textSecondary,
                     }}
                   >
                     Active Users
@@ -885,7 +887,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#6B7280",
+                      color: t.textSecondary,
                     }}
                   >
                     Avg Streak
@@ -905,7 +907,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 12,
-                      color: "#6B7280",
+                      color: t.textSecondary,
                     }}
                   >
                     Total Logs
