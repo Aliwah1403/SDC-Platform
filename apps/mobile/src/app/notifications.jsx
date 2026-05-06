@@ -1,5 +1,11 @@
 import { useMemo } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -23,6 +29,7 @@ import {
   useMarkAllSystemReadMutation,
 } from "@/hooks/queries/useSystemNotificationsQuery";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 function timeAgo(date) {
   const diff = (Date.now() - new Date(date).getTime()) / 1000;
@@ -34,48 +41,56 @@ function timeAgo(date) {
 
 const ICON_CONFIG = {
   // Community types
-  like: { Component: Heart, color: "#A9334D", fill: true },
-  comment: { Component: MessageCircle, color: "#3B82F6", fill: false },
-  reply: { Component: MessageCircle, color: "#A9334D", fill: false },
-  category_post: { Component: Bell, color: "#1A1A1A", fill: false },
-  system_poll: { Component: Bell, color: "#A9334D", fill: false },
-  post_actioned: { Component: ShieldAlert, color: "#781D11", fill: false },
+  like: { Component: Heart, fill: true },
+  comment: { Component: MessageCircle, fill: false },
+  reply: { Component: MessageCircle, fill: false },
+  category_post: { Component: Bell, fill: false },
+  system_poll: { Component: Bell, fill: false },
+  post_actioned: { Component: ShieldAlert, fill: false },
   // System types
-  checkin: { Component: Bell, color: "#1A1A1A", fill: false },
-  medication: { Component: Pill, color: "#A9334D", fill: false },
-  streak: { Component: Flame, color: "#F0531C", fill: false },
-  appointment: { Component: Calendar, color: "#1A1A1A", fill: false },
-  health_alert: { Component: AlertTriangle, color: "#DC2626", fill: false },
+  checkin: { Component: Bell, fill: false },
+  medication: { Component: Pill, fill: false },
+  streak: { Component: Flame, fill: false },
+  appointment: { Component: Calendar, fill: false },
+  health_alert: { Component: AlertTriangle, fill: false },
 };
 
 function buildText(n) {
   // System notifications have explicit title + body
-  if (n._source === "system") return { bold: n.title, rest: n.body ? `\n${n.body}` : "" };
+  if (n._source === "system")
+    return { bold: n.title, rest: n.body ? `\n${n.body}` : "" };
 
   if (n.type === "like") {
     const others = (n.actorCount ?? 1) - 1;
-    const rest = others > 0
-      ? ` and ${others} other${others > 1 ? "s" : ""} liked your post`
-      : " liked your post";
+    const rest =
+      others > 0
+        ? ` and ${others} other${others > 1 ? "s" : ""} liked your post`
+        : " liked your post";
     return { bold: n.actorName ?? "Someone", rest };
   }
-  if (n.type === "comment") return { bold: n.actorName ?? "Someone", rest: " commented on your post" };
+  if (n.type === "comment")
+    return { bold: n.actorName ?? "Someone", rest: " commented on your post" };
   if (n.type === "reply") {
     const others = (n.actorCount ?? 1) - 1;
-    const rest = others > 0
-      ? ` and ${others} other${others > 1 ? "s" : ""} replied to your comment`
-      : " replied to your comment";
+    const rest =
+      others > 0
+        ? ` and ${others} other${others > 1 ? "s" : ""} replied to your comment`
+        : " replied to your comment";
     return { bold: n.actorName ?? "Someone", rest };
   }
-  if (n.type === "category_post") return { bold: n.categoryName, rest: " posted in this community" };
+  if (n.type === "category_post")
+    return { bold: n.categoryName, rest: " posted in this community" };
   if (n.type === "post_actioned")
     return { bold: "Your post was removed", rest: ` · ${n.reason}` };
   return { bold: n.categoryName, rest: " started a new poll" };
 }
 
-function NotificationRow({ item }) {
+function NotificationRow({ item, theme }) {
   const cfg = ICON_CONFIG[item.type] ?? ICON_CONFIG.comment;
   const { bold, rest } = buildText(item);
+  const sourceAccent = item._source === "system" ? theme.cta : theme.accent;
+  const iconColor =
+    item.type === "health_alert" ? theme.destructive : sourceAccent;
 
   return (
     <View
@@ -83,11 +98,11 @@ function NotificationRow({ item }) {
         flexDirection: "row",
         alignItems: "flex-start",
         padding: 16,
-        backgroundColor: item.read ? "#FFFFFF" : "#FDF8F7",
+        backgroundColor: item.read ? theme.surface : theme.background,
         borderLeftWidth: item.read ? 0 : 3,
-        borderLeftColor: item._source === "system" ? "#F0531C" : "#A9334D",
+        borderLeftColor: sourceAccent,
         borderBottomWidth: 1,
-        borderBottomColor: "#F5F0EE",
+        borderBottomColor: theme.divider,
       }}
     >
       <View
@@ -95,7 +110,7 @@ function NotificationRow({ item }) {
           width: 36,
           height: 36,
           borderRadius: 18,
-          backgroundColor: `${cfg.color}18`,
+          backgroundColor: `${iconColor}18`,
           alignItems: "center",
           justifyContent: "center",
           marginRight: 12,
@@ -104,9 +119,9 @@ function NotificationRow({ item }) {
       >
         <cfg.Component
           size={16}
-          color={cfg.color}
+          color={iconColor}
           strokeWidth={2}
-          fill={cfg.fill ? cfg.color : "transparent"}
+          fill={cfg.fill ? iconColor : "transparent"}
         />
       </View>
 
@@ -115,7 +130,7 @@ function NotificationRow({ item }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: "#1A1A1A",
+            color: theme.text,
             lineHeight: 20,
           }}
         >
@@ -128,7 +143,7 @@ function NotificationRow({ item }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#3D3D3D",
+              color: theme.textSecondary,
               marginTop: 2,
               lineHeight: 18,
             }}
@@ -143,7 +158,7 @@ function NotificationRow({ item }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: "#9C8D8A",
+              color: theme.textSecondary,
               marginTop: 3,
             }}
           >
@@ -155,7 +170,7 @@ function NotificationRow({ item }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 11,
-            color: "#9C8D8A",
+            color: theme.textSecondary,
             marginTop: 4,
           }}
         >
@@ -169,6 +184,7 @@ function NotificationRow({ item }) {
 export default function NotificationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
 
   const { data: communityNotifs = [], isLoading: communityLoading } =
     useCommunityNotificationsQuery();
@@ -187,7 +203,8 @@ export default function NotificationsScreen() {
     ];
     return tagged.sort(
       (a, b) =>
-        new Date(b.createdAt ?? b.timestamp) - new Date(a.createdAt ?? a.timestamp),
+        new Date(b.createdAt ?? b.timestamp) -
+        new Date(a.createdAt ?? a.timestamp),
     );
   }, [communityNotifs, systemNotifs]);
 
@@ -208,7 +225,8 @@ export default function NotificationsScreen() {
     allNotifications.forEach((n) => {
       const d = new Date(n.createdAt ?? n.timestamp);
       if (d.toDateString() === today.toDateString()) groups.Today.push(n);
-      else if (d.toDateString() === yesterday.toDateString()) groups.Yesterday.push(n);
+      else if (d.toDateString() === yesterday.toDateString())
+        groups.Yesterday.push(n);
       else groups.Earlier.push(n);
     });
 
@@ -222,8 +240,8 @@ export default function NotificationsScreen() {
   }, [allNotifications]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       <View
         style={{
@@ -232,9 +250,9 @@ export default function NotificationsScreen() {
           paddingHorizontal: 16,
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#F0EAE8",
+          borderBottomColor: t.border,
         }}
       >
         <TouchableOpacity
@@ -244,21 +262,22 @@ export default function NotificationsScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
+          <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
           style={{
             flex: 1,
             textAlign: "center",
+            marginLeft: 36,
             fontFamily: fonts.bold,
             fontSize: 17,
-            color: "#1A1A1A",
+            color: t.text,
           }}
         >
           Notifications
@@ -273,7 +292,7 @@ export default function NotificationsScreen() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: "#A9334D",
+                color: t.accent,
               }}
             >
               Mark all read
@@ -285,7 +304,7 @@ export default function NotificationsScreen() {
       </View>
 
       {isLoading && (
-        <ActivityIndicator style={{ marginTop: 40 }} color="#A9334D" />
+        <ActivityIndicator style={{ marginTop: 40 }} color={t.accent} />
       )}
       <FlatList
         data={isLoading ? [] : sections}
@@ -299,28 +318,34 @@ export default function NotificationsScreen() {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 12,
-                  color: "#9C8D8A",
+                  color: t.textSecondary,
                   letterSpacing: 0.5,
                   textTransform: "uppercase",
                   paddingHorizontal: 16,
                   paddingTop: 20,
                   paddingBottom: 8,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                 }}
               >
                 {item._header}
               </Text>
             );
           }
-          return <NotificationRow item={item} />;
+          return <NotificationRow item={item} theme={t} />;
         }}
         ListEmptyComponent={
-          <View style={{ alignItems: "center", paddingTop: 80, paddingHorizontal: 32 }}>
+          <View
+            style={{
+              alignItems: "center",
+              paddingTop: 80,
+              paddingHorizontal: 32,
+            }}
+          >
             <Text
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
                 marginBottom: 6,
               }}
             >
@@ -330,7 +355,7 @@ export default function NotificationsScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
                 textAlign: "center",
               }}
             >
