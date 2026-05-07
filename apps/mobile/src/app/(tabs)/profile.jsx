@@ -457,7 +457,6 @@ export default function ProfileScreen() {
   }, [locationEnabled]);
 
   useEffect(() => {
-    posthog?.capture("profile_viewed", {});
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const currentSession = useAuthStore.getState().auth?.session;
@@ -579,7 +578,12 @@ export default function ProfileScreen() {
           await Notifications.requestPermissionsAsync({
             ios: { allowAlert: true, allowBadge: true, allowSound: true },
           });
-        if (newStatus !== "granted") return;
+        if (newStatus === 'granted') {
+          posthog?.capture('notification_permission_granted', { platform: 'ios', prompt_variant: 'settings' });
+        } else {
+          posthog?.capture('notification_permission_denied', { platform: 'ios', prompt_variant: 'settings' });
+          return;
+        }
       }
     }
     posthog?.capture("notifications_toggled", { enabled: val });
@@ -841,7 +845,10 @@ export default function ProfileScreen() {
   };
   const saveFullName = () => {
     const name = tempFullName.trim();
-    if (name) updateProfile.mutate({ fullName: name });
+    if (name) {
+      updateProfile.mutate({ fullName: name });
+      posthog?.capture('profile_updated', { fields_changed: ['full_name'] });
+    }
     setEditingFullName(false);
   };
 
@@ -851,7 +858,10 @@ export default function ProfileScreen() {
   };
   const saveNickname = () => {
     const nick = tempNickname.trim();
-    if (nick) updateProfile.mutate({ nickname: nick });
+    if (nick) {
+      updateProfile.mutate({ nickname: nick });
+      posthog?.capture('profile_updated', { fields_changed: ['nickname'] });
+    }
     setEditingNickname(false);
   };
 

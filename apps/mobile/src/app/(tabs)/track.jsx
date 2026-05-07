@@ -500,7 +500,12 @@ function MedicationsSection({ selectedDate }) {
           medication={med}
           taken={!!med.taken}
           onToggle={() => {
-            posthog?.capture("medication_marked_taken", {
+            posthog?.capture("dose_logged", {
+              medication_name: med.name,
+              dose_time: med.time ?? null,
+              delay_minutes: med.time
+                ? Math.round((Date.now() - new Date(`${new Date().toISOString().split('T')[0]}T${med.time}`).getTime()) / 60000)
+                : null,
               new_state: !med.taken,
             });
             toggleTaken.mutate(med.id);
@@ -1329,10 +1334,6 @@ export default function TrackScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workouts, setWorkouts] = useState([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
-
-  useEffect(() => {
-    posthog?.capture("track_viewed", { has_healthkit: healthKitConnected });
-  }, []);
 
   useEffect(() => {
     if (alertState && alertState.level !== "urgent") {

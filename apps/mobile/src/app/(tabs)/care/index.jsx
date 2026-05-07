@@ -302,14 +302,6 @@ export default function CareMenuScreen() {
     .filter((a) => a.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))[0] ?? null;
 
-  useEffect(() => {
-    posthog?.capture('care_hub_viewed', {
-      crisis_active: crisisMode.isActive,
-      meds_due_count: medsDue,
-      has_next_appointment: !!nextAppt,
-    });
-  }, []);
-
   // Summary header line
   const summaryLine = [
     medsDue > 0 ? `${medsDue} med${medsDue > 1 ? "s" : ""} due today` : "All meds taken",

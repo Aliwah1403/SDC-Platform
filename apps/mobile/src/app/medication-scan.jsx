@@ -165,6 +165,7 @@ function ResultCard({
 function BarcodeCamera({ onResult, flash, onScanOverlay }) {
   const t = useTheme();
   const styles = createStyles(t);
+  const posthog = usePostHog();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -176,6 +177,7 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
     try {
       const result = await lookupByNDC(data);
       if (result) {
+        posthog?.capture('medication_scan_completed', { found_in_fda: true });
         onResult({
           name: result.name,
           commonName: result.name,
@@ -187,6 +189,7 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
           _barcodeResult: result,
         });
       } else {
+        posthog?.capture('medication_scan_completed', { found_in_fda: false });
         Alert.alert(
           "Not found",
           "This barcode wasn't matched to a known medication. Try the Photo AI tab to identify it by image.",
@@ -194,6 +197,7 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
         );
       }
     } catch {
+      posthog?.capture('medication_scan_failed', { reason: 'lookup_error' });
       Alert.alert(
         "Error",
         "Failed to look up this barcode. Please try again.",

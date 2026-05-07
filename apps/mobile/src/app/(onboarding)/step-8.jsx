@@ -93,6 +93,11 @@ export default function Step8() {
       const { status } = await Notifications.requestPermissionsAsync({
         ios: { allowAlert: true, allowBadge: true, allowSound: true },
       });
+      if (status === 'granted') {
+        posthog?.capture('notification_permission_granted', { platform: 'ios', prompt_variant: 'onboarding' });
+      } else {
+        posthog?.capture('notification_permission_denied', { platform: 'ios', prompt_variant: 'onboarding' });
+      }
       setOnboardingField("notificationsEnabled", status === "granted");
       router.push("/(onboarding)/step-9");
     } catch {

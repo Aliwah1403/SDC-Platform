@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePostHog } from 'posthog-react-native';
 import {
   Platform,
@@ -73,6 +73,7 @@ export default function SignUpScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState(null);
+  const startedRef = useRef(false);
 
   const strengthIndex = getPasswordStrength(password);
   const strength = strengthIndex >= 0 ? STRENGTH_LEVELS[strengthIndex] : null;
@@ -217,7 +218,13 @@ export default function SignUpScreen() {
                 value={fullName}
                 onChangeText={setFullName}
                 autoCapitalize="words"
-                onFocus={() => setFocusedField('name')}
+                onFocus={() => {
+                  setFocusedField('name');
+                  if (!startedRef.current) {
+                    startedRef.current = true;
+                    posthog?.capture('sign_up_started', { method: 'email' });
+                  }
+                }}
                 onBlur={() => setFocusedField(null)}
               />
             </View>

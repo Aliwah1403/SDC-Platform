@@ -244,6 +244,9 @@ export default function PostDetailScreen() {
     if (!text) return;
 
     posthog?.capture('comment_submitted', { is_reply: !!replyingTo });
+    if (replyingTo) {
+      posthog?.capture('comment_replied', { thread_depth: 1 });
+    }
 
     if (replyingTo) {
       addReply({
@@ -263,7 +266,10 @@ export default function PostDetailScreen() {
   const handleShare = async () => {
     try {
       const author = post.isAnonymous ? "Someone" : post.author.name;
-      await Share.share({ message: `${author} on Hemo: "${post.content}"` });
+      const result = await Share.share({ message: `${author} on Hemo: "${post.content}"` });
+      if (result.action === Share.sharedAction) {
+        posthog?.capture('post_shared', { share_destination: result.activityType ?? 'unknown' });
+      }
     } catch (_) {}
   };
 

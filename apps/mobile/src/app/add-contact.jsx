@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -67,6 +68,7 @@ function getInitials(name = "") {
 }
 
 export default function AddContactScreen() {
+  const posthog = usePostHog();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -250,7 +252,13 @@ export default function AddContactScreen() {
         );
       } else {
         addMutation.mutate(payload, {
-          onSuccess: () => router.back(),
+          onSuccess: () => {
+            posthog?.capture('emergency_contact_added', {
+              contact_type: relationship ? 'family' : 'other',
+              method: mode === 'form' ? 'manual' : 'phone_picker',
+            });
+            router.back();
+          },
           onError: () => setSaving(false),
         });
       }

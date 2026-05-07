@@ -14,7 +14,10 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
 
   useEffect(() => {
     if (visible) {
-      posthog?.capture('streak_lost', { streak_days: lostStreak });
+      posthog?.capture('streak_lost', {
+        streak_days: lostStreak,
+        last_active_date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+      });
       Animated.spring(flameScale, {
         toValue: 1,
         friction: 5,

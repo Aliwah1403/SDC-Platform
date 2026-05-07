@@ -1,9 +1,31 @@
 import PostHog from 'posthog-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 export const posthog = new PostHog('phc_x88DaDTp52cVBiXM9cWKN242pxv7D78GBe6V79oLNUzr', {
   host: 'https://h.hemo-scd.com',
   captureAppLifecycleEvents: false, // tracked manually with richer context
 });
+
+const INSTALL_DATE_KEY = 'hemo_install_date';
+
+export async function registerSuperProperties() {
+  let installDate = await AsyncStorage.getItem(INSTALL_DATE_KEY);
+  if (!installDate) {
+    installDate = new Date().toISOString();
+    await AsyncStorage.setItem(INSTALL_DATE_KEY, installDate);
+  }
+  const daysSinceInstall = Math.floor(
+    (Date.now() - new Date(installDate).getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  posthog.register({
+    app_version: Constants.expoConfig?.version ?? 'unknown',
+    session_id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+    user_subscription_tier: 'free',
+    days_since_install: daysSinceInstall,
+  });
+}
 
 export function captureAIGeneration(featureName, meta) {
   if (!meta) return;

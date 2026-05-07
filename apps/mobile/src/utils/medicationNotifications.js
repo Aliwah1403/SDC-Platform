@@ -1,4 +1,5 @@
 import * as Notifications from "expo-notifications";
+import { posthog } from "@/utils/analytics";
 
 function parseTimeToHourMinute(timeStr) {
   const match = timeStr?.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -75,6 +76,12 @@ export async function scheduleMedicationNotifications(med) {
         sound: true,
       },
       trigger,
+    });
+    posthog.capture('medication_reminder_sent', {
+      medication_name: med.name,
+      trigger_type: isWeekly ? 'weekly' : 'daily',
+      offset_minutes: 0,
+      notification_variant: 'dose',
     });
 
     const reminders = Array.isArray(med.reminders) ? med.reminders : [];

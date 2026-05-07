@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -176,6 +177,7 @@ function HydrationSetter({ value, onChange, meta }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function MetricGoalScreen() {
+  const posthog = usePostHog();
   const router = useRouter();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -212,7 +214,15 @@ export default function MetricGoalScreen() {
   };
 
   const handleSave = () => {
-    setGoalMutation.mutate({ metric, value }, { onSuccess: () => router.back() });
+    setGoalMutation.mutate(
+      { metric, value },
+      {
+        onSuccess: () => {
+          posthog?.capture('metric_goal_set', { metric_name: metric, goal_value: value });
+          router.back();
+        },
+      },
+    );
   };
 
   const isBelowRecommended = value < meta.recommended.min;

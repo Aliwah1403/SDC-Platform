@@ -97,6 +97,7 @@ export function useDrugSearch(query) {
       abortRef.current = controller;
       try {
         const apiResults = await searchRxNorm(query, controller.signal);
+        if (abortRef.current !== controller) return;
         const localNames = new Set(local.map((r) => r.name.toLowerCase()));
         const merged = [
           ...local,
@@ -115,6 +116,7 @@ export function useDrugSearch(query) {
 
     return () => {
       clearTimeout(timerRef.current);
+      abortRef.current?.abort();
     };
   }, [query, medications]);
 

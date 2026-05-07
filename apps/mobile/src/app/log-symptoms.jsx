@@ -561,7 +561,7 @@ export default function LogSymptomsScreen() {
 
   // Track opened once on mount
   useEffect(() => {
-    posthog?.capture('symptom_log_opened', {});
+    posthog?.capture('daily_check_in_started', { checkin_type: 'symptom_log' });
   }, []);
 
   // Track each step as it becomes active
@@ -633,12 +633,32 @@ export default function LogSymptomsScreen() {
     updateSymptomLog(logData);
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
+        const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
         posthog?.capture('symptom_log_submitted', {
+          pain_level: painLevel,
+          hydration_level: hydration,
+          mood: MOOD_VALUES[moodValue - 1],
+          symptoms_selected: symptoms,
           location_count: bodyLocations.length,
           symptom_count: symptoms.length,
           has_notes: notes.trim().length > 0,
-          total_time_seconds: Math.round((Date.now() - openedAtRef.current) / 1000),
+          log_duration_seconds: logDuration,
         });
+        posthog?.capture('pain_logged', {
+          pain_score: painLevel,
+          pain_location: bodyLocations[0] ?? null,
+          crisis_step: null,
+        });
+        posthog?.capture('hydration_logged', {
+          amount_glasses: hydration,
+          goal_met: hydration >= 8,
+        });
+        if (!hasLoggedToday) {
+          posthog?.capture('streak_saved', {
+            trigger_type: 'organic',
+            days_since_last_log: 1,
+          });
+        }
         resetSymptomLog();
         // Mirror to Apple Health on the first log of the day only — re-logs would
         // append duplicate DietaryWater and symptom samples to HealthKit.
