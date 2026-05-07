@@ -20,6 +20,8 @@ import {
   Search,
   Camera,
 } from "lucide-react-native";
+import Svg, { Path, Rect, Line, Circle } from "react-native-svg";
+import MedicationBottle from "@/components/MedicationBottle";
 import { Picker } from "@react-native-picker/picker";
 import { MotiView } from "moti";
 import {
@@ -146,6 +148,36 @@ function FieldLabel({ children, optional }) {
         </Text>
       )}
     </View>
+  );
+}
+
+// ─── Scan illustration ───────────────────────────────────────────────────────
+function ScanIllustration() {
+  const t = useTheme();
+  const lineColor = t.isDark ? "#C8A8B0" : "#2A1A1E";
+  const bgFill = t.isDark ? "rgba(169,51,77,0.12)" : "#F9EFF1";
+  return (
+    <Svg width={82} height={82} viewBox="0 0 80 80">
+      <Circle cx="40" cy="40" r="36" fill={bgFill} />
+      <Line x1="16" y1="24" x2="16" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="21" y1="24" x2="21" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="25" y1="24" x2="25" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
+      <Line x1="30" y1="24" x2="30" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="34" y1="24" x2="34" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="39" y1="24" x2="39" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="43" y1="24" x2="43" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
+      <Line x1="48" y1="24" x2="48" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="52" y1="24" x2="52" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="57" y1="24" x2="57" y2="56" stroke={lineColor} strokeWidth="2" strokeOpacity="0.7" />
+      <Line x1="61" y1="24" x2="61" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="64" y1="24" x2="64" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.8" />
+      <Rect x="12" y="37.5" width="56" height="3" rx="1.5" fill="#F0531C" opacity="0.9" />
+      <Rect x="12" y="36" width="56" height="6" rx="3" fill="#F0531C" opacity="0.15" />
+      <Path d="M11 28 L11 20 L19 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M69 28 L69 20 L61 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M11 52 L11 60 L19 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M69 52 L69 60 L61 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
   );
 }
 
@@ -439,119 +471,108 @@ export default function AddMedicationScreen() {
           >
             {/* ━━ Step 0: Method picker ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 0 && (
-              <View style={{ gap: 14, marginTop: 4 }}>
+              <View style={{ gap: 20, marginTop: 4 }}>
                 <Text
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 15,
                     color: t.textSecondary,
-                    marginBottom: 4,
                   }}
                 >
                   How would you like to add your medication?
                 </Text>
 
-                {/* Search card */}
-                <TouchableOpacity
-                  onPress={() => setStep(1)}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor: t.surface,
-                    borderRadius: 16,
-                    borderWidth: 1.5,
-                    borderColor: t.border,
-                    padding: 20,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 16,
-                  }}
-                >
-                  <View
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  {/* Search card */}
+                  <TouchableOpacity
+                    onPress={() => setStep(1)}
+                    activeOpacity={0.8}
                     style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
+                      flex: 1,
+                      backgroundColor: t.surface,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: t.border,
                       alignItems: "center",
-                      justifyContent: "center",
+                      paddingTop: 28,
+                      paddingBottom: 22,
+                      paddingHorizontal: 8,
+                      gap: 14,
                     }}
                   >
-                    <Search size={24} color={C.accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.semibold,
-                        fontSize: 16,
-                        color: t.text,
-                      }}
-                    >
-                      Search & select drug
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.regular,
-                        fontSize: 13,
-                        color: t.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      Search any medication by name
-                    </Text>
-                  </View>
-                  <ChevronRight size={18} color={t.textSecondary} />
-                </TouchableOpacity>
+                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
+                      <MedicationBottle type="tablet" color={C.accent} drugName="" size={100} />
+                    </View>
+                    <View style={{ alignItems: "center", gap: 4 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: t.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        Search drug
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: t.textSecondary,
+                          textAlign: "center",
+                          lineHeight: 16,
+                        }}
+                      >
+                        Find by name
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
 
-                {/* Scan Pill card */}
-                <TouchableOpacity
-                  onPress={() => router.push("/medication-scan")}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor: t.surface,
-                    borderRadius: 16,
-                    borderWidth: 1.5,
-                    borderColor: t.border,
-                    padding: 20,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 16,
-                  }}
-                >
-                  <View
+                  {/* Scan card */}
+                  <TouchableOpacity
+                    onPress={() => router.push("/medication-scan")}
+                    activeOpacity={0.8}
                     style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
+                      flex: 1,
+                      backgroundColor: t.surface,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: t.border,
                       alignItems: "center",
-                      justifyContent: "center",
+                      paddingTop: 28,
+                      paddingBottom: 22,
+                      paddingHorizontal: 8,
+                      gap: 14,
                     }}
                   >
-                    <Camera size={24} color={C.accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.semibold,
-                        fontSize: 16,
-                        color: t.text,
-                      }}
-                    >
-                      Scan Pill
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.regular,
-                        fontSize: 13,
-                        color: t.textSecondary,
-                        marginTop: 2,
-                      }}
-                    >
-                      Scan barcode or identify by photo
-                    </Text>
-                  </View>
-                  <ChevronRight size={18} color={t.textSecondary} />
-                </TouchableOpacity>
+                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
+                      <ScanIllustration />
+                    </View>
+                    <View style={{ alignItems: "center", gap: 4 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: t.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        Scan Pill
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: t.textSecondary,
+                          textAlign: "center",
+                          lineHeight: 16,
+                        }}
+                      >
+                        Barcode or AI photo
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
 
