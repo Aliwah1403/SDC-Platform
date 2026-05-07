@@ -30,8 +30,8 @@ import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
-const HEADER_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
 const SCD_TYPE_LABELS = {
   HbSS: "HbSS — Sickle Cell Anaemia",
@@ -258,7 +258,7 @@ export default function CrisisPlanScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={HEADER_GRADIENT}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

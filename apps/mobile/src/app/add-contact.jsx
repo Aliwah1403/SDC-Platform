@@ -44,6 +44,7 @@ import { uploadContactPhoto } from "@/services/supabaseQueries";
 import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -306,7 +307,7 @@ export default function AddContactScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

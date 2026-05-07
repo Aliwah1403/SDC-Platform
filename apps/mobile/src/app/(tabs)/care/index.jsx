@@ -8,6 +8,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 import { useAppStore } from "@/store/appStore";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
@@ -25,7 +26,6 @@ import {
   ChevronRight,
 } from "lucide-react-native";
 
-const HEMO_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HALF_CARD = (SCREEN_WIDTH - 40 - 12) / 2;
 
@@ -314,7 +314,7 @@ export default function CareMenuScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={HEMO_GRADIENT}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: insets.top + 12, paddingBottom: 24, paddingHorizontal: 20, overflow: "hidden" }}

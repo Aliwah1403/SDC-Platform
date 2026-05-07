@@ -1,5 +1,6 @@
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { ScanLine, QrCode } from 'lucide-react-native';
+import { useTheme } from '@/hooks/useTheme';
 import Animated, {
   Extrapolation,
   SharedValue,
@@ -16,6 +17,9 @@ interface ToggleButtonProps {
 }
 
 export const ToggleButton = ({ progress, onPress }: ToggleButtonProps) => {
+  const t = useTheme();
+  const iconColor = t.isDark ? '#F8E9E7' : '#1A1A1A';
+
   const scanIconStyle = useAnimatedStyle(() => ({
     opacity: interpolate(progress.value, [0, 0.25], [1, 0], Extrapolation.CLAMP),
   }));
@@ -56,19 +60,19 @@ export const ToggleButton = ({ progress, onPress }: ToggleButtonProps) => {
   return (
     <View style={styles.buttonContainer}>
       <Animated.View style={buttonPulseStyle}>
-        <TouchableOpacity style={styles.button} onPress={onPress} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.button, { backgroundColor: t.surface }]} onPress={onPress} activeOpacity={0.8}>
           <Animated.View style={[styles.iconContainer, scanIconStyle]}>
-            <ScanLine size={28} color="#1A1A1A" strokeWidth={1.8} />
+            <ScanLine size={28} color={iconColor} strokeWidth={1.8} />
           </Animated.View>
           <Animated.View style={[styles.iconContainer, qrIconStyle]}>
-            <QrCode size={28} color="#1A1A1A" strokeWidth={1.8} />
+            <QrCode size={28} color={iconColor} strokeWidth={1.8} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
 
       <View style={styles.labelContainer}>
-        <Animated.Text style={[styles.label, labelConnectStyle]}>Connect</Animated.Text>
-        <Animated.Text style={[styles.label, styles.labelAbsolute, labelShareStyle]}>Share</Animated.Text>
+        <Animated.Text style={[styles.label, { color: t.text }, labelConnectStyle]}>Connect</Animated.Text>
+        <Animated.Text style={[styles.label, styles.labelAbsolute, { color: t.text }, labelShareStyle]}>Share</Animated.Text>
       </View>
     </View>
   );

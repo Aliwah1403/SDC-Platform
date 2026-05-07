@@ -247,8 +247,8 @@ export default function HomeScreen() {
     alertState,
     weather,
   });
-  const gradientColors = getGradientColors(hasLoggedData);
   const t = useTheme();
+  const gradientColors = getGradientColors(hasLoggedData, t.isDark);
 
   const compactBarHeight = insets.top + 56;
   const [headerHeight, setHeaderHeight] = useState(350);

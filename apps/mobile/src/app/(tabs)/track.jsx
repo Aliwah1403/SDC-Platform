@@ -46,6 +46,7 @@ import {
   useToggleMedicationTakenMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
+import { getGradientColors } from "@/utils/homeHelpers";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
@@ -61,7 +62,6 @@ const MONTH_HEIGHT = 334;
 
 const ORANGE = "#F0531C";
 const WINE = "#A9334D";
-const GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
 const MOOD_ICONS = [
   { Icon: Frown, color: "#DC2626" },
@@ -1378,7 +1378,7 @@ export default function TrackScreen() {
     <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Fixed top: header + calendar */}
       <LinearGradient
-        colors={GRADIENT}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >

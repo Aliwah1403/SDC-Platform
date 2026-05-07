@@ -28,6 +28,7 @@ import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const C_BRAND = {
   accent: "#A9334D",
@@ -394,7 +395,7 @@ export default function MedicationsScreen() {
     <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
