@@ -761,7 +761,7 @@ export default function AddMedicationScreen() {
                       </View>
                     )}
 
-                    {/* Loading with no results yet */}
+                    {/* Loading */}
                     {drugLoading && drugResults.length === 0 && (
                       <View
                         style={{ alignItems: "center", paddingVertical: 32 }}
@@ -776,6 +776,33 @@ export default function AddMedicationScreen() {
                           }}
                         >
                           Searching drug database…
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* No results */}
+                    {!drugLoading && drugResults.length === 0 && !drugError && (
+                      <View
+                        style={{ alignItems: "center", paddingVertical: 28 }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: fonts.medium,
+                            fontSize: 14,
+                            color: t.text,
+                          }}
+                        >
+                          No results for "{searchQuery.trim()}"
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: fonts.regular,
+                            fontSize: 13,
+                            color: t.textSecondary,
+                            marginTop: 4,
+                          }}
+                        >
+                          Try a different spelling or add it manually
                         </Text>
                       </View>
                     )}

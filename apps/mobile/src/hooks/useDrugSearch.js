@@ -87,6 +87,7 @@ export function useDrugSearch(query) {
     const local = searchSaved(medications, query);
     setResults(local);
     setError(null);
+    setIsLoading(true);
 
     // Debounced API fetch
     clearTimeout(timerRef.current);
@@ -94,8 +95,6 @@ export function useDrugSearch(query) {
       if (abortRef.current) abortRef.current.abort();
       const controller = new AbortController();
       abortRef.current = controller;
-
-      setIsLoading(true);
       try {
         const apiResults = await searchRxNorm(query, controller.signal);
         const localNames = new Set(local.map((r) => r.name.toLowerCase()));
