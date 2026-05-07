@@ -99,7 +99,7 @@ export function useLikeMutation() {
     },
 
     onError: (_err, { postId, isLiked }) => {
-      // Revert
+      // Revert optimistic update
       queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
         updateLikeInCache(key, postId, isLiked);
       });
@@ -177,7 +177,8 @@ export function useAddCommentMutation() {
   return useMutation({
     mutationFn: ({ postId, content }) => addComment(userId, postId, content),
     onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: ['post_detail', postId, userId] });
+      // Partial key match so any userId variation still hits the right query
+      queryClient.invalidateQueries({ queryKey: ['post_detail', postId] });
       // Bump comment_count in feed caches
       queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
         queryClient.setQueryData(key, (old) =>
@@ -199,7 +200,7 @@ export function useAddReplyMutation() {
     mutationFn: ({ postId, parentCommentId, replyingToName, content }) =>
       addReply(userId, postId, parentCommentId, replyingToName, content),
     onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: ['post_detail', postId, userId] });
+      queryClient.invalidateQueries({ queryKey: ['post_detail', postId] });
     },
   });
 }

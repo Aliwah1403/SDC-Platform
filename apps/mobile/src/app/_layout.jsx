@@ -261,8 +261,8 @@ export default function RootLayout() {
         router.push("/(tabs)/home");
       } else if (data.type === "appointment") {
         router.push("/(tabs)/care/appointments");
-      } else if (data.type === "community") {
-        router.push(data.postId ? `/(tabs)/community/${data.postId}` : "/notifications");
+      } else if (data.type === "community" || data.type === "like" || data.type === "comment" || data.type === "reply") {
+        router.push(data.postId ? `/community/${data.postId}` : "/community/notifications");
       } else if (data.screen === "metric-detail" && data.metric) {
         router.push(`/metric-detail?metric=${data.metric}`);
       }

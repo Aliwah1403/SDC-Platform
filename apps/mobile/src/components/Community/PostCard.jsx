@@ -82,7 +82,7 @@ export function PostCard({
     } catch (_) {}
   };
 
-  const displayLikes = post.likes + (isLiked ? 1 : 0);
+  const displayLikes = post.likes;
   const systemCategory = post.isSystemPost
     ? CATEGORY_MAP[post.systemCategory]
     : null;
@@ -243,7 +243,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#1A1A1A",
+              color: t.text,
               lineHeight: 25,
               paddingHorizontal: 16,
               marginBottom: 14,
@@ -302,7 +302,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.regular,
               fontSize: 15,
-              color: "#1A1A1A",
+              color: t.text,
               lineHeight: 22,
               paddingHorizontal: 16,
               marginBottom: 12,
