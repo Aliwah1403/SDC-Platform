@@ -5,6 +5,11 @@ import Constants from 'expo-constants';
 export const posthog = new PostHog('phc_x88DaDTp52cVBiXM9cWKN242pxv7D78GBe6V79oLNUzr', {
   host: 'https://h.hemo-scd.com',
   captureAppLifecycleEvents: false, // tracked manually with richer context
+  enableSessionReplay: true,
+  sessionReplayConfig: {
+    maskAllTextInputs: true,  // masks passwords, health data inputs by default
+    maskAllImages: false,
+  },
 });
 
 const INSTALL_DATE_KEY = 'hemo_install_date';
