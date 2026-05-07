@@ -103,7 +103,7 @@ export default function HelpCenterArticleScreen() {
           activeOpacity={0.6}
           style={styles.backBtn}
         >
-          <ChevronLeft size={22} color="#09332C" />
+          <ChevronLeft size={22} color="#1A1A1A" />
         </TouchableOpacity>
         <View style={{ width: 38 }} />
       </View>
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 26,
-    color: "#09332C",
+    color: "#1A1A1A",
     lineHeight: 33,
     marginBottom: 16,
   },

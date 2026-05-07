@@ -6,6 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { LayoutGrid } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -345,6 +346,7 @@ function MetricTile({
   hasData,
 }) {
   const router = useRouter();
+  const t = useTheme();
 
   return (
     <TouchableOpacity
@@ -356,7 +358,7 @@ function MetricTile({
       style={{
         width: TILE_WIDTH,
         height: TILE_HEIGHT,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 20,
         padding: 14,
         shadowColor: "#000",
@@ -375,7 +377,7 @@ function MetricTile({
         }}
       >
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#6B7280" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}
         >
           {title}
         </Text>
@@ -407,6 +409,7 @@ function getMoodStatus(mood) {
 
 export function MetricGrid({ selectedDateData }) {
   const router = useRouter();
+  const t = useTheme();
   const [visibleMetrics, setVisibleMetrics] = useState(DEFAULT_VISIBLE);
 
   useFocusEffect(
@@ -509,7 +512,7 @@ export function MetricGrid({ selectedDateData }) {
         }}
       >
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#1F2937" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}
         >
           Health Metrics
         </Text>

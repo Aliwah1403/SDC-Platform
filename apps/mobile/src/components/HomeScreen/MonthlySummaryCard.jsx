@@ -4,6 +4,7 @@ import { BlurView } from "expo-blur";
 import Svg, { Path, Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const SPARK_W = 90;
 const SPARK_H = 36;
@@ -116,6 +117,7 @@ function StatBlock({ value, label }) {
 
 export function MonthlySummaryCard({ healthData }) {
   const router = useRouter();
+  const t = useTheme();
 
   const today = new Date();
   if (today.getDate() !== 1) return null;
@@ -159,7 +161,7 @@ export function MonthlySummaryCard({ healthData }) {
         style={{
           fontFamily: fonts.bold,
           fontSize: 17,
-          color: "#09332C",
+          color: t.text,
           marginBottom: 10,
         }}
       >

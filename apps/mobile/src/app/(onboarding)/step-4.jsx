@@ -117,7 +117,7 @@ export default function Step4() {
                 unit === 'Metric' ? setKgValue(val) : setLbValue(val)
               }
               style={{ height: 216 }}
-              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#09332C' }}
+              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#1A1A1A' }}
             >
               {(unit === 'Metric' ? kgItems : lbItems).map((item) => (
                 <Picker.Item key={item.value} label={item.label} value={item.value} />
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     color: 'rgba(9,51,44,0.5)',
   },
   segmentTextActive: {
-    color: '#09332C',
+    color: '#1A1A1A',
     fontFamily: 'Geist_600SemiBold',
   },
   valueCard: {
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   valueText: {
     fontFamily: 'Geist_800ExtraBold',
     fontSize: 60,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -2,
   },
   tapHintRow: {

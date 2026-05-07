@@ -259,7 +259,7 @@ const s = StyleSheet.create({
   },
   closeBtnX: {
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     fontWeight: "600",
   },
   badgeWrapper: {
@@ -294,7 +294,7 @@ const s = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "800",
-    color: "#09332C",
+    color: "#1A1A1A",
     marginBottom: 24,
   },
   description: {
@@ -369,7 +369,7 @@ const s = StyleSheet.create({
   requirementValue: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#09332C",
+    color: "#1A1A1A",
   },
 
   // Unlock date
@@ -395,7 +395,7 @@ const s = StyleSheet.create({
   unlockDate: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#09332C",
+    color: "#1A1A1A",
   },
 
   // Progress

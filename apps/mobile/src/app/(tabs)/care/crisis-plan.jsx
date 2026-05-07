@@ -28,6 +28,7 @@ import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const HEADER_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
@@ -104,12 +105,16 @@ const PRESET_ALLERGIES = [
 // ── Section heading ─────────────────────────────────────────────────────────────
 
 function SectionLabel({ label }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
 // ── Tier row ────────────────────────────────────────────────────────────────────
 
 function TierRow({ tier }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable
@@ -154,6 +159,8 @@ function TierRow({ tier }) {
 // ── Main Screen ─────────────────────────────────────────────────────────────────
 
 export default function CrisisPlanScreen() {
+  const t = useTheme();
+  const styles = createStyles(t);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const sheetRef = useRef(null);
@@ -231,7 +238,7 @@ export default function CrisisPlanScreen() {
   const allAllergies = allergies;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+    <View style={{ flex: 1, backgroundColor: t.surface }}>
       <StatusBar style="light" />
 
       {/* Header */}
@@ -264,7 +271,7 @@ export default function CrisisPlanScreen() {
             width: 100,
             height: 100,
             borderRadius: 999,
-            backgroundColor: "#09332C",
+            backgroundColor: "#1A1A1A",
             opacity: 0.4,
             bottom: -20,
             left: -20,
@@ -599,7 +606,7 @@ export default function CrisisPlanScreen() {
             <TextInput
               style={styles.sheetInput}
               placeholder="Add allergy…"
-              placeholderTextColor="rgba(9,51,44,0.35)"
+              placeholderTextColor={t.textTertiary}
               value={editAllergyInput}
               onChangeText={setEditAllergyInput}
               onSubmitEditing={addEditCustom}
@@ -623,7 +630,7 @@ export default function CrisisPlanScreen() {
           <TextInput
             style={styles.sheetTextarea}
             placeholder="e.g. 'Previous ACS episode in 2023. Best response to morphine IV.'"
-            placeholderTextColor="rgba(9,51,44,0.35)"
+            placeholderTextColor={t.textTertiary}
             value={editNotes}
             onChangeText={setEditNotes}
             multiline
@@ -646,7 +653,7 @@ export default function CrisisPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function createStyles(t) { return StyleSheet.create({
   headerBtn: {
     width: 38,
     height: 38,
@@ -685,7 +692,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: fonts.bold,
     fontSize: 11,
-    color: "rgba(9,51,44,0.4)",
+    color: t.textSecondary,
     letterSpacing: 1.2,
     textTransform: "uppercase",
     marginBottom: 14,
@@ -693,14 +700,14 @@ const styles = StyleSheet.create({
   sectionHint: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     lineHeight: 19,
     marginTop: -6,
     marginBottom: 4,
   },
   sectionDivider: {
     height: 1,
-    backgroundColor: "rgba(9,51,44,0.07)",
+    backgroundColor: t.divider,
     marginHorizontal: 20,
   },
   // ── Info rows ──────────────────────────────────────────────────────
@@ -714,25 +721,25 @@ const styles = StyleSheet.create({
   infoKey: {
     fontFamily: fonts.medium,
     fontSize: 14,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     flexShrink: 0,
   },
   infoVal: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
     textAlign: "right",
     flex: 1,
   },
   infoValEmpty: {
     fontFamily: fonts.regular,
-    color: "rgba(9,51,44,0.35)",
+    color: t.textTertiary,
     textAlign: "right",
     flex: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: "rgba(9,51,44,0.06)",
+    backgroundColor: t.divider,
   },
   allergyChips: {
     flexDirection: "row",
@@ -770,7 +777,7 @@ const styles = StyleSheet.create({
   bulletText: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(9,51,44,0.75)",
+    color: t.text,
     flex: 1,
     lineHeight: 20,
   },
@@ -803,14 +810,14 @@ const styles = StyleSheet.create({
   tierPainRange: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(9,51,44,0.45)",
+    color: t.textSecondary,
   },
   tierActions: {
     marginTop: 12,
     gap: 8,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "rgba(9,51,44,0.06)",
+    borderTopColor: t.divider,
   },
   tierActionRow: {
     flexDirection: "row",
@@ -827,7 +834,7 @@ const styles = StyleSheet.create({
   tierActionText: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(9,51,44,0.75)",
+    color: t.text,
     flex: 1,
     lineHeight: 19,
   },
@@ -842,24 +849,24 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#09332C",
+    backgroundColor: t.surfaceElevated,
     alignItems: "center",
     justifyContent: "center",
   },
   contactAvatarText: {
     fontFamily: fonts.bold,
     fontSize: 13,
-    color: "#F8E9E7",
+    color: t.text,
   },
   contactName: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
   },
   contactRel: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     marginTop: 1,
   },
   callPill: {
@@ -880,12 +887,12 @@ const styles = StyleSheet.create({
   hospitalName: {
     fontFamily: fonts.semibold,
     fontSize: 15,
-    color: "#09332C",
+    color: t.text,
   },
   hospitalAddress: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     lineHeight: 18,
   },
   callPillLarge: {
@@ -912,19 +919,19 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 14,
     textTransform: "capitalize",
-    color: "#09332C",
+    color: t.text,
   },
   medDosage: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     marginTop: 2,
   },
   // ── ER Notes ───────────────────────────────────────────────────────
   erNotesText: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(9,51,44,0.75)",
+    color: t.text,
     lineHeight: 22,
   },
   // ── Empty states ───────────────────────────────────────────────────
@@ -935,7 +942,7 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(9,51,44,0.4)",
+    color: t.textSecondary,
   },
   emptyStateLink: {
     fontFamily: fonts.medium,
@@ -944,11 +951,11 @@ const styles = StyleSheet.create({
   },
   // ── Bottom sheet ───────────────────────────────────────────────────
   sheetBg: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 28,
   },
   sheetHandle: {
-    backgroundColor: "rgba(9,51,44,0.15)",
+    backgroundColor: t.border,
     width: 40,
   },
   sheetContent: {
@@ -959,19 +966,19 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontFamily: fonts.bold,
     fontSize: 20,
-    color: "#09332C",
+    color: t.text,
     marginBottom: 20,
   },
   sheetLabel: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
     marginBottom: 10,
   },
   sheetHint: {
     fontFamily: fonts.regular,
     fontSize: 12,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     lineHeight: 17,
     marginBottom: 10,
     marginTop: -6,
@@ -989,18 +996,18 @@ const styles = StyleSheet.create({
   },
   sheetInput: {
     flex: 1,
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
+    borderColor: t.border,
     paddingHorizontal: 14,
     paddingVertical: 11,
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
   },
   sheetAddBtn: {
-    backgroundColor: "#09332C",
+    backgroundColor: t.text,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 11,
@@ -1011,15 +1018,15 @@ const styles = StyleSheet.create({
     color: "#F8E9E7",
   },
   sheetTextarea: {
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.12)",
+    borderColor: t.border,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
     minHeight: 100,
   },
   sheetSaveBtn: {
@@ -1034,4 +1041,4 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#FFFFFF",
   },
-});
+}); }

@@ -6,21 +6,23 @@ import {
   HeartHandshake,
 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function TabLayout() {
+  const theme = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#fff",
+          backgroundColor: theme.tabBarBackground,
           borderTopWidth: 1,
-          borderColor: "#E5E7EB",
+          borderColor: theme.border,
           paddingTop: 6,
           paddingBottom: 6,
         },
-        tabBarActiveTintColor: "#DC2626",
-        tabBarInactiveTintColor: "#6B6B6B",
+        tabBarActiveTintColor: theme.tabActiveText,
+        tabBarInactiveTintColor: theme.tabInactiveText,
         tabBarLabelStyle: {
           fontFamily: fonts.semibold,
           fontSize: 10,

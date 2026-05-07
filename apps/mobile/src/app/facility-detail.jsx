@@ -33,7 +33,7 @@ import { getPlaceDetails, photoUrl } from "@/utils/hospitalSearch";
 const C = {
   bg: "#F8F4F0",
   card: "#FFFFFF",
-  dark: "#09332C",
+  dark: "#1A1A1A",
   muted: "rgba(9,51,44,0.45)",
   faint: "rgba(9,51,44,0.1)",
   accent: "#A9334D",
@@ -45,14 +45,14 @@ const TYPE_GRADIENT = {
   [FACILITY_TYPES.HOSPITAL]: ["#DC2626", "#991B1B", "#7F1D1D"],
   [FACILITY_TYPES.URGENT_CARE]: ["#D09F9A", "#A9334D", "#781D11"],
   [FACILITY_TYPES.CLINIC]: ["#059669", "#047857", "#065F46"],
-  [FACILITY_TYPES.SCD_SPECIALIST]: ["#1A5C52", "#09332C", "#052620"],
+  [FACILITY_TYPES.SCD_SPECIALIST]: ["#1A5C52", "#1A1A1A", "#052620"],
 };
 
 const TYPE_CONFIG = {
   [FACILITY_TYPES.HOSPITAL]: { color: "#DC2626", bg: "#FEE2E2" },
   [FACILITY_TYPES.URGENT_CARE]: { color: "#A9334D", bg: "#F8E9E7" },
   [FACILITY_TYPES.CLINIC]: { color: "#059669", bg: "#D1FAE5" },
-  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#09332C", bg: "#F8E9E7" },
+  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#1A1A1A", bg: "#F8E9E7" },
 };
 
 const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -180,7 +180,7 @@ export default function FacilityDetailScreen() {
   if (fetchError) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0", padding: 24 }}>
-        <Text style={{ color: "#09332C", fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
+        <Text style={{ color: "#1A1A1A", fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
           {fetchError}
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
@@ -192,7 +192,7 @@ export default function FacilityDetailScreen() {
 
   if (!facility) return null;
 
-  const gradient = TYPE_GRADIENT[facility.type] ?? ["#09332C", "#052620"];
+  const gradient = TYPE_GRADIENT[facility.type] ?? ["#1A1A1A", "#052620"];
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
 
   const userLocation =
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     backgroundColor: C.card,
     borderRadius: 16,
     overflow: "hidden",
-    shadowColor: "#09332C",
+    shadowColor: "#1A1A1A",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   contactValue: {
     fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   contactAction: {
     backgroundColor: "#F8E9E7",
@@ -580,10 +580,10 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
     marginLeft: 12,
   },
-  hoursValueToday: { fontFamily: "Geist_600SemiBold", color: "#09332C" },
+  hoursValueToday: { fontFamily: "Geist_600SemiBold", color: "#1A1A1A" },
   hoursValueClosed: { color: "rgba(9,51,44,0.35)" },
   todayDot: {
     width: 7,

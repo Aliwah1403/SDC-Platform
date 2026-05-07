@@ -44,7 +44,7 @@ export function FeedFilter({ active, onSelect }) {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 13,
-                color: isActive ? "#F8E9E7" : "#09332C",
+                color: isActive ? "#F8E9E7" : "#1A1A1A",
               }}
             >
               {filter.label}

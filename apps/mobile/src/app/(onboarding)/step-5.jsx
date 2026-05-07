@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontFamily: 'Geist_700Bold',
     fontSize: 14,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -0.2,
     textAlign: 'center',
   },
@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   descType: {
     fontFamily: 'Geist_700Bold',
     fontSize: 18,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -0.4,
   },
   descSubtitle: {

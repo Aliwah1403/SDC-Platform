@@ -58,10 +58,10 @@ export const ToggleButton = ({ progress, onPress }: ToggleButtonProps) => {
       <Animated.View style={buttonPulseStyle}>
         <TouchableOpacity style={styles.button} onPress={onPress} activeOpacity={0.8}>
           <Animated.View style={[styles.iconContainer, scanIconStyle]}>
-            <ScanLine size={28} color="#09332C" strokeWidth={1.8} />
+            <ScanLine size={28} color="#1A1A1A" strokeWidth={1.8} />
           </Animated.View>
           <Animated.View style={[styles.iconContainer, qrIconStyle]}>
-            <QrCode size={28} color="#09332C" strokeWidth={1.8} />
+            <QrCode size={28} color="#1A1A1A" strokeWidth={1.8} />
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(9, 51, 44, 0.08)',
     borderRadius: 32,
     borderWidth: 1,
-    shadowColor: '#09332C',
+    shadowColor: '#1A1A1A',
     shadowOffset: { width: 0, height: 7 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   label: {
-    color: '#09332C',
+    color: '#1A1A1A',
     fontFamily: 'Geist_600SemiBold',
     fontSize: 13,
     letterSpacing: 0.8,

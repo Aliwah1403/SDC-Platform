@@ -1,8 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export function PollBlock({ poll, votedOptionId, onVote }) {
+  const t = useTheme();
   const hasVoted = votedOptionId != null;
   const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
 
@@ -22,7 +24,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
               style={{
                 borderRadius: 10,
 
-                backgroundColor: isSelected ? "#FDF0F2" : "#F8F4F0",
+                backgroundColor: isSelected ? (t.isDark ? t.surfaceElevated : "#FDF0F2") : (t.isDark ? t.surfaceElevated : "#F8F4F0"),
                 overflow: "hidden",
               }}
             >
@@ -36,7 +38,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   width: `${percentage}%`,
                   backgroundColor: isSelected
                     ? "rgba(169,51,77,0.18)"
-                    : "rgba(9,51,44,0.07)",
+                    : t.isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
                 }}
               />
 
@@ -53,7 +55,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                     flex: 1,
                     fontFamily: isSelected ? fonts.semibold : fonts.regular,
                     fontSize: 14,
-                    color: isSelected ? "#A9334D" : "#09332C",
+                    color: isSelected ? "#A9334D" : t.text,
                   }}
                 >
                   {option.text}
@@ -62,7 +64,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   style={{
                     fontFamily: fonts.bold,
                     fontSize: 13,
-                    color: isSelected ? "#A9334D" : "#6B7280",
+                    color: isSelected ? "#A9334D" : t.textSecondary,
                     minWidth: 38,
                     textAlign: "right",
                   }}
@@ -81,7 +83,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
             activeOpacity={0.7}
             style={{
               borderRadius: 10,
-              backgroundColor: "#FAFAFA",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#FAFAFA",
             }}
           >
             <View
@@ -97,7 +99,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   flex: 1,
                   fontFamily: fonts.regular,
                   fontSize: 14,
-                  color: "#09332C",
+                  color: t.text,
                 }}
               >
                 {option.text}
@@ -108,7 +110,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
                   height: 18,
                   borderRadius: 9,
                   borderWidth: 1.5,
-                  borderColor: "#C4BAB7",
+                  borderColor: t.border,
                 }}
               />
             </View>
@@ -121,7 +123,7 @@ export function PollBlock({ poll, votedOptionId, onVote }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 12,
-            color: "#9C8D8A",
+            color: t.textSecondary,
             marginTop: 2,
           }}
         >

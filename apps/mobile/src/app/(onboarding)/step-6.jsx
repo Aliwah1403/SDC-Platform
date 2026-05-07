@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 16,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   sectionHint: {
     fontFamily: "Geist_400Regular",
@@ -221,7 +221,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   chipTextSelected: {
     color: "#FFFFFF",
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   allergyChipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   allergyChipTextSelected: {
     fontFamily: "Geist_500Medium",
@@ -276,10 +276,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   addBtn: {
-    backgroundColor: "#09332C",
+    backgroundColor: "#1A1A1A",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,

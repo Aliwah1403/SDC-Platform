@@ -31,6 +31,7 @@ import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
+import { useTheme } from "@/hooks/useTheme";
 import { toLocalDateStr } from "@/utils/dateUtils";
 
 const ALL_MILESTONES = [
@@ -254,6 +255,7 @@ export default function HomeScreen() {
     weather,
   });
   const gradientColors = getGradientColors(hasLoggedData);
+  const t = useTheme();
 
   const compactBarHeight = insets.top + 56;
   const [headerHeight, setHeaderHeight] = useState(350);
@@ -293,7 +295,7 @@ export default function HomeScreen() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFF9F9" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       <Animated.View

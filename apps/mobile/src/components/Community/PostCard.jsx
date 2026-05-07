@@ -19,8 +19,9 @@ import {
 import { fonts } from "@/utils/fonts";
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { PollBlock } from "@/components/Community/PollBlock";
+import { useTheme } from "@/hooks/useTheme";
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
 function avatarColor(name) {
   let hash = 0;
@@ -73,6 +74,7 @@ export function PostCard({
   blockedCategoryIds = [],
   onFollowCategory,
 }) {
+  const t = useTheme();
   const handleShare = async () => {
     try {
       const author = post.isAnonymous ? "Someone" : post.author.name;
@@ -95,12 +97,12 @@ export function PostCard({
       onPress={onPress}
       activeOpacity={0.95}
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         marginHorizontal: 16,
         marginBottom: 12,
         overflow: "hidden",
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 6,
@@ -137,13 +139,13 @@ export function PostCard({
               width: 40,
               height: 40,
               borderRadius: 20,
-              backgroundColor: "#E5E0DD",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#E5E0DD",
               alignItems: "center",
               justifyContent: "center",
               marginRight: 10,
             }}
           >
-            <UserCircle size={22} color="#9C8D8A" strokeWidth={1.5} />
+            <UserCircle size={22} color={t.textSecondary} strokeWidth={1.5} />
           </View>
         ) : (
           // Regular: initials avatar
@@ -172,7 +174,7 @@ export function PostCard({
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 14,
-                color: "#09332C",
+                color: t.text,
               }}
             >
               {post.isSystemPost && systemCategory
@@ -209,7 +211,7 @@ export function PostCard({
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "#6B7280",
+                color: t.textSecondary,
                 marginTop: 1,
               }}
             >
@@ -228,7 +230,7 @@ export function PostCard({
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             style={{ padding: 4 }}
           >
-            <MoreHorizontal size={18} color="#9CA3AF" strokeWidth={2} />
+            <MoreHorizontal size={18} color={t.textSecondary} strokeWidth={2} />
           </TouchableOpacity>
         )}
       </View>
@@ -241,7 +243,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 25,
               paddingHorizontal: 16,
               marginBottom: 14,
@@ -300,7 +302,7 @@ export function PostCard({
             style={{
               fontFamily: fonts.regular,
               fontSize: 15,
-              color: "#09332C",
+              color: "#1A1A1A",
               lineHeight: 22,
               paddingHorizontal: 16,
               marginBottom: 12,
@@ -337,7 +339,7 @@ export function PostCard({
         >
           <View
             style={{
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
               borderRadius: 10,
               paddingHorizontal: 10,
               paddingVertical: 3,
@@ -347,7 +349,7 @@ export function PostCard({
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 11,
-                color: "#09332C",
+                color: t.text,
               }}
             >
               {CATEGORY_LABELS[post.category] ?? post.category}
@@ -381,7 +383,7 @@ export function PostCard({
             flexDirection: "row",
             alignItems: "center",
             borderTopWidth: 1,
-            borderTopColor: "#F0EAE8",
+            borderTopColor: t.border,
             paddingTop: 10,
           }}
         >
@@ -422,12 +424,12 @@ export function PostCard({
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <MessageCircle size={18} color="#9CA3AF" strokeWidth={2} />
+            <MessageCircle size={18} color={t.textSecondary} strokeWidth={2} />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: "#6B7280",
+                color: t.textSecondary,
               }}
             >
               {post.commentCount ?? 0}
@@ -439,7 +441,7 @@ export function PostCard({
             style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Share2 size={18} color="#9CA3AF" strokeWidth={2} />
+            <Share2 size={18} color={t.textSecondary} strokeWidth={2} />
           </TouchableOpacity>
 
           <View style={{ flex: 1 }} />

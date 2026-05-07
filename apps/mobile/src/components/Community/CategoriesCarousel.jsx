@@ -25,7 +25,7 @@ export function CategoriesCarousel({ communityPosts, followedCategoryIds }) {
         }}
       >
         <Text
-          style={{ fontFamily: fonts.bold, fontSize: 16, color: "#09332C" }}
+          style={{ fontFamily: fonts.bold, fontSize: 16, color: "#1A1A1A" }}
         >
           Communities
         </Text>

@@ -2,9 +2,11 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { ChevronRight, NotebookPen, Flame, Pill } from "lucide-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 export function QuickActions({ medications = [] }) {
   const router = useRouter();
+  const t = useTheme();
   const hasMeds = medications.length > 0;
 
   return (
@@ -29,7 +31,6 @@ export function QuickActions({ medications = [] }) {
           backgroundColor: "#A9334D",
           borderRadius: 10,
           paddingHorizontal: 13,
-          // paddingVertical: 7,
         }}
         activeOpacity={0.8}
       >
@@ -50,12 +51,12 @@ export function QuickActions({ medications = [] }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 6,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           borderRadius: 10,
           paddingHorizontal: 13,
           paddingVertical: 7,
           borderWidth: 1.5,
-          borderColor: "#F0E4E1",
+          borderColor: t.border,
         }}
         activeOpacity={0.8}
       >
@@ -81,12 +82,12 @@ export function QuickActions({ medications = [] }) {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 6,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: t.surface,
             borderRadius: 10,
             paddingHorizontal: 13,
             paddingVertical: 7,
             borderWidth: 1.5,
-            borderColor: "#F0E4E1",
+            borderColor: t.border,
           }}
           activeOpacity={0.8}
         >

@@ -101,7 +101,7 @@ export default function Step9() {
           ]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
+          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </Pressable>
         <View style={styles.dotsRow}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 30,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: -0.9,
     lineHeight: 36,
     textAlign: "center",
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 6,
-    backgroundColor: "#09332C",
+    backgroundColor: "#1A1A1A",
     alignItems: "center",
     justifyContent: "center",
     opacity: 0.55,

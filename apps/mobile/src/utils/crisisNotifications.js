@@ -10,8 +10,8 @@ export async function scheduleCrisisCheckIns(intervalMinutes = 30) {
   try {
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "Crisis Check-In",
-        body: "How are you feeling? Tap to update your crisis status.",
+        title: "How are you feeling right now?",
+        body: "Just checking in — tap to update your status.",
         data: { type: "crisis_checkin" },
         sound: true,
       },
@@ -46,7 +46,7 @@ export async function scheduleEscalationAlert(newStep) {
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: `Crisis Escalated — ${stepLabels[newStep] ?? "Severe"}`,
+        title: `Crisis escalated — ${(stepLabels[newStep] ?? "Severe").toLowerCase()}.`,
         body:
           newStep === 3
             ? "Your crisis has escalated to Severe. Consider alerting your care team."

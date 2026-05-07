@@ -16,7 +16,7 @@ import { usePostHog } from 'posthog-react-native';
 const STATS = [
   { icon: StreakFireIcon, label: 'Streak', value: '1 day', color: '#781D11' },
   { icon: Heart, label: 'Health score', value: 'Ready', color: '#A9334D' },
-  { icon: Activity, label: 'Tracking', value: 'Active', color: '#09332C' },
+  { icon: Activity, label: 'Tracking', value: 'Active', color: '#1A1A1A' },
 ];
 
 export default function OnboardingComplete() {
@@ -105,7 +105,7 @@ export default function OnboardingComplete() {
             transition={{ type: 'spring', damping: 12, stiffness: 80, delay: 100 }}
             style={styles.checkCircle}
           >
-            <CheckCircle size={52} color="#09332C" strokeWidth={1.5} />
+            <CheckCircle size={52} color="#1A1A1A" strokeWidth={1.5} />
           </MotiView>
         </View>
 
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'Geist_800ExtraBold',
     fontSize: 30,
-    color: '#09332C',
+    color: '#1A1A1A',
     letterSpacing: -1,
     textAlign: 'center',
   },
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: 'Geist_700Bold',
     fontSize: 14,
-    color: '#09332C',
+    color: '#1A1A1A',
     textAlign: 'center',
   },
   statLabel: {

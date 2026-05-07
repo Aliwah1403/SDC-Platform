@@ -468,7 +468,7 @@ export default function StreakAchievementModal({
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 30,
-              color: "#09332C",
+              color: "#1A1A1A",
               textAlign: "center",
               marginBottom: 8,
               letterSpacing: -0.5,

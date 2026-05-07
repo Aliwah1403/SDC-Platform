@@ -41,13 +41,22 @@ export function useHealthKitAlerts() {
     [todayEntry]
   );
 
+  // Sync baselines to the store using a stringified dependency to avoid
+  // infinite loops when baselines get new object references on each render
+  // (e.g. during React Query cache invalidation on sign-out).
+  const baselinesStr = JSON.stringify(baselines);
+  useEffect(() => {
+    if (healthKitConnected) {
+      setHealthKitBaselines(baselines);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [healthKitConnected, baselinesStr]);
+
   useEffect(() => {
     if (!healthKitConnected) {
       setComputedAlertState(null);
       return;
     }
-
-    setHealthKitBaselines(baselines);
 
     if (!todayEntry) {
       setComputedAlertState(null);

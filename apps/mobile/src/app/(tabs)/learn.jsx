@@ -25,10 +25,12 @@ import {
 } from "lucide-react-native";
 import { useAppStore } from "../../store/appStore";
 import { mockArticles } from "../../types";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function LearnScreen() {
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
+  const t = useTheme();
   const scrollViewRef = useRef(null);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -138,12 +140,12 @@ export default function LearnScreen() {
     <TouchableOpacity
       onPress={() => onPress(question.text)}
       style={{
-        backgroundColor: "#ffffff",
+        backgroundColor: t.surface,
         borderRadius: 12,
         padding: 16,
         marginRight: 12,
         borderWidth: 1,
-        borderColor: "#F3F4F6",
+        borderColor: t.border,
         minWidth: 200,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
@@ -173,7 +175,7 @@ export default function LearnScreen() {
           style={{
             fontSize: 14,
             fontWeight: "600",
-            color: "#111827",
+            color: t.text,
             flex: 1,
           }}
         >
@@ -184,7 +186,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 12,
-          color: "#6B7280",
+          color: t.textSecondary,
         }}
       >
         Ask AI assistant →
@@ -220,12 +222,12 @@ export default function LearnScreen() {
 
         <View
           style={{
-            backgroundColor: isUser ? "#DC2626" : "#ffffff",
+            backgroundColor: isUser ? "#DC2626" : t.surface,
             borderRadius: 16,
             padding: 16,
             maxWidth: "75%",
             borderWidth: isUser ? 0 : 1,
-            borderColor: "#F3F4F6",
+            borderColor: t.border,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 1 },
             shadowOpacity: 0.05,
@@ -236,7 +238,7 @@ export default function LearnScreen() {
           <Text
             style={{
               fontSize: 16,
-              color: isUser ? "#ffffff" : "#111827",
+              color: isUser ? "#ffffff" : t.text,
               lineHeight: 22,
             }}
           >
@@ -246,7 +248,7 @@ export default function LearnScreen() {
           <Text
             style={{
               fontSize: 12,
-              color: isUser ? "#FCA5A5" : "#6B7280",
+              color: isUser ? "#FCA5A5" : t.textSecondary,
               marginTop: 4,
             }}
           >
@@ -296,17 +298,17 @@ export default function LearnScreen() {
 
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderRadius: 16,
           padding: 16,
           borderWidth: 1,
-          borderColor: "#F3F4F6",
+          borderColor: t.border,
         }}
       >
         <Text
           style={{
             fontSize: 16,
-            color: "#6B7280",
+            color: t.textSecondary,
             fontStyle: "italic",
           }}
         >
@@ -319,13 +321,13 @@ export default function LearnScreen() {
   const ArticleCard = ({ article }) => (
     <TouchableOpacity
       style={{
-        backgroundColor: "#ffffff",
+        backgroundColor: t.surface,
         borderRadius: 12,
         padding: 16,
         marginRight: 16,
         width: 280,
         borderWidth: 1,
-        borderColor: "#F3F4F6",
+        borderColor: t.border,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
@@ -359,7 +361,7 @@ export default function LearnScreen() {
         style={{
           fontSize: 16,
           fontWeight: "600",
-          color: "#111827",
+          color: t.text,
           marginBottom: 8,
           lineHeight: 22,
         }}
@@ -370,7 +372,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 13,
-          color: "#6B7280",
+          color: t.textSecondary,
           lineHeight: 18,
           marginBottom: 12,
         }}
@@ -388,7 +390,7 @@ export default function LearnScreen() {
         <Text
           style={{
             fontSize: 11,
-            color: "#9CA3AF",
+            color: t.textSecondary,
           }}
         >
           {article.readTime} min read
@@ -430,7 +432,7 @@ export default function LearnScreen() {
         style={{
           fontSize: 24,
           fontWeight: "bold",
-          color: "#111827",
+          color: t.text,
           marginBottom: 8,
           textAlign: "center",
         }}
@@ -441,7 +443,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 16,
-          color: "#6B7280",
+          color: t.textSecondary,
           textAlign: "center",
           lineHeight: 22,
           marginBottom: 24,
@@ -454,7 +456,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 14,
-          color: "#9CA3AF",
+          color: t.textSecondary,
           textAlign: "center",
         }}
       >
@@ -464,8 +466,8 @@ export default function LearnScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9FAFB" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -473,9 +475,9 @@ export default function LearnScreen() {
           paddingTop: insets.top + 20,
           paddingHorizontal: 20,
           paddingBottom: 20,
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#F3F4F6",
+          borderBottomColor: t.border,
         }}
       >
         <View
@@ -491,7 +493,7 @@ export default function LearnScreen() {
               style={{
                 fontSize: 28,
                 fontWeight: "bold",
-                color: "#111827",
+                color: t.text,
                 marginBottom: 4,
               }}
             >
@@ -501,7 +503,7 @@ export default function LearnScreen() {
             <Text
               style={{
                 fontSize: 16,
-                color: "#6B7280",
+                color: t.textSecondary,
               }}
             >
               Get personalized health guidance
@@ -512,12 +514,12 @@ export default function LearnScreen() {
             <TouchableOpacity
               onPress={handleClearChat}
               style={{
-                backgroundColor: "#F3F4F6",
+                backgroundColor: t.surfaceElevated,
                 borderRadius: 10,
                 padding: 12,
               }}
             >
-              <Trash2 size={20} color="#6B7280" />
+              <Trash2 size={20} color={t.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -529,7 +531,7 @@ export default function LearnScreen() {
               style={{
                 fontSize: 16,
                 fontWeight: "600",
-                color: "#111827",
+                color: t.text,
                 marginBottom: 12,
               }}
             >
@@ -585,9 +587,9 @@ export default function LearnScreen() {
         {/* Input Area */}
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             borderTopWidth: 1,
-            borderTopColor: "#F3F4F6",
+            borderTopColor: t.border,
             paddingHorizontal: 20,
             paddingVertical: 16,
             paddingBottom: Math.max(insets.bottom, 16),
@@ -597,24 +599,25 @@ export default function LearnScreen() {
             style={{
               flexDirection: "row",
               alignItems: "flex-end",
-              backgroundColor: "#F9FAFB",
+              backgroundColor: t.background,
               borderRadius: 20,
               paddingHorizontal: 16,
               paddingVertical: 8,
               borderWidth: 1,
-              borderColor: "#E5E7EB",
+              borderColor: t.border,
             }}
           >
             <TextInput
               style={{
                 flex: 1,
                 fontSize: 16,
-                color: "#111827",
+                color: t.text,
                 maxHeight: 100,
                 paddingVertical: 8,
               }}
               placeholder="Ask about sickle cell management..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor={t.textSecondary}
+              keyboardAppearance={t.isDark ? "dark" : "light"}
               multiline
               value={inputText}
               onChangeText={setInputText}
@@ -642,9 +645,9 @@ export default function LearnScreen() {
       {chatMessages.length === 0 && (
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             borderTopWidth: 1,
-            borderTopColor: "#F3F4F6",
+            borderTopColor: t.border,
             paddingVertical: 20,
           }}
         >
@@ -661,7 +664,7 @@ export default function LearnScreen() {
               style={{
                 fontSize: 18,
                 fontWeight: "600",
-                color: "#111827",
+                color: t.text,
               }}
             >
               Recommended Reading

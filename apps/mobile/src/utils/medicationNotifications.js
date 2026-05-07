@@ -84,7 +84,7 @@ export async function scheduleMedicationNotifications(med) {
         identifier: `med-${med.id}-${timeStr}-before-${r.offsetMinutes}`,
         content: {
           title: `${med.name} in ${r.offsetMinutes} min`,
-          body: `Your ${med.name} dose is coming up soon`,
+          body: `A gentle reminder: your dose is soon.`,
           data: { type: 'medication', medicationId: med.id },
           sound: true,
         },
@@ -102,7 +102,7 @@ export async function scheduleMedicationNotifications(med) {
         identifier: `med-${med.id}-${timeStr}-after-${r.offsetMinutes}`,
         content: {
           title: `Did you take ${med.name}?`,
-          body: `Don't forget your dose scheduled for ${timeStr}`,
+          body: `Just checking in on your dose.`,
           data: { type: 'medication', medicationId: med.id },
           sound: true,
         },

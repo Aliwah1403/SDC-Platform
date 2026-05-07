@@ -44,7 +44,7 @@ const C = {
   bg: "#F2EEE8",
   card: "#ffffff",
   border: "#F0E4E1",
-  textDark: "#09332C",
+  textDark: "#1A1A1A",
   muted: "#9CA3AF",
   accent: "#A9334D",
   darkBurg: "#781D11",

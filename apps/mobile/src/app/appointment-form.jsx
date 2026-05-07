@@ -22,6 +22,7 @@ import { X, Calendar, Clock, MapPin, User, FileText, Bell, CalendarCheck } from 
 import { useAppointmentsQuery, useAddAppointmentMutation, useUpdateAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
 import { addToDeviceCalendar, scheduleReminders, cancelReminders } from "@/utils/appointmentUtils";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { format } from "date-fns";
 
 const TYPES = [
@@ -52,6 +53,7 @@ export default function AppointmentForm() {
   const { id } = useLocalSearchParams();
 
   const { data: appointments = [] } = useAppointmentsQuery();
+  const { data: profile } = useProfileQuery();
   const addAppt = useAddAppointmentMutation();
   const updateAppt = useUpdateAppointmentMutation();
 
@@ -161,7 +163,7 @@ export default function AppointmentForm() {
     if (existing?.reminderIds?.length) await cancelReminders(existing.reminderIds);
     let reminderIds = [];
     if (remindersOn && status === "upcoming") {
-      reminderIds = await scheduleReminders({ ...apptBase, id: existing?.id ?? "new" }, reminderOffsets);
+      reminderIds = await scheduleReminders({ ...apptBase, id: existing?.id ?? "new" }, reminderOffsets, profile?.nickname ?? "there");
     }
 
     const navigate = () => router.back();
@@ -198,8 +200,8 @@ export default function AppointmentForm() {
 
   const SectionLabel = ({ icon: Icon, label }) => (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 20 }}>
-      <Icon size={16} color="#09332C" strokeWidth={2} />
-      <Text style={{ fontSize: 13, fontWeight: "600", color: "#09332C", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Icon size={16} color="#1A1A1A" strokeWidth={2} />
+      <Text style={{ fontSize: 13, fontWeight: "600", color: "#1A1A1A", textTransform: "uppercase", letterSpacing: 0.5 }}>
         {label}
       </Text>
     </View>
@@ -488,7 +490,7 @@ export default function AppointmentForm() {
                       style={{
                         fontFamily: "Geist_600SemiBold",
                         fontSize: 14,
-                        color: "#09332C",
+                        color: "#1A1A1A",
                       }}
                     >
                       {item.name}
@@ -736,7 +738,7 @@ export default function AppointmentForm() {
           {/* Toggle row */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Bell size={20} color="#09332C" />
+              <Bell size={20} color="#1A1A1A" />
               <View>
                 <Text style={{ fontSize: 15, fontFamily: "Geist-SemiBold", color: "#1a1a1a" }}>Reminders</Text>
                 <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Push notification before appointment</Text>
@@ -879,7 +881,7 @@ export default function AppointmentForm() {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
-              <CalendarCheck size={20} color="#09332C" />
+              <CalendarCheck size={20} color="#1A1A1A" />
               <View>
                 <Text
                   style={{

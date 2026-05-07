@@ -110,7 +110,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 26,
-              color: "#09332C",
+              color: "#1A1A1A",
               textAlign: "center",
               marginBottom: 10,
             }}

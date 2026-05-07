@@ -1,7 +1,9 @@
 import { View } from "react-native";
 import { MotiView } from "moti";
+import { useTheme } from "@/hooks/useTheme";
 
 function Bone({ width, height, borderRadius = 8, style }) {
+  const t = useTheme();
   return (
     <MotiView
       from={{ opacity: 0.35 }}
@@ -17,7 +19,7 @@ function Bone({ width, height, borderRadius = 8, style }) {
           width,
           height,
           borderRadius,
-          backgroundColor: "#E8DEDD",
+          backgroundColor: t.isDark ? t.surfaceElevated : "#E8DEDD",
         },
         style,
       ]}
@@ -26,15 +28,16 @@ function Bone({ width, height, borderRadius = 8, style }) {
 }
 
 export function PostSkeleton() {
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: t.surface,
         borderRadius: 16,
         marginHorizontal: 16,
         marginBottom: 12,
         padding: 16,
-        shadowColor: "#09332C",
+        shadowColor: "#1A1A1A",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
         shadowRadius: 6,
@@ -61,7 +64,7 @@ export function PostSkeleton() {
       <View
         style={{
           borderTopWidth: 1,
-          borderTopColor: "#F0EAE8",
+          borderTopColor: t.border,
           paddingTop: 12,
           flexDirection: "row",
           alignItems: "center",

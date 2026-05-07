@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
   alertBannerText: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    color: "#09332C",
+    color: "#1A1A1A",
     flex: 1,
     lineHeight: 19,
   },
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
   confirmTitle: {
     fontFamily: fonts.bold,
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   confirmBody: {
     fontFamily: fonts.regular,
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
   confirmBtnOutlineText: {
     fontFamily: fonts.semibold,
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   confirmBtnFill: {
     flex: 1,

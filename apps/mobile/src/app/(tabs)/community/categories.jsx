@@ -18,6 +18,7 @@ import {
 } from "@/hooks/queries/useCategoryPrefsQuery";
 import { COMMUNITY_CATEGORIES_DATA } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const GROUP_FILTERS = [
   { id: "following", label: "Following" },
@@ -26,6 +27,7 @@ const GROUP_FILTERS = [
 ];
 
 export default function CategoriesScreen() {
+  const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = useState("all");
@@ -68,8 +70,8 @@ export default function CategoriesScreen() {
   }, [activeFilter, followedCategoryIds]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -79,9 +81,9 @@ export default function CategoriesScreen() {
           paddingHorizontal: 16,
           flexDirection: "row",
           alignItems: "center",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           borderBottomWidth: 1,
-          borderBottomColor: "#F0EAE8",
+          borderBottomColor: t.border,
         }}
       >
         <TouchableOpacity
@@ -91,12 +93,12 @@ export default function CategoriesScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <ChevronLeft size={20} color="#09332C" strokeWidth={2} />
+          <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
         <Text
@@ -105,7 +107,7 @@ export default function CategoriesScreen() {
             textAlign: "center",
             fontFamily: fonts.bold,
             fontSize: 17,
-            color: "#09332C",
+            color: t.text,
           }}
         >
           Communities
@@ -124,7 +126,7 @@ export default function CategoriesScreen() {
           gap: 8,
           alignItems: "center",
         }}
-        style={{ flexGrow: 0, backgroundColor: "#FFFFFF" }}
+        style={{ flexGrow: 0, backgroundColor: t.surface }}
       >
         {GROUP_FILTERS.map((f) => {
           const isActive = activeFilter === f.id;
@@ -139,14 +141,14 @@ export default function CategoriesScreen() {
                 borderRadius: 20,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: isActive ? "#A9334D" : "#F8F4F0",
+                backgroundColor: isActive ? "#A9334D" : t.background,
               }}
             >
               <Text
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 13,
-                  color: isActive ? "#F8E9E7" : "#09332C",
+                  color: isActive ? "#F8E9E7" : t.text,
                 }}
               >
                 {f.label}
@@ -173,7 +175,7 @@ export default function CategoriesScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#09332C",
+                color: t.text,
                 marginBottom: 6,
               }}
             >
@@ -183,7 +185,7 @@ export default function CategoriesScreen() {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
                 textAlign: "center",
               }}
             >
@@ -198,7 +200,7 @@ export default function CategoriesScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 13,
-                  color: "#9C8D8A",
+                  color: t.textSecondary,
                   paddingHorizontal: 20,
                   paddingTop: gi === 0 ? 12 : 20,
                   paddingBottom: 8,
@@ -225,7 +227,7 @@ export default function CategoriesScreen() {
                       paddingHorizontal: 20,
                       paddingVertical: 12,
                       borderBottomWidth: isLast ? 0 : 1,
-                      borderBottomColor: "#F5F0EE",
+                      borderBottomColor: t.divider,
                     }}
                   >
                     {/* Circular photo avatar */}
@@ -248,7 +250,7 @@ export default function CategoriesScreen() {
                         style={{
                           fontFamily: fonts.semibold,
                           fontSize: 15,
-                          color: "#09332C",
+                          color: t.text,
                           marginBottom: 2,
                         }}
                       >
@@ -258,7 +260,7 @@ export default function CategoriesScreen() {
                         style={{
                           fontFamily: fonts.regular,
                           fontSize: 12,
-                          color: "#9C8D8A",
+                          color: t.textSecondary,
                         }}
                       >
                         Community
@@ -277,18 +279,18 @@ export default function CategoriesScreen() {
                         justifyContent: "center",
                         flexDirection: "row",
                         gap: 4,
-                        backgroundColor: isFollowing ? "#F3F0EE" : "#A9334D",
+                        backgroundColor: isFollowing ? (t.isDark ? t.surfaceElevated : "#F3F0EE") : "#A9334D",
                         marginRight: 10,
                       }}
                     >
                       {isFollowing && (
-                        <Check size={12} color="#09332C" strokeWidth={2.5} />
+                        <Check size={12} color={t.text} strokeWidth={2.5} />
                       )}
                       <Text
                         style={{
                           fontFamily: fonts.bold,
                           fontSize: 13,
-                          color: isFollowing ? "#09332C" : "#F8E9E7",
+                          color: isFollowing ? t.text : "#F8E9E7",
                         }}
                       >
                         {isFollowing ? "Following" : "Follow"}
@@ -303,14 +305,14 @@ export default function CategoriesScreen() {
                         width: 34,
                         height: 34,
                         borderRadius: 17,
-                        backgroundColor: isBlocked ? "#FFEEF0" : "#F3F0EE",
+                        backgroundColor: isBlocked ? "#FFEEF0" : (t.isDark ? t.surfaceElevated : "#F3F0EE"),
                         alignItems: "center",
                         justifyContent: "center",
                       }}
                     >
                       <Ban
                         size={16}
-                        color={isBlocked ? "#DC2626" : "#9C8D8A"}
+                        color={isBlocked ? "#DC2626" : t.textSecondary}
                         strokeWidth={1.8}
                       />
                     </TouchableOpacity>

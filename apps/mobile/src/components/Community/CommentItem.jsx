@@ -3,8 +3,9 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
-const AVATAR_COLORS = ["#A9334D", "#09332C", "#781D11", "#5C2E00"];
+const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
 function avatarColor(name) {
   let hash = 0;
@@ -47,6 +48,7 @@ function Avatar({ name, initials, size = 34 }) {
 }
 
 function ReplyRow({ reply, onReply, onLongPress }) {
+  const t = useTheme();
   const handleLongPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onLongPress?.(reply.id, reply.isCurrentUser);
@@ -66,10 +68,10 @@ function ReplyRow({ reply, onReply, onLongPress }) {
       />
       <View style={{ flex: 1, marginLeft: 8 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 }}>
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#09332C" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text }}>
             {reply.author.name}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
             {timeAgo(reply.timestamp)}
           </Text>
         </View>
@@ -78,7 +80,7 @@ function ReplyRow({ reply, onReply, onLongPress }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: "#374151",
+            color: t.text,
             lineHeight: 20,
           }}
         >
@@ -95,7 +97,7 @@ function ReplyRow({ reply, onReply, onLongPress }) {
           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
           style={{ marginTop: 5 }}
         >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#9CA3AF" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: t.textSecondary }}>
             Reply
           </Text>
         </TouchableOpacity>
@@ -105,6 +107,7 @@ function ReplyRow({ reply, onReply, onLongPress }) {
 }
 
 export function CommentItem({ comment, onReply, onLongPress }) {
+  const t = useTheme();
   const [repliesExpanded, setRepliesExpanded] = useState(false);
   const replyCount = comment.replies?.length ?? 0;
 
@@ -135,10 +138,10 @@ export function CommentItem({ comment, onReply, onLongPress }) {
               marginBottom: 3,
             }}
           >
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#09332C" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text }}>
               {comment.author.name}
             </Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF" }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
               {timeAgo(comment.timestamp)}
             </Text>
           </View>
@@ -147,7 +150,7 @@ export function CommentItem({ comment, onReply, onLongPress }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#374151",
+              color: t.text,
               lineHeight: 20,
             }}
           >
@@ -161,7 +164,7 @@ export function CommentItem({ comment, onReply, onLongPress }) {
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               style={{ marginTop: 6 }}
             >
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: "#9CA3AF" }}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 12, color: t.textSecondary }}>
                 Reply
               </Text>
             </TouchableOpacity>
@@ -188,7 +191,7 @@ export function CommentItem({ comment, onReply, onLongPress }) {
               style={{
                 width: 20,
                 height: 1.5,
-                backgroundColor: "#D1C9C7",
+                backgroundColor: t.isDark ? t.border : "#D1C9C7",
                 borderRadius: 1,
               }}
             />
@@ -216,7 +219,7 @@ export function CommentItem({ comment, onReply, onLongPress }) {
               <View
                 style={{
                   borderLeftWidth: 2,
-                  borderLeftColor: "#EDE8E6",
+                  borderLeftColor: t.border,
                   paddingLeft: 12,
                 }}
               >

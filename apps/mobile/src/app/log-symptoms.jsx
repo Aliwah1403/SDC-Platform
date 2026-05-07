@@ -24,6 +24,7 @@ import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { usePostHog } from "posthog-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
@@ -126,6 +127,7 @@ function lerpColor(a, b, t) {
 const MOOD_ORB_COLORS = ["#6366F1", "#8B5CF6", "#A9334D", "#F59E0B", "#F97316"];
 
 function ProgressDots({ step }) {
+  const t = useTheme();
   return (
     <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 8 }}>
       {Array.from({ length: TOTAL_STEPS - 1 }).map((_, i) => (
@@ -135,7 +137,7 @@ function ProgressDots({ step }) {
             width: i === step ? 20 : 7,
             height: 7,
             borderRadius: 4,
-            backgroundColor: i < step ? "#A9334D" : i === step ? "#A9334D" : "#F8E9E7",
+            backgroundColor: i < step ? "#A9334D" : i === step ? "#A9334D" : t.isDark ? t.surfaceElevated : "#F8E9E7",
             opacity: i < step ? 0.4 : 1,
           }}
         />
@@ -146,6 +148,7 @@ function ProgressDots({ step }) {
 
 // Step 0 — Pain Level
 function PainStep({ value, onChange }) {
+  const t = useTheme();
   const color = getPainColor(value);
   const scale = 0.55 + (value / 10) * 0.85;
 
@@ -157,7 +160,7 @@ function PainStep({ value, onChange }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={styles.stepTitle}>How's your pain today?</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your pain today?</Text>
         <Text style={styles.stepSubtitle}>Rate from 0 (no pain) to 10 (worst possible)</Text>
       </View>
 
@@ -239,6 +242,7 @@ function PainStep({ value, onChange }) {
 
 // Step 1 — Mood
 function MoodStep({ value, onChange }) {
+  const t = useTheme();
   const idx = value - 1; // 1-indexed → 0-indexed
   const color = MOOD_ORB_COLORS[idx] || MOOD_ORB_COLORS[2];
   const scale = 0.55 + ((value - 1) / 4) * 0.85;
@@ -246,7 +250,7 @@ function MoodStep({ value, onChange }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={styles.stepTitle}>Choose how you've felt{"\n"}overall today</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Choose how you've felt{"\n"}overall today</Text>
       </View>
 
       {/* Orb */}
@@ -307,9 +311,10 @@ function MoodStep({ value, onChange }) {
 
 // Step 2 — Body Locations
 function LocationsStep({ selected, onToggle }) {
+  const t = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Text style={styles.stepTitle}>Where does it hurt?</Text>
+      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Where does it hurt?</Text>
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if no pain</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -333,9 +338,10 @@ function LocationsStep({ selected, onToggle }) {
 
 // Step 3 — Symptoms Checklist
 function SymptomsStep({ selected, onToggle }) {
+  const t = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Text style={styles.stepTitle}>Any symptoms today?</Text>
+      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Any symptoms today?</Text>
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if none</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -361,12 +367,13 @@ function SymptomsStep({ selected, onToggle }) {
 const HYDRATION_PRESETS = [4, 8, 12];
 
 function HydrationStep({ value, onChange }) {
+  const t = useTheme();
   const fillColor = value >= 8 ? "#10B981" : value >= 5 ? "#3B82F6" : "#F59E0B";
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={styles.stepTitle}>How's your hydration?</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your hydration?</Text>
         <Text style={styles.stepSubtitle}>How many glasses of water today?</Text>
       </View>
 
@@ -376,7 +383,7 @@ function HydrationStep({ value, onChange }) {
         <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 52, color: fillColor, marginTop: 8 }}>
           {value}
         </Text>
-        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 16, color: "#9CA3AF", marginTop: 2 }}>
+        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 16, color: t.textSecondary, marginTop: 2 }}>
           glasses
         </Text>
       </View>
@@ -440,10 +447,11 @@ function HydrationStep({ value, onChange }) {
 
 // Step 5 — Notes
 function NotesStep({ value, onChange, onSkip }) {
+  const t = useTheme();
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.stepTitle}>Anything to note?</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Anything to note?</Text>
         <Text style={styles.stepSubtitle}>Optional — triggers, activities, how your day went</Text>
         <View style={{ marginTop: 24, flex: 1 }}>
           <TextInput
@@ -452,20 +460,21 @@ function NotesStep({ value, onChange, onSkip }) {
             multiline
             placeholder="e.g. Stressed at work, slept poorly, went for a short walk..."
             placeholderTextColor="#C4A8A4"
+            keyboardAppearance={t.isDark ? "dark" : "light"}
             style={{
-              backgroundColor: "#F8E9E7",
+              backgroundColor: t.isDark ? t.surface : "#F8E9E7",
               borderRadius: 16,
               padding: 16,
               fontFamily: "Geist_400Regular",
               fontSize: 15,
-              color: "#781D11",
+              color: t.isDark ? t.text : "#781D11",
               minHeight: 140,
               textAlignVertical: "top",
             }}
           />
         </View>
         <TouchableOpacity onPress={onSkip} style={{ alignItems: "center", marginTop: 16 }}>
-          <Text style={{ fontFamily: "Geist_500Medium", fontSize: 15, color: "#9CA3AF" }}>
+          <Text style={{ fontFamily: "Geist_500Medium", fontSize: 15, color: t.textSecondary }}>
             Skip this step →
           </Text>
         </TouchableOpacity>
@@ -476,6 +485,7 @@ function NotesStep({ value, onChange, onSkip }) {
 
 // Step 6 — Summary
 function SummaryStep({ log, onSubmit }) {
+  const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
 
@@ -500,12 +510,12 @@ function SummaryStep({ log, onSubmit }) {
             from={{ opacity: 0, translateY: 16 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ delay: i * 80, type: "timing", duration: 300 }}
-            style={styles.summaryRow}
+            style={[styles.summaryRow, { backgroundColor: t.isDark ? t.surface : "#F8E9E7" }]}
           >
             <View style={[styles.summaryDot, { backgroundColor: row.color }]} />
             <View style={{ flex: 1 }}>
               <Text style={styles.summaryLabel}>{row.label}</Text>
-              <Text style={styles.summaryValue} numberOfLines={2}>{row.value}</Text>
+              <Text style={[styles.summaryValue, { color: t.isDark ? t.text : "#781D11" }]} numberOfLines={2}>{row.value}</Text>
             </View>
           </MotiView>
         ))}
@@ -526,6 +536,7 @@ const STEP_NAMES = ['pain_level', 'mood', 'body_locations', 'symptoms', 'hydrati
 export default function LogSymptomsScreen() {
   const router = useRouter();
   const posthog = usePostHog();
+  const t = useTheme();
   const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected, healthKitPreferences } = useAppStore();
   const submitLogMutation = useSubmitLogMutation();
   const openedAtRef = useRef(Date.now());
@@ -664,21 +675,21 @@ export default function LogSymptomsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F9" }} edges={["top", "bottom"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={["top", "bottom"]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.headerBtn}>
-          <ChevronLeft color="#781D11" size={24} strokeWidth={2} />
-          <Text style={styles.headerBtnText}>Back</Text>
+          <ChevronLeft color={t.accent} size={24} strokeWidth={2} />
+          <Text style={[styles.headerBtnText, { color: t.accent }]}>Back</Text>
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: t.text }]}>
           {isSummary ? "Summary" : `Step ${step + 1} of ${STEP_COUNT - 1}`}
         </Text>
 
         {!isSummary ? (
           <TouchableOpacity onPress={handleCancel} style={styles.headerBtn}>
-            <Text style={[styles.headerBtnText, { color: "#9CA3AF" }]}>Cancel</Text>
+            <Text style={[styles.headerBtnText, { color: t.textSecondary }]}>Cancel</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.headerBtn} />

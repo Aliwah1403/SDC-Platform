@@ -5,6 +5,7 @@ import Svg, { Path, Circle } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { toLocalDateStr } from "@/utils/dateUtils";
+import { useTheme } from "@/hooks/useTheme";
 
 const ACCENT = {
   concern: "#A9334D",
@@ -64,6 +65,7 @@ function PainSparkline({ data, color }) {
 export function HealthSignalSection({ alertState, healthData }) {
   const [expanded, setExpanded] = useState(false);
   const router = useRouter();
+  const t = useTheme();
 
   if (!alertState || (alertState.level !== "concern" && !alertState.vocRisk)) {
     return null;
@@ -95,7 +97,7 @@ export function HealthSignalSection({ alertState, healthData }) {
       <View
         style={{
           flexDirection: "row",
-          backgroundColor: "#FFF0ED",
+          backgroundColor: t.isDark ? t.surface : "#FFF0ED",
           borderRadius: 16,
           overflow: "hidden",
         }}
@@ -157,7 +159,7 @@ export function HealthSignalSection({ alertState, healthData }) {
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 14,
-                  color: "#09332C",
+                  color: t.text,
                   lineHeight: 20,
                 }}
               >

@@ -168,7 +168,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               <X size={20} color="#6B7280" strokeWidth={2} />
             </TouchableOpacity>
             <Text
-              style={{ fontFamily: fonts.bold, fontSize: 17, color: "#09332C" }}
+              style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}
             >
               Report comment
             </Text>
@@ -235,7 +235,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
                     style={{
                       fontFamily: fonts.semibold,
                       fontSize: 14,
-                      color: isSelected ? "#A9334D" : "#09332C",
+                      color: isSelected ? "#A9334D" : "#1A1A1A",
                     }}
                   >
                     {reason.label}
@@ -273,7 +273,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               paddingVertical: 12,
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#09332C",
+              color: "#1A1A1A",
               minHeight: 72,
               textAlignVertical: "top",
             }}
@@ -394,7 +394,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
           style={{
             fontFamily: fonts.semibold,
             fontSize: 15,
-            color: destructive ? "#A9334D" : "#09332C",
+            color: destructive ? "#A9334D" : "#1A1A1A",
           }}
         >
           {label}

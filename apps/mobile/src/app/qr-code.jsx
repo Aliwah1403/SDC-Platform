@@ -55,11 +55,11 @@ export default function QRCodeScreen() {
             justifyContent: "center",
           }}
         >
-          <ArrowLeft size={20} color="#09332C" strokeWidth={2} />
+          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
         </TouchableOpacity>
 
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#09332C" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1A1A1A" }}>
             Emergency Card
           </Text>
           <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 1 }}>

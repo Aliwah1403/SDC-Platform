@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 16,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   cancelBtn: {
     fontFamily: "Geist_400Regular",
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   spinnerItem: {
     fontFamily: "Geist_400Regular",
     fontSize: 18,
-    color: "#09332C",
+    color: "#1A1A1A",
     height: 200,
   },
 });

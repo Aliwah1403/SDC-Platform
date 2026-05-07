@@ -51,6 +51,7 @@ import { saveFacility, unsaveFacility } from "@/services/supabaseQueries";
 import { useAuthStore } from "@/utils/auth/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { useTheme } from "@/hooks/useTheme";
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -72,7 +73,7 @@ const TYPE_CONFIG = {
   [FACILITY_TYPES.HOSPITAL]: { color: "#DC2626", bg: "#FEE2E2" },
   [FACILITY_TYPES.URGENT_CARE]: { color: "#A9334D", bg: "#F8E9E7" },
   [FACILITY_TYPES.CLINIC]: { color: "#059669", bg: "#D1FAE5" },
-  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#09332C", bg: "#F8E9E7" },
+  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#1A1A1A", bg: "#F8E9E7" },
 };
 
 const FILTERS = [
@@ -86,6 +87,8 @@ const FILTERS = [
 
 // ── Search result card ────────────────────────────────────────────────────────
 function SearchResultCard({ facility, userLocation, isSaved, onAdd, onPress }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -160,6 +163,8 @@ function FacilityCard({
   onToggleFavourite,
   onPress,
 }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -216,15 +221,15 @@ function FacilityCard({
       {/* Details */}
       <View style={styles.cardDetails}>
         <View style={styles.detailRow}>
-          <MapPin size={15} color="rgba(9,51,44,0.4)" />
+          <MapPin size={15} color={t.textSecondary} />
           <Text style={styles.detailText}>{facility.address}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Phone size={15} color="rgba(9,51,44,0.4)" />
+          <Phone size={15} color={t.textSecondary} />
           <Text style={styles.detailText}>{facility.phone}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Clock size={15} color="rgba(9,51,44,0.4)" />
+          <Clock size={15} color={t.textSecondary} />
           <Text style={styles.detailText}>{facility.hours}</Text>
         </View>
       </View>
@@ -274,6 +279,8 @@ function FacilityCard({
 
 // ── Facility map marker ───────────────────────────────────────────────────────
 function FacilityMarker({ facility, isSelected, showLabel }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const pulseScale = useRef(new Animated.Value(1)).current;
   const pulseOpacity = useRef(new Animated.Value(0.6)).current;
@@ -371,6 +378,8 @@ function FacilitySheetContent({
   onToggleFavourite,
   onNavigateToDetail,
 }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
   const distance = userLocation
     ? distanceMiles(
@@ -613,6 +622,8 @@ function FacilitySheetContent({
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 export default function FacilitiesScreen() {
+  const t = useTheme();
+  const styles = createStyles(t);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const {
@@ -875,7 +886,7 @@ export default function FacilitiesScreen() {
 
   return (
     <View style={styles.screen}>
-      <StatusBar style="dark" />
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* ── Header ── */}
       <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
@@ -885,7 +896,7 @@ export default function FacilitiesScreen() {
             onPress={() => router.back()}
             style={styles.backBtn}
           >
-            <ChevronLeft size={24} color="#09332C" />
+            <ChevronLeft size={24} color={t.text} />
           </TouchableOpacity>
 
           <Text style={styles.headerTitle}>Clinics & Hospitals</Text>
@@ -902,7 +913,7 @@ export default function FacilitiesScreen() {
               >
                 <List
                   size={16}
-                  color={view === "list" ? "#FFFFFF" : "rgba(9,51,44,0.5)"}
+                  color={view === "list" ? "#FFFFFF" : t.textSecondary}
                 />
               </TouchableOpacity>
               <TouchableOpacity
@@ -914,7 +925,7 @@ export default function FacilitiesScreen() {
               >
                 <Map
                   size={16}
-                  color={view === "map" ? "#FFFFFF" : "rgba(9,51,44,0.5)"}
+                  color={view === "map" ? "#FFFFFF" : t.textSecondary}
                 />
               </TouchableOpacity>
             </View>
@@ -925,14 +936,14 @@ export default function FacilitiesScreen() {
         <View style={styles.searchBar}>
           <Search
             size={17}
-            color="rgba(9,51,44,0.4)"
+            color={t.textSecondary}
             style={{ marginRight: 8 }}
           />
           <TextInput
             ref={searchRef}
             style={styles.searchInput}
             placeholder="Search hospitals, clinics..."
-            placeholderTextColor="rgba(9,51,44,0.35)"
+            placeholderTextColor={t.textTertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
@@ -940,7 +951,7 @@ export default function FacilitiesScreen() {
           />
           {isSearchMode && (
             <TouchableOpacity onPress={handleClearSearch} hitSlop={10}>
-              <X size={16} color="rgba(9,51,44,0.4)" />
+              <X size={16} color={t.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -1022,7 +1033,7 @@ export default function FacilitiesScreen() {
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <Search size={40} color="rgba(9,51,44,0.2)" />
+                <Search size={40} color={t.textTertiary} />
                 <Text style={styles.emptyStateText}>
                   No results for "{searchQuery}"
                 </Text>
@@ -1070,7 +1081,7 @@ export default function FacilitiesScreen() {
               </View>
             ) : (
               <View style={styles.emptyState}>
-                <MapPin size={40} color="rgba(9,51,44,0.2)" />
+                <MapPin size={40} color={t.textTertiary} />
                 <Text style={styles.emptyStateText}>
                   No facilities match this filter.
                 </Text>
@@ -1157,14 +1168,14 @@ export default function FacilitiesScreen() {
 }
 
 // ── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8F4F0" },
+function createStyles(t) { return StyleSheet.create({
+  screen: { flex: 1, backgroundColor: t.background },
 
   // Header
   header: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(9,51,44,0.07)",
+    borderBottomColor: t.border,
     paddingBottom: 12,
   },
   headerTop: {
@@ -1177,7 +1188,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -1186,12 +1197,12 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_700Bold",
     fontSize: 20,
-    color: "#09332C",
+    color: t.text,
     letterSpacing: -0.4,
   },
   viewToggle: {
     flexDirection: "row",
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 10,
     padding: 3,
     gap: 2,
@@ -1209,20 +1220,20 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 12,
     marginHorizontal: 16,
     marginBottom: 12,
     paddingHorizontal: 14,
     paddingVertical: 11,
     borderWidth: 1,
-    borderColor: "rgba(9,51,44,0.08)",
+    borderColor: t.border,
   },
   searchInput: {
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: t.text,
     padding: 0,
   },
 
@@ -1232,15 +1243,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderWidth: 1,
-    borderColor: "rgba(9,51,44,0.1)",
+    borderColor: t.border,
   },
   filterChipActive: { backgroundColor: "#A9334D", borderColor: "#A9334D" },
   filterChipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "rgba(9,51,44,0.6)",
+    color: t.textSecondary,
   },
   filterChipTextActive: { color: "#FFFFFF" },
 
@@ -1266,11 +1277,11 @@ const styles = StyleSheet.create({
   searchCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 14,
     padding: 16,
     marginBottom: 10,
-    shadowColor: "#09332C",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 6,
@@ -1293,17 +1304,17 @@ const styles = StyleSheet.create({
   searchResultsLabel: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "rgba(9,51,44,0.45)",
+    color: t.textSecondary,
     marginBottom: 12,
   },
 
   // Facility card
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 16,
     padding: 18,
     marginBottom: 14,
-    shadowColor: "#09332C",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
@@ -1317,7 +1328,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontFamily: "Geist_700Bold",
     fontSize: 17,
-    color: "#09332C",
+    color: t.text,
     letterSpacing: -0.3,
     marginBottom: 6,
   },
@@ -1338,7 +1349,7 @@ const styles = StyleSheet.create({
   detailText: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.6)",
+    color: t.textSecondary,
     flex: 1,
   },
 
@@ -1348,7 +1359,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -1356,7 +1367,7 @@ const styles = StyleSheet.create({
   metaChipText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 12,
-    color: "#09332C",
+    color: t.text,
   },
 
   // Action buttons
@@ -1414,7 +1425,7 @@ const styles = StyleSheet.create({
   },
   markerLabel: {
     marginTop: 3,
-    backgroundColor: "rgba(255,255,255,0.92)",
+    backgroundColor: t.surface,
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
@@ -1428,7 +1439,7 @@ const styles = StyleSheet.create({
   markerLabelText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 10,
-    color: "#09332C",
+    color: t.text,
   },
 
   // Load more
@@ -1438,7 +1449,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginTop: 4,
     marginBottom: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(169,51,77,0.2)",
@@ -1454,21 +1465,21 @@ const styles = StyleSheet.create({
   emptyStateText: {
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     textAlign: "center",
   },
   emptyStateSubtext: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.35)",
+    color: t.textSecondary,
   },
 
   // ── Bottom sheet ────────────────────────────────────────────────────────────
   sheetBg: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    shadowColor: "#09332C",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.08,
     shadowRadius: 16,
@@ -1478,7 +1489,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "rgba(9,51,44,0.15)",
+    backgroundColor: t.border,
   },
   sheetWrap: { paddingHorizontal: 20, paddingTop: 8 },
   sheetHeader: {
@@ -1489,7 +1500,7 @@ const styles = StyleSheet.create({
   sheetName: {
     fontFamily: "Geist_700Bold",
     fontSize: 19,
-    color: "#09332C",
+    color: t.text,
     letterSpacing: -0.4,
     marginBottom: 6,
   },
@@ -1500,7 +1511,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  sheetDivider: { height: 1, backgroundColor: "rgba(9,51,44,0.07)" },
+  sheetDivider: { height: 1, backgroundColor: t.divider },
   sheetRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1519,18 +1530,18 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "#09332C",
+    color: t.text,
   },
   sheetRowAction: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 13,
     color: "#A9334D",
   },
-  sheetRowDivider: { height: 1, backgroundColor: "rgba(9,51,44,0.05)" },
+  sheetRowDivider: { height: 1, backgroundColor: t.divider },
   sheetSectionLabel: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 12,
-    color: "rgba(9,51,44,0.4)",
+    color: t.textSecondary,
     letterSpacing: 0.6,
     textTransform: "uppercase",
     marginBottom: 12,
@@ -1538,14 +1549,14 @@ const styles = StyleSheet.create({
   sheetDescription: {
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "rgba(9,51,44,0.7)",
+    color: t.text,
     lineHeight: 22,
     marginBottom: 4,
   },
   sheetHoursTable: {
     borderRadius: 12,
     overflow: "hidden",
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
   },
   sheetHoursRow: {
     flexDirection: "row",
@@ -1569,4 +1580,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#A9334D",
   },
-});
+}); }

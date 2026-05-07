@@ -357,7 +357,7 @@ export default function Step7() {
           style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
           onPress={handleAddAnother}
         >
-          <Plus size={16} color="#09332C" strokeWidth={2} />
+          <Plus size={16} color="#1A1A1A" strokeWidth={2} />
           <Text style={styles.addBtnText}>Add another contact</Text>
         </Pressable>
       )}
@@ -377,7 +377,7 @@ export default function Step7() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select a contact</Text>
               <Pressable onPress={() => setShowContactModal(false)} hitSlop={8}>
-                <X size={22} color="#09332C" strokeWidth={2} />
+                <X size={22} color="#1A1A1A" strokeWidth={2} />
               </Pressable>
             </View>
 
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   gateTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
     textAlign: "center",
   },
   gateBody: {
@@ -510,7 +510,7 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 13,
-    color: "#09332C",
+    color: "#1A1A1A",
     letterSpacing: 0.2,
   },
   pickedRow: {
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
   pickedName: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   pickedPhone: {
     fontFamily: "Geist_400Regular",
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     padding: 0,
     margin: 0,
   },
@@ -599,13 +599,13 @@ const styles = StyleSheet.create({
   phoneTextInput: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     height: 50,
   },
   phoneCodeText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   phoneFlagBtn: {
     backgroundColor: "transparent",
@@ -636,7 +636,7 @@ const styles = StyleSheet.create({
   relChipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   relChipTextSelected: {
     color: "#FFFFFF",
@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   modalContainer: {
     flex: 1,
@@ -676,7 +676,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   searchWrapper: {
     flexDirection: "row",
@@ -693,7 +693,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
     padding: 0,
     margin: 0,
   },
@@ -730,7 +730,7 @@ const styles = StyleSheet.create({
   rowName: {
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "#09332C",
+    color: "#1A1A1A",
   },
   rowPhone: {
     fontFamily: "Geist_400Regular",
