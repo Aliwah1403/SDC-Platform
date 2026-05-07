@@ -1089,9 +1089,19 @@ export default function ProfileScreen() {
         onPress: () => router.push("/feedback-modal"),
       },
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ],
-    [],
+    [
+      profile,
+      auth,
+      appleHealthConnected,
+      openFullNameSheet,
+      openNicknameSheet,
+      openPhotoSheet,
+      openDobSheet,
+      openAllergiesSheet,
+      handleExportData,
+      handleShareSummary,
+    ],
   );
 
   const filteredSettings = useMemo(() => {

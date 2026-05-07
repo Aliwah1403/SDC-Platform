@@ -11,9 +11,9 @@ export const lightTheme = {
   border: "#F0E4E1",
   divider: "#F8E9E7",
   tabBarBackground: "#FFFFFF",
-  tabActiveText: "#DC2626",
+  tabActiveText: "#DC2626", // intentionally matches destructive in light mode; diverges in dark
   tabInactiveText: "#6B6B6B",
-  destructive: "#DC2626",
+  destructive: "#DC2626", // error / danger actions — same red as tabActiveText in light only
   modalBackdrop: "rgba(0,0,0,0.5)",
 };
 

@@ -677,11 +677,11 @@ export default function FacilitiesScreen() {
   // Toggle save — optimistic update + background Supabase sync
   const handleToggleSave = useCallback(
     (facility) => {
-      const alreadySaved = savedFacilities.some((f) => f.placeId === facility.placeId);
+      const alreadySaved = savedFacilities.some((f) => f.placeId === facility.id);
       toggleSavedFacility(facility);
       if (!userId) return;
       if (alreadySaved) {
-        unsaveFacility(userId, facility.placeId)
+        unsaveFacility(userId, facility.id)
           .then(() => queryClient.invalidateQueries({ queryKey: ['savedFacilities', userId] }))
           .catch(() => toggleSavedFacility(facility));
       } else {
