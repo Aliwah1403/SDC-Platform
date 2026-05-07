@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const TABS = ["FAQs", "Tips & Tricks"];
 
@@ -247,24 +248,26 @@ const TIPS_SECTIONS = [
 ];
 
 export default function HelpCenterScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState(0);
+  const styles = createStyles(t);
 
   const sections = activeTab === 0 ? FAQ_SECTIONS : TIPS_SECTIONS;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           paddingTop: insets.top + 10,
           paddingBottom: 0,
           borderBottomWidth: 1,
-          borderBottomColor: "#F0E4E1",
+          borderBottomColor: t.border,
         }}
       >
         <View
@@ -280,7 +283,7 @@ export default function HelpCenterScreen() {
             activeOpacity={0.6}
             style={styles.backBtn}
           >
-            <ChevronLeft size={22} color="#1A1A1A" />
+            <ChevronLeft size={22} color={t.text} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Help Center</Text>
           <View style={{ width: 38 }} />
@@ -338,7 +341,7 @@ export default function HelpCenterScreen() {
                     <Text style={styles.rowText} numberOfLines={2}>
                       {item.title}
                     </Text>
-                    <ChevronRight size={18} color="#C4A8A4" />
+                    <ChevronRight size={18} color={t.textTertiary} />
                   </TouchableOpacity>
                   {i < section.items.length - 1 && (
                     <View style={styles.divider} />
@@ -353,79 +356,81 @@ export default function HelpCenterScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F8F4F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 17,
-    color: "#1A1A1A",
-    flex: 1,
-    textAlign: "center",
-  },
-  tabRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    gap: 4,
-  },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-    marginBottom: -1,
-  },
-  tabActive: {
-    borderBottomColor: "#A9334D",
-  },
-  tabText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 14,
-    color: "#9CA3AF",
-  },
-  tabTextActive: {
-    fontFamily: "Geist_600SemiBold",
-    color: "#A9334D",
-  },
-  sectionHeader: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 11,
-    color: "#9CA3AF",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#F0E4E1",
-    overflow: "hidden",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  rowText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 15,
-    color: "#1A1A1A",
-    flex: 1,
-    lineHeight: 20,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F8E9E7",
-    marginLeft: 16,
-  },
-});
+function createStyles(t) {
+  return StyleSheet.create({
+    backBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: t.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: {
+      fontFamily: "Geist_700Bold",
+      fontSize: 17,
+      color: t.text,
+      flex: 1,
+      textAlign: "center",
+    },
+    tabRow: {
+      flexDirection: "row",
+      paddingHorizontal: 16,
+      gap: 4,
+    },
+    tab: {
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderBottomWidth: 2,
+      borderBottomColor: "transparent",
+      marginBottom: -1,
+    },
+    tabActive: {
+      borderBottomColor: "#A9334D",
+    },
+    tabText: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 14,
+      color: t.textSecondary,
+    },
+    tabTextActive: {
+      fontFamily: "Geist_600SemiBold",
+      color: "#A9334D",
+    },
+    sectionHeader: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 11,
+      color: t.textSecondary,
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      marginBottom: 6,
+      marginLeft: 4,
+    },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: t.border,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      gap: 8,
+    },
+    rowText: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 15,
+      color: t.text,
+      flex: 1,
+      lineHeight: 20,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: t.divider,
+      marginLeft: 16,
+    },
+  });
+}

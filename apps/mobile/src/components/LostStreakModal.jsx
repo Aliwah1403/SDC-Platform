@@ -5,8 +5,10 @@ import { MotiView } from "moti";
 import { Flame, RotateCcw } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { usePostHog } from "posthog-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
+  const t = useTheme();
   const posthog = usePostHog();
   const flameScale = useRef(new Animated.Value(0.8)).current;
 
@@ -35,7 +37,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
       <View
         style={{
           flex: 1,
-          backgroundColor: "rgba(9, 51, 44, 0.6)",
+          backgroundColor: t.modalBackdrop,
           justifyContent: "center",
           alignItems: "center",
           paddingHorizontal: 28,
@@ -46,7 +48,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
           animate={{ opacity: 1, scale: 1, translateY: 0 }}
           transition={{ type: "spring", damping: 18, stiffness: 200 }}
           style={{
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             borderRadius: 28,
             paddingHorizontal: 28,
             paddingTop: 36,
@@ -83,7 +85,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
                 alignItems: "center",
                 justifyContent: "center",
                 borderWidth: 2.5,
-                borderColor: "#F8F4F0",
+                borderColor: t.background,
               }}
             >
               <Text style={{ fontSize: 14 }}>💔</Text>
@@ -110,7 +112,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 26,
-              color: "#1A1A1A",
+              color: t.text,
               textAlign: "center",
               marginBottom: 10,
             }}
@@ -123,7 +125,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#7A6F6A",
+              color: t.textSecondary,
               textAlign: "center",
               lineHeight: 22,
               marginBottom: 28,
@@ -161,7 +163,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
 
           {/* Dismiss */}
           <TouchableOpacity onPress={onClose} activeOpacity={0.7} style={{ paddingVertical: 8 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#9CA3AF" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.textSecondary }}>
               Maybe later
             </Text>
           </TouchableOpacity>

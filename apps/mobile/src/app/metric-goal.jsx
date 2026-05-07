@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { X, Minus, Plus, Droplets, Moon, Activity, TriangleAlert } from "lucide-react-native";
 import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SLIDER_WIDTH = SCREEN_WIDTH - 48;
@@ -80,6 +81,7 @@ function MetricIcon({ icon: Icon, color }) {
 // ─── Recommended range bar (below slider) ─────────────────────────────────────
 
 function RangeBar({ min, max, recMin, recMax, color }) {
+  const t = useTheme();
   const leftFrac = (recMin - min) / (max - min);
   const widthFrac = (recMax - recMin) / (max - min);
   const leftPx = leftFrac * SLIDER_WIDTH;
@@ -88,7 +90,7 @@ function RangeBar({ min, max, recMin, recMax, color }) {
   return (
     <View style={{ width: SLIDER_WIDTH, marginTop: 8 }}>
       {/* Full track */}
-      <View style={{ height: 3, backgroundColor: "#E5E7EB", borderRadius: 2 }}>
+      <View style={{ height: 3, backgroundColor: t.border, borderRadius: 2 }}>
         {/* Highlighted recommended segment */}
         <View style={{
           position: "absolute",
@@ -107,6 +109,7 @@ function RangeBar({ min, max, recMin, recMax, color }) {
 // ─── Stepper for hydration ────────────────────────────────────────────────────
 
 function HydrationSetter({ value, onChange, meta }) {
+  const t = useTheme();
   const hapticAndChange = (v) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onChange(v);
@@ -124,7 +127,7 @@ function HydrationSetter({ value, onChange, meta }) {
               paddingHorizontal: 16,
               paddingVertical: 10,
               borderRadius: 20,
-              backgroundColor: value === p ? meta.color : "#F3F4F6",
+              backgroundColor: value === p ? meta.color : t.surfaceElevated,
               borderWidth: 1.5,
               borderColor: value === p ? meta.color : "transparent",
             }}
@@ -132,7 +135,7 @@ function HydrationSetter({ value, onChange, meta }) {
             <Text style={{
               fontFamily: fonts.semibold,
               fontSize: 14,
-              color: value === p ? "#fff" : "#6B7280",
+              color: value === p ? "#fff" : t.textSecondary,
             }}>
               {p}
             </Text>
@@ -146,13 +149,13 @@ function HydrationSetter({ value, onChange, meta }) {
           onPress={() => hapticAndChange(Math.max(meta.min, value - 1))}
           style={{
             width: 48, height: 48, borderRadius: 24,
-            borderWidth: 2, borderColor: "#E5E7EB",
+            borderWidth: 2, borderColor: t.border,
             alignItems: "center", justifyContent: "center",
           }}
         >
-          <Minus size={20} color="#6B7280" strokeWidth={2.5} />
+          <Minus size={20} color={t.textSecondary} strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF" }}>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
           Fine adjust
         </Text>
         <TouchableOpacity
@@ -174,6 +177,7 @@ function HydrationSetter({ value, onChange, meta }) {
 
 export default function MetricGoalScreen() {
   const router = useRouter();
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const { metric } = useLocalSearchParams();
   const { data: metricGoals } = useMetricGoalsQuery();
@@ -226,10 +230,10 @@ export default function MetricGoalScreen() {
   const IconComp = meta.icon;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F9F9F7" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Handle bar */}
       <View style={{ alignItems: "center", paddingTop: 12 }}>
-        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: "#D1D5DB" }} />
+        <View style={{ width: 36, height: 4, borderRadius: 2, backgroundColor: t.border }} />
       </View>
 
       {/* Close button */}
@@ -238,11 +242,11 @@ export default function MetricGoalScreen() {
           onPress={() => router.back()}
           style={{
             width: 34, height: 34, borderRadius: 17,
-            backgroundColor: "#EFEFED",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center", justifyContent: "center",
           }}
         >
-          <X size={17} color="#6B7280" strokeWidth={2} />
+          <X size={17} color={t.textSecondary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
 
@@ -256,7 +260,7 @@ export default function MetricGoalScreen() {
         <Text style={{
           fontFamily: fonts.bold,
           fontSize: 26,
-          color: "#1F2937",
+          color: t.text,
           textAlign: "center",
           marginBottom: 8,
         }}>
@@ -265,7 +269,7 @@ export default function MetricGoalScreen() {
         <Text style={{
           fontFamily: fonts.regular,
           fontSize: 14,
-          color: "#9CA3AF",
+          color: t.textSecondary,
           textAlign: "center",
           lineHeight: 20,
           marginBottom: 32,
@@ -278,18 +282,18 @@ export default function MetricGoalScreen() {
           <Text style={{
             fontFamily: fonts.bold,
             fontSize: 64,
-            color: "#1F2937",
+            color: t.text,
             lineHeight: 70,
           }}>
             {displayValue}
           </Text>
           {metric === "steps" && (
-            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#9CA3AF", marginTop: 2 }}>
+            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
               steps per day
             </Text>
           )}
           {metric === "hydration" && (
-            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: "#9CA3AF", marginTop: 2 }}>
+            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
               glasses per day
             </Text>
           )}
@@ -306,7 +310,7 @@ export default function MetricGoalScreen() {
               value={value}
               onValueChange={handleSliderChange}
               minimumTrackTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
-              maximumTrackTintColor="#E5E7EB"
+              maximumTrackTintColor={t.border}
               thumbTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
             />
             <RangeBar
@@ -319,7 +323,7 @@ export default function MetricGoalScreen() {
             <Text style={{
               fontFamily: fonts.semibold,
               fontSize: 10,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               letterSpacing: 0.8,
               textTransform: "uppercase",
               textAlign: "center",
@@ -332,9 +336,9 @@ export default function MetricGoalScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,
-                backgroundColor: "#FFFBEB",
+                backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
                 borderWidth: 1,
-                borderColor: "#FDE68A",
+                borderColor: t.isDark ? "rgba(245,158,11,0.3)" : "#FDE68A",
                 borderRadius: 10,
                 paddingHorizontal: 12,
                 paddingVertical: 8,
@@ -367,9 +371,9 @@ export default function MetricGoalScreen() {
                 flexDirection: "row",
                 alignItems: "center",
                 gap: 6,
-                backgroundColor: "#FFFBEB",
+                backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
                 borderWidth: 1,
-                borderColor: "#FDE68A",
+                borderColor: t.isDark ? "rgba(245,158,11,0.3)" : "#FDE68A",
                 borderRadius: 10,
                 paddingHorizontal: 12,
                 paddingVertical: 8,
@@ -390,7 +394,7 @@ export default function MetricGoalScreen() {
           <Text style={{
             fontFamily: fonts.regular,
             fontSize: 13,
-            color: "#6B7280",
+            color: t.textSecondary,
             lineHeight: 20,
             textAlign: "center",
             marginBottom: 20,

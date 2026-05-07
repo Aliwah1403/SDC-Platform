@@ -356,7 +356,7 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="medication-scan"
-            options={{ presentation: "card" }}
+            options={{ presentation: "modal" }}
           />
           <Stack.Screen
             name="crisis-mode"

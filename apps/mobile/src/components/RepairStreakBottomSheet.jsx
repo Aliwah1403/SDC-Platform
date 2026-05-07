@@ -7,8 +7,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useMissedDay, useStreakQuery, useStreakRepairMutation } from "@/hooks/queries/useStreakQuery";
 import { fonts } from "@/utils/fonts";
 import { usePostHog } from "posthog-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
+  const t = useTheme();
   const posthog = usePostHog();
   const bottomSheetRef = useRef(null);
   const missedDay = useMissedDay();
@@ -90,8 +92,8 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
       snapPoints={["68%"]}
       enablePanDownToClose
       onClose={handleClose}
-      backgroundStyle={{ backgroundColor: "#F8F4F0", borderRadius: 28 }}
-      handleIndicatorStyle={{ backgroundColor: "#DDD8D2", width: 36 }}
+      backgroundStyle={{ backgroundColor: t.background, borderRadius: 28 }}
+      handleIndicatorStyle={{ backgroundColor: t.border, width: 36 }}
     >
       <BottomSheetView style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8, paddingBottom: 24 }}>
 
@@ -105,13 +107,13 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                 width: 34,
                 height: 34,
                 borderRadius: 17,
-                backgroundColor: "#EDE8E3",
+                backgroundColor: t.isDark ? t.surfaceElevated : "#EDE8E3",
                 alignItems: "center",
                 justifyContent: "center",
                 marginBottom: 16,
               }}
             >
-              <X size={16} color="#7A6F6A" strokeWidth={2.5} />
+              <X size={16} color={t.textSecondary} strokeWidth={2.5} />
             </TouchableOpacity>
 
             {/* Icon + headline */}
@@ -158,7 +160,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               </View>
 
               {/* Title */}
-              <Text style={{ fontFamily: fonts.extrabold, fontSize: 24, color: "#1A1A1A", marginBottom: 6 }}>
+              <Text style={{ fontFamily: fonts.extrabold, fontSize: 24, color: t.text, marginBottom: 6 }}>
                 Streak at Risk
               </Text>
 
@@ -178,21 +180,21 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}
             >
               {/* Streak stat */}
-              <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: "#EDE8E3" }}>
-                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: "#1A1A1A", lineHeight: 34 }}>
+              <View style={{ flex: 1, backgroundColor: t.surface, borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: t.border }}>
+                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: t.text, lineHeight: 34 }}>
                   {healthStreak}
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
                   Day Streak
                 </Text>
               </View>
 
               {/* Repairs stat */}
-              <View style={{ flex: 1, backgroundColor: canRepair ? "#FEF0EB" : "#F5F5F5", borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: canRepair ? "#F0C4B4" : "#E5E5E5" }}>
-                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: canRepair ? "#F0531C" : "#9CA3AF", lineHeight: 34 }}>
+              <View style={{ flex: 1, backgroundColor: canRepair ? "#FEF0EB" : (t.isDark ? t.surfaceElevated : "#F5F5F5"), borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: canRepair ? "#F0C4B4" : t.border }}>
+                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: canRepair ? "#F0531C" : t.textSecondary, lineHeight: 34 }}>
                   {repairsAvailable}
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
                   Repairs Left
                 </Text>
               </View>
@@ -205,12 +207,12 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               transition={{ type: "timing", duration: 350, delay: 140 }}
               style={{ marginBottom: 24 }}
             >
-              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: "#7A6F6A", textAlign: "center", lineHeight: 21 }}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", lineHeight: 21 }}>
                 {canRepair
                   ? `Use 1 repair to fill the gap and keep your `
                   : "You've used all your repairs. Log today to start a fresh streak."}
                 {canRepair && (
-                  <Text style={{ fontFamily: fonts.bold, color: "#1A1A1A" }}>
+                  <Text style={{ fontFamily: fonts.bold, color: t.text }}>
                     {healthStreak} day streak
                   </Text>
                 )}
@@ -242,7 +244,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                 activeOpacity={0.7}
                 style={{ paddingVertical: 14, alignItems: "center" }}
               >
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#9CA3AF" }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.textSecondary }}>
                   Skip for now
                 </Text>
               </TouchableOpacity>
@@ -259,7 +261,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               }}
             >
               <LinearGradient
-                colors={["#1A1A1A", "#1A5C52"]}
+                colors={["#781D11", "#A9334D"]}
                 style={{
                   width: 100,
                   height: 100,
@@ -272,10 +274,10 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                 <Shield size={48} color="#F8E9E7" strokeWidth={1.8} />
               </LinearGradient>
 
-              <Text style={{ fontFamily: fonts.extrabold, fontSize: 28, color: "#1A1A1A", marginBottom: 8 }}>
+              <Text style={{ fontFamily: fonts.extrabold, fontSize: 28, color: t.text, marginBottom: 8 }}>
                 Streak Saved!
               </Text>
-              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: "#7A6F6A", textAlign: "center" }}>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: t.textSecondary, textAlign: "center" }}>
                 Your {restoredStreak} day streak is restored 🔥
               </Text>
             </Animated.View>

@@ -3,6 +3,7 @@ import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { Smile, Meh, Frown } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
@@ -23,6 +24,7 @@ function getMoodInsight(chartData) {
 }
 
 export function MoodChart({ moodData, chartData }) {
+  const t = useTheme();
   const giftedData = useMemo(() => moodData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
@@ -32,7 +34,7 @@ export function MoodChart({ moodData, chartData }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 20,
         marginBottom: 16,
@@ -52,7 +54,7 @@ export function MoodChart({ moodData, chartData }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#1F2937" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
           Mood Patterns
         </Text>
         <View
@@ -68,7 +70,7 @@ export function MoodChart({ moodData, chartData }) {
           </Text>
         </View>
       </View>
-      <Text style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
+      <Text style={{ fontSize: 13, color: t.textSecondary, marginBottom: 20 }}>
         Your emotional well-being over time
       </Text>
 
@@ -87,8 +89,8 @@ export function MoodChart({ moodData, chartData }) {
           noOfSections={5}
           maxValue={5}
           yAxisColor="transparent"
-          xAxisColor="#E5E7EB"
-          rulesColor="#F3F4F6"
+          xAxisColor={t.border}
+          rulesColor={t.divider}
           rulesType="solid"
           initialSpacing={8}
           spacing={Math.max(4, Math.floor(CHART_WIDTH / 32))}
@@ -108,13 +110,13 @@ export function MoodChart({ moodData, chartData }) {
           marginTop: 16,
           paddingTop: 16,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
             <Smile size={13} color="#A9334D" strokeWidth={2} />
-            <Text style={{ fontSize: 11, color: "#6B7280" }}>Excellent</Text>
+            <Text style={{ fontSize: 11, color: t.textSecondary }}>Excellent</Text>
           </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#A9334D" }}>
             {chartData.filter((d) => d.mood === 5).length}d
@@ -123,7 +125,7 @@ export function MoodChart({ moodData, chartData }) {
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
             <Meh size={13} color="#D09F9A" strokeWidth={2} />
-            <Text style={{ fontSize: 11, color: "#6B7280" }}>Fair</Text>
+            <Text style={{ fontSize: 11, color: t.textSecondary }}>Fair</Text>
           </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#D09F9A" }}>
             {chartData.filter((d) => d.mood === 3).length}d
@@ -132,7 +134,7 @@ export function MoodChart({ moodData, chartData }) {
         <View style={{ alignItems: "center" }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 }}>
             <Frown size={13} color="#781D11" strokeWidth={2} />
-            <Text style={{ fontSize: 11, color: "#6B7280" }}>Poor</Text>
+            <Text style={{ fontSize: 11, color: t.textSecondary }}>Poor</Text>
           </View>
           <Text style={{ fontSize: 16, fontWeight: "700", color: "#781D11" }}>
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
@@ -146,14 +148,14 @@ export function MoodChart({ moodData, chartData }) {
           marginTop: 16,
           paddingTop: 14,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <Text
           style={{
             fontFamily: fonts.regular,
             fontSize: 13,
-            color: "#4B5563",
+            color: t.textSecondary,
             lineHeight: 20,
           }}
         >

@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import { Check } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export const PREFS_KEY = "hemo_visible_metrics";
 export const DEFAULT_VISIBLE = ["hydration", "mood", "steps", "sleep"];
@@ -22,6 +23,7 @@ const METRICS = [
 ];
 
 export default function MetricPreferences() {
+  const t = useTheme();
   const router = useRouter();
   const [selected, setSelected] = useState(DEFAULT_VISIBLE);
 
@@ -47,7 +49,7 @@ export default function MetricPreferences() {
     <View style={{ flex: 1, justifyContent: "flex-end" }}>
       {/* Dim overlay — tap to dismiss */}
       <TouchableOpacity
-        style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)" }}
+        style={{ flex: 1, backgroundColor: t.modalBackdrop }}
         activeOpacity={1}
         onPress={() => router.back()}
       />
@@ -56,7 +58,7 @@ export default function MetricPreferences() {
       <View
         style={{
           height: "50%",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: t.surface,
           borderTopLeftRadius: 28,
           borderTopRightRadius: 28,
           paddingTop: 12,
@@ -68,18 +70,18 @@ export default function MetricPreferences() {
             width: 40,
             height: 4,
             borderRadius: 2,
-            backgroundColor: "#D09F9A",
+            backgroundColor: t.border,
             alignSelf: "center",
             marginBottom: 16,
           }}
         />
 
-        {/* Header — centered */}
+        {/* Header */}
         <View style={{ alignItems: "center", marginBottom: 20, paddingHorizontal: 20 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#1F2937" }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: t.text }}>
             Health Metrics
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#9CA3AF", marginTop: 3 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginTop: 3 }}>
             Choose what appears on your home screen
           </Text>
         </View>
@@ -100,7 +102,7 @@ export default function MetricPreferences() {
                   alignItems: "center",
                   paddingVertical: 12,
                   borderBottomWidth: i < METRICS.length - 1 ? 1 : 0,
-                  borderBottomColor: "#F3F4F6",
+                  borderBottomColor: t.divider,
                 }}
               >
                 <View
@@ -108,7 +110,6 @@ export default function MetricPreferences() {
                     width: 42,
                     height: 42,
                     borderRadius: 12,
-                    // backgroundColor: "#F8E9E7",
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: 14,
@@ -118,7 +119,7 @@ export default function MetricPreferences() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#1F2937" }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.text }}>
                     {m.label}
                   </Text>
                 </View>
@@ -128,9 +129,9 @@ export default function MetricPreferences() {
                     width: 26,
                     height: 26,
                     borderRadius: 7,
-                    backgroundColor: active ? "#A9334D" : "#F3F4F6",
+                    backgroundColor: active ? "#A9334D" : t.surfaceElevated,
                     borderWidth: active ? 0 : 1.5,
-                    borderColor: "#E5E7EB",
+                    borderColor: t.border,
                     alignItems: "center",
                     justifyContent: "center",
                   }}

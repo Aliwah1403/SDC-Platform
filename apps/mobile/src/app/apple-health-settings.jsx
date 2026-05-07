@@ -26,6 +26,7 @@ import {
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const READ_ITEMS = [
   {
@@ -97,21 +98,20 @@ const WRITE_ITEMS = [
 ];
 
 function SectionHeader({ title }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return <Text style={styles.sectionHeader}>{title}</Text>;
 }
 
 function Divider() {
+  const t = useTheme();
+  const styles = createStyles(t);
   return <View style={styles.divider} />;
 }
 
-function PreferenceRow({
-  icon: Icon,
-  iconColor,
-  label,
-  description,
-  value,
-  onChange,
-}) {
+function PreferenceRow({ icon: Icon, iconColor, label, description, value, onChange }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return (
     <View style={styles.row}>
       <View style={[styles.iconBubble, { backgroundColor: `${iconColor}18` }]}>
@@ -124,18 +124,20 @@ function PreferenceRow({
       <Switch
         value={value}
         onValueChange={onChange}
-        trackColor={{ false: "#E5E7EB", true: "#A9334D" }}
+        trackColor={{ false: t.border, true: "#A9334D" }}
         thumbColor="#ffffff"
-        ios_backgroundColor="#E5E7EB"
+        ios_backgroundColor={t.border}
       />
     </View>
   );
 }
 
 export default function AppleHealthSettingsScreen() {
+  const t = useTheme();
   const posthog = usePostHog();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = createStyles(t);
   const {
     healthKitPreferences: prefs,
     setHealthKitPreference,
@@ -164,10 +166,8 @@ export default function AppleHealthSettingsScreen() {
     );
   }
 
-  const syncedDaysCount = Object.keys(healthKitData).length;
-
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <TouchableOpacity
@@ -175,7 +175,7 @@ export default function AppleHealthSettingsScreen() {
           style={styles.backBtn}
           activeOpacity={0.6}
         >
-          <ChevronLeft size={20} color="#1A1A1A" />
+          <ChevronLeft size={20} color={t.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Apple Health</Text>
         <View style={{ width: 36 }} />
@@ -268,18 +268,18 @@ export default function AppleHealthSettingsScreen() {
                 style={styles.baselineInput}
                 keyboardType="numeric"
                 placeholder="—"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={t.textSecondary}
                 maxLength={3}
                 value={
                   healthKitManualBaselines.spO2 != null
                     ? String(healthKitManualBaselines.spO2)
                     : ""
                 }
-                onChangeText={(t) => {
-                  const n = parseInt(t, 10);
+                onChangeText={(v) => {
+                  const n = parseInt(v, 10);
                   setHealthKitManualBaseline(
                     "spO2",
-                    t === ""
+                    v === ""
                       ? null
                       : n >= 50 && n <= 99
                         ? n
@@ -303,18 +303,18 @@ export default function AppleHealthSettingsScreen() {
                 style={styles.baselineInput}
                 keyboardType="numeric"
                 placeholder="—"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={t.textSecondary}
                 maxLength={3}
                 value={
                   healthKitManualBaselines.heartRate != null
                     ? String(healthKitManualBaselines.heartRate)
                     : ""
                 }
-                onChangeText={(t) => {
-                  const n = parseInt(t, 10);
+                onChangeText={(v) => {
+                  const n = parseInt(v, 10);
                   setHealthKitManualBaseline(
                     "heartRate",
-                    t === ""
+                    v === ""
                       ? null
                       : n >= 30 && n <= 200
                         ? n
@@ -333,7 +333,7 @@ export default function AppleHealthSettingsScreen() {
 
         {/* Help note */}
         <TouchableOpacity style={styles.helpRow} activeOpacity={0.6}>
-          <AlertCircle size={15} color="#9CA3AF" />
+          <AlertCircle size={15} color={t.textSecondary} />
           <Text style={styles.helpText}>
             Not seeing data? Check permissions in iOS Settings → Privacy &
             Security → Health → Hemo SCD
@@ -344,180 +344,173 @@ export default function AppleHealthSettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    backgroundColor: "#F8F4F0",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#F0E4E1",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 17,
-    color: "#1A1A1A",
-  },
-  statusCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: "#F0E4E1",
-  },
-  statusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  ahIcon: {
-    width: 44,
-    height: 44,
-  },
-  statusLabel: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 15,
-    color: "#1A1A1A",
-  },
-  statusConnected: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: "#059669",
-    marginTop: 1,
-  },
-  disconnectBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
-    backgroundColor: "#FEF2F2",
-  },
-  disconnectText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 13,
-    color: "#DC2626",
-  },
-  syncNote: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#F0E4E1",
-  },
-  sectionHeader: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 11,
-    color: "#9CA3AF",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#F0E4E1",
-    overflow: "hidden",
-    marginBottom: 24,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  iconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowText: {
-    flex: 1,
-  },
-  rowLabel: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 15,
-    color: "#1A1A1A",
-  },
-  rowDesc: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 1,
-    lineHeight: 16,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F8E9E7",
-    marginLeft: 62,
-  },
-  helpRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-  helpText: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 12,
-    color: "#9CA3AF",
-    flex: 1,
-    lineHeight: 18,
-  },
-  baselineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  baselineText: {
-    flex: 1,
-  },
-  baselineInputWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  baselineInput: {
-    width: 52,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F8F4F0",
-    textAlign: "center",
-    fontFamily: "Geist_500Medium",
-    fontSize: 15,
-    color: "#1A1A1A",
-  },
-  baselineUnit: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: "#9CA3AF",
-    minWidth: 28,
-  },
-  baselineHint: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 12,
-    color: "#9CA3AF",
-    lineHeight: 18,
-    marginTop: -16,
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-});
+function createStyles(t) {
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 12,
+      backgroundColor: t.background,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: t.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: {
+      fontFamily: "Geist_700Bold",
+      fontSize: 17,
+      color: t.text,
+    },
+    statusCard: {
+      backgroundColor: t.surface,
+      borderRadius: 16,
+      padding: 16,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: t.border,
+    },
+    statusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    ahIcon: {
+      width: 44,
+      height: 44,
+    },
+    statusLabel: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 15,
+      color: t.text,
+    },
+    statusConnected: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 13,
+      color: "#059669",
+      marginTop: 1,
+    },
+    disconnectBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 8,
+      backgroundColor: t.isDark ? "rgba(220,38,38,0.12)" : "#FEF2F2",
+    },
+    disconnectText: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 13,
+      color: "#DC2626",
+    },
+    sectionHeader: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 11,
+      color: t.textSecondary,
+      letterSpacing: 0.8,
+      textTransform: "uppercase",
+      marginBottom: 6,
+      marginLeft: 4,
+    },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: t.border,
+      overflow: "hidden",
+      marginBottom: 24,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      gap: 12,
+    },
+    iconBubble: {
+      width: 34,
+      height: 34,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowText: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 15,
+      color: t.text,
+    },
+    rowDesc: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 12,
+      color: t.textSecondary,
+      marginTop: 1,
+      lineHeight: 16,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: t.divider,
+      marginLeft: 62,
+    },
+    helpRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 8,
+      paddingHorizontal: 4,
+    },
+    helpText: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 12,
+      color: t.textSecondary,
+      flex: 1,
+      lineHeight: 18,
+    },
+    baselineRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      gap: 12,
+    },
+    baselineText: {
+      flex: 1,
+    },
+    baselineInputWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    baselineInput: {
+      width: 52,
+      height: 36,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: t.border,
+      backgroundColor: t.surfaceElevated,
+      textAlign: "center",
+      fontFamily: "Geist_500Medium",
+      fontSize: 15,
+      color: t.text,
+    },
+    baselineUnit: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 13,
+      color: t.textSecondary,
+      minWidth: 28,
+    },
+    baselineHint: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 12,
+      color: t.textSecondary,
+      lineHeight: 18,
+      marginTop: -16,
+      marginBottom: 24,
+      paddingHorizontal: 4,
+    },
+  });
+}

@@ -309,7 +309,7 @@ export default function CrisisModeScreen() {
   function responseColor(r) {
     if (r === "better") return "#A9334D";
     if (r === "worse") return "#DC2626";
-    return "rgba(9,51,44,0.35)";
+    return "rgba(26,26,26,0.35)";
   }
   function responseLabel(r) {
     if (r === "better") return "Better";
@@ -740,12 +740,12 @@ const styles = StyleSheet.create({
   stepPainRange: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
+    color: "rgba(26,26,26,0.5)",
   },
   stepDescription: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(9,51,44,0.75)",
+    color: "rgba(26,26,26,0.75)",
     lineHeight: 20,
   },
   // ── Alert banner ───────────────────────────────────────────────────
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   confirmBody: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    color: "rgba(9,51,44,0.7)",
+    color: "rgba(26,26,26,0.7)",
     lineHeight: 20,
   },
   confirmButtons: {
@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: 13,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.25)",
+    borderColor: "rgba(26,26,26,0.25)",
     alignItems: "center",
   },
   confirmBtnOutlineText: {

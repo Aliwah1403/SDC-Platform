@@ -7,6 +7,7 @@ import Svg, { Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width } = Dimensions.get("window");
 
@@ -37,6 +38,7 @@ export function HomeHeader({
   message,
 }) {
   const router = useRouter();
+  const t = useTheme();
   return (
     <View style={{ position: "relative" }}>
       <LinearGradient
@@ -222,7 +224,7 @@ export function HomeHeader({
       >
         <Path
           d={`M0,0 Q${width / 2},50 ${width},0 L${width},50 L0,50 Z`}
-          fill="#FFF9F9"
+          fill={t.background}
         />
       </Svg>
     </View>

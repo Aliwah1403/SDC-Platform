@@ -27,6 +27,7 @@ import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
 import { StreakFireIcon } from "@/utils/streakFire";
+import { useTheme } from "@/hooks/useTheme";
 
 const HEMO = {
   dark: "#781D11",
@@ -59,6 +60,7 @@ const MILESTONE_BADGE = {
 export default function StreakModal() {
   const posthog = usePostHog();
   const router = useRouter();
+  const t = useTheme();
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
   const { data: healthData = [] } = useHealthDataQuery();
@@ -452,7 +454,7 @@ export default function StreakModal() {
         disabled={!isUnlocked}
         style={{
           width: "48%",
-          backgroundColor: "white",
+          backgroundColor: t.surface,
           borderRadius: 20,
           padding: 20,
           marginBottom: 16,
@@ -511,26 +513,28 @@ export default function StreakModal() {
             </View>
           )}
 
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Lock size={32} color="#FFFFFF" strokeWidth={2} />
-          </View>
+          {!isUnlocked && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Lock size={32} color="#FFFFFF" strokeWidth={2} />
+            </View>
+          )}
         </View>
 
         <Text
           style={{
             fontFamily: fonts.bold,
             fontSize: 15,
-            color: "#1a1a1a",
+            color: t.text,
             textAlign: "center",
             marginBottom: 8,
           }}
@@ -542,7 +546,7 @@ export default function StreakModal() {
           style={{
             fontFamily: fonts.medium,
             fontSize: 13,
-            color: "#999",
+            color: t.textSecondary,
             textAlign: "center",
             marginBottom: 12,
           }}
@@ -555,7 +559,7 @@ export default function StreakModal() {
           style={{
             width: "100%",
             height: 8,
-            backgroundColor: "#FFF9F9",
+            backgroundColor: t.isDark ? t.surfaceElevated : "#FFF9F9",
             borderRadius: 4,
             overflow: "hidden",
           }}
@@ -572,7 +576,7 @@ export default function StreakModal() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFF9F8" }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
       {/* Close button */}
       <View
         style={{
@@ -589,19 +593,23 @@ export default function StreakModal() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F3F4F6",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <X size={20} color="#1F2937" />
+          <X size={20} color={t.text} />
         </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* ── GRADIENT HERO ── */}
         <LinearGradient
-          colors={["#FFF9F8", "#F8E9E7", "#ECDAD4"]}
+          colors={
+            t.isDark
+              ? ["#1A0F0F", "#2A1419", "#1F1F1F"]
+              : ["#FFF9F8", "#F8E9E7", "#ECDAD4"]
+          }
           style={{
             paddingTop: 8,
             paddingBottom: 56,
@@ -635,7 +643,7 @@ export default function StreakModal() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 22,
-              color: HEMO.dark,
+              color: t.isDark ? t.text : HEMO.dark,
               letterSpacing: -0.4,
               marginBottom: 8,
             }}
@@ -648,7 +656,7 @@ export default function StreakModal() {
             style={{
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "rgba(9,51,44,0.5)",
+              color: t.textSecondary,
               textAlign: "center",
               marginBottom: 36,
             }}
@@ -670,7 +678,7 @@ export default function StreakModal() {
                   style={{
                     fontFamily: day.isToday ? fonts.bold : fonts.medium,
                     fontSize: 12,
-                    color: day.isToday ? HEMO.wine : "rgba(9,51,44,0.35)",
+                    color: day.isToday ? HEMO.wine : t.textSecondary,
                     marginBottom: 8,
                   }}
                 >
@@ -711,7 +719,9 @@ export default function StreakModal() {
                       borderRadius: 18,
                       backgroundColor: day.isToday
                         ? "rgba(169,51,77,0.12)"
-                        : "rgba(9,51,44,0.06)",
+                        : t.isDark
+                          ? t.surfaceElevated
+                          : "rgba(0,0,0,0.06)",
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: day.isToday ? 1.5 : 0,
@@ -722,7 +732,7 @@ export default function StreakModal() {
                       style={{
                         fontFamily: day.isToday ? fonts.bold : fonts.regular,
                         fontSize: 13,
-                        color: day.isToday ? HEMO.wine : "rgba(9,51,44,0.22)",
+                        color: day.isToday ? HEMO.wine : t.textTertiary,
                       }}
                     >
                       {day.dayNumber}
@@ -737,7 +747,7 @@ export default function StreakModal() {
         {/* ── WHITE BODY ── */}
         <View
           style={{
-            backgroundColor: "#FFFFFF",
+            backgroundColor: t.surface,
             borderTopLeftRadius: 28,
             borderTopRightRadius: 28,
             marginTop: -28,
@@ -749,7 +759,7 @@ export default function StreakModal() {
           {/* Stats Card */}
           <View
             style={{
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
               borderRadius: 20,
               padding: 20,
               marginBottom: 24,
@@ -764,7 +774,7 @@ export default function StreakModal() {
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 16,
-                color: "#9CA3AF",
+                color: t.textSecondary,
                 textAlign: "center",
                 marginBottom: 24,
               }}
@@ -786,7 +796,7 @@ export default function StreakModal() {
                       style={{
                         width: 1,
                         height: 36,
-                        backgroundColor: "#E5E7EB",
+                        backgroundColor: t.border,
                         alignSelf: "center",
                       }}
                     />
@@ -796,7 +806,7 @@ export default function StreakModal() {
                       style={{
                         fontFamily: fonts.medium,
                         fontSize: 13,
-                        color: "#9CA3AF",
+                        color: t.textSecondary,
                         marginBottom: 8,
                       }}
                     >
@@ -806,7 +816,7 @@ export default function StreakModal() {
                       style={{
                         fontFamily: fonts.bold,
                         fontSize: 20,
-                        color: "#1F2937",
+                        color: t.text,
                       }}
                     >
                       {stat.value}
@@ -821,7 +831,7 @@ export default function StreakModal() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: "#FFFFFF",
+                backgroundColor: t.surface,
                 borderRadius: 100,
                 paddingVertical: 8,
                 paddingHorizontal: 14,
@@ -834,12 +844,12 @@ export default function StreakModal() {
                 gap: 6,
               }}
             >
-              <Sparkles size={14} color={HEMO.wine} />
+              <Sparkles size={14} color={t.isDark ? t.text : HEMO.wine} />
               <Text
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 12,
-                  color: HEMO.wine,
+                  color: t.isDark ? t.text : HEMO.wine,
                 }}
               >
                 2 Insights Available
@@ -857,6 +867,7 @@ export default function StreakModal() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
+              backgroundColor: t.surface,
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.05,
@@ -884,7 +895,7 @@ export default function StreakModal() {
                   style={{
                     fontFamily: fonts.bold,
                     fontSize: 16,
-                    color: "#1a1a1a",
+                    color: t.text,
                     marginBottom: 2,
                   }}
                 >
@@ -929,7 +940,7 @@ export default function StreakModal() {
                 style={{
                   fontFamily: fonts.bold,
                   fontSize: 22,
-                  color: HEMO.dark,
+                  color: t.isDark ? t.text : HEMO.dark,
                 }}
               >
                 Your Milestones
@@ -938,7 +949,7 @@ export default function StreakModal() {
                 style={{
                   fontFamily: fonts.bold,
                   fontSize: 13,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 {unlockedCount}/{milestonesWithDates.length}
@@ -961,7 +972,7 @@ export default function StreakModal() {
           {/* Footer */}
           <View
             style={{
-              backgroundColor: HEMO.blush,
+              backgroundColor: t.isDark ? "rgba(169,51,77,0.12)" : HEMO.blush,
               borderRadius: 12,
               padding: 16,
               alignItems: "center",
@@ -970,17 +981,21 @@ export default function StreakModal() {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
-              <Zap size={16} color={HEMO.wine} strokeWidth={2} />
+              <Zap
+                size={16}
+                color={t.isDark ? t.text : HEMO.wine}
+                strokeWidth={2}
+              />
               <Text
                 style={{
                   fontFamily: fonts.semibold,
                   fontSize: 14,
-                  color: HEMO.wine,
+                  color: t.isDark ? t.text : HEMO.wine,
                   textAlign: "center",
                   lineHeight: 20,
                 }}
               >
-                Keep logging daily to maintain your streak!
+                More coming soon!
               </Text>
             </View>
           </View>

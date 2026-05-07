@@ -15,7 +15,6 @@ import {
   Phone,
   User,
   Calendar,
-  Clock,
   Star,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
@@ -28,28 +27,19 @@ import {
 } from "@/hooks/queries/useEmergencyContactsQuery";
 import { fonts } from "@/utils/fonts";
 import { useState } from "react";
-
-const C = {
-  bg: "#F8F4F0",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  divider: "#F0E4E1",
-  dark: "#1A1A1A",
-  muted: "rgba(9,51,44,0.45)",
-  accent: "#A9334D",
-};
+import { useTheme } from "@/hooks/useTheme";
 
 const RELATIONSHIP_COLORS = {
-  doctor:    { color: "#2563EB", bg: "#DBEAFE", gradient: ["#DBEAFE", "#EFF6FF", "#F8F4F0"] },
-  nurse:     { color: "#0891B2", bg: "#CFFAFE", gradient: ["#CFFAFE", "#ECFEFF", "#F8F4F0"] },
-  family:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3", "#F8F4F0"] },
-  friend:    { color: "#059669", bg: "#D1FAE5", gradient: ["#D1FAE5", "#ECFDF5", "#F8F4F0"] },
-  caregiver: { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF", "#F8F4F0"] },
-  parent:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3", "#F8F4F0"] },
-  sibling:   { color: "#F0531C", bg: "#FEF0EB", gradient: ["#FEF0EB", "#FFF7F5", "#F8F4F0"] },
-  partner:   { color: "#A9334D", bg: "#FBE9ED", gradient: ["#FBE9ED", "#FDF4F6", "#F8F4F0"] },
-  carer:     { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF", "#F8F4F0"] },
-  other:     { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3", "#F8F4F0"] },
+  doctor:    { color: "#2563EB", bg: "#DBEAFE", gradient: ["#DBEAFE", "#EFF6FF"] },
+  nurse:     { color: "#0891B2", bg: "#CFFAFE", gradient: ["#CFFAFE", "#ECFEFF"] },
+  family:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
+  friend:    { color: "#059669", bg: "#D1FAE5", gradient: ["#D1FAE5", "#ECFDF5"] },
+  caregiver: { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF"] },
+  parent:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
+  sibling:   { color: "#F0531C", bg: "#FEF0EB", gradient: ["#FEF0EB", "#FFF7F5"] },
+  partner:   { color: "#A9334D", bg: "#FBE9ED", gradient: ["#FBE9ED", "#FDF4F6"] },
+  carer:     { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF"] },
+  other:     { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
 };
 
 function getAccent(relationship = "") {
@@ -75,24 +65,16 @@ function formatDate(isoString) {
   }
 }
 
-function formatLastCalled(isoString) {
-  if (!isoString) return "Never";
-  try {
-    return format(new Date(isoString), "MMM d, yyyy 'at' h:mm a");
-  } catch {
-    return "Never";
-  }
-}
-
 // ── sub-components ─────────────────────────────────────────────────────────
 
 function SectionLabel({ title }) {
+  const t = useTheme();
   return (
     <Text
       style={{
         fontFamily: fonts.semibold,
         fontSize: 11,
-        color: C.muted,
+        color: t.textSecondary,
         letterSpacing: 0.8,
         textTransform: "uppercase",
         marginBottom: 8,
@@ -105,13 +87,14 @@ function SectionLabel({ title }) {
 }
 
 function Card({ children }) {
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: C.card,
+        backgroundColor: t.surface,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: C.border,
+        borderColor: t.border,
         overflow: "hidden",
         marginBottom: 24,
       }}
@@ -122,12 +105,12 @@ function Card({ children }) {
 }
 
 function Divider() {
-  return (
-    <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 62 }} />
-  );
+  const t = useTheme();
+  return <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 62 }} />;
 }
 
 function InfoRow({ icon: Icon, iconColor, label, value, last }) {
+  const t = useTheme();
   if (!value) return null;
   return (
     <>
@@ -144,7 +127,7 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
             width: 34,
             height: 34,
             borderRadius: 9,
-            backgroundColor: "#F2EFEC",
+            backgroundColor: t.surfaceElevated,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
@@ -152,76 +135,10 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
         >
           <Icon size={17} color={iconColor} />
         </View>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 14,
-            color: C.muted,
-            flex: 1,
-          }}
-        >
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, flex: 1 }}>
           {label}
         </Text>
-        <Text
-          style={{
-            fontFamily: fonts.medium,
-            fontSize: 14,
-            color: C.dark,
-            maxWidth: "55%",
-            textAlign: "right",
-          }}
-        >
-          {value}
-        </Text>
-      </View>
-      {!last && <Divider />}
-    </>
-  );
-}
-
-function StatRow({ icon: Icon, iconColor, label, value, last }) {
-  return (
-    <>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 14,
-          paddingHorizontal: 16,
-        }}
-      >
-        <View
-          style={{
-            width: 34,
-            height: 34,
-            borderRadius: 9,
-            backgroundColor: "#F2EFEC",
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 12,
-          }}
-        >
-          <Icon size={17} color={iconColor} />
-        </View>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 14,
-            color: C.muted,
-            flex: 1,
-          }}
-        >
-          {label}
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 14,
-            color: C.dark,
-            maxWidth: "55%",
-            textAlign: "right",
-          }}
-        >
+        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.text, maxWidth: "55%", textAlign: "right" }}>
           {value}
         </Text>
       </View>
@@ -233,6 +150,7 @@ function StatRow({ icon: Icon, iconColor, label, value, last }) {
 // ── main screen ────────────────────────────────────────────────────────────
 
 export default function ContactDetailScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { contactId } = useLocalSearchParams();
@@ -276,19 +194,12 @@ export default function ContactDetailScreen() {
 
   if (!contact) {
     return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.bg,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: C.muted }}>
+      <View style={{ flex: 1, backgroundColor: t.background, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ fontFamily: fonts.medium, fontSize: 16, color: t.textSecondary }}>
           Contact not found
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: C.accent }}>
+          <Text style={{ fontFamily: fonts.medium, fontSize: 15, color: "#A9334D" }}>
             Go back
           </Text>
         </TouchableOpacity>
@@ -296,7 +207,10 @@ export default function ContactDetailScreen() {
     );
   }
 
-  const { color, bg, gradient } = getAccent(contact.relationship);
+  const { color, bg, gradient: lightGradient } = getAccent(contact.relationship);
+  const gradient = t.isDark
+    ? [lightGradient[0] + "22", lightGradient[1] + "11", t.background]
+    : [...lightGradient, t.background];
 
   const handleCall = async () => {
     const phone = contact.phone?.replace(/\s+/g, "");
@@ -308,11 +222,7 @@ export default function ContactDetailScreen() {
 
   const handleDelete = () => {
     if (contacts.length <= 1) {
-      Alert.alert(
-        "Cannot Delete",
-        "You must have at least one emergency contact.",
-        [{ text: "OK" }],
-      );
+      Alert.alert("Cannot Delete", "You must have at least one emergency contact.", [{ text: "OK" }]);
       return;
     }
     Alert.alert(
@@ -344,17 +254,21 @@ export default function ContactDetailScreen() {
     ]);
   };
 
+  const floatBtnBg = t.isDark ? "rgba(30,30,30,0.88)" : "rgba(255,255,255,0.88)";
   const floatBtn = {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: floatBtnBg,
     alignItems: "center",
     justifyContent: "center",
   };
 
+  const navBg = t.isDark ? "rgba(20,20,20,0.96)" : "rgba(248,244,240,0.96)";
+  const stickyBg = t.isDark ? "rgba(20,20,20,0.97)" : "rgba(248,244,240,0.97)";
+
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* ── Hero ── */}
       <Animated.View
         style={[
@@ -384,10 +298,10 @@ export default function ContactDetailScreen() {
             }}
           >
             <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={floatBtn}>
-              <ChevronLeft size={20} color={C.dark} />
+              <ChevronLeft size={20} color={t.text} />
             </TouchableOpacity>
             <TouchableOpacity onPress={handleMore} activeOpacity={0.7} style={floatBtn}>
-              <MoreHorizontal size={20} color={C.dark} />
+              <MoreHorizontal size={20} color={t.text} />
             </TouchableOpacity>
           </View>
 
@@ -425,7 +339,7 @@ export default function ContactDetailScreen() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 26,
-              color: C.dark,
+              color: t.text,
               textAlign: "center",
               marginBottom: 10,
             }}
@@ -452,7 +366,7 @@ export default function ContactDetailScreen() {
             {contact.isPrimary ? (
               <View
                 style={{
-                  backgroundColor: "#FEF3C7",
+                  backgroundColor: t.isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
                   borderRadius: 10,
                   paddingHorizontal: 12,
                   paddingVertical: 4,
@@ -461,8 +375,8 @@ export default function ContactDetailScreen() {
                   gap: 4,
                 }}
               >
-                <Star size={11} color="#92400E" fill="#92400E" />
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#92400E" }}>
+                <Star size={11} color={t.isDark ? "#D97706" : "#92400E"} fill={t.isDark ? "#D97706" : "#92400E"} />
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.isDark ? "#D97706" : "#92400E" }}>
                   Primary
                 </Text>
               </View>
@@ -482,9 +396,9 @@ export default function ContactDetailScreen() {
             right: 0,
             zIndex: 20,
             height: NAV_HEIGHT,
-            backgroundColor: "rgba(248,244,240,0.96)",
+            backgroundColor: navBg,
             borderBottomWidth: 1,
-            borderBottomColor: C.border,
+            borderBottomColor: t.border,
             flexDirection: "row",
             alignItems: "flex-end",
             paddingHorizontal: 12,
@@ -494,14 +408,14 @@ export default function ContactDetailScreen() {
         ]}
       >
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} style={floatBtn}>
-          <ChevronLeft size={20} color={C.dark} />
+          <ChevronLeft size={20} color={t.text} />
         </TouchableOpacity>
         <Text
           numberOfLines={1}
           style={{
             fontFamily: fonts.semibold,
             fontSize: 16,
-            color: C.dark,
+            color: t.text,
             flex: 1,
             textAlign: "center",
             marginHorizontal: 8,
@@ -510,7 +424,7 @@ export default function ContactDetailScreen() {
           {contact.name}
         </Text>
         <TouchableOpacity onPress={handleMore} activeOpacity={0.7} style={floatBtn}>
-          <MoreHorizontal size={20} color={C.dark} />
+          <MoreHorizontal size={20} color={t.text} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -529,12 +443,7 @@ export default function ContactDetailScreen() {
           {/* Contact Info */}
           <SectionLabel title="Contact Info" />
           <Card>
-            <InfoRow
-              icon={Phone}
-              iconColor={color}
-              label="Phone"
-              value={contact.phone}
-            />
+            <InfoRow icon={Phone} iconColor={color} label="Phone" value={contact.phone} />
             <InfoRow
               icon={User}
               iconColor={color}
@@ -557,11 +466,11 @@ export default function ContactDetailScreen() {
           <Card>
             {callLogs.length === 0 ? (
               <View style={{ padding: 24, alignItems: "center" }}>
-                <Phone size={28} color="#D1D5DB" style={{ marginBottom: 8 }} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.muted, textAlign: "center" }}>
+                <Phone size={28} color={t.textTertiary} style={{ marginBottom: 8 }} />
+                <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, textAlign: "center" }}>
                   No calls yet
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#9CA3AF", marginTop: 4, textAlign: "center" }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 4, textAlign: "center" }}>
                   Calls made from this screen will appear here
                 </Text>
               </View>
@@ -580,14 +489,13 @@ export default function ContactDetailScreen() {
                         gap: 12,
                       }}
                     >
-                      {/* Timeline dot + line */}
                       <View style={{ alignItems: "center", width: 34 }}>
                         <View
                           style={{
                             width: 10,
                             height: 10,
                             borderRadius: 5,
-                            backgroundColor: idx === 0 ? color : "#D1D5DB",
+                            backgroundColor: idx === 0 ? color : t.textTertiary,
                           }}
                         />
                         {!isLast && (
@@ -596,7 +504,7 @@ export default function ContactDetailScreen() {
                               width: 2,
                               flex: 1,
                               minHeight: 20,
-                              backgroundColor: "#F0EDE8",
+                              backgroundColor: t.border,
                               marginTop: 4,
                             }}
                           />
@@ -604,7 +512,7 @@ export default function ContactDetailScreen() {
                       </View>
 
                       <View style={{ flex: 1 }}>
-                        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: C.dark }}>
+                        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.text }}>
                           {date.toLocaleDateString("en-GB", {
                             weekday: "short",
                             day: "numeric",
@@ -612,7 +520,7 @@ export default function ContactDetailScreen() {
                             year: "numeric",
                           })}
                         </Text>
-                        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: C.muted, marginTop: 2 }}>
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
                           {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </Text>
                       </View>
@@ -633,7 +541,7 @@ export default function ContactDetailScreen() {
                       )}
                     </View>
                     {!isLast && (
-                      <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 62 }} />
+                      <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 62 }} />
                     )}
                   </View>
                 );
@@ -653,9 +561,9 @@ export default function ContactDetailScreen() {
           paddingHorizontal: 20,
           paddingBottom: insets.bottom + 20,
           paddingTop: 16,
-          backgroundColor: "rgba(248,244,240,0.97)",
+          backgroundColor: stickyBg,
           borderTopWidth: 1,
-          borderTopColor: C.border,
+          borderTopColor: t.border,
         }}
       >
         <TouchableOpacity

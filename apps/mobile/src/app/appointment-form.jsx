@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import {
   View,
   Text,
@@ -48,6 +49,7 @@ const REMINDER_OPTIONS = [
 ];
 
 export default function AppointmentForm() {
+  const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
@@ -200,28 +202,28 @@ export default function AppointmentForm() {
 
   const SectionLabel = ({ icon: Icon, label }) => (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 20 }}>
-      <Icon size={16} color="#1A1A1A" strokeWidth={2} />
-      <Text style={{ fontSize: 13, fontWeight: "600", color: "#1A1A1A", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Icon size={16} color={t.text} strokeWidth={2} />
+      <Text style={{ fontSize: 13, fontWeight: "600", color: t.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
         {label}
       </Text>
     </View>
   );
 
   const inputStyle = {
-    backgroundColor: "#fff",
+    backgroundColor: t.surface,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
     fontSize: 16,
-    color: "#1a1a1a",
+    color: t.text,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: t.border,
     fontFamily: "Geist-Regular",
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F4F0" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <LinearGradient
@@ -324,7 +326,7 @@ export default function AppointmentForm() {
         <TextInput
           style={inputStyle}
           placeholder="e.g. Routine Check-up, Infusion, Blood Work"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={t.textSecondary}
           value={title}
           onChangeText={setTitle}
           returnKeyType="next"
@@ -333,28 +335,28 @@ export default function AppointmentForm() {
         {/* Type chips */}
         <SectionLabel icon={Calendar} label="Type" />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {TYPES.map((t) => (
+          {TYPES.map((typ) => (
             <TouchableOpacity
-              key={t.key}
-              onPress={() => setType(t.key)}
+              key={typ.key}
+              onPress={() => setType(typ.key)}
               style={{
-                backgroundColor: type === t.key ? "#A9334D" : "#fff",
+                backgroundColor: type === typ.key ? "#A9334D" : t.surface,
                 borderRadius: 20,
                 paddingHorizontal: 14,
                 paddingVertical: 8,
                 borderWidth: 1,
-                borderColor: type === t.key ? "#A9334D" : "#E5E7EB",
+                borderColor: type === typ.key ? "#A9334D" : t.border,
               }}
             >
               <Text
                 style={{
                   fontSize: 14,
                   fontWeight: "600",
-                  color: type === t.key ? "#fff" : "#4B5563",
+                  color: type === typ.key ? "#fff" : t.textSecondary,
                   fontFamily: "Geist-SemiBold",
                 }}
               >
-                {t.label}
+                {typ.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -365,7 +367,7 @@ export default function AppointmentForm() {
         <TextInput
           style={inputStyle}
           placeholder="Dr. Name"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={t.textSecondary}
           value={doctor}
           onChangeText={setDoctor}
           returnKeyType="next"
@@ -385,23 +387,23 @@ export default function AppointmentForm() {
             <Text
               style={{
                 fontSize: 16,
-                color: specialty ? "#1a1a1a" : "#9CA3AF",
+                color: specialty ? t.text : t.textSecondary,
                 fontFamily: "Geist-Regular",
               }}
             >
               {specialty || "Specialty (optional)"}
             </Text>
-            <Text style={{ color: "#9CA3AF", fontSize: 12 }}>
+            <Text style={{ color: t.textSecondary, fontSize: 12 }}>
               {showSpecialtyPicker ? "▲" : "▼"}
             </Text>
           </TouchableOpacity>
           {showSpecialtyPicker && (
             <View
               style={{
-                backgroundColor: "#fff",
+                backgroundColor: t.surface,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: t.border,
                 marginTop: 4,
                 overflow: "hidden",
               }}
@@ -417,13 +419,13 @@ export default function AppointmentForm() {
                     paddingHorizontal: 16,
                     paddingVertical: 14,
                     borderBottomWidth: 1,
-                    borderBottomColor: "#F3F4F6",
+                    borderBottomColor: t.divider,
                   }}
                 >
                   <Text
                     style={{
                       fontSize: 16,
-                      color: specialty === s ? "#A9334D" : "#1a1a1a",
+                      color: specialty === s ? "#A9334D" : t.text,
                       fontWeight: specialty === s ? "600" : "400",
                     }}
                   >
@@ -441,7 +443,7 @@ export default function AppointmentForm() {
           <TextInput
             style={inputStyle}
             placeholder="Hospital or clinic name"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={t.textSecondary}
             value={facility}
             onChangeText={setFacility}
             onFocus={() => setFacilityFocused(true)}
@@ -459,10 +461,10 @@ export default function AppointmentForm() {
                 left: 0,
                 right: 0,
                 maxHeight: 4 * 64,
-                backgroundColor: "#fff",
+                backgroundColor: t.surface,
                 borderRadius: 12,
                 borderWidth: 1,
-                borderColor: "#E5E7EB",
+                borderColor: t.border,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: 4 },
                 shadowOpacity: 0.08,
@@ -481,7 +483,7 @@ export default function AppointmentForm() {
                     style={({ pressed }) => ({
                       paddingHorizontal: 16,
                       paddingVertical: 12,
-                      backgroundColor: pressed ? "#F8F4F0" : "#fff",
+                      backgroundColor: pressed ? t.surfaceElevated : t.surface,
                       borderTopLeftRadius: index === 0 ? 12 : 0,
                       borderTopRightRadius: index === 0 ? 12 : 0,
                     })}
@@ -490,7 +492,7 @@ export default function AppointmentForm() {
                       style={{
                         fontFamily: "Geist_600SemiBold",
                         fontSize: 14,
-                        color: "#1A1A1A",
+                        color: t.text,
                       }}
                     >
                       {item.name}
@@ -500,7 +502,7 @@ export default function AppointmentForm() {
                         style={{
                           fontFamily: "Geist_400Regular",
                           fontSize: 12,
-                          color: "#6B7280",
+                          color: t.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -512,7 +514,7 @@ export default function AppointmentForm() {
                     <View
                       style={{
                         height: 1,
-                        backgroundColor: "#F0E4E1",
+                        backgroundColor: t.border,
                         marginLeft: 16,
                       }}
                     />
@@ -540,7 +542,7 @@ export default function AppointmentForm() {
           <Text
             style={{
               fontSize: 16,
-              color: "#1a1a1a",
+              color: t.text,
               fontFamily: "Geist-Regular",
             }}
           >
@@ -566,7 +568,7 @@ export default function AppointmentForm() {
           <Text
             style={{
               fontSize: 16,
-              color: "#1a1a1a",
+              color: t.text,
               fontFamily: "Geist-Regular",
             }}
           >
@@ -589,7 +591,7 @@ export default function AppointmentForm() {
               <Pressable onPress={() => {}}>
                 <View
                   style={{
-                    backgroundColor: "#fff",
+                    backgroundColor: t.surface,
                     borderTopLeftRadius: 20,
                     borderTopRightRadius: 20,
                     paddingBottom: 32,
@@ -609,7 +611,7 @@ export default function AppointmentForm() {
                       style={{
                         fontFamily: "Geist_400Regular",
                         fontSize: 15,
-                        color: "#6B7280",
+                        color: t.textSecondary,
                       }}
                     >
                       Select date
@@ -669,7 +671,7 @@ export default function AppointmentForm() {
               <Pressable onPress={() => {}}>
                 <View
                   style={{
-                    backgroundColor: "#fff",
+                    backgroundColor: t.surface,
                     borderTopLeftRadius: 20,
                     borderTopRightRadius: 20,
                     paddingBottom: 32,
@@ -689,7 +691,7 @@ export default function AppointmentForm() {
                       style={{
                         fontFamily: "Geist_400Regular",
                         fontSize: 15,
-                        color: "#6B7280",
+                        color: t.textSecondary,
                       }}
                     >
                       Select time
@@ -734,14 +736,14 @@ export default function AppointmentForm() {
         )}
 
         {/* Reminders */}
-        <View style={{ backgroundColor: "#fff", borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: "#E5E7EB", overflow: "hidden" }}>
+        <View style={{ backgroundColor: t.surface, borderRadius: 16, marginTop: 24, borderWidth: 1, borderColor: t.border, overflow: "hidden" }}>
           {/* Toggle row */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-              <Bell size={20} color="#1A1A1A" />
+              <Bell size={20} color={t.text} />
               <View>
-                <Text style={{ fontSize: 15, fontFamily: "Geist-SemiBold", color: "#1a1a1a" }}>Reminders</Text>
-                <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>Push notification before appointment</Text>
+                <Text style={{ fontSize: 15, fontFamily: "Geist-SemiBold", color: t.text }}>Reminders</Text>
+                <Text style={{ fontSize: 13, color: t.textSecondary, marginTop: 2 }}>Push notification before appointment</Text>
               </View>
             </View>
             <Switch
@@ -750,7 +752,7 @@ export default function AppointmentForm() {
                 setRemindersOn(val);
                 if (!val) { setReminder1(null); setReminder2(null); }
               }}
-              trackColor={{ false: "#E5E7EB", true: "#A9334D" }}
+              trackColor={{ false: t.border, true: "#A9334D" }}
               thumbColor="#fff"
             />
           </View>
@@ -758,36 +760,36 @@ export default function AppointmentForm() {
           {remindersOn && (
             <>
               {/* Divider */}
-              <View style={{ height: 1, backgroundColor: "#F0E4E1" }} />
+              <View style={{ height: 1, backgroundColor: t.border }} />
 
               {/* First reminder row */}
               <TouchableOpacity
                 onPress={() => setShowReminder1Picker(true)}
                 style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 }}
               >
-                <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: "#1a1a1a" }}>Reminder</Text>
+                <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: t.text }}>Reminder</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: reminder1 !== null ? "#A9334D" : "#9CA3AF" }}>
                     {reminder1 !== null ? REMINDER_OPTIONS.find((o) => o.minutes === reminder1)?.label ?? "1 hour before" : "None"}
                   </Text>
-                  <Text style={{ fontSize: 18, color: "#C0C0C0" }}>›</Text>
+                  <Text style={{ fontSize: 18, color: t.textTertiary }}>›</Text>
                 </View>
               </TouchableOpacity>
 
               {/* Second reminder row — only appears once first is set */}
               {reminder1 !== null && (
                 <>
-                  <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 16 }} />
+                  <View style={{ height: 1, backgroundColor: t.border, marginLeft: 16 }} />
                   <TouchableOpacity
                     onPress={() => setShowReminder2Picker(true)}
                     style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 }}
                   >
-                    <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: "#1a1a1a" }}>Second Reminder</Text>
+                    <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: t.text }}>Second Reminder</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                       <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: reminder2 !== null ? "#A9334D" : "#9CA3AF" }}>
                         {reminder2 !== null ? REMINDER_OPTIONS.find((o) => o.minutes === reminder2)?.label ?? "1 day before" : "None"}
                       </Text>
-                      <Text style={{ fontSize: 18, color: "#C0C0C0" }}>›</Text>
+                      <Text style={{ fontSize: 18, color: t.textTertiary }}>›</Text>
                     </View>
                   </TouchableOpacity>
                 </>
@@ -800,21 +802,21 @@ export default function AppointmentForm() {
         <Modal transparent visible={showReminder1Picker} animationType="slide">
           <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" }} onPress={() => setShowReminder1Picker(false)}>
             <Pressable onPress={() => {}}>
-              <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32 }}>
+              <View style={{ backgroundColor: t.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
-                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 15, color: "#6B7280" }}>Reminder</Text>
+                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 15, color: t.textSecondary }}>Reminder</Text>
                   <TouchableOpacity onPress={() => setShowReminder1Picker(false)}>
                     <Text style={{ fontFamily: "Geist_600SemiBold", fontSize: 15, color: "#A9334D" }}>Done</Text>
                   </TouchableOpacity>
                 </View>
                 {REMINDER_OPTIONS.map((opt, i) => (
                   <React.Fragment key={opt.minutes}>
-                    {i > 0 && <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />}
+                    {i > 0 && <View style={{ height: 1, backgroundColor: t.border, marginLeft: 20 }} />}
                     <TouchableOpacity
                       onPress={() => { setReminder1(opt.minutes); setShowReminder1Picker(false); }}
                       style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14 }}
                     >
-                      <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: "#1a1a1a" }}>{opt.label}</Text>
+                      <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: t.text }}>{opt.label}</Text>
                       {reminder1 === opt.minutes && <Text style={{ fontSize: 18, color: "#A9334D" }}>✓</Text>}
                     </TouchableOpacity>
                   </React.Fragment>
@@ -828,9 +830,9 @@ export default function AppointmentForm() {
         <Modal transparent visible={showReminder2Picker} animationType="slide">
           <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.3)", justifyContent: "flex-end" }} onPress={() => setShowReminder2Picker(false)}>
             <Pressable onPress={() => {}}>
-              <View style={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32 }}>
+              <View style={{ backgroundColor: t.surface, borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 32 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 }}>
-                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 15, color: "#6B7280" }}>Second Reminder</Text>
+                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 15, color: t.textSecondary }}>Second Reminder</Text>
                   <TouchableOpacity onPress={() => setShowReminder2Picker(false)}>
                     <Text style={{ fontFamily: "Geist_600SemiBold", fontSize: 15, color: "#A9334D" }}>Done</Text>
                   </TouchableOpacity>
@@ -840,17 +842,17 @@ export default function AppointmentForm() {
                   onPress={() => { setReminder2(null); setShowReminder2Picker(false); }}
                   style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14 }}
                 >
-                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: "#1a1a1a" }}>None</Text>
+                  <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: t.text }}>None</Text>
                   {reminder2 === null && <Text style={{ fontSize: 18, color: "#A9334D" }}>✓</Text>}
                 </TouchableOpacity>
                 {REMINDER_OPTIONS.map((opt, i) => (
                   <React.Fragment key={opt.minutes}>
-                    <View style={{ height: 1, backgroundColor: "#F0E4E1", marginLeft: 20 }} />
+                    <View style={{ height: 1, backgroundColor: t.border, marginLeft: 20 }} />
                     <TouchableOpacity
                       onPress={() => { setReminder2(opt.minutes); setShowReminder2Picker(false); }}
                       style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingVertical: 14 }}
                     >
-                      <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: "#1a1a1a" }}>{opt.label}</Text>
+                      <Text style={{ fontFamily: "Geist_400Regular", fontSize: 16, color: t.text }}>{opt.label}</Text>
                       {reminder2 === opt.minutes && <Text style={{ fontSize: 18, color: "#A9334D" }}>✓</Text>}
                     </TouchableOpacity>
                   </React.Fragment>
@@ -863,12 +865,12 @@ export default function AppointmentForm() {
         {/* Add to Calendar toggle */}
         <View
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: t.surface,
             borderRadius: 16,
             padding: 16,
             marginTop: 12,
             borderWidth: 1,
-            borderColor: "#E5E7EB",
+            borderColor: t.border,
           }}
         >
           <View
@@ -881,19 +883,19 @@ export default function AppointmentForm() {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
             >
-              <CalendarCheck size={20} color="#1A1A1A" />
+              <CalendarCheck size={20} color={t.text} />
               <View>
                 <Text
                   style={{
                     fontSize: 15,
                     fontWeight: "600",
-                    color: "#1a1a1a",
+                    color: t.text,
                     fontFamily: "Geist-SemiBold",
                   }}
                 >
                   Add to Calendar
                 </Text>
-                <Text style={{ fontSize: 13, color: "#6B7280", marginTop: 2 }}>
+                <Text style={{ fontSize: 13, color: t.textSecondary, marginTop: 2 }}>
                   Sync with your device calendar
                 </Text>
               </View>
@@ -901,7 +903,7 @@ export default function AppointmentForm() {
             <Switch
               value={calendarOn}
               onValueChange={setCalendarOn}
-              trackColor={{ false: "#E5E7EB", true: "#A9334D" }}
+              trackColor={{ false: t.border, true: "#A9334D" }}
               thumbColor="#fff"
               disabled={!!existing?.addedToCalendar}
             />
@@ -913,7 +915,7 @@ export default function AppointmentForm() {
         <TextInput
           style={{ ...inputStyle, height: 230, textAlignVertical: "top" }}
           placeholder="Anything to remember for this appointment…"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor={t.textSecondary}
           value={notes}
           onChangeText={setNotes}
           multiline

@@ -1,5 +1,6 @@
 import { ScrollView, TouchableOpacity, Text } from "react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 export const FEED_FILTERS = [
   { id: "popular", label: "Popular" },
@@ -10,6 +11,7 @@ export const FEED_FILTERS = [
 ];
 
 export function FeedFilter({ active, onSelect }) {
+  const t = useTheme();
   return (
     <ScrollView
       horizontal
@@ -20,7 +22,7 @@ export function FeedFilter({ active, onSelect }) {
         gap: 8,
         alignItems: "center",
       }}
-      style={{ backgroundColor: "#F8F4F0", flexGrow: 0 }}
+      style={{ backgroundColor: t.background, flexGrow: 0 }}
     >
       {FEED_FILTERS.map((filter) => {
         const isActive = active === filter.id;
@@ -30,10 +32,10 @@ export function FeedFilter({ active, onSelect }) {
             onPress={() => onSelect(filter.id)}
             activeOpacity={0.75}
             style={{
-              backgroundColor: isActive ? "#A9334D" : "#FFFFFF",
+              backgroundColor: isActive ? "#A9334D" : t.surface,
               borderRadius: 20,
               borderWidth: 1,
-              borderColor: isActive ? "#A9334D" : "#E2D9D6",
+              borderColor: isActive ? "#A9334D" : t.border,
               paddingHorizontal: 16,
               height: 34,
               alignItems: "center",
@@ -44,7 +46,7 @@ export function FeedFilter({ active, onSelect }) {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 13,
-                color: isActive ? "#F8E9E7" : "#1A1A1A",
+                color: isActive ? "#F8E9E7" : t.text,
               }}
             >
               {filter.label}

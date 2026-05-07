@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  StyleSheet,
   ActivityIndicator,
   Switch,
 } from "react-native";
@@ -20,10 +19,9 @@ import {
   ChevronRight,
   Search,
   Camera,
-  ScanBarcode,
 } from "lucide-react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import * as ImagePicker from "expo-image-picker";
+import Svg, { Path, Rect, Line, Circle } from "react-native-svg";
+import MedicationBottle from "@/components/MedicationBottle";
 import { Picker } from "@react-native-picker/picker";
 import { MotiView } from "moti";
 import {
@@ -33,26 +31,19 @@ import {
   useDeleteMedicationMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
 import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
-import { lookupByNDC } from "@/utils/medicationApi";
 import { scheduleMedicationNotifications, cancelMedicationNotifications } from "@/utils/medicationNotifications";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
-  bg: "#F8F4F0",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  dark: "#1A1A1A",
-  muted: "#9CA3AF",
   accent: "#A9334D",
   success: "#059669",
   danger: "#DC2626",
-  inputBorder: "#E5E7EB",
-  divider: "#F8E9E7",
 };
 
 const CATEGORY_COLORS = {
@@ -86,6 +77,7 @@ const STEP_LABELS = ["", "Find Drug", "Dosage", "Schedule", "Reminders"];
 
 // ─── Tiny shared components ──────────────────────────────────────────────────
 function ChipRow({ options, selected, onSelect, getLabel }) {
+  const t = useTheme();
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
       {options.map((opt) => {
@@ -105,16 +97,16 @@ function ChipRow({ options, selected, onSelect, getLabel }) {
               paddingHorizontal: 14,
               paddingVertical: 8,
               borderRadius: 20,
-              backgroundColor: active ? C.accent : C.card,
+              backgroundColor: active ? C.accent : t.surface,
               borderWidth: 1,
-              borderColor: active ? C.accent : C.border,
+              borderColor: active ? C.accent : t.border,
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 13,
-                color: active ? "#fff" : C.dark,
+                color: active ? "#fff" : t.text,
               }}
             >
               {label}
@@ -127,6 +119,7 @@ function ChipRow({ options, selected, onSelect, getLabel }) {
 }
 
 function FieldLabel({ children, optional }) {
+  const t = useTheme();
   return (
     <View
       style={{ flexDirection: "row", alignItems: "center", marginBottom: 10 }}
@@ -135,7 +128,7 @@ function FieldLabel({ children, optional }) {
         style={{
           fontFamily: fonts.semibold,
           fontSize: 11,
-          color: C.muted,
+          color: t.textSecondary,
           textTransform: "uppercase",
           letterSpacing: 0.7,
         }}
@@ -147,7 +140,7 @@ function FieldLabel({ children, optional }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 12,
-            color: C.muted,
+            color: t.textSecondary,
             marginLeft: 6,
           }}
         >
@@ -158,175 +151,33 @@ function FieldLabel({ children, optional }) {
   );
 }
 
-// ─── Barcode scanner (full-screen) ───────────────────────────────────────────
-function BarcodeScannerView({ insets, onScan, onCancel }) {
-  const [permission, requestPermission] = useCameraPermissions();
-  const scanned = useRef(false);
-
-  if (!permission) {
-    return <View style={{ flex: 1, backgroundColor: "#000" }} />;
-  }
-
-  if (!permission.granted) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "#000",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 32,
-        }}
-      >
-        <Camera size={48} color="#fff" />
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 18,
-            color: "#fff",
-            textAlign: "center",
-            marginTop: 16,
-            marginBottom: 8,
-          }}
-        >
-          Camera access needed
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 14,
-            color: "rgba(255,255,255,0.65)",
-            textAlign: "center",
-            marginBottom: 32,
-          }}
-        >
-          Allow camera access to scan your medication barcode
-        </Text>
-        <TouchableOpacity
-          onPress={requestPermission}
-          activeOpacity={0.8}
-          style={{
-            backgroundColor: C.accent,
-            borderRadius: 12,
-            paddingVertical: 14,
-            paddingHorizontal: 32,
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#fff" }}
-          >
-            Allow Camera
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={onCancel} activeOpacity={0.7}>
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: 15,
-              color: "rgba(255,255,255,0.55)",
-            }}
-          >
-            Cancel
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
+// ─── Scan illustration ───────────────────────────────────────────────────────
+function ScanIllustration() {
+  const t = useTheme();
+  const lineColor = t.isDark ? "#C8A8B0" : "#2A1A1E";
+  const bgFill = t.isDark ? "rgba(169,51,77,0.12)" : "#F9EFF1";
   return (
-    <View style={{ flex: 1, backgroundColor: "#000" }}>
-      <CameraView
-        style={StyleSheet.absoluteFill}
-        onBarcodeScanned={({ data }) => {
-          if (!scanned.current) {
-            scanned.current = true;
-            onScan(data);
-          }
-        }}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr", "ean13", "ean8", "code128", "upc_a", "upc_e"],
-        }}
-      />
-      {/* Scanning frame overlay */}
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <View
-          style={{
-            width: 240,
-            height: 140,
-            borderRadius: 16,
-            borderWidth: 2.5,
-            borderColor: "#fff",
-            opacity: 0.9,
-          }}
-        />
-        <Text
-          style={{
-            fontFamily: fonts.medium,
-            fontSize: 14,
-            color: "#fff",
-            marginTop: 18,
-            opacity: 0.85,
-          }}
-        >
-          Point at medication barcode
-        </Text>
-      </View>
-      <TouchableOpacity
-        onPress={onCancel}
-        style={{
-          position: "absolute",
-          top: insets.top + 12,
-          right: 20,
-          width: 40,
-          height: 40,
-          borderRadius: 20,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <X size={20} color="#fff" />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-// ─── AI identifying loader ────────────────────────────────────────────────────
-function IdentifyingView() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: C.bg,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 32,
-      }}
-    >
-      <ActivityIndicator size="large" color={C.accent} />
-      <Text
-        style={{
-          fontFamily: fonts.semibold,
-          fontSize: 17,
-          color: C.dark,
-          marginTop: 20,
-        }}
-      >
-        Identifying medication…
-      </Text>
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: 13,
-          color: C.muted,
-          marginTop: 6,
-          textAlign: "center",
-        }}
-      >
-        Analysing your photo
-      </Text>
-    </View>
+    <Svg width={82} height={82} viewBox="0 0 80 80">
+      <Circle cx="40" cy="40" r="36" fill={bgFill} />
+      <Line x1="16" y1="24" x2="16" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="21" y1="24" x2="21" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="25" y1="24" x2="25" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
+      <Line x1="30" y1="24" x2="30" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="34" y1="24" x2="34" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="39" y1="24" x2="39" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="43" y1="24" x2="43" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
+      <Line x1="48" y1="24" x2="48" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="52" y1="24" x2="52" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
+      <Line x1="57" y1="24" x2="57" y2="56" stroke={lineColor} strokeWidth="2" strokeOpacity="0.7" />
+      <Line x1="61" y1="24" x2="61" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
+      <Line x1="64" y1="24" x2="64" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.8" />
+      <Rect x="12" y="37.5" width="56" height="3" rx="1.5" fill="#F0531C" opacity="0.9" />
+      <Rect x="12" y="36" width="56" height="6" rx="3" fill="#F0531C" opacity="0.15" />
+      <Path d="M11 28 L11 20 L19 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M69 28 L69 20 L61 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M11 52 L11 60 L19 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M69 52 L69 60 L61 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
   );
 }
 
@@ -343,6 +194,7 @@ function parseTimeStr(timeStr) {
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function AddMedicationScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { medicationId, prefillName, prefillCategory, prefillDosage } =
@@ -374,13 +226,8 @@ export default function AddMedicationScreen() {
     return { amount: m[1], unit };
   })();
 
-  // ── Navigation / camera state
+  // ── Navigation state
   const [step, setStep] = useState(isEditing ? 2 : prefillName ? 2 : 0);
-  const [cameraMode, setCameraMode] = useState(null); // null | 'barcode'
-  const [identifying, setIdentifying] = useState(false);
-  const [barcodeLoading, setBarcodeLoading] = useState(false);
-  const [scanNotFound, setScanNotFound] = useState(false);
-  const [showCameraOptions, setShowCameraOptions] = useState(false);
 
   // ── Step 1: Drug
   const [name, setName] = useState(existing?.name ?? prefillName ?? "");
@@ -439,54 +286,6 @@ export default function AddMedicationScreen() {
     } else {
       setStep((s) => s - 1);
     }
-  };
-
-  const handleBarcodeScanned = async (data) => {
-    setCameraMode(null);
-    setBarcodeLoading(true);
-    try {
-      const found = await lookupByNDC(data);
-      if (found) {
-        setName(found.name);
-        setCategory(found.category);
-        if (found.rxcui) setRxcui(found.rxcui);
-        setStep(2);
-      } else {
-        // Drug not in US database — drop to name search so user can type it
-        setScanNotFound(true);
-        setStep(1);
-      }
-    } catch {
-      setScanNotFound(true);
-      setStep(1);
-    } finally {
-      setBarcodeLoading(false);
-    }
-  };
-
-  const handlePhotoCapture = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission required",
-        "Camera access is needed to identify medication.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: false,
-      quality: 0.8,
-    });
-    if (result.canceled) return;
-    setIdentifying(true);
-    // Stub: simulate AI identification
-    setTimeout(() => {
-      const stub = SCD_MEDICATIONS[0];
-      setName(stub.name);
-      setCategory(stub.category);
-      setIdentifying(false);
-      setStep(2);
-    }, 1500);
   };
 
   const handleSave = () => {
@@ -573,71 +372,19 @@ export default function AddMedicationScreen() {
     ]);
   };
 
-  // ── Full-screen overlays
-  if (cameraMode === "barcode") {
-    return (
-      <BarcodeScannerView
-        insets={insets}
-        onScan={handleBarcodeScanned}
-        onCancel={() => setCameraMode(null)}
-      />
-    );
-  }
-
-  if (identifying) {
-    return <IdentifyingView />;
-  }
-
-  if (barcodeLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: C.bg,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 32,
-        }}
-      >
-        <ActivityIndicator size="large" color={C.accent} />
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 17,
-            color: C.dark,
-            marginTop: 20,
-          }}
-        >
-          Looking up medication…
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 13,
-            color: C.muted,
-            marginTop: 6,
-            textAlign: "center",
-          }}
-        >
-          Searching drug database
-        </Text>
-      </View>
-    );
-  }
-
   const catColor = CATEGORY_COLORS[category] ?? C.accent;
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* ── Header ── */}
       <View
         style={{
-          backgroundColor: C.card,
+          backgroundColor: t.surface,
           paddingTop: insets.top + 12,
           paddingBottom: 14,
           paddingHorizontal: 20,
           borderBottomWidth: 1,
-          borderBottomColor: C.border,
+          borderBottomColor: t.border,
           flexDirection: "row",
           alignItems: "center",
           gap: 12,
@@ -650,22 +397,22 @@ export default function AddMedicationScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: C.bg,
+            backgroundColor: t.background,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           {step === 0 ? (
-            <X size={18} color={C.dark} />
+            <X size={18} color={t.text} />
           ) : (
-            <ChevronLeft size={20} color={C.dark} />
+            <ChevronLeft size={20} color={t.text} />
           )}
         </TouchableOpacity>
         <Text
           style={{
             fontFamily: fonts.bold,
             fontSize: 20,
-            color: C.dark,
+            color: t.text,
             flex: 1,
           }}
         >
@@ -685,9 +432,9 @@ export default function AddMedicationScreen() {
             gap: 4,
             paddingHorizontal: 20,
             paddingVertical: 10,
-            backgroundColor: C.card,
+            backgroundColor: t.surface,
             borderBottomWidth: 1,
-            borderBottomColor: C.border,
+            borderBottomColor: t.border,
           }}
         >
           {[1, 2, 3, 4].map((s) => (
@@ -697,7 +444,7 @@ export default function AddMedicationScreen() {
                 flex: 1,
                 height: 3,
                 borderRadius: 2,
-                backgroundColor: s <= step ? C.accent : "#E5E7EB",
+                backgroundColor: s <= step ? C.accent : t.border,
               }}
             />
           ))}
@@ -724,261 +471,107 @@ export default function AddMedicationScreen() {
           >
             {/* ━━ Step 0: Method picker ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 0 && (
-              <View style={{ gap: 14, marginTop: 4 }}>
+              <View style={{ gap: 20, marginTop: 4 }}>
                 <Text
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 15,
-                    color: C.muted,
-                    marginBottom: 4,
+                    color: t.textSecondary,
                   }}
                 >
                   How would you like to add your medication?
                 </Text>
 
-                {/* Search card */}
-                <TouchableOpacity
-                  onPress={() => setStep(1)}
-                  activeOpacity={0.8}
-                  style={{
-                    backgroundColor: C.card,
-                    borderRadius: 16,
-                    borderWidth: 1.5,
-                    borderColor: C.border,
-                    padding: 20,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 16,
-                  }}
-                >
-                  <View
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      backgroundColor: "#F5EBF0",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Search size={24} color={C.accent} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.semibold,
-                        fontSize: 16,
-                        color: C.dark,
-                      }}
-                    >
-                      Search & select drug
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.regular,
-                        fontSize: 13,
-                        color: C.muted,
-                        marginTop: 2,
-                      }}
-                    >
-                      Search any medication by name
-                    </Text>
-                  </View>
-                  <ChevronRight size={18} color={C.muted} />
-                </TouchableOpacity>
-
-                {/* Camera card */}
-                <View
-                  style={{
-                    backgroundColor: C.card,
-                    borderRadius: 16,
-                    borderWidth: 1.5,
-                    borderColor: C.border,
-                    overflow: "hidden",
-                  }}
-                >
+                <View style={{ flexDirection: "row", gap: 12 }}>
+                  {/* Search card */}
                   <TouchableOpacity
-                    onPress={() => setShowCameraOptions((v) => !v)}
+                    onPress={() => setStep(1)}
                     activeOpacity={0.8}
                     style={{
-                      padding: 20,
-                      flexDirection: "row",
+                      flex: 1,
+                      backgroundColor: t.surface,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: t.border,
                       alignItems: "center",
-                      gap: 16,
+                      paddingTop: 28,
+                      paddingBottom: 22,
+                      paddingHorizontal: 8,
+                      gap: 14,
                     }}
                   >
-                    <View
-                      style={{
-                        width: 52,
-                        height: 52,
-                        borderRadius: 14,
-                        backgroundColor: "#EBF0EE",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Camera size={24} color={C.dark} />
+                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
+                      <MedicationBottle type="tablet" color={C.accent} drugName="" size={100} />
                     </View>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ alignItems: "center", gap: 4 }}>
                       <Text
                         style={{
                           fontFamily: fonts.semibold,
-                          fontSize: 16,
-                          color: C.dark,
+                          fontSize: 14,
+                          color: t.text,
+                          textAlign: "center",
                         }}
                       >
-                        Use camera
+                        Search drug
                       </Text>
                       <Text
                         style={{
                           fontFamily: fonts.regular,
-                          fontSize: 13,
-                          color: C.muted,
-                          marginTop: 2,
+                          fontSize: 12,
+                          color: t.textSecondary,
+                          textAlign: "center",
+                          lineHeight: 16,
                         }}
                       >
-                        Scan barcode or identify by photo
+                        Find by name
                       </Text>
                     </View>
-                    <ChevronRight
-                      size={18}
-                      color={C.muted}
-                      style={{
-                        transform: [
-                          { rotate: showCameraOptions ? "90deg" : "0deg" },
-                        ],
-                      }}
-                    />
                   </TouchableOpacity>
 
-                  {showCameraOptions && (
-                    <View
-                      style={{ borderTopWidth: 1, borderTopColor: C.divider }}
-                    >
-                      {/* Scan barcode */}
-                      <TouchableOpacity
-                        onPress={() => setCameraMode("barcode")}
-                        activeOpacity={0.7}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 14,
-                          padding: 16,
-                          paddingLeft: 20,
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 10,
-                            backgroundColor: C.bg,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Text style={{ fontSize: 20 }}>
-                            <ScanBarcode size={18} color={C.dark} />
-                          </Text>
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontFamily: fonts.medium,
-                              fontSize: 14,
-                              color: C.dark,
-                            }}
-                          >
-                            Scan barcode or QR code
-                          </Text>
-                          <Text
-                            style={{
-                              fontFamily: fonts.regular,
-                              fontSize: 12,
-                              color: C.muted,
-                              marginTop: 1,
-                            }}
-                          >
-                            Works with most medication packaging
-                          </Text>
-                        </View>
-                        <ChevronRight size={16} color={C.muted} />
-                      </TouchableOpacity>
-
-                      <View
-                        style={{
-                          height: 1,
-                          backgroundColor: C.divider,
-                          marginLeft: 72,
-                        }}
-                      />
-
-                      {/* Photo AI */}
-                      <TouchableOpacity
-                        onPress={handlePhotoCapture}
-                        activeOpacity={0.7}
-                        style={{
-                          flexDirection: "row",
-                          alignItems: "center",
-                          gap: 14,
-                          padding: 16,
-                          paddingLeft: 20,
-                        }}
-                      >
-                        <View
-                          style={{
-                            width: 38,
-                            height: 38,
-                            borderRadius: 10,
-                            backgroundColor: C.bg,
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <Camera size={18} color={C.dark} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={{
-                              fontFamily: fonts.medium,
-                              fontSize: 14,
-                              color: C.dark,
-                            }}
-                          >
-                            Take photo for AI identification
-                          </Text>
-                          <View
-                            style={{
-                              flexDirection: "row",
-                              alignItems: "center",
-                              gap: 6,
-                              marginTop: 2,
-                            }}
-                          >
-                            <View
-                              style={{
-                                backgroundColor: "#FEF3C7",
-                                borderRadius: 6,
-                                paddingHorizontal: 6,
-                                paddingVertical: 1,
-                              }}
-                            >
-                              <Text
-                                style={{
-                                  fontFamily: fonts.medium,
-                                  fontSize: 10,
-                                  color: "#92400E",
-                                }}
-                              >
-                                Prototype
-                              </Text>
-                            </View>
-                          </View>
-                        </View>
-                        <ChevronRight size={16} color={C.muted} />
-                      </TouchableOpacity>
+                  {/* Scan card */}
+                  <TouchableOpacity
+                    onPress={() => router.push("/medication-scan")}
+                    activeOpacity={0.8}
+                    style={{
+                      flex: 1,
+                      backgroundColor: t.surface,
+                      borderRadius: 20,
+                      borderWidth: 1.5,
+                      borderColor: t.border,
+                      alignItems: "center",
+                      paddingTop: 28,
+                      paddingBottom: 22,
+                      paddingHorizontal: 8,
+                      gap: 14,
+                    }}
+                  >
+                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
+                      <ScanIllustration />
                     </View>
-                  )}
+                    <View style={{ alignItems: "center", gap: 4 }}>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: t.text,
+                          textAlign: "center",
+                        }}
+                      >
+                        Scan Pill
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 12,
+                          color: t.textSecondary,
+                          textAlign: "center",
+                          lineHeight: 16,
+                        }}
+                      >
+                        Barcode or AI photo
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -986,55 +579,15 @@ export default function AddMedicationScreen() {
             {/* ━━ Step 1: Drug search ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 1 && (
               <View>
-                {/* Barcode not found banner */}
-                {scanNotFound && (
-                  <View
-                    style={{
-                      backgroundColor: "#FEF9C3",
-                      borderRadius: 12,
-                      borderWidth: 1,
-                      borderColor: "#FDE047",
-                      padding: 14,
-                      marginBottom: 16,
-                      flexDirection: "row",
-                      alignItems: "flex-start",
-                      gap: 10,
-                    }}
-                  >
-                    <Text style={{ fontSize: 16, lineHeight: 20 }}>⚠️</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={{
-                          fontFamily: fonts.semibold,
-                          fontSize: 13,
-                          color: "#78350F",
-                        }}
-                      >
-                        Barcode not found
-                      </Text>
-                      <Text
-                        style={{
-                          fontFamily: fonts.regular,
-                          fontSize: 12,
-                          color: "#92400E",
-                          marginTop: 2,
-                        }}
-                      >
-                        This medication isn't in our US database. Search by name
-                        below.
-                      </Text>
-                    </View>
-                  </View>
-                )}
                 {/* Search input */}
                 <View
                   style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderRadius: 12,
                     borderWidth: 1,
-                    borderColor: drugLoading ? C.accent : C.inputBorder,
+                    borderColor: drugLoading ? C.accent : t.border,
                     paddingHorizontal: 14,
                     marginBottom: 16,
                     gap: 10,
@@ -1043,19 +596,19 @@ export default function AddMedicationScreen() {
                   {drugLoading ? (
                     <ActivityIndicator size="small" color={C.accent} />
                   ) : (
-                    <Search size={16} color={C.muted} />
+                    <Search size={16} color={t.textSecondary} />
                   )}
                   <TextInput
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     placeholder="Search any medication…"
-                    placeholderTextColor={C.muted}
+                    placeholderTextColor={t.textSecondary}
                     autoFocus
                     style={{
                       flex: 1,
                       fontFamily: fonts.regular,
                       fontSize: 15,
-                      color: C.dark,
+                      color: t.text,
                       paddingVertical: 12,
                     }}
                   />
@@ -1064,7 +617,7 @@ export default function AddMedicationScreen() {
                       onPress={() => setSearchQuery("")}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                      <X size={16} color={C.muted} />
+                      <X size={16} color={t.textSecondary} />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -1073,7 +626,7 @@ export default function AddMedicationScreen() {
                 {drugError && (
                   <View
                     style={{
-                      backgroundColor: "#FEF3C7",
+                      backgroundColor: t.isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
                       borderRadius: 10,
                       paddingHorizontal: 12,
                       paddingVertical: 8,
@@ -1084,7 +637,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.regular,
                         fontSize: 12,
-                        color: "#92400E",
+                        color: t.isDark ? "#D97706" : "#92400E",
                       }}
                     >
                       {drugError}
@@ -1098,10 +651,10 @@ export default function AddMedicationScreen() {
                     {drugResults.length > 0 && (
                       <View
                         style={{
-                          backgroundColor: C.card,
+                          backgroundColor: t.surface,
                           borderRadius: 14,
                           borderWidth: 1,
-                          borderColor: C.border,
+                          borderColor: t.border,
                           overflow: "hidden",
                           marginBottom: 16,
                         }}
@@ -1133,7 +686,7 @@ export default function AddMedicationScreen() {
                                   style={{
                                     fontFamily: fonts.medium,
                                     fontSize: 15,
-                                    color: C.dark,
+                                    color: t.text,
                                   }}
                                 >
                                   {drug.name}
@@ -1143,7 +696,7 @@ export default function AddMedicationScreen() {
                                     style={{
                                       fontFamily: fonts.regular,
                                       fontSize: 12,
-                                      color: C.muted,
+                                      color: t.textSecondary,
                                       marginTop: 1,
                                     }}
                                   >
@@ -1155,7 +708,7 @@ export default function AddMedicationScreen() {
                               {drug.source === "saved" && (
                                 <View
                                   style={{
-                                    backgroundColor: "#EBF5F0",
+                                    backgroundColor: t.isDark ? "rgba(5,150,105,0.15)" : "#EBF5F0",
                                     borderRadius: 6,
                                     paddingHorizontal: 7,
                                     paddingVertical: 2,
@@ -1175,7 +728,7 @@ export default function AddMedicationScreen() {
                               {drug.source === "scd" && (
                                 <View
                                   style={{
-                                    backgroundColor: "#F5EBF0",
+                                    backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
                                     borderRadius: 6,
                                     paddingHorizontal: 7,
                                     paddingVertical: 2,
@@ -1192,13 +745,13 @@ export default function AddMedicationScreen() {
                                   </Text>
                                 </View>
                               )}
-                              <ChevronRight size={16} color={C.muted} />
+                              <ChevronRight size={16} color={t.textSecondary} />
                             </TouchableOpacity>
                             {i < drugResults.length - 1 && (
                               <View
                                 style={{
                                   height: 1,
-                                  backgroundColor: C.divider,
+                                  backgroundColor: t.divider,
                                   marginLeft: 16,
                                 }}
                               />
@@ -1208,7 +761,7 @@ export default function AddMedicationScreen() {
                       </View>
                     )}
 
-                    {/* Loading with no results yet */}
+                    {/* Loading */}
                     {drugLoading && drugResults.length === 0 && (
                       <View
                         style={{ alignItems: "center", paddingVertical: 32 }}
@@ -1218,11 +771,38 @@ export default function AddMedicationScreen() {
                           style={{
                             fontFamily: fonts.regular,
                             fontSize: 13,
-                            color: C.muted,
+                            color: t.textSecondary,
                             marginTop: 10,
                           }}
                         >
                           Searching drug database…
+                        </Text>
+                      </View>
+                    )}
+
+                    {/* No results */}
+                    {!drugLoading && drugResults.length === 0 && !drugError && (
+                      <View
+                        style={{ alignItems: "center", paddingVertical: 28 }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: fonts.medium,
+                            fontSize: 14,
+                            color: t.text,
+                          }}
+                        >
+                          No results for "{searchQuery.trim()}"
+                        </Text>
+                        <Text
+                          style={{
+                            fontFamily: fonts.regular,
+                            fontSize: 13,
+                            color: t.textSecondary,
+                            marginTop: 4,
+                          }}
+                        >
+                          Try a different spelling or add it manually
                         </Text>
                       </View>
                     )}
@@ -1239,7 +819,7 @@ export default function AddMedicationScreen() {
                           borderRadius: 14,
                           paddingVertical: 14,
                           borderWidth: 1.5,
-                          borderColor: C.border,
+                          borderColor: t.border,
                           borderStyle: "dashed",
                           gap: 8,
                         }}
@@ -1248,7 +828,7 @@ export default function AddMedicationScreen() {
                           style={{
                             fontFamily: fonts.medium,
                             fontSize: 14,
-                            color: C.muted,
+                            color: t.textSecondary,
                           }}
                         >
                           Can't find it? Add manually
@@ -1257,10 +837,10 @@ export default function AddMedicationScreen() {
                     ) : (
                       <View
                         style={{
-                          backgroundColor: C.card,
+                          backgroundColor: t.surface,
                           borderRadius: 14,
                           borderWidth: 1,
-                          borderColor: C.inputBorder,
+                          borderColor: t.border,
                           padding: 16,
                         }}
                       >
@@ -1268,7 +848,7 @@ export default function AddMedicationScreen() {
                           style={{
                             fontFamily: fonts.medium,
                             fontSize: 13,
-                            color: C.dark,
+                            color: t.text,
                             marginBottom: 10,
                           }}
                         >
@@ -1278,17 +858,17 @@ export default function AddMedicationScreen() {
                           value={customNameInput}
                           onChangeText={setCustomNameInput}
                           placeholder={searchQuery || "e.g. Ibuprofen"}
-                          placeholderTextColor={C.muted}
+                          placeholderTextColor={t.textSecondary}
                           autoFocus
                           style={{
-                            backgroundColor: C.bg,
+                            backgroundColor: t.background,
                             borderWidth: 1,
-                            borderColor: C.inputBorder,
+                            borderColor: t.border,
                             borderRadius: 10,
                             padding: 12,
                             fontFamily: fonts.regular,
                             fontSize: 15,
-                            color: C.dark,
+                            color: t.text,
                             marginBottom: 12,
                           }}
                         />
@@ -1331,7 +911,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.semibold,
                         fontSize: 11,
-                        color: C.muted,
+                        color: t.textSecondary,
                         textTransform: "uppercase",
                         letterSpacing: 0.7,
                         marginBottom: 10,
@@ -1362,10 +942,10 @@ export default function AddMedicationScreen() {
                           </Text>
                           <View
                             style={{
-                              backgroundColor: C.card,
+                              backgroundColor: t.surface,
                               borderRadius: 14,
                               borderWidth: 1,
-                              borderColor: C.border,
+                              borderColor: t.border,
                               overflow: "hidden",
                             }}
                           >
@@ -1398,7 +978,7 @@ export default function AddMedicationScreen() {
                                       style={{
                                         fontFamily: fonts.medium,
                                         fontSize: 15,
-                                        color: C.dark,
+                                        color: t.text,
                                       }}
                                     >
                                       {drug.name}
@@ -1408,7 +988,7 @@ export default function AddMedicationScreen() {
                                         style={{
                                           fontFamily: fonts.regular,
                                           fontSize: 12,
-                                          color: C.muted,
+                                          color: t.textSecondary,
                                           marginTop: 1,
                                         }}
                                       >
@@ -1418,7 +998,7 @@ export default function AddMedicationScreen() {
                                   </View>
                                   <View
                                     style={{
-                                      backgroundColor: "#F5EBF0",
+                                      backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
                                       borderRadius: 6,
                                       paddingHorizontal: 7,
                                       paddingVertical: 2,
@@ -1435,13 +1015,13 @@ export default function AddMedicationScreen() {
                                       SCD
                                     </Text>
                                   </View>
-                                  <ChevronRight size={16} color={C.muted} />
+                                  <ChevronRight size={16} color={t.textSecondary} />
                                 </TouchableOpacity>
                                 {i < drugs.length - 1 && (
                                   <View
                                     style={{
                                       height: 1,
-                                      backgroundColor: C.divider,
+                                      backgroundColor: t.divider,
                                       marginLeft: 16,
                                     }}
                                   />
@@ -1463,10 +1043,10 @@ export default function AddMedicationScreen() {
                 {/* Drug confirmation pill */}
                 <View
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderRadius: 14,
                     borderWidth: 1,
-                    borderColor: C.border,
+                    borderColor: t.border,
                     padding: 16,
                     flexDirection: "row",
                     alignItems: "center",
@@ -1491,7 +1071,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.semibold,
                         fontSize: 17,
-                        color: C.dark,
+                        color: t.text,
                       }}
                     >
                       {name}
@@ -1500,7 +1080,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.regular,
                         fontSize: 13,
-                        color: C.muted,
+                        color: t.textSecondary,
                         marginTop: 2,
                       }}
                     >
@@ -1514,17 +1094,17 @@ export default function AddMedicationScreen() {
                   value={dosageAmount}
                   onChangeText={setDosageAmount}
                   placeholder="e.g. 500"
-                  placeholderTextColor={C.muted}
+                  placeholderTextColor={t.textSecondary}
                   keyboardType="numeric"
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderWidth: 1,
-                    borderColor: C.inputBorder,
+                    borderColor: t.border,
                     borderRadius: 12,
                     padding: 14,
                     fontFamily: fonts.regular,
                     fontSize: 24,
-                    color: C.dark,
+                    color: t.text,
                     marginBottom: 16,
                     textAlign: "center",
                   }}
@@ -1541,7 +1121,7 @@ export default function AddMedicationScreen() {
                   <View
                     style={{
                       marginTop: 20,
-                      backgroundColor: "#F0F9F5",
+                      backgroundColor: t.isDark ? "rgba(5,150,105,0.12)" : "#F0F9F5",
                       borderRadius: 10,
                       padding: 12,
                       alignItems: "center",
@@ -1584,10 +1164,10 @@ export default function AddMedicationScreen() {
                 {time === "custom" && (
                   <View
                     style={{
-                      backgroundColor: C.card,
+                      backgroundColor: t.surface,
                       borderRadius: 14,
                       borderWidth: 1,
-                      borderColor: C.border,
+                      borderColor: t.border,
                       marginTop: 14,
                       overflow: "hidden",
                     }}
@@ -1599,7 +1179,7 @@ export default function AddMedicationScreen() {
                         style={{ flex: 1 }}
                         itemStyle={{
                           fontFamily: fonts.regular,
-                          color: C.dark,
+                          color: t.text,
                           fontSize: 18,
                         }}
                       >
@@ -1613,7 +1193,7 @@ export default function AddMedicationScreen() {
                         style={{ flex: 1 }}
                         itemStyle={{
                           fontFamily: fonts.regular,
-                          color: C.dark,
+                          color: t.text,
                           fontSize: 18,
                         }}
                       >
@@ -1631,7 +1211,7 @@ export default function AddMedicationScreen() {
                         style={{ flex: 1 }}
                         itemStyle={{
                           fontFamily: fonts.regular,
-                          color: C.dark,
+                          color: t.text,
                           fontSize: 18,
                         }}
                       >
@@ -1647,7 +1227,7 @@ export default function AddMedicationScreen() {
                 <View
                   style={{
                     marginTop: 16,
-                    backgroundColor: "#F0F9F5",
+                    backgroundColor: t.isDark ? "rgba(5,150,105,0.12)" : "#F0F9F5",
                     borderRadius: 10,
                     padding: 12,
                     alignItems: "center",
@@ -1672,10 +1252,10 @@ export default function AddMedicationScreen() {
                 {/* Summary chip */}
                 <View
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderRadius: 14,
                     borderWidth: 1,
-                    borderColor: C.border,
+                    borderColor: t.border,
                     padding: 14,
                     flexDirection: "row",
                     alignItems: "center",
@@ -1689,7 +1269,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.semibold,
                         fontSize: 14,
-                        color: C.dark,
+                        color: t.text,
                       }}
                     >
                       {name}
@@ -1698,7 +1278,7 @@ export default function AddMedicationScreen() {
                       style={{
                         fontFamily: fonts.regular,
                         fontSize: 12,
-                        color: C.muted,
+                        color: t.textSecondary,
                       }}
                     >
                       {frequency} · {computedTime}
@@ -1709,10 +1289,10 @@ export default function AddMedicationScreen() {
                 {/* Remind before */}
                 <View
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderRadius: 14,
                     borderWidth: 1,
-                    borderColor: C.border,
+                    borderColor: t.border,
                     padding: 16,
                     marginBottom: 12,
                   }}
@@ -1729,7 +1309,7 @@ export default function AddMedicationScreen() {
                         style={{
                           fontFamily: fonts.semibold,
                           fontSize: 14,
-                          color: C.dark,
+                          color: t.text,
                         }}
                       >
                         Remind me before
@@ -1738,7 +1318,7 @@ export default function AddMedicationScreen() {
                         style={{
                           fontFamily: fonts.regular,
                           fontSize: 12,
-                          color: C.muted,
+                          color: t.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -1748,8 +1328,8 @@ export default function AddMedicationScreen() {
                     <Switch
                       value={remindBefore}
                       onValueChange={setRemindBefore}
-                      trackColor={{ false: "#E5E7EB", true: `${C.accent}80` }}
-                      thumbColor={remindBefore ? C.accent : "#9CA3AF"}
+                      trackColor={{ false: t.border, true: `${C.accent}80` }}
+                      thumbColor={remindBefore ? C.accent : t.textSecondary}
                     />
                   </View>
                   {remindBefore && (
@@ -1765,10 +1345,10 @@ export default function AddMedicationScreen() {
                 {/* Remind after */}
                 <View
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderRadius: 14,
                     borderWidth: 1,
-                    borderColor: C.border,
+                    borderColor: t.border,
                     padding: 16,
                     marginBottom: 24,
                   }}
@@ -1785,7 +1365,7 @@ export default function AddMedicationScreen() {
                         style={{
                           fontFamily: fonts.semibold,
                           fontSize: 14,
-                          color: C.dark,
+                          color: t.text,
                         }}
                       >
                         Remind if missed
@@ -1794,7 +1374,7 @@ export default function AddMedicationScreen() {
                         style={{
                           fontFamily: fonts.regular,
                           fontSize: 12,
-                          color: C.muted,
+                          color: t.textSecondary,
                           marginTop: 2,
                         }}
                       >
@@ -1804,8 +1384,8 @@ export default function AddMedicationScreen() {
                     <Switch
                       value={remindAfter}
                       onValueChange={setRemindAfter}
-                      trackColor={{ false: "#E5E7EB", true: `${C.accent}80` }}
-                      thumbColor={remindAfter ? C.accent : "#9CA3AF"}
+                      trackColor={{ false: t.border, true: `${C.accent}80` }}
+                      thumbColor={remindAfter ? C.accent : t.textSecondary}
                     />
                   </View>
                   {remindAfter && (
@@ -1824,18 +1404,18 @@ export default function AddMedicationScreen() {
                   value={notes}
                   onChangeText={setNotes}
                   placeholder="e.g. Take with food, avoid grapefruit…"
-                  placeholderTextColor={C.muted}
+                  placeholderTextColor={t.textSecondary}
                   multiline
                   numberOfLines={3}
                   style={{
-                    backgroundColor: C.card,
+                    backgroundColor: t.surface,
                     borderWidth: 1,
-                    borderColor: C.inputBorder,
+                    borderColor: t.border,
                     borderRadius: 12,
                     padding: 14,
                     fontFamily: fonts.regular,
                     fontSize: 15,
-                    color: C.dark,
+                    color: t.text,
                     minHeight: 80,
                     textAlignVertical: "top",
                   }}
@@ -1871,12 +1451,12 @@ export default function AddMedicationScreen() {
         {step >= 2 && (
           <View
             style={{
-              backgroundColor: C.bg,
+              backgroundColor: t.background,
               paddingHorizontal: 20,
               paddingTop: 12,
               paddingBottom: insets.bottom + 16,
               borderTopWidth: 1,
-              borderTopColor: C.border,
+              borderTopColor: t.border,
             }}
           >
             <TouchableOpacity

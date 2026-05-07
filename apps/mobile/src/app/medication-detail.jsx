@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useTheme } from "@/hooks/useTheme";
 import { View, Text, TouchableOpacity, Alert, Dimensions, PanResponder } from "react-native";
 import Animated, {
   useSharedValue,
@@ -33,12 +34,6 @@ import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
 
 const C = {
-  bg: "#F8F4F0",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  divider: "#F0E4E1",
-  dark: "#1A1A1A",
-  muted: "rgba(9,51,44,0.45)",
   accent: "#A9334D",
   success: "#059669",
 };
@@ -57,7 +52,7 @@ function parseTimes(timeStr) {
   if (!timeStr) return [];
   return timeStr
     .split(",")
-    .map((t) => t.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 }
 
@@ -242,12 +237,13 @@ function getAdherenceChartData(period, med, logDates, baseDate, logCountByDate) 
 // ── sub-components ─────────────────────────────────────────────────────────
 
 function SectionLabel({ title }) {
+  const t = useTheme();
   return (
     <Text
       style={{
         fontFamily: fonts.semibold,
         fontSize: 11,
-        color: C.muted,
+        color: t.textSecondary,
         letterSpacing: 0.8,
         textTransform: "uppercase",
         marginBottom: 8,
@@ -260,13 +256,14 @@ function SectionLabel({ title }) {
 }
 
 function Card({ children }) {
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: C.card,
+        backgroundColor: t.surface,
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: C.border,
+        borderColor: t.border,
         overflow: "hidden",
         marginBottom: 24,
       }}
@@ -277,12 +274,14 @@ function Card({ children }) {
 }
 
 function Divider() {
+  const t = useTheme();
   return (
-    <View style={{ height: 1, backgroundColor: C.divider, marginLeft: 62 }} />
+    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 62 }} />
   );
 }
 
 function InfoRow({ icon: Icon, iconColor, label, value, last }) {
+  const t = useTheme();
   if (!value) return null;
   return (
     <>
@@ -299,7 +298,7 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
             width: 34,
             height: 34,
             borderRadius: 9,
-            backgroundColor: "#F2EFEC",
+            backgroundColor: t.isDark ? t.surfaceElevated : "#F2EFEC",
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
@@ -311,7 +310,7 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: C.muted,
+            color: t.textSecondary,
             flex: 1,
           }}
         >
@@ -321,7 +320,7 @@ function InfoRow({ icon: Icon, iconColor, label, value, last }) {
           style={{
             fontFamily: fonts.medium,
             fontSize: 14,
-            color: C.dark,
+            color: t.text,
             maxWidth: "52%",
             textAlign: "right",
           }}
@@ -345,6 +344,7 @@ function DoseRow({
   isExtra,
   last,
 }) {
+  const t = useTheme();
   return (
     <>
       <View
@@ -370,7 +370,7 @@ function DoseRow({
         </View>
         <View style={{ flex: 1 }}>
           <Text
-            style={{ fontFamily: fonts.semibold, fontSize: 15, color: C.dark }}
+            style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}
           >
             {timeLabel}
           </Text>
@@ -390,7 +390,7 @@ function DoseRow({
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: C.muted,
+                color: t.textSecondary,
                 marginTop: 2,
               }}
             >
@@ -404,7 +404,7 @@ function DoseRow({
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: "#D1FAE5",
+              backgroundColor: t.isDark ? "rgba(5,150,105,0.2)" : "#D1FAE5",
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -438,6 +438,7 @@ function DoseRow({
 // ── main screen ────────────────────────────────────────────────────────────
 
 export default function MedicationDetailScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { medicationId } = useLocalSearchParams();
@@ -492,13 +493,13 @@ export default function MedicationDetailScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: C.bg,
+          backgroundColor: t.background,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         <Text
-          style={{ fontFamily: fonts.medium, fontSize: 16, color: C.muted }}
+          style={{ fontFamily: fonts.medium, fontSize: 16, color: t.textSecondary }}
         >
           Medication not found
         </Text>
@@ -624,13 +625,13 @@ export default function MedicationDetailScreen() {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: t.isDark ? "rgba(30,30,30,0.88)" : "rgba(255,255,255,0.88)",
     alignItems: "center",
     justifyContent: "center",
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       {/* ── Hero (absolutely positioned, slides up on scroll) ── */}
       <Animated.View
         style={[
@@ -664,14 +665,14 @@ export default function MedicationDetailScreen() {
               activeOpacity={0.7}
               style={floatBtn}
             >
-              <ChevronLeft size={20} color={C.dark} />
+              <ChevronLeft size={20} color={t.text} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleMore}
               activeOpacity={0.7}
               style={floatBtn}
             >
-              <MoreHorizontal size={20} color={C.dark} />
+              <MoreHorizontal size={20} color={t.text} />
             </TouchableOpacity>
           </View>
 
@@ -691,7 +692,7 @@ export default function MedicationDetailScreen() {
             style={{
               fontFamily: fonts.bold,
               fontSize: 26,
-              color: C.dark,
+              color: t.text,
               textAlign: "center",
               marginBottom: 10,
             }}
@@ -722,7 +723,7 @@ export default function MedicationDetailScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 13,
-                  color: C.muted,
+                  color: t.textSecondary,
                 }}
               >
                 {med.category}
@@ -732,7 +733,7 @@ export default function MedicationDetailScreen() {
         </View>
 
         {/* Gradient fade into page bg */}
-        <LinearGradient colors={[`${color}08`, C.bg]} style={{ height: 28 }} />
+        <LinearGradient colors={[`${color}08`, t.background]} style={{ height: 28 }} />
       </Animated.View>
 
       {/* ── Compact sticky nav (fades in on scroll) ── */}
@@ -746,9 +747,9 @@ export default function MedicationDetailScreen() {
             right: 0,
             zIndex: 20,
             height: NAV_HEIGHT,
-            backgroundColor: "rgba(248,244,240,0.96)",
+            backgroundColor: t.isDark ? "rgba(20,20,20,0.96)" : "rgba(248,244,240,0.96)",
             borderBottomWidth: 1,
-            borderBottomColor: C.border,
+            borderBottomColor: t.border,
             flexDirection: "row",
             alignItems: "flex-end",
             paddingHorizontal: 12,
@@ -762,14 +763,14 @@ export default function MedicationDetailScreen() {
           activeOpacity={0.7}
           style={floatBtn}
         >
-          <ChevronLeft size={20} color={C.dark} />
+          <ChevronLeft size={20} color={t.text} />
         </TouchableOpacity>
         <Text
           numberOfLines={1}
           style={{
             fontFamily: fonts.semibold,
             fontSize: 16,
-            color: C.dark,
+            color: t.text,
             flex: 1,
             textAlign: "center",
             marginHorizontal: 8,
@@ -782,7 +783,7 @@ export default function MedicationDetailScreen() {
           activeOpacity={0.7}
           style={floatBtn}
         >
-          <MoreHorizontal size={20} color={C.dark} />
+          <MoreHorizontal size={20} color={t.text} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -802,16 +803,16 @@ export default function MedicationDetailScreen() {
           <SectionLabel title="Today's Log" />
           <Card>
             {times.length > 0 ? (
-              times.map((t, idx) => {
+              times.map((tm, idx) => {
                 const takenTime =
                   med.taken && med.takenAt ? formatLogTime(med.takenAt) : null;
                 const isLast =
                   idx === times.length - 1 && extraLogs.length === 0;
                 return (
                   <DoseRow
-                    key={t}
+                    key={tm}
                     color={color}
-                    timeLabel={t}
+                    timeLabel={tm}
                     isTaken={med.taken}
                     takenTime={takenTime}
                     onMark={handleMarkTaken}
@@ -907,7 +908,7 @@ export default function MedicationDetailScreen() {
                     style={{
                       fontFamily: fonts.semibold,
                       fontSize: 13,
-                      color: adherencePeriod === p ? "#fff" : C.muted,
+                      color: adherencePeriod === p ? "#fff" : t.textSecondary,
                     }}
                   >
                     {p}
@@ -940,7 +941,7 @@ export default function MedicationDetailScreen() {
                       style={{
                         fontFamily: fonts.semibold,
                         fontSize: 10,
-                        color: C.muted,
+                        color: t.textSecondary,
                         letterSpacing: 0.6,
                         textTransform: "uppercase",
                       }}
@@ -952,7 +953,7 @@ export default function MedicationDetailScreen() {
                     style={{
                       fontFamily: fonts.bold,
                       fontSize: 30,
-                      color: C.dark,
+                      color: t.text,
                       lineHeight: 34,
                     }}
                   >
@@ -961,7 +962,7 @@ export default function MedicationDetailScreen() {
                       style={{
                         fontFamily: fonts.regular,
                         fontSize: 14,
-                        color: C.muted,
+                        color: t.textSecondary,
                       }}
                     >
                       %
@@ -982,14 +983,14 @@ export default function MedicationDetailScreen() {
                         width: 7,
                         height: 7,
                         borderRadius: 4,
-                        backgroundColor: "#C4B8B3",
+                        backgroundColor: t.textTertiary,
                       }}
                     />
                     <Text
                       style={{
                         fontFamily: fonts.semibold,
                         fontSize: 10,
-                        color: C.muted,
+                        color: t.textSecondary,
                         letterSpacing: 0.6,
                         textTransform: "uppercase",
                       }}
@@ -1001,7 +1002,7 @@ export default function MedicationDetailScreen() {
                     style={{
                       fontFamily: fonts.bold,
                       fontSize: 30,
-                      color: C.dark,
+                      color: t.text,
                       lineHeight: 34,
                     }}
                   >
@@ -1015,16 +1016,16 @@ export default function MedicationDetailScreen() {
                   onPress={() => { if (canGoBack) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOffset((o) => o + 1); } }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <ChevronLeft size={18} color={canGoBack ? C.dark : C.border} />
+                  <ChevronLeft size={18} color={canGoBack ? t.text : t.border} />
                 </TouchableOpacity>
-                <Text style={{ flex: 1, textAlign: "center", fontFamily: fonts.regular, fontSize: 12, color: C.muted }}>
+                <Text style={{ flex: 1, textAlign: "center", fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
                   {adherenceResult.dateRange}
                 </Text>
                 <TouchableOpacity
                   onPress={() => { if (offset > 0) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setOffset((o) => o - 1); } }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <ChevronRight size={18} color={offset > 0 ? C.dark : C.border} />
+                  <ChevronRight size={18} color={offset > 0 ? t.text : t.border} />
                 </TouchableOpacity>
               </View>
 
@@ -1034,7 +1035,7 @@ export default function MedicationDetailScreen() {
                     const chartData = adherenceResult.bars.map((bar) => ({
                       value: bar.value,
                       label: bar.label,
-                      frontColor: bar.value > 0 ? color : C.border,
+                      frontColor: bar.value > 0 ? color : t.border,
                     }));
                     const cfg = {
                       D:   { barWidth: 52, spacing: 32 },
@@ -1053,21 +1054,21 @@ export default function MedicationDetailScreen() {
                         maxValue={101}
                         noOfSections={2}
                         rulesType="dashed"
-                        rulesColor={C.border}
+                        rulesColor={t.border}
                         yAxisLabelTexts={["0%", "50%", "100%"]}
                         yAxisTextStyle={{
                           fontFamily: fonts.regular,
                           fontSize: 10,
-                          color: C.muted,
+                          color: t.textSecondary,
                         }}
                         yAxisLabelWidth={34}
                         yAxisThickness={0}
                         xAxisThickness={1}
-                        xAxisColor={C.border}
+                        xAxisColor={t.border}
                         xAxisLabelTextStyle={{
                           fontFamily: fonts.regular,
                           fontSize: adherencePeriod === "Y" ? 9 : 10,
-                          color: C.muted,
+                          color: t.textSecondary,
                         }}
                         barBorderRadius={4}
                         isAnimated
@@ -1122,7 +1123,7 @@ export default function MedicationDetailScreen() {
             />
             <InfoRow
               icon={FileText}
-              iconColor={C.muted}
+              iconColor={t.textSecondary}
               label="Notes"
               value={med.notes || undefined}
               last
@@ -1140,18 +1141,18 @@ export default function MedicationDetailScreen() {
                 key={label}
                 style={{
                   flex: 1,
-                  backgroundColor: C.card,
+                  backgroundColor: t.surface,
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: C.border,
+                  borderColor: t.border,
                   padding: 12,
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark, marginBottom: 4 }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text, marginBottom: 4 }}>
                   {value}
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: C.muted, textAlign: "center" }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary, textAlign: "center" }}>
                   {label}
                 </Text>
               </View>
@@ -1164,37 +1165,37 @@ export default function MedicationDetailScreen() {
             {drugInfoLoading ? (
               <View style={{ padding: 16, gap: 10 }}>
                 {[80, 60, 90, 50].map((w, i) => (
-                  <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: "#F0EBE8", borderRadius: 6 }} />
+                  <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: t.surfaceElevated, borderRadius: 6 }} />
                 ))}
               </View>
             ) : (drugInfo?.humanizedIndications || drugInfo?.indications || drugInfo?.description || drugInfo?.humanizedMechanism || drugInfo?.mechanism) ? (
               <View style={{ padding: 16, gap: 14 }}>
                 {(drugInfo.humanizedIndications || drugInfo.indications) && (
                   <View>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text, marginBottom: 4 }}>
                       What it's for
                     </Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={5}>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }} numberOfLines={5}>
                       {drugInfo.humanizedIndications || drugInfo.indications}
                     </Text>
                   </View>
                 )}
                 {(drugInfo.humanizedMechanism || drugInfo.mechanism) && (
                   <View>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text, marginBottom: 4 }}>
                       How it works
                     </Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={4}>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }} numberOfLines={4}>
                       {drugInfo.humanizedMechanism || drugInfo.mechanism}
                     </Text>
                   </View>
                 )}
                 {drugInfo.description && !drugInfo.indications && !drugInfo.humanizedIndications && (
                   <View>
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                    <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text, marginBottom: 4 }}>
                       Description
                     </Text>
-                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={5}>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }} numberOfLines={5}>
                       {drugInfo.description}
                     </Text>
                   </View>
@@ -1202,7 +1203,7 @@ export default function MedicationDetailScreen() {
               </View>
             ) : (
               <View style={{ padding: 16 }}>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary }}>
                   No additional information available for this medication.
                 </Text>
               </View>
@@ -1211,15 +1212,15 @@ export default function MedicationDetailScreen() {
 
           {/* SCD Contraindication Warning */}
           {drugInfo?.scdContraindication?.flagged && (
-            <View style={{ backgroundColor: "#FEE2E2", borderRadius: 12, padding: 14, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
+            <View style={{ backgroundColor: t.isDark ? "rgba(220,38,38,0.12)" : "#FEE2E2", borderRadius: 12, padding: 14, flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
               <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#DC2626", alignItems: "center", justifyContent: "center", marginTop: 1 }}>
                 <Text style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>!</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#991B1B", marginBottom: 3 }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.isDark ? "#EF4444" : "#991B1B", marginBottom: 3 }}>
                   SCD Consideration
                 </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#7F1D1D", lineHeight: 19 }}>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.isDark ? "#FCA5A5" : "#7F1D1D", lineHeight: 19 }}>
                   {drugInfo.scdContraindication.reason || "This medication may require special consideration for people with Sickle Cell Disease. Speak with your haematologist before use."}
                 </Text>
               </View>
@@ -1234,27 +1235,27 @@ export default function MedicationDetailScreen() {
                 {drugInfoLoading ? (
                   <View style={{ padding: 16, gap: 10 }}>
                     {[70, 55, 80].map((w, i) => (
-                      <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: "#F0EBE8", borderRadius: 6 }} />
+                      <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: t.surfaceElevated, borderRadius: 6 }} />
                     ))}
                   </View>
                 ) : (
                   <View style={{ padding: 16, gap: 14 }}>
                     {(drugInfo?.humanizedSideEffects || drugInfo?.sideEffects) && (
                       <View>
-                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: C.dark, marginBottom: 4 }}>
+                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text, marginBottom: 4 }}>
                           Common Side Effects
                         </Text>
-                        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }} numberOfLines={6}>
                           {drugInfo.humanizedSideEffects || drugInfo.sideEffects}
                         </Text>
                       </View>
                     )}
                     {(drugInfo?.humanizedWarnings || drugInfo?.warnings) && (
-                      <View style={{ backgroundColor: "#FEF3C7", borderRadius: 10, padding: 12 }}>
-                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#92400E", marginBottom: 4 }}>
+                      <View style={{ backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FEF3C7", borderRadius: 10, padding: 12 }}>
+                        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.isDark ? "#D97706" : "#92400E", marginBottom: 4 }}>
                           Warnings
                         </Text>
-                        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: "#78350F", lineHeight: 20 }} numberOfLines={5}>
+                        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.isDark ? "#FCD34D" : "#78350F", lineHeight: 20 }} numberOfLines={5}>
                           {drugInfo.humanizedWarnings || drugInfo.warnings}
                         </Text>
                       </View>
@@ -1271,7 +1272,7 @@ export default function MedicationDetailScreen() {
               <SectionLabel title="Drug Interactions" />
               <Card>
                 <View style={{ padding: 16 }}>
-                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: C.muted, lineHeight: 21 }} numberOfLines={6}>
+                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }} numberOfLines={6}>
                     {drugInfo.humanizedInteractions || drugInfo.drugInteractions}
                   </Text>
                 </View>
@@ -1288,42 +1289,42 @@ export default function MedicationDetailScreen() {
         index={-1}
         snapPoints={["32%"]}
         enablePanDownToClose
-        backgroundStyle={{ backgroundColor: "#fff", borderRadius: 24 }}
-        handleIndicatorStyle={{ backgroundColor: "#D1D5DB", width: 36 }}
+        backgroundStyle={{ backgroundColor: t.surface, borderRadius: 24 }}
+        handleIndicatorStyle={{ backgroundColor: t.border, width: 36 }}
       >
         <BottomSheetView style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: insets.bottom + 16 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: C.dark, marginBottom: 2 }}>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 2 }}>
             {med.name}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: C.muted, marginBottom: 20 }}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginBottom: 20 }}>
             {med.dosage ? `${med.dosage}  ·  ` : ""}{med.category}
           </Text>
 
           <TouchableOpacity
             onPress={() => { sheetRef.current?.close(); router.push({ pathname: "/add-medication", params: { medicationId: med.id } }); }}
-            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: t.border }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
               <Pencil size={18} color={C.accent} />
             </View>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>Edit Medication</Text>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}>Edit Medication</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleArchive}
-            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: t.border }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
-              <Archive size={18} color={C.muted} />
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0", alignItems: "center", justifyContent: "center" }}>
+              <Archive size={18} color={t.textSecondary} />
             </View>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: C.dark }}>Archive Medication</Text>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}>Archive Medication</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={handleDelete}
-            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: "#F3F4F6" }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 14, borderTopWidth: 1, borderTopColor: t.border }}
           >
-            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.isDark ? "rgba(220,38,38,0.12)" : "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
               <Trash2 size={18} color="#DC2626" />
             </View>
             <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#DC2626" }}>Delete Medication</Text>

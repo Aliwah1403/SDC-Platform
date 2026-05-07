@@ -102,7 +102,7 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
       {/* Type pill */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 }}>
         <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : typeColor.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: typeColor.text, fontFamily: "Geist-SemiBold" }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: t.isDark ? t.text : typeColor.text, fontFamily: "Geist-SemiBold" }}>
             {TYPE_LABELS[appointment.type] ?? appointment.type}
           </Text>
         </View>

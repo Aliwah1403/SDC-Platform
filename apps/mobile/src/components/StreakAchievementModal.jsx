@@ -25,6 +25,7 @@ import { Image } from "expo-image";
 import { Canvas, Group, Circle, Shadow, vec } from "@shopify/react-native-skia";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -91,6 +92,7 @@ function ConfettiPiece({ x, color, size, delay, rotation, duration, isRect }) {
 // ── Week strip ────────────────────────────────────────────────────────────────
 
 function WeekStrip({ healthData }) {
+  const t = useTheme();
   const days = useMemo(() => {
     const today = new Date();
     const DAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
@@ -120,7 +122,7 @@ function WeekStrip({ healthData }) {
           <Text
             style={{
               fontSize: 10,
-              color: "#9CA3AF",
+              color: t.textSecondary,
               fontFamily: fonts.semibold,
             }}
           >
@@ -133,7 +135,7 @@ function WeekStrip({ healthData }) {
               borderRadius: 16,
               backgroundColor: day.hasData ? "#A9334D" : "transparent",
               borderWidth: day.hasData ? 0 : 1.5,
-              borderColor: "#E5E0DB",
+              borderColor: t.isDark ? t.border : "#E5E0DB",
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -163,6 +165,7 @@ export default function StreakAchievementModal({
   healthData,
   onClaim,
 }) {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
 
   // Badge spring entrance
@@ -454,7 +457,7 @@ export default function StreakAchievementModal({
             delay: 150,
           }}
           style={{
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             borderTopLeftRadius: 32,
             borderTopRightRadius: 32,
             paddingTop: 28,
@@ -468,7 +471,7 @@ export default function StreakAchievementModal({
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 30,
-              color: "#1A1A1A",
+              color: t.text,
               textAlign: "center",
               marginBottom: 8,
               letterSpacing: -0.5,

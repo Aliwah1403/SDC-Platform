@@ -36,16 +36,12 @@ import { fonts } from "@/utils/fonts";
 import { lookupByNDC, lookupByName } from "@/utils/medicationApi";
 import { identifyPill } from "@/utils/pillVision";
 import { Sentry } from "@/utils/sentry";
+import { useTheme } from "@/hooks/useTheme";
 
 const { height: SCREEN_H } = Dimensions.get("window");
 const VIEWFINDER_RATIO = 0.58;
 
 const C = {
-  bg: "#F2EEE8",
-  card: "#ffffff",
-  border: "#F0E4E1",
-  textDark: "#1A1A1A",
-  muted: "#9CA3AF",
   accent: "#A9334D",
   darkBurg: "#781D11",
   orange: "#F0531C",
@@ -71,7 +67,7 @@ const STEPS = [
   },
 ];
 
-// ─── Result card (unchanged) ──────────────────────────────────────────────────
+// ─── Result card ──────────────────────────────────────────────────────────────
 
 function ResultCard({
   result,
@@ -83,6 +79,8 @@ function ResultCard({
   onAdd,
   onClear,
 }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return (
     <View style={styles.resultCard}>
       <View style={styles.resultHeader}>
@@ -91,7 +89,7 @@ function ResultCard({
         {enriching && (
           <ActivityIndicator
             size="small"
-            color={C.muted}
+            color={t.textSecondary}
             style={{ marginLeft: 6 }}
           />
         )}
@@ -102,7 +100,7 @@ function ResultCard({
         onChangeText={onNameChange}
         style={styles.resultNameInput}
         placeholder="Medication name"
-        placeholderTextColor={C.muted}
+        placeholderTextColor={t.textSecondary}
       />
 
       <View
@@ -118,7 +116,7 @@ function ResultCard({
           onChangeText={onStrengthChange}
           style={[styles.resultStrengthInput, { flex: 1 }]}
           placeholder="Strength (e.g. 500mg)"
-          placeholderTextColor={C.muted}
+          placeholderTextColor={t.textSecondary}
         />
         {result.form ? (
           <Text style={styles.resultForm}>{result.form}</Text>
@@ -162,9 +160,11 @@ function ResultCard({
   );
 }
 
-// ─── Barcode camera (logic unchanged, UI trimmed) ─────────────────────────────
+// ─── Barcode camera ───────────────────────────────────────────────────────────
 
 function BarcodeCamera({ onResult, flash, onScanOverlay }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -287,6 +287,8 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
 // ─── Photo AI content ─────────────────────────────────────────────────────────
 
 function PhotoContent({ onResult }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   const [loading, setLoading] = useState(false);
 
   const pickAndIdentify = async (useCamera) => {
@@ -411,7 +413,7 @@ function PhotoContent({ onResult }) {
 
       {/* Sticky CTAs */}
       <LinearGradient
-        colors={[`${C.bg}00`, C.bg, C.bg]}
+        colors={[t.background + "00", t.background, t.background]}
         style={styles.ctaGradient}
         pointerEvents="box-none"
       >
@@ -428,7 +430,7 @@ function PhotoContent({ onResult }) {
           onPress={() => pickAndIdentify(false)}
           activeOpacity={0.7}
         >
-          <ImageIcon size={18} color={`${C.textDark}99`} />
+          <ImageIcon size={18} color={t.text + "99"} />
           <Text style={styles.secondaryCtaText}>Choose from Library</Text>
         </TouchableOpacity>
       </LinearGradient>
@@ -439,6 +441,8 @@ function PhotoContent({ onResult }) {
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export default function MedicationScanScreen() {
+  const t = useTheme();
+  const styles = createStyles(t);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const posthog = usePostHog();
@@ -509,13 +513,13 @@ export default function MedicationScanScreen() {
         onDark ? styles.tabPillDark : styles.tabPillLight,
       ]}
     >
-      {["barcode", "photo"].map((t) => {
-        const active = tab === t;
+      {["barcode", "photo"].map((tabId) => {
+        const active = tab === tabId;
         return (
           <TouchableOpacity
-            key={t}
+            key={tabId}
             onPress={() => {
-              setTab(t);
+              setTab(tabId);
               setResult(null);
               setFlash(false);
             }}
@@ -526,7 +530,7 @@ export default function MedicationScanScreen() {
                 (onDark ? styles.tabBtnActiveDark : styles.tabBtnActiveLight),
             ]}
           >
-            {t === "barcode" ? (
+            {tabId === "barcode" ? (
               <ScanLine
                 size={14}
                 color={
@@ -536,7 +540,7 @@ export default function MedicationScanScreen() {
                       : "#fff"
                     : onDark
                       ? "rgba(248,233,231,0.55)"
-                      : "rgba(9,51,44,0.45)"
+                      : t.textSecondary
                 }
               />
             ) : (
@@ -549,7 +553,7 @@ export default function MedicationScanScreen() {
                       : "#fff"
                     : onDark
                       ? "rgba(248,233,231,0.55)"
-                      : "rgba(9,51,44,0.45)"
+                      : t.textSecondary
                 }
               />
             )}
@@ -565,7 +569,7 @@ export default function MedicationScanScreen() {
                     : styles.tabBtnTextInactiveLight,
               ]}
             >
-              {t === "barcode" ? "Barcode" : "Photo AI"}
+              {tabId === "barcode" ? "Barcode" : "Photo AI"}
             </Text>
           </TouchableOpacity>
         );
@@ -576,15 +580,15 @@ export default function MedicationScanScreen() {
   // ── Result view ──
   if (result) {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
-        <StatusBar barStyle="dark-content" />
+      <View style={{ flex: 1, backgroundColor: t.background }}>
+        <StatusBar barStyle={t.isDark ? "light-content" : "dark-content"} />
         <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity
             style={styles.iconBtn}
             onPress={() => setResult(null)}
             activeOpacity={0.7}
           >
-            <ChevronLeft size={22} color={C.textDark} />
+            <ChevronLeft size={22} color={t.text} />
           </TouchableOpacity>
           <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
           <View style={styles.iconBtn} />
@@ -599,9 +603,9 @@ export default function MedicationScanScreen() {
           <ResultCard
             result={result}
             confirmedName={confirmedName}
-            onNameChange={(t) => {
+            onNameChange={(v) => {
               userEditedNameRef.current = true;
-              setConfirmedName(t);
+              setConfirmedName(v);
             }}
             confirmedStrength={confirmedStrength}
             onStrengthChange={setConfirmedStrength}
@@ -620,7 +624,7 @@ export default function MedicationScanScreen() {
   // ── Barcode mode ──
   if (tab === "barcode") {
     return (
-      <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1, backgroundColor: t.background }}>
         <StatusBar barStyle="light-content" />
 
         {/* Camera viewfinder */}
@@ -682,8 +686,8 @@ export default function MedicationScanScreen() {
 
   // ── Photo AI mode ──
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
-      <StatusBar barStyle="dark-content" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar barStyle={t.isDark ? "light-content" : "dark-content"} />
 
       {/* Regular header */}
       <View style={[styles.plainHeader, { paddingTop: insets.top + 8 }]}>
@@ -692,7 +696,7 @@ export default function MedicationScanScreen() {
           onPress={() => router.back()}
           activeOpacity={0.7}
         >
-          <ChevronLeft size={22} color={C.textDark} />
+          <ChevronLeft size={22} color={t.text} />
         </TouchableOpacity>
         <Text style={styles.plainHeaderTitle}>Scan Pill</Text>
         <View style={styles.iconBtn} />
@@ -710,478 +714,480 @@ export default function MedicationScanScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
-  // Headers
-  floatingHeader: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-    zIndex: 10,
-  },
-  floatingTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 18,
-    color: "#fff",
-    letterSpacing: 0.2,
-  },
-  floatIconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
-  floatIconBtnActive: {
-    backgroundColor: "rgba(240,83,28,0.3)",
-  },
-  plainHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  plainHeaderTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 17,
-    color: C.textDark,
-    letterSpacing: 0.1,
-  },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(9,51,44,0.07)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
+function createStyles(t) {
+  return StyleSheet.create({
+    // Headers
+    floatingHeader: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 20,
+      zIndex: 10,
+    },
+    floatingTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 18,
+      color: "#fff",
+      letterSpacing: 0.2,
+    },
+    floatIconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(0,0,0,0.25)",
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.12)",
+    },
+    floatIconBtnActive: {
+      backgroundColor: "rgba(240,83,28,0.3)",
+    },
+    plainHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingBottom: 8,
+    },
+    plainHeaderTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 17,
+      color: t.text,
+      letterSpacing: 0.1,
+    },
+    iconBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: t.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  // Tabs pill
-  tabsOverlap: {
-    alignItems: "center",
-    marginTop: -26,
-    zIndex: 5,
-  },
-  tabPill: {
-    flexDirection: "row",
-    borderRadius: 100,
-    padding: 4,
-  },
-  tabPillDark: {
-    backgroundColor: "rgba(120,29,17,0.82)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  tabPillLight: {
-    backgroundColor: "rgba(169,51,77,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(169,51,77,0.12)",
-  },
-  tabBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 100,
-  },
-  tabBtnActiveDark: {
-    backgroundColor: C.cream,
-  },
-  tabBtnActiveLight: {
-    backgroundColor: C.accent,
-  },
-  tabBtnText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-  },
-  tabBtnTextActiveDark: {
-    color: C.darkBurg,
-    fontFamily: fonts.semibold,
-  },
-  tabBtnTextActiveLight: {
-    color: "#fff",
-    fontFamily: fonts.semibold,
-  },
-  tabBtnTextInactiveDark: {
-    color: "rgba(248,233,231,0.55)",
-  },
-  tabBtnTextInactiveLight: {
-    color: "rgba(9,51,44,0.45)",
-  },
+    // Tabs pill
+    tabsOverlap: {
+      alignItems: "center",
+      marginTop: -26,
+      zIndex: 5,
+    },
+    tabPill: {
+      flexDirection: "row",
+      borderRadius: 100,
+      padding: 4,
+    },
+    tabPillDark: {
+      backgroundColor: "rgba(120,29,17,0.82)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.1)",
+    },
+    tabPillLight: {
+      backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "rgba(169,51,77,0.08)",
+      borderWidth: 1,
+      borderColor: t.isDark ? "rgba(169,51,77,0.2)" : "rgba(169,51,77,0.12)",
+    },
+    tabBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 100,
+    },
+    tabBtnActiveDark: {
+      backgroundColor: C.cream,
+    },
+    tabBtnActiveLight: {
+      backgroundColor: C.accent,
+    },
+    tabBtnText: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+    },
+    tabBtnTextActiveDark: {
+      color: C.darkBurg,
+      fontFamily: fonts.semibold,
+    },
+    tabBtnTextActiveLight: {
+      color: "#fff",
+      fontFamily: fonts.semibold,
+    },
+    tabBtnTextInactiveDark: {
+      color: "rgba(248,233,231,0.55)",
+    },
+    tabBtnTextInactiveLight: {
+      color: t.textSecondary,
+    },
 
-  // Camera / barcode
-  scanOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  scanWindow: {
-    width: 248,
-    height: 160,
-    position: "relative",
-    marginBottom: 48,
-  },
-  scanCorner: {
-    position: "absolute",
-    width: 28,
-    height: 28,
-    borderColor: "rgba(248,233,231,0.8)",
-    borderWidth: 2.5,
-  },
-  cornerTL: {
-    top: 0,
-    left: 0,
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    borderTopLeftRadius: 6,
-  },
-  cornerTR: {
-    top: 0,
-    right: 0,
-    borderLeftWidth: 0,
-    borderBottomWidth: 0,
-    borderTopRightRadius: 6,
-  },
-  cornerBL: {
-    bottom: 0,
-    left: 0,
-    borderRightWidth: 0,
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 6,
-  },
-  cornerBR: {
-    bottom: 0,
-    right: 0,
-    borderLeftWidth: 0,
-    borderTopWidth: 0,
-    borderBottomRightRadius: 6,
-  },
-  instructionPill: {
-    position: "absolute",
-    bottom: 72,
-    alignSelf: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(120,29,17,0.7)",
-    borderRadius: 100,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "rgba(248,233,231,0.12)",
-  },
-  instructionText: {
-    fontFamily: fonts.regular,
-    fontSize: 11.5,
-    color: "rgba(248,233,231,0.9)",
-  },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.55)",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: "#fff",
-  },
-  rescanButton: {
-    position: "absolute",
-    bottom: 24,
-    alignSelf: "center",
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.3)",
-  },
-  rescanButtonText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: "#fff",
-  },
+    // Camera / barcode
+    scanOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    scanWindow: {
+      width: 248,
+      height: 160,
+      position: "relative",
+      marginBottom: 48,
+    },
+    scanCorner: {
+      position: "absolute",
+      width: 28,
+      height: 28,
+      borderColor: "rgba(248,233,231,0.8)",
+      borderWidth: 2.5,
+    },
+    cornerTL: {
+      top: 0,
+      left: 0,
+      borderRightWidth: 0,
+      borderBottomWidth: 0,
+      borderTopLeftRadius: 6,
+    },
+    cornerTR: {
+      top: 0,
+      right: 0,
+      borderLeftWidth: 0,
+      borderBottomWidth: 0,
+      borderTopRightRadius: 6,
+    },
+    cornerBL: {
+      bottom: 0,
+      left: 0,
+      borderRightWidth: 0,
+      borderTopWidth: 0,
+      borderBottomLeftRadius: 6,
+    },
+    cornerBR: {
+      bottom: 0,
+      right: 0,
+      borderLeftWidth: 0,
+      borderTopWidth: 0,
+      borderBottomRightRadius: 6,
+    },
+    instructionPill: {
+      position: "absolute",
+      bottom: 72,
+      alignSelf: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      backgroundColor: "rgba(120,29,17,0.7)",
+      borderRadius: 100,
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderWidth: 1,
+      borderColor: "rgba(248,233,231,0.12)",
+    },
+    instructionText: {
+      fontFamily: fonts.regular,
+      fontSize: 11.5,
+      color: "rgba(248,233,231,0.9)",
+    },
+    loadingOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.55)",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
+    loadingText: {
+      fontFamily: fonts.medium,
+      fontSize: 15,
+      color: "#fff",
+    },
+    rescanButton: {
+      position: "absolute",
+      bottom: 24,
+      alignSelf: "center",
+      backgroundColor: "rgba(255,255,255,0.15)",
+      borderRadius: 20,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.3)",
+    },
+    rescanButtonText: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: "#fff",
+    },
 
-  // Permission
-  permissionBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-    gap: 12,
-    backgroundColor: C.darkBurg,
-  },
-  permissionTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 17,
-    color: C.cream,
-    marginTop: 8,
-  },
-  permissionSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: "rgba(248,233,231,0.6)",
-    textAlign: "center",
-  },
-  permissionButton: {
-    marginTop: 8,
-    backgroundColor: C.accent,
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  permissionButtonText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "#fff",
-  },
+    // Permission
+    permissionBox: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 32,
+      gap: 12,
+      backgroundColor: C.darkBurg,
+    },
+    permissionTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 17,
+      color: C.cream,
+      marginTop: 8,
+    },
+    permissionSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: "rgba(248,233,231,0.6)",
+      textAlign: "center",
+    },
+    permissionButton: {
+      marginTop: 8,
+      backgroundColor: C.accent,
+      borderRadius: 12,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+    },
+    permissionButtonText: {
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: "#fff",
+    },
 
-  // Tips
-  tipsLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: "rgba(9,51,44,0.38)",
-    letterSpacing: 0.8,
-  },
-  tipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  tipText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: "rgba(9,51,44,0.65)",
-    flex: 1,
-  },
+    // Tips
+    tipsLabel: {
+      fontFamily: fonts.semibold,
+      fontSize: 11,
+      color: t.textSecondary,
+      letterSpacing: 0.8,
+    },
+    tipRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    tipText: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: t.text,
+      flex: 1,
+    },
 
-  // Photo AI steps
-  howTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    color: C.textDark,
-    letterSpacing: -0.3,
-  },
-  howSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: "rgba(9,51,44,0.5)",
-    marginTop: 4,
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 14,
-  },
-  stepNumber: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: C.cream,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepNumberText: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: C.accent,
-  },
-  stepTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: C.textDark,
-    marginBottom: 2,
-  },
-  stepBody: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
-    lineHeight: 19,
-  },
+    // Photo AI steps
+    howTitle: {
+      fontFamily: fonts.bold,
+      fontSize: 22,
+      color: t.text,
+      letterSpacing: -0.3,
+    },
+    howSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: t.textSecondary,
+      marginTop: 4,
+    },
+    stepRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 14,
+    },
+    stepNumber: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: t.isDark ? t.surfaceElevated : C.cream,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    stepNumberText: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: C.accent,
+    },
+    stepTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: t.text,
+      marginBottom: 2,
+    },
+    stepBody: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: t.textSecondary,
+      lineHeight: 19,
+    },
 
-  // Photo CTAs
-  ctaGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 24,
-    paddingBottom: 32,
-    paddingTop: 32,
-    gap: 10,
-  },
-  primaryCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: C.accent,
-    borderRadius: 14,
-    paddingVertical: 16,
-    shadowColor: C.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.28,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  primaryCtaText: {
-    fontFamily: fonts.semibold,
-    fontSize: 16,
-    color: "#fff",
-  },
-  secondaryCta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-  },
-  secondaryCtaText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "rgba(9,51,44,0.5)",
-  },
+    // Photo CTAs
+    ctaGradient: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      paddingHorizontal: 24,
+      paddingBottom: 32,
+      paddingTop: 32,
+      gap: 10,
+    },
+    primaryCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      backgroundColor: C.accent,
+      borderRadius: 14,
+      paddingVertical: 16,
+      shadowColor: C.accent,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.28,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    primaryCtaText: {
+      fontFamily: fonts.semibold,
+      fontSize: 16,
+      color: "#fff",
+    },
+    secondaryCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingVertical: 12,
+    },
+    secondaryCtaText: {
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: t.textSecondary,
+    },
 
-  // Loading box (photo)
-  loadingBox: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingBoxTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 17,
-    color: C.textDark,
-  },
-  loadingBoxSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: C.muted,
-  },
+    // Loading box (photo)
+    loadingBox: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
+    loadingBoxTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 17,
+      color: t.text,
+    },
+    loadingBoxSubtitle: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: t.textSecondary,
+    },
 
-  // Result card
-  resultCard: {
-    backgroundColor: C.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: C.border,
-    padding: 20,
-  },
-  resultHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 12,
-  },
-  resultFoundLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: "#059669",
-  },
-  resultNameInput: {
-    fontFamily: fonts.bold,
-    fontSize: 22,
-    color: C.textDark,
-    marginBottom: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    paddingBottom: 4,
-    paddingHorizontal: 0,
-  },
-  resultStrengthInput: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: C.muted,
-    borderBottomWidth: 1,
-    borderBottomColor: C.border,
-    paddingBottom: 2,
-    paddingHorizontal: 0,
-  },
-  resultForm: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: C.muted,
-  },
-  editHint: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: C.muted,
-    marginTop: 6,
-    marginBottom: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: C.border,
-    marginVertical: 14,
-  },
-  sectionLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    color: C.muted,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-    marginBottom: 6,
-  },
-  indicationText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: C.textDark,
-    lineHeight: 22,
-  },
-  scdBanner: {
-    flexDirection: "row",
-    backgroundColor: "#FEF2F2",
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 14,
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  scdBannerTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 13,
-    color: "#B91C1C",
-    marginBottom: 3,
-  },
-  scdBannerText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: "#7F1D1D",
-    lineHeight: 18,
-  },
-  addButton: {
-    backgroundColor: C.orange,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  addButtonText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "#fff",
-  },
-  clearButton: {
-    alignItems: "center",
-    paddingVertical: 12,
-    marginTop: 4,
-  },
-  clearButtonText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: C.muted,
-  },
-});
+    // Result card
+    resultCard: {
+      backgroundColor: t.surface,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: t.border,
+      padding: 20,
+    },
+    resultHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginBottom: 12,
+    },
+    resultFoundLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 13,
+      color: "#059669",
+    },
+    resultNameInput: {
+      fontFamily: fonts.bold,
+      fontSize: 22,
+      color: t.text,
+      marginBottom: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border,
+      paddingBottom: 4,
+      paddingHorizontal: 0,
+    },
+    resultStrengthInput: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      color: t.textSecondary,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border,
+      paddingBottom: 2,
+      paddingHorizontal: 0,
+    },
+    resultForm: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: t.textSecondary,
+    },
+    editHint: {
+      fontFamily: fonts.regular,
+      fontSize: 11,
+      color: t.textSecondary,
+      marginTop: 6,
+      marginBottom: 2,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: t.border,
+      marginVertical: 14,
+    },
+    sectionLabel: {
+      fontFamily: fonts.semibold,
+      fontSize: 12,
+      color: t.textSecondary,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: 6,
+    },
+    indicationText: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: t.text,
+      lineHeight: 22,
+    },
+    scdBanner: {
+      flexDirection: "row",
+      backgroundColor: t.isDark ? "rgba(220,38,38,0.12)" : "#FEF2F2",
+      borderRadius: 12,
+      padding: 14,
+      marginTop: 14,
+      borderWidth: 1,
+      borderColor: t.isDark ? "rgba(220,38,38,0.3)" : "#FECACA",
+    },
+    scdBannerTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      color: t.isDark ? "#EF4444" : "#B91C1C",
+      marginBottom: 3,
+    },
+    scdBannerText: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      color: t.isDark ? "#FCA5A5" : "#7F1D1D",
+      lineHeight: 18,
+    },
+    addButton: {
+      backgroundColor: C.orange,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginTop: 20,
+    },
+    addButtonText: {
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: "#fff",
+    },
+    clearButton: {
+      alignItems: "center",
+      paddingVertical: 12,
+      marginTop: 4,
+    },
+    clearButtonText: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: t.textSecondary,
+    },
+  });
+}

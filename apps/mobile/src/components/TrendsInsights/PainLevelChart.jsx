@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { View, Text, Dimensions } from "react-native";
 import { LineChart } from "react-native-gifted-charts";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const LABEL_TEXT_STYLE = { color: "#9CA3AF", fontSize: 9 };
 
@@ -27,6 +28,7 @@ function getPainInsight(avg, highest, highPainDays, painFreeDays) {
 }
 
 export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
+  const t = useTheme();
   const giftedData = useMemo(() => painLevelData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
@@ -44,7 +46,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 20,
         marginBottom: 16,
@@ -64,7 +66,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#1F2937" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
           Pain Level Trends
         </Text>
         <View
@@ -80,7 +82,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           </Text>
         </View>
       </View>
-      <Text style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
+      <Text style={{ fontSize: 13, color: t.textSecondary, marginBottom: 20 }}>
         Track your pain levels over time
       </Text>
 
@@ -99,8 +101,8 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           noOfSections={5}
           maxValue={10}
           yAxisColor="transparent"
-          xAxisColor="#E5E7EB"
-          rulesColor="#F3F4F6"
+          xAxisColor={t.border}
+          rulesColor={t.divider}
           rulesType="solid"
           initialSpacing={8}
           spacing={Math.max(4, Math.floor(CHART_WIDTH / 32))}
@@ -120,19 +122,19 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           marginTop: 16,
           paddingTop: 16,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Average
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#1F2937" }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: t.text }}>
             {avgPainLevel}
           </Text>
         </View>
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Highest
           </Text>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#DC2626" }}>
@@ -140,7 +142,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           </Text>
         </View>
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Lowest
           </Text>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
@@ -155,14 +157,14 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           marginTop: 16,
           paddingTop: 14,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <Text
           style={{
             fontFamily: fonts.regular,
             fontSize: 13,
-            color: "#4B5563",
+            color: t.textSecondary,
             lineHeight: 20,
           }}
         >

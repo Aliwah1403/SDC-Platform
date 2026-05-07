@@ -1,6 +1,7 @@
 import { View, Text, Dimensions } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
@@ -20,6 +21,7 @@ function getHydrationInsight(avg, daysAtGoal, total) {
 }
 
 export function HydrationChart({ hydrationData, avgHydration }) {
+  const t = useTheme();
   const giftedData = hydrationData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
@@ -35,7 +37,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
   return (
     <View
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: t.surface,
         borderRadius: 16,
         padding: 20,
         marginBottom: 16,
@@ -55,7 +57,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: "#1F2937" }}>
+        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
           Hydration Levels
         </Text>
         <View
@@ -71,7 +73,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           </Text>
         </View>
       </View>
-      <Text style={{ fontSize: 13, color: "#6B7280", marginBottom: 20 }}>
+      <Text style={{ fontSize: 13, color: t.textSecondary, marginBottom: 20 }}>
         Monitor your daily water intake (glasses)
       </Text>
 
@@ -92,7 +94,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             borderRadius: 1,
           }}
         />
-        <Text style={{ fontSize: 11, color: "#6B7280" }}>Goal: 8 glasses</Text>
+        <Text style={{ fontSize: 11, color: t.textSecondary }}>Goal: 8 glasses</Text>
       </View>
 
       {/* Chart */}
@@ -107,8 +109,8 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           noOfSections={4}
           maxValue={10}
           yAxisColor="transparent"
-          xAxisColor="#E5E7EB"
-          rulesColor="#F3F4F6"
+          xAxisColor={t.border}
+          rulesColor={t.divider}
           rulesType="solid"
           initialSpacing={5}
           yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
@@ -134,19 +136,19 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           marginTop: 16,
           paddingTop: 16,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Daily Avg
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#1F2937" }}>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: t.text }}>
             {avgHydration}
           </Text>
         </View>
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Goal
           </Text>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
@@ -154,7 +156,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           </Text>
         </View>
         <View>
-          <Text style={{ fontSize: 12, color: "#6B7280", marginBottom: 4 }}>
+          <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Days at goal
           </Text>
           <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
@@ -169,14 +171,14 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           marginTop: 16,
           paddingTop: 14,
           borderTopWidth: 1,
-          borderTopColor: "#F3F4F6",
+          borderTopColor: t.border,
         }}
       >
         <Text
           style={{
             fontFamily: fonts.regular,
             fontSize: 13,
-            color: "#4B5563",
+            color: t.textSecondary,
             lineHeight: 20,
           }}
         >

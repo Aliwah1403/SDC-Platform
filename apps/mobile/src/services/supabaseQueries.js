@@ -422,15 +422,16 @@ export async function addMedicationLog(userId, medId) {
 
 export async function markGroupTaken(userId, medIds) {
   const todayStr = today();
+  const now = new Date().toISOString();
   const rows = medIds.map((id) => ({
     medication_id: id,
     user_id: userId,
     date: todayStr,
-    taken_at: new Date().toISOString(),
+    taken_at: now,
   }));
   const { error } = await supabase
     .from('medication_logs')
-    .upsert(rows, { onConflict: 'medication_id,date', ignoreDuplicates: false });
+    .insert(rows);
   if (error) throw error;
 }
 

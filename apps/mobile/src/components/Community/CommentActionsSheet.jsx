@@ -9,6 +9,7 @@ import {
   useDeleteCommentMutation,
 } from "@/hooks/queries/useCommunityMutations";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const REPORT_REASONS = [
   {
@@ -45,6 +46,7 @@ const REPORT_REASONS = [
 
 // step: "actions" → "report" → "done"
 export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isOwnComment }) {
+  const t = useTheme();
   const bottomSheetRef = useRef(null);
   const [step, setStep] = useState("actions");
   const [selectedReason, setSelectedReason] = useState(null);
@@ -99,8 +101,8 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
       enablePanDownToClose
       onClose={onClose}
       animateOnMount
-      backgroundStyle={{ backgroundColor: "#FFFFFF", borderRadius: 20 }}
-      handleIndicatorStyle={{ backgroundColor: "#D1C9C7", width: 36 }}
+      backgroundStyle={{ backgroundColor: t.surface, borderRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: t.border, width: 36 }}
     >
       {step === "actions" && (
         <BottomSheetView
@@ -129,14 +131,14 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               paddingVertical: 14,
               alignItems: "center",
               borderRadius: 12,
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
             }}
           >
             <Text
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 15,
-                color: "#6B7280",
+                color: t.textSecondary,
               }}
             >
               Cancel
@@ -165,10 +167,10 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               style={{ marginRight: 12 }}
             >
-              <X size={20} color="#6B7280" strokeWidth={2} />
+              <X size={20} color={t.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
             <Text
-              style={{ fontFamily: fonts.bold, fontSize: 17, color: "#1A1A1A" }}
+              style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}
             >
               Report comment
             </Text>
@@ -178,7 +180,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
             style={{
               fontFamily: fonts.regular,
               fontSize: 13,
-              color: "#6B7280",
+              color: t.textSecondary,
               marginBottom: 16,
               lineHeight: 18,
             }}
@@ -200,7 +202,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
                   paddingHorizontal: 14,
                   borderRadius: 12,
                   marginBottom: 8,
-                  backgroundColor: isSelected ? "#FDF0F2" : "#F8F4F0",
+                  backgroundColor: isSelected ? (t.isDark ? t.surfaceElevated : "#FDF0F2") : (t.isDark ? t.surfaceElevated : "#F8F4F0"),
                   borderWidth: 1.5,
                   borderColor: isSelected ? "#A9334D" : "transparent",
                 }}
@@ -211,7 +213,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
                     height: 20,
                     borderRadius: 10,
                     borderWidth: 2,
-                    borderColor: isSelected ? "#A9334D" : "#C9BDB9",
+                    borderColor: isSelected ? "#A9334D" : t.border,
                     alignItems: "center",
                     justifyContent: "center",
                     marginRight: 12,
@@ -235,7 +237,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
                     style={{
                       fontFamily: fonts.semibold,
                       fontSize: 14,
-                      color: isSelected ? "#A9334D" : "#1A1A1A",
+                      color: isSelected ? "#A9334D" : t.text,
                     }}
                   >
                     {reason.label}
@@ -245,7 +247,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
                       style={{
                         fontFamily: fonts.regular,
                         fontSize: 12,
-                        color: "#9C8D8A",
+                        color: t.textSecondary,
                         marginTop: 2,
                       }}
                     >
@@ -261,19 +263,20 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
             value={extraNote}
             onChangeText={setExtraNote}
             placeholder="Anything else we should know? (optional)"
-            placeholderTextColor="#9C8D8A"
+            placeholderTextColor={t.textTertiary}
             multiline
             maxLength={200}
+            keyboardAppearance={t.isDark ? "dark" : "light"}
             style={{
               marginTop: 4,
               marginBottom: 20,
-              backgroundColor: "#F8F4F0",
+              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
               borderRadius: 12,
               paddingHorizontal: 14,
               paddingVertical: 12,
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "#1A1A1A",
+              color: t.text,
               minHeight: 72,
               textAlignVertical: "top",
             }}
@@ -284,7 +287,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
             disabled={!selectedReason}
             activeOpacity={0.85}
             style={{
-              backgroundColor: selectedReason ? "#A9334D" : "#D1C9C7",
+              backgroundColor: selectedReason ? "#A9334D" : (t.isDark ? t.surfaceElevated : "#D1C9C7"),
               borderRadius: 14,
               paddingVertical: 15,
               alignItems: "center",
@@ -294,7 +297,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               style={{
                 fontFamily: fonts.bold,
                 fontSize: 15,
-                color: selectedReason ? "#F8E9E7" : "#9C8D8A",
+                color: selectedReason ? "#F8E9E7" : t.textSecondary,
               }}
             >
               Submit report
@@ -341,7 +344,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 14,
-                color: "#6B7280",
+                color: t.textSecondary,
                 textAlign: "center",
                 lineHeight: 20,
                 marginBottom: 28,
@@ -375,6 +378,7 @@ export function CommentActionsSheet({ isVisible, onClose, commentId, postId, isO
 }
 
 function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
+  const t = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -385,7 +389,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
         paddingVertical: 14,
         paddingHorizontal: 4,
         borderBottomWidth: 1,
-        borderBottomColor: "#F5F0EE",
+        borderBottomColor: t.border,
       }}
     >
       <View style={{ marginRight: 14 }}>{icon}</View>
@@ -394,7 +398,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
           style={{
             fontFamily: fonts.semibold,
             fontSize: 15,
-            color: destructive ? "#A9334D" : "#1A1A1A",
+            color: destructive ? "#A9334D" : t.text,
           }}
         >
           {label}
@@ -404,7 +408,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: "#9C8D8A",
+              color: t.textSecondary,
               marginTop: 1,
             }}
           >
@@ -412,7 +416,7 @@ function ActionRow({ icon, label, sublabel, onPress, destructive = false }) {
           </Text>
         )}
       </View>
-      <ChevronRight size={16} color="#C9BDB9" strokeWidth={2} />
+      <ChevronRight size={16} color={t.border} strokeWidth={2} />
     </TouchableOpacity>
   );
 }
