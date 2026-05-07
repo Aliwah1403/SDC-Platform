@@ -28,18 +28,7 @@ import * as Haptics from "expo-haptics";
 import { useAppStore } from "@/store/appStore";
 import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
 import { getPlaceDetails, photoUrl } from "@/utils/hospitalSearch";
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-const C = {
-  bg: "#F8F4F0",
-  card: "#FFFFFF",
-  dark: "#1A1A1A",
-  muted: "rgba(9,51,44,0.45)",
-  faint: "rgba(9,51,44,0.1)",
-  accent: "#A9334D",
-  success: "#059669",
-  border: "rgba(9,51,44,0.08)",
-};
+import { useTheme } from "@/hooks/useTheme";
 
 const TYPE_GRADIENT = {
   [FACILITY_TYPES.HOSPITAL]: ["#DC2626", "#991B1B", "#7F1D1D"],
@@ -61,7 +50,6 @@ function todayAbbr() {
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()];
 }
 
-// ── Haversine distance in miles ───────────────────────────────────────────────
 function distanceMiles(lat1, lng1, lat2, lng2) {
   const R = 3958.8;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -74,8 +62,9 @@ function distanceMiles(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// ── Section wrapper ───────────────────────────────────────────────────────────
 function Section({ title, children }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return (
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -84,8 +73,9 @@ function Section({ title, children }) {
   );
 }
 
-// ── Contact row ───────────────────────────────────────────────────────────────
 function ContactRow({ icon: Icon, label, value, onPress, actionLabel }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return (
     <TouchableOpacity
       style={styles.contactRow}
@@ -94,7 +84,7 @@ function ContactRow({ icon: Icon, label, value, onPress, actionLabel }) {
       disabled={!onPress}
     >
       <View style={styles.contactIconWrap}>
-        <Icon size={18} color={C.accent} strokeWidth={2} />
+        <Icon size={18} color="#A9334D" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.contactLabel}>{label}</Text>
@@ -109,8 +99,9 @@ function ContactRow({ icon: Icon, label, value, onPress, actionLabel }) {
   );
 }
 
-// ── Hours row ─────────────────────────────────────────────────────────────────
 function HoursRow({ day, hours, isToday }) {
+  const t = useTheme();
+  const styles = createStyles(t);
   return (
     <View style={[styles.hoursRow, isToday && styles.hoursRowToday]}>
       <Text style={[styles.hoursDay, isToday && styles.hoursDayToday]}>{day}</Text>
@@ -128,15 +119,15 @@ function HoursRow({ day, hours, isToday }) {
   );
 }
 
-// ── Main screen ───────────────────────────────────────────────────────────────
 export default function FacilityDetailScreen() {
+  const t = useTheme();
+  const styles = createStyles(t);
   const { id, userLat, userLng } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { savedFacilities, toggleSavedFacility, placeDetailsCache, setPlaceDetails } =
     useAppStore();
 
-  // Resolve facility: cache → mock fallback → API fetch
   const cached = placeDetailsCache[id];
   const mock = mockFacilities.find((f) => f.id === id);
   const [facility, setFacility] = useState(cached ?? mock ?? null);
@@ -146,15 +137,8 @@ export default function FacilityDetailScreen() {
   const isFavourite = savedFacilities.some((f) => f.placeId === id);
 
   useEffect(() => {
-    if (cached) {
-      setFacility(cached);
-      return;
-    }
-    if (mock) {
-      setFacility(mock);
-      return;
-    }
-    // Not in cache and not a mock — fetch from API (e.g. deep-linked or stale cache)
+    if (cached) { setFacility(cached); return; }
+    if (mock) { setFacility(mock); return; }
     if (!id) { router.back(); return; }
     setLoadingDetails(true);
     getPlaceDetails(id)
@@ -171,7 +155,7 @@ export default function FacilityDetailScreen() {
 
   if (loadingDetails) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0" }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: t.background }}>
         <ActivityIndicator size="large" color="#A9334D" />
       </View>
     );
@@ -179,8 +163,8 @@ export default function FacilityDetailScreen() {
 
   if (fetchError) {
     return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#F8F4F0", padding: 24 }}>
-        <Text style={{ color: "#1A1A1A", fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: t.background, padding: 24 }}>
+        <Text style={{ color: t.text, fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
           {fetchError}
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
@@ -221,7 +205,6 @@ export default function FacilityDetailScreen() {
     if (facility.website) Linking.openURL(facility.website);
   };
 
-  // Sort weeklyHours by canonical day order
   const sortedHours = facility.weeklyHours
     ? [...facility.weeklyHours].sort(
         (a, b) => DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day)
@@ -229,14 +212,12 @@ export default function FacilityDetailScreen() {
     : [];
 
   const todayHours = sortedHours.find((h) => h.day === today);
-
   const heroPhotoUrl = photoUrl(facility.photoName);
 
   return (
     <View style={styles.screen}>
       {/* ── Hero ── */}
       <LinearGradient colors={gradient} style={styles.hero}>
-        {/* Real photo overlay when available */}
         {heroPhotoUrl && (
           <Image
             source={{ uri: heroPhotoUrl }}
@@ -244,18 +225,15 @@ export default function FacilityDetailScreen() {
             resizeMode="cover"
           />
         )}
-        {/* Scrim so text stays readable over the photo */}
         {heroPhotoUrl && (
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.55)"]}
             style={StyleSheet.absoluteFill}
           />
         )}
-        {/* Decorative circles (only shown without photo) */}
         {!heroPhotoUrl && <View style={styles.deco1} />}
         {!heroPhotoUrl && <View style={styles.deco2} />}
 
-        {/* Top bar */}
         <View style={[styles.heroTopBar, { paddingTop: insets.top + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.heroBtn}>
             <X size={20} color="#FFFFFF" strokeWidth={2.5} />
@@ -270,7 +248,6 @@ export default function FacilityDetailScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Icon + name */}
         <View style={styles.heroBody}>
           <View style={styles.heroIconWrap}>
             <Building2 size={40} color="#FFFFFF" strokeWidth={1.5} />
@@ -290,7 +267,6 @@ export default function FacilityDetailScreen() {
 
           <Text style={styles.heroName}>{facility.name}</Text>
 
-          {/* Meta chips */}
           <View style={styles.heroMeta}>
             {distance && (
               <View style={styles.heroMetaChip}>
@@ -317,12 +293,9 @@ export default function FacilityDetailScreen() {
       {/* ── Content ── */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + 110,
-        }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 110 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* ── About ── */}
         {facility.description && (
           <Section title="About">
             <View style={styles.card}>
@@ -331,24 +304,11 @@ export default function FacilityDetailScreen() {
           </Section>
         )}
 
-        {/* ── Contact ── */}
         <Section title="Contact & Location">
           <View style={styles.card}>
-            <ContactRow
-              icon={MapPin}
-              label="Address"
-              value={facility.address}
-              onPress={handleDirections}
-              actionLabel="Directions"
-            />
+            <ContactRow icon={MapPin} label="Address" value={facility.address} onPress={handleDirections} actionLabel="Directions" />
             <View style={styles.divider} />
-            <ContactRow
-              icon={Phone}
-              label="Phone"
-              value={facility.phone}
-              onPress={handleCall}
-              actionLabel="Call"
-            />
+            <ContactRow icon={Phone} label="Phone" value={facility.phone} onPress={handleCall} actionLabel="Call" />
             {facility.website && (
               <>
                 <View style={styles.divider} />
@@ -364,7 +324,6 @@ export default function FacilityDetailScreen() {
           </View>
         </Section>
 
-        {/* ── Opening Hours ── */}
         {sortedHours.length > 0 && (
           <Section title="Opening Hours">
             <View style={styles.card}>
@@ -382,8 +341,8 @@ export default function FacilityDetailScreen() {
       {/* ── Sticky action bar ── */}
       <View style={[styles.actionBar, { paddingBottom: insets.bottom + 16 }]}>
         <TouchableOpacity style={styles.actionBtnOutlined} onPress={handleDirections}>
-          <Navigation size={18} color={C.accent} />
-          <Text style={[styles.actionBtnText, { color: C.accent }]}>Get Directions</Text>
+          <Navigation size={18} color="#A9334D" />
+          <Text style={[styles.actionBtnText, { color: "#A9334D" }]}>Get Directions</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionBtnFilled} onPress={handleCall}>
           <Phone size={18} color="#FFFFFF" />
@@ -394,246 +353,198 @@ export default function FacilityDetailScreen() {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: C.bg },
+function createStyles(t) {
+  return StyleSheet.create({
+    screen: { flex: 1, backgroundColor: t.background },
 
-  // Hero
-  hero: {
-    paddingBottom: 28,
-    overflow: "hidden",
-  },
-  deco1: {
-    position: "absolute",
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: "rgba(255,255,255,0.06)",
-    top: -60,
-    right: -50,
-  },
-  deco2: {
-    position: "absolute",
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    bottom: -30,
-    left: -30,
-  },
-  heroTopBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  heroBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroBody: {
-    paddingHorizontal: 24,
-    alignItems: "flex-start",
-  },
-  heroIconWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  heroName: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 26,
-    color: "#FFFFFF",
-    letterSpacing: -0.6,
-    lineHeight: 32,
-    marginBottom: 16,
-  },
-  heroMeta: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  heroMetaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  heroMetaText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.9)",
-  },
+    hero: { paddingBottom: 28, overflow: "hidden" },
+    deco1: {
+      position: "absolute",
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      backgroundColor: "rgba(255,255,255,0.06)",
+      top: -60,
+      right: -50,
+    },
+    deco2: {
+      position: "absolute",
+      width: 140,
+      height: 140,
+      borderRadius: 70,
+      backgroundColor: "rgba(255,255,255,0.05)",
+      bottom: -30,
+      left: -30,
+    },
+    heroTopBar: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      marginBottom: 24,
+    },
+    heroBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroBody: { paddingHorizontal: 24, alignItems: "flex-start" },
+    heroIconWrap: {
+      width: 72,
+      height: 72,
+      borderRadius: 22,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 16,
+    },
+    heroName: {
+      fontFamily: "Geist_700Bold",
+      fontSize: 26,
+      color: "#FFFFFF",
+      letterSpacing: -0.6,
+      lineHeight: 32,
+      marginBottom: 16,
+    },
+    heroMeta: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    heroMetaChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+    },
+    heroMetaText: { fontFamily: "Geist_500Medium", fontSize: 12, color: "rgba(255,255,255,0.9)" },
 
-  // Type badges
-  typeBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  typeBadgeText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.2,
-  },
+    typeBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      alignSelf: "flex-start",
+      borderRadius: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    typeBadgeText: { fontFamily: "Geist_600SemiBold", fontSize: 11, letterSpacing: 0.2 },
 
-  // Sections
-  section: { paddingHorizontal: 16, paddingTop: 20 },
-  sectionTitle: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 13,
-    color: "rgba(9,51,44,0.45)",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
-    marginBottom: 10,
-  },
+    section: { paddingHorizontal: 16, paddingTop: 20 },
+    sectionTitle: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 13,
+      color: t.textSecondary,
+      letterSpacing: 0.5,
+      textTransform: "uppercase",
+      marginBottom: 10,
+    },
 
-  // Card
-  card: {
-    backgroundColor: C.card,
-    borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#1A1A1A",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
+    card: {
+      backgroundColor: t.surface,
+      borderRadius: 16,
+      overflow: "hidden",
+      shadowColor: "#1A1A1A",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
+    },
 
-  // Description
-  description: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "rgba(9,51,44,0.75)",
-    lineHeight: 24,
-    padding: 18,
-  },
+    description: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 15,
+      color: t.textSecondary,
+      lineHeight: 24,
+      padding: 18,
+    },
 
-  // Contact rows
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 15,
-    gap: 14,
-  },
-  contactIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#F8E9E7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  contactLabel: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 12,
-    color: "rgba(9,51,44,0.4)",
-    marginBottom: 2,
-  },
-  contactValue: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 14,
-    color: "#1A1A1A",
-  },
-  contactAction: {
-    backgroundColor: "#F8E9E7",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  contactActionText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 12,
-    color: "#A9334D",
-  },
+    contactRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 18,
+      paddingVertical: 15,
+      gap: 14,
+    },
+    contactIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: t.isDark ? "rgba(169,51,77,0.12)" : "#F8E9E7",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    contactLabel: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 12,
+      color: t.textSecondary,
+      marginBottom: 2,
+    },
+    contactValue: { fontFamily: "Geist_500Medium", fontSize: 14, color: t.text },
+    contactAction: {
+      backgroundColor: t.isDark ? "rgba(169,51,77,0.12)" : "#F8E9E7",
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+    },
+    contactActionText: { fontFamily: "Geist_600SemiBold", fontSize: 12, color: "#A9334D" },
 
-  // Hours rows
-  hoursRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
-    paddingVertical: 13,
-  },
-  hoursRowToday: { backgroundColor: "#FFF5F5" },
-  hoursDay: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 14,
-    color: "rgba(9,51,44,0.5)",
-    width: 40,
-  },
-  hoursDayToday: {
-    fontFamily: "Geist_700Bold",
-    color: "#A9334D",
-  },
-  hoursValue: {
-    flex: 1,
-    fontFamily: "Geist_400Regular",
-    fontSize: 14,
-    color: "#1A1A1A",
-    marginLeft: 12,
-  },
-  hoursValueToday: { fontFamily: "Geist_600SemiBold", color: "#1A1A1A" },
-  hoursValueClosed: { color: "rgba(9,51,44,0.35)" },
-  todayDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: "#A9334D",
-    marginLeft: 8,
-  },
+    hoursRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 18,
+      paddingVertical: 13,
+    },
+    hoursRowToday: { backgroundColor: t.isDark ? "rgba(169,51,77,0.08)" : "#FFF5F5" },
+    hoursDay: { fontFamily: "Geist_500Medium", fontSize: 14, color: t.textSecondary, width: 40 },
+    hoursDayToday: { fontFamily: "Geist_700Bold", color: "#A9334D" },
+    hoursValue: {
+      flex: 1,
+      fontFamily: "Geist_400Regular",
+      fontSize: 14,
+      color: t.text,
+      marginLeft: 12,
+    },
+    hoursValueToday: { fontFamily: "Geist_600SemiBold", color: t.text },
+    hoursValueClosed: { color: t.textTertiary },
+    todayDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: "#A9334D", marginLeft: 8 },
 
-  // Divider
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(9,51,44,0.06)",
-    marginHorizontal: 18,
-  },
+    divider: { height: 1, backgroundColor: t.divider, marginHorizontal: 18 },
 
-  // Sticky action bar
-  actionBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "rgba(9,51,44,0.07)",
-  },
-  actionBtnOutlined: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 14,
-    borderWidth: 1.5,
-    borderColor: "#A9334D",
-  },
-  actionBtnFilled: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 14,
-    paddingVertical: 14,
-    backgroundColor: "#A9334D",
-  },
-  actionBtnText: { fontFamily: "Geist_600SemiBold", fontSize: 15 },
-});
+    actionBar: {
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingTop: 14,
+      backgroundColor: t.surface,
+      borderTopWidth: 1,
+      borderTopColor: t.border,
+    },
+    actionBtnOutlined: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 14,
+      paddingVertical: 14,
+      borderWidth: 1.5,
+      borderColor: "#A9334D",
+    },
+    actionBtnFilled: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      borderRadius: 14,
+      paddingVertical: 14,
+      backgroundColor: "#A9334D",
+    },
+    actionBtnText: { fontFamily: "Geist_600SemiBold", fontSize: 15 },
+  });
+}

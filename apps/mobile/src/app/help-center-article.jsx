@@ -12,10 +12,12 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
+import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-function ArticlePage({ item, insets }) {
+function ArticlePage({ item, insets, t }) {
+  const styles = createStyles(t);
   return (
     <ScrollView
       style={{ width: SCREEN_WIDTH }}
@@ -46,9 +48,11 @@ function ArticlePage({ item, insets }) {
 }
 
 export default function HelpCenterArticleScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { items: itemsJson, initialIndex } = useLocalSearchParams();
+  const styles = createStyles(t);
 
   const items = (() => {
     try {
@@ -82,8 +86,8 @@ export default function HelpCenterArticleScreen() {
   if (items.length === 0) return null;
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#ffffff" }}>
-      <StatusBar style="dark" />
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* Header */}
       <View
@@ -94,8 +98,8 @@ export default function HelpCenterArticleScreen() {
           flexDirection: "row",
           alignItems: "center",
           borderBottomWidth: 1,
-          borderBottomColor: "#F0E4E1",
-          backgroundColor: "#ffffff",
+          borderBottomColor: t.border,
+          backgroundColor: t.surface,
         }}
       >
         <TouchableOpacity
@@ -103,7 +107,7 @@ export default function HelpCenterArticleScreen() {
           activeOpacity={0.6}
           style={styles.backBtn}
         >
-          <ChevronLeft size={22} color="#1A1A1A" />
+          <ChevronLeft size={22} color={t.text} />
         </TouchableOpacity>
         <View style={{ width: 38 }} />
       </View>
@@ -121,7 +125,7 @@ export default function HelpCenterArticleScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig.current}
         renderItem={({ item }) => (
-          <ArticlePage item={item} insets={insets} />
+          <ArticlePage item={item} insets={insets} t={t} />
         )}
       />
 
@@ -155,77 +159,79 @@ export default function HelpCenterArticleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  backBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#F8F4F0",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 26,
-    color: "#1A1A1A",
-    lineHeight: 33,
-    marginBottom: 16,
-  },
-  body: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 16,
-    color: "#374151",
-    lineHeight: 26,
-  },
-  stepRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    marginBottom: 14,
-  },
-  stepBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#A9334D",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 1,
-    flexShrink: 0,
-  },
-  stepBadgeText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 13,
-    color: "#ffffff",
-  },
-  stepText: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 16,
-    color: "#374151",
-    lineHeight: 24,
-    flex: 1,
-  },
-  dotsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 7,
-    paddingTop: 12,
-    backgroundColor: "#ffffff",
-    borderTopWidth: 1,
-    borderTopColor: "#F0E4E1",
-  },
-  dot: {
-    borderRadius: 99,
-  },
-  dotActive: {
-    width: 20,
-    height: 7,
-    backgroundColor: "#A9334D",
-  },
-  dotInactive: {
-    width: 7,
-    height: 7,
-    backgroundColor: "#D1C8C4",
-  },
-});
+function createStyles(t) {
+  return StyleSheet.create({
+    backBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: t.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    title: {
+      fontFamily: "Geist_700Bold",
+      fontSize: 26,
+      color: t.text,
+      lineHeight: 33,
+      marginBottom: 16,
+    },
+    body: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 16,
+      color: t.textSecondary,
+      lineHeight: 26,
+    },
+    stepRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      marginBottom: 14,
+    },
+    stepBadge: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "#A9334D",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 1,
+      flexShrink: 0,
+    },
+    stepBadgeText: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 13,
+      color: "#ffffff",
+    },
+    stepText: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 16,
+      color: t.textSecondary,
+      lineHeight: 24,
+      flex: 1,
+    },
+    dotsRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 7,
+      paddingTop: 12,
+      backgroundColor: t.surface,
+      borderTopWidth: 1,
+      borderTopColor: t.border,
+    },
+    dot: {
+      borderRadius: 99,
+    },
+    dotActive: {
+      width: 20,
+      height: 7,
+      backgroundColor: "#A9334D",
+    },
+    dotInactive: {
+      width: 7,
+      height: 7,
+      backgroundColor: t.textTertiary,
+    },
+  });
+}

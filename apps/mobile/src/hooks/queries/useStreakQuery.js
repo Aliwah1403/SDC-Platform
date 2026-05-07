@@ -106,12 +106,12 @@ export function useClaimBadgeMutation() {
   return useMutation({
     mutationFn: (badges) => updateClaimedBadges(userId, badges),
     onMutate: async (badges) => {
-      await queryClient.cancelQueries({ queryKey: ['streak', userId] });
       const previous = queryClient.getQueryData(['streak', userId]);
       queryClient.setQueryData(['streak', userId], (old) => ({
         ...old,
         claimedBadges: badges,
       }));
+      await queryClient.cancelQueries({ queryKey: ['streak', userId] });
       return { previous };
     },
     onError: (_err, _vars, context) => {

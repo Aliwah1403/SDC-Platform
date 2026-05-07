@@ -42,6 +42,7 @@ import {
 import { uploadContactPhoto } from "@/services/supabaseQueries";
 import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -53,14 +54,7 @@ const RELATIONSHIPS = [
   "Other",
 ];
 
-const C = {
-  bg: "#F8F4F0",
-  accent: "#A9334D",
-  dark: "#1A1A1A",
-  muted: "#9CA3AF",
-  border: "rgba(9,51,44,0.1)",
-  inputBg: "#F0EBE5",
-};
+const C = { accent: "#A9334D" };
 
 function getInitials(name = "") {
   return name
@@ -73,6 +67,7 @@ function getInitials(name = "") {
 }
 
 export default function AddContactScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { contactId } = useLocalSearchParams();
@@ -84,6 +79,7 @@ export default function AddContactScreen() {
   const updateMutation = useUpdateEmergencyContactMutation();
   const deleteMutation = useDeleteEmergencyContactMutation();
 
+  const styles = createStyles(t);
   const existing = contactId ? contacts.find((c) => c.id === contactId) : null;
   const isEditing = !!existing;
 
@@ -297,7 +293,7 @@ export default function AddContactScreen() {
     .slice(0, 60);
 
   return (
-    <View style={{ flex: 1, backgroundColor: C.bg }}>
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
 
       {/* Header */}
@@ -449,7 +445,7 @@ export default function AddContactScreen() {
                       width: 88,
                       height: 88,
                       borderRadius: 44,
-                      backgroundColor: "#F0E4E1",
+                      backgroundColor: t.isDark ? t.surfaceElevated : "#F0E4E1",
                       alignItems: "center",
                       justifyContent: "center",
                       overflow: "hidden",
@@ -485,7 +481,7 @@ export default function AddContactScreen() {
                       alignItems: "center",
                       justifyContent: "center",
                       borderWidth: 2,
-                      borderColor: C.bg,
+                      borderColor: t.background,
                     }}
                   >
                     <Camera size={14} color="#fff" strokeWidth={2} />
@@ -495,7 +491,7 @@ export default function AddContactScreen() {
                   style={{
                     fontFamily: fonts.regular,
                     fontSize: 12,
-                    color: C.muted,
+                    color: t.textSecondary,
                     marginTop: 8,
                   }}
                 >
@@ -539,7 +535,7 @@ export default function AddContactScreen() {
                 <TextInput
                   style={styles.input}
                   placeholder="Full name"
-                  placeholderTextColor="rgba(9,51,44,0.35)"
+                  placeholderTextColor={t.textTertiary}
                   value={name}
                   onChangeText={setName}
                   autoCapitalize="words"
@@ -564,7 +560,7 @@ export default function AddContactScreen() {
                 codeTextStyle={styles.phoneCodeText}
                 flagButtonStyle={styles.phoneFlagBtn}
                 textInputProps={{
-                  placeholderTextColor: "rgba(9,51,44,0.35)",
+                  placeholderTextColor: t.textTertiary,
                   keyboardType: "phone-pad",
                   onFocus: () => setFocusedField("phone"),
                   onBlur: () => setFocusedField(null),
@@ -616,12 +612,12 @@ export default function AddContactScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  backgroundColor: "#fff",
+                  backgroundColor: t.surface,
                   borderRadius: 14,
                   padding: 16,
                   marginTop: 20,
                   borderWidth: 1,
-                  borderColor: "#F0EDE8",
+                  borderColor: t.border,
                 }}
               >
                 <View style={{ flex: 1, marginRight: 16 }}>
@@ -629,7 +625,7 @@ export default function AddContactScreen() {
                     style={{
                       fontFamily: fonts.semibold,
                       fontSize: 15,
-                      color: C.dark,
+                      color: t.text,
                     }}
                   >
                     Primary Contact
@@ -638,7 +634,7 @@ export default function AddContactScreen() {
                     style={{
                       fontFamily: fonts.regular,
                       fontSize: 13,
-                      color: C.muted,
+                      color: t.textSecondary,
                       marginTop: 2,
                     }}
                   >
@@ -648,7 +644,7 @@ export default function AddContactScreen() {
                 <Switch
                   value={isPrimary}
                   onValueChange={setIsPrimary}
-                  trackColor={{ false: "#E5E7EB", true: C.accent }}
+                  trackColor={{ false: t.border, true: C.accent }}
                   thumbColor="#fff"
                 />
               </View>
@@ -692,7 +688,7 @@ export default function AddContactScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowContactModal(false)}
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#FAFAFA" }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -700,17 +696,17 @@ export default function AddContactScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select a contact</Text>
               <Pressable onPress={() => setShowContactModal(false)} hitSlop={8}>
-                <X size={22} color={C.dark} strokeWidth={2} />
+                <X size={22} color={t.text} strokeWidth={2} />
               </Pressable>
             </View>
 
             <View style={styles.searchWrapper}>
-              <Search size={17} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
+              <Search size={17} color={t.textSecondary} strokeWidth={1.8} />
               <TextInput
                 ref={contactSearchRef}
                 style={styles.searchInput}
                 placeholder="Search contacts"
-                placeholderTextColor="rgba(9,51,44,0.35)"
+                placeholderTextColor={t.textTertiary}
                 value={contactSearch}
                 onChangeText={setContactSearch}
                 autoCorrect={false}
@@ -729,7 +725,7 @@ export default function AddContactScreen() {
                 <View
                   style={{
                     height: 1,
-                    backgroundColor: "rgba(9,51,44,0.06)",
+                    backgroundColor: t.border,
                     marginLeft: 62,
                   }}
                 />
@@ -772,7 +768,7 @@ export default function AddContactScreen() {
                     style={{
                       fontFamily: fonts.regular,
                       fontSize: 14,
-                      color: "rgba(9,51,44,0.45)",
+                      color: t.textSecondary,
                       textAlign: "center",
                     }}
                   >
@@ -790,189 +786,192 @@ export default function AddContactScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  gateCard: {
-    borderRadius: 18,
-    borderStyle: "dashed",
-    padding: 20,
-    alignItems: "center",
-    gap: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
-  },
-  gateIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(169,51,77,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 4,
-  },
-  gateTitle: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 17,
-    color: "#1A1A1A",
-    textAlign: "center",
-  },
-  gateBody: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 14,
-    color: "rgba(9,51,44,0.6)",
-    textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 8,
-  },
-  accessBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#A9334D",
-    borderRadius: 12,
-    paddingVertical: 13,
-    paddingHorizontal: 24,
-    marginTop: 4,
-  },
-  accessBtnText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 15,
-    color: "#FFFFFF",
-  },
-  manualLink: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
-    textDecorationLine: "underline",
-    marginTop: 2,
-  },
-  fieldLabel: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: "rgba(9,51,44,0.55)",
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F0EBE5",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-  },
-  inputFocused: {
-    borderColor: "#A9334D",
-    backgroundColor: "rgba(169,51,77,0.04)",
-  },
-  input: {
-    flex: 1,
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "#1A1A1A",
-    padding: 0,
-    margin: 0,
-  },
-  phoneContainer: {
-    width: "100%",
-    backgroundColor: "#F0EBE5",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
-    height: 52,
-  },
-  phoneTextContainer: {
-    backgroundColor: "#F0EBE5",
-    borderRadius: 12,
-    paddingVertical: 0,
-  },
-  phoneTextInput: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "#1A1A1A",
-    height: 52,
-  },
-  phoneCodeText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 14,
-    color: "#1A1A1A",
-  },
-  phoneFlagBtn: { backgroundColor: "transparent" },
-  relChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  relChip: {
-    backgroundColor: "#F0EBE5",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.1)",
-  },
-  relChipSelected: { backgroundColor: "#A9334D", borderColor: "#A9334D" },
-  relChipText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: "#1A1A1A",
-  },
-  relChipTextSelected: { color: "#FFFFFF" },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(9,51,44,0.07)",
-  },
-  modalTitle: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 17,
-    color: "#1A1A1A",
-  },
-  searchWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#F0EBE5",
-    marginHorizontal: 16,
-    marginVertical: 12,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "#1A1A1A",
-    padding: 0,
-    margin: 0,
-  },
-  contactRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
-    borderRadius: 8,
-  },
-  rowInitials: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#A9334D",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowInitialsText: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 15,
-    color: "#FFFFFF",
-  },
-  rowName: { fontFamily: "Geist_500Medium", fontSize: 15, color: "#1A1A1A" },
-  rowPhone: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
-    marginTop: 1,
-  },
-});
+function createStyles(t) {
+  const inputBg = t.isDark ? t.surfaceElevated : "#F0EBE5";
+  return StyleSheet.create({
+    gateCard: {
+      borderRadius: 18,
+      borderStyle: "dashed",
+      padding: 20,
+      alignItems: "center",
+      gap: 12,
+      borderWidth: 1.5,
+      borderColor: t.border,
+    },
+    gateIconWrap: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: "rgba(169,51,77,0.08)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 4,
+    },
+    gateTitle: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 17,
+      color: t.text,
+      textAlign: "center",
+    },
+    gateBody: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 14,
+      color: t.textSecondary,
+      textAlign: "center",
+      lineHeight: 20,
+      paddingHorizontal: 8,
+    },
+    accessBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: "#A9334D",
+      borderRadius: 12,
+      paddingVertical: 13,
+      paddingHorizontal: 24,
+      marginTop: 4,
+    },
+    accessBtnText: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 15,
+      color: "#FFFFFF",
+    },
+    manualLink: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 13,
+      color: t.textSecondary,
+      textDecorationLine: "underline",
+      marginTop: 2,
+    },
+    fieldLabel: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 13,
+      color: t.textSecondary,
+      marginBottom: 8,
+    },
+    inputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: inputBg,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+    },
+    inputFocused: {
+      borderColor: "#A9334D",
+      backgroundColor: "rgba(169,51,77,0.04)",
+    },
+    input: {
+      flex: 1,
+      fontFamily: "Geist_400Regular",
+      fontSize: 15,
+      color: t.text,
+      padding: 0,
+      margin: 0,
+    },
+    phoneContainer: {
+      width: "100%",
+      backgroundColor: inputBg,
+      borderRadius: 12,
+      borderWidth: 1.5,
+      borderColor: t.border,
+      height: 52,
+    },
+    phoneTextContainer: {
+      backgroundColor: inputBg,
+      borderRadius: 12,
+      paddingVertical: 0,
+    },
+    phoneTextInput: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 15,
+      color: t.text,
+      height: 52,
+    },
+    phoneCodeText: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 14,
+      color: t.text,
+    },
+    phoneFlagBtn: { backgroundColor: "transparent" },
+    relChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    relChip: {
+      backgroundColor: inputBg,
+      borderRadius: 20,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderWidth: 1.5,
+      borderColor: t.border,
+    },
+    relChipSelected: { backgroundColor: "#A9334D", borderColor: "#A9334D" },
+    relChipText: {
+      fontFamily: "Geist_500Medium",
+      fontSize: 13,
+      color: t.text,
+    },
+    relChipTextSelected: { color: "#FFFFFF" },
+    modalHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: t.border,
+    },
+    modalTitle: {
+      fontFamily: "Geist_600SemiBold",
+      fontSize: 17,
+      color: t.text,
+    },
+    searchWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: inputBg,
+      marginHorizontal: 16,
+      marginVertical: 12,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 11,
+    },
+    searchInput: {
+      flex: 1,
+      fontFamily: "Geist_400Regular",
+      fontSize: 15,
+      color: t.text,
+      padding: 0,
+      margin: 0,
+    },
+    contactRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 4,
+      borderRadius: 8,
+    },
+    rowInitials: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: "#A9334D",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowInitialsText: {
+      fontFamily: "Geist_700Bold",
+      fontSize: 15,
+      color: "#FFFFFF",
+    },
+    rowName: { fontFamily: "Geist_500Medium", fontSize: 15, color: t.text },
+    rowPhone: {
+      fontFamily: "Geist_400Regular",
+      fontSize: 13,
+      color: t.textSecondary,
+      marginTop: 1,
+    },
+  });
+}

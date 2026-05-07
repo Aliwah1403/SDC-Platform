@@ -17,7 +17,6 @@ import {
   Pill,
   Check,
   ChevronRight,
-  Camera,
 } from "lucide-react-native";
 import { MotiView } from "moti";
 import {
@@ -716,31 +715,6 @@ export default function MedicationsScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => {
-            posthog?.capture("medication_scan_tapped");
-            router.push("/medication-scan");
-          }}
-          activeOpacity={0.7}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 14,
-            borderStyle: "dashed",
-            paddingVertical: 14,
-            borderWidth: 1.5,
-            borderColor: t.border,
-            gap: 8,
-          }}
-        >
-          <Camera size={18} color={t.text} />
-          <Text
-            style={{ fontFamily: fonts.medium, fontSize: 15, color: t.text }}
-          >
-            Scan Pill
-          </Text>
-        </TouchableOpacity>
       </ScrollView>
     </View>
   );

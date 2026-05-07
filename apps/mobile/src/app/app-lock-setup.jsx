@@ -20,6 +20,7 @@ import {
 } from "lucide-react-native";
 import { useAppStore } from "@/store/appStore";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
 
 const TIMEOUT_OPTIONS = [
   { label: "Immediately", value: 0 },
@@ -30,7 +31,9 @@ const TIMEOUT_OPTIONS = [
 ];
 
 export default function AppLockSetupScreen() {
+  const t = useTheme();
   const insets = useSafeAreaInsets();
+  const styles = createStyles(t);
   const {
     appLockEnabled,
     appLockTimeout,
@@ -103,7 +106,7 @@ export default function AppLockSetupScreen() {
           style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={22} color="#1A1A1A" strokeWidth={2} />
+          <ArrowLeft size={22} color={t.text} strokeWidth={2} />
         </Pressable>
         <Text style={styles.headerTitle}>App Lock</Text>
         <View style={{ width: 40 }} />
@@ -114,6 +117,7 @@ export default function AppLockSetupScreen() {
           loading={loading}
           onGetStarted={handleGetStarted}
           insets={insets}
+          t={t}
         />
       ) : (
         <ConfigStep
@@ -123,44 +127,38 @@ export default function AppLockSetupScreen() {
           onDisable={handleDisable}
           isExisting={appLockEnabled}
           insets={insets}
+          t={t}
         />
       )}
     </View>
   );
 }
 
-function IntroStep({ loading, onGetStarted, insets }) {
+function IntroStep({ loading, onGetStarted, insets, t }) {
+  const styles = createStyles(t);
   return (
     <View style={{ flex: 1, paddingHorizontal: 28 }}>
       {/* Illustration */}
       <View style={styles.illustrationWrap}>
-        {/* Outer ring */}
         <View style={styles.outerRing}>
-          {/* Inner ring */}
           <View style={styles.innerRing} />
-
-          {/* Custom lock SVG */}
           <View style={styles.svgWrap}>
             <Svg width={58} height={66} viewBox="0 0 58 66" fill="none">
-              {/* Shackle */}
               <Path
                 d="M14 28V20C14 12.268 20.268 6 28 6h2C37.732 6 44 12.268 44 20v8"
-                stroke="#1A1A1A"
+                stroke={t.text}
                 strokeWidth={4}
                 strokeLinecap="round"
               />
-              {/* Lock body */}
-              <Rect x={7} y={28} width={44} height={32} rx={8} fill="#1A1A1A" />
-              {/* Keyhole circle */}
-              <Circle cx={29} cy={42} r={5} fill="#F2EEE8" opacity={0.9} />
-              {/* Keyhole stem */}
+              <Rect x={7} y={28} width={44} height={32} rx={8} fill={t.text} />
+              <Circle cx={29} cy={42} r={5} fill={t.isDark ? "#2A1A1A" : "#F2EEE8"} opacity={0.9} />
               <Rect
                 x={27}
                 y={45}
                 width={4}
                 height={7}
                 rx={2}
-                fill="#F2EEE8"
+                fill={t.isDark ? "#2A1A1A" : "#F2EEE8"}
                 opacity={0.9}
               />
             </Svg>
@@ -207,14 +205,8 @@ function IntroStep({ loading, onGetStarted, insets }) {
   );
 }
 
-function ConfigStep({
-  selectedTimeout,
-  onSelectTimeout,
-  onSave,
-  onDisable,
-  isExisting,
-  insets,
-}) {
+function ConfigStep({ selectedTimeout, onSelectTimeout, onSave, onDisable, isExisting, insets, t }) {
+  const styles = createStyles(t);
   return (
     <ScrollView
       contentContainerStyle={{
@@ -236,7 +228,7 @@ function ConfigStep({
             <Pressable
               style={({ pressed }) => [
                 styles.optionRow,
-                pressed && { backgroundColor: "#F8F4F0" },
+                pressed && { backgroundColor: t.surfaceElevated },
               ]}
               onPress={() => onSelectTimeout(opt.value)}
             >
@@ -282,200 +274,202 @@ function ConfigStep({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F4F0",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: "#F8F4F0",
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(9,51,44,0.06)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: 17,
-    color: "#1A1A1A",
-  },
-  illustrationWrap: {
-    alignItems: "center",
-    marginBottom: 32,
-  },
-  outerRing: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(255,255,255,0.72)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#1A1A1A",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.09,
-        shadowRadius: 20,
-      },
-      android: { elevation: 3 },
-    }),
-  },
-  innerRing: {
-    position: "absolute",
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "rgba(255,255,255,0.45)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.5)",
-  },
-  svgWrap: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#1A1A1A",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.18,
-        shadowRadius: 6,
-      },
-    }),
-  },
-  title: {
-    fontFamily: fonts.bold,
-    fontSize: 26,
-    color: "#1A1A1A",
-    letterSpacing: -0.8,
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  body: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: "rgba(9,51,44,0.6)",
-    lineHeight: 22,
-    textAlign: "center",
-    marginBottom: 28,
-  },
-  featureList: {
-    gap: 16,
-  },
-  featureRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  featureCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#A9334D",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  featureText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: "#1A1A1A",
-    flex: 1,
-  },
-  enabledBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#D1FAE5",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 28,
-    marginTop: 8,
-  },
-  enabledBadgeText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: "#059669",
-  },
-  sectionLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: "#9CA3AF",
-    letterSpacing: 0.8,
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  sectionHint: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginTop: 8,
-    marginLeft: 4,
-    lineHeight: 17,
-  },
-  optionsCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#F0E4E1",
-    overflow: "hidden",
-  },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
-  },
-  optionLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: "#1A1A1A",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#F0E4E1",
-    marginLeft: 16,
-  },
-  primaryBtn: {
-    backgroundColor: "#A9334D",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#A9334D",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 16,
-      },
-      android: { elevation: 6 },
-    }),
-  },
-  primaryBtnText: {
-    fontFamily: fonts.bold,
-    fontSize: 16,
-    color: "#ffffff",
-    letterSpacing: 0.2,
-  },
-  destructiveBtn: {
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  destructiveBtnText: {
-    fontFamily: fonts.semibold,
-    fontSize: 15,
-    color: "#DC2626",
-  },
-});
+function createStyles(t) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: t.background,
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: t.background,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: t.surfaceElevated,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: {
+      fontFamily: fonts.semibold,
+      fontSize: 17,
+      color: t.text,
+    },
+    illustrationWrap: {
+      alignItems: "center",
+      marginBottom: 32,
+    },
+    outerRing: {
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      backgroundColor: t.isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.72)",
+      borderWidth: 1,
+      borderColor: t.isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.6)",
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#1A1A1A",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.09,
+          shadowRadius: 20,
+        },
+        android: { elevation: 3 },
+      }),
+    },
+    innerRing: {
+      position: "absolute",
+      width: 110,
+      height: 110,
+      borderRadius: 55,
+      backgroundColor: t.isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.45)",
+      borderWidth: 1,
+      borderColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.5)",
+    },
+    svgWrap: {
+      ...Platform.select({
+        ios: {
+          shadowColor: "#1A1A1A",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.18,
+          shadowRadius: 6,
+        },
+      }),
+    },
+    title: {
+      fontFamily: fonts.bold,
+      fontSize: 26,
+      color: t.text,
+      letterSpacing: -0.8,
+      textAlign: "center",
+      marginBottom: 12,
+    },
+    body: {
+      fontFamily: fonts.regular,
+      fontSize: 15,
+      color: t.textSecondary,
+      lineHeight: 22,
+      textAlign: "center",
+      marginBottom: 28,
+    },
+    featureList: {
+      gap: 16,
+    },
+    featureRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    featureCheck: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: "#A9334D",
+      alignItems: "center",
+      justifyContent: "center",
+      flexShrink: 0,
+    },
+    featureText: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: t.text,
+      flex: 1,
+    },
+    enabledBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      backgroundColor: t.isDark ? "rgba(5,150,105,0.15)" : "#D1FAE5",
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      marginBottom: 28,
+      marginTop: 8,
+    },
+    enabledBadgeText: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      color: "#059669",
+    },
+    sectionLabel: {
+      fontFamily: fonts.semibold,
+      fontSize: 11,
+      color: t.textSecondary,
+      letterSpacing: 0.8,
+      marginBottom: 6,
+      marginLeft: 4,
+    },
+    sectionHint: {
+      fontFamily: fonts.regular,
+      fontSize: 12,
+      color: t.textSecondary,
+      marginTop: 8,
+      marginLeft: 4,
+      lineHeight: 17,
+    },
+    optionsCard: {
+      backgroundColor: t.surface,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: t.border,
+      overflow: "hidden",
+    },
+    optionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      backgroundColor: t.surface,
+    },
+    optionLabel: {
+      fontFamily: fonts.medium,
+      fontSize: 15,
+      color: t.text,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: t.border,
+      marginLeft: 16,
+    },
+    primaryBtn: {
+      backgroundColor: "#A9334D",
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: "center",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#A9334D",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.35,
+          shadowRadius: 16,
+        },
+        android: { elevation: 6 },
+      }),
+    },
+    primaryBtnText: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: "#ffffff",
+      letterSpacing: 0.2,
+    },
+    destructiveBtn: {
+      borderRadius: 14,
+      paddingVertical: 16,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    destructiveBtnText: {
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: "#DC2626",
+    },
+  });
+}

@@ -981,7 +981,11 @@ export default function StreakModal() {
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
             >
-              <Zap size={16} color={t.isDark ? t.text : HEMO.wine} strokeWidth={2} />
+              <Zap
+                size={16}
+                color={t.isDark ? t.text : HEMO.wine}
+                strokeWidth={2}
+              />
               <Text
                 style={{
                   fontFamily: fonts.semibold,
@@ -991,7 +995,7 @@ export default function StreakModal() {
                   lineHeight: 20,
                 }}
               >
-                Keep logging daily to maintain your streak!
+                More coming soon!
               </Text>
             </View>
           </View>

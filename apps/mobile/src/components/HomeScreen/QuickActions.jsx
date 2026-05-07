@@ -31,6 +31,7 @@ export function QuickActions({ medications = [] }) {
           backgroundColor: "#A9334D",
           borderRadius: 10,
           paddingHorizontal: 13,
+          paddingVertical: 7,
         }}
         activeOpacity={0.8}
       >
@@ -60,15 +61,15 @@ export function QuickActions({ medications = [] }) {
         }}
         activeOpacity={0.8}
       >
-        <Flame size={15} color="#A9334D" opacity={0.8} />
+        <Flame size={15} color={t.isDark ? t.text : "#A9334D"} opacity={0.8} />
         <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#A9334D" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.isDark ? t.text : "#A9334D" }}
         >
           Log a flare
         </Text>
         <ChevronRight
           size={16}
-          color="#A9334D"
+          color={t.isDark ? t.text : "#A9334D"}
           style={{ marginLeft: 4, opacity: 0.8 }}
         />
       </TouchableOpacity>
@@ -91,19 +92,19 @@ export function QuickActions({ medications = [] }) {
           }}
           activeOpacity={0.8}
         >
-          <Pill size={15} color="#A9334D" opacity={0.8} />
+          <Pill size={15} color={t.isDark ? t.text : "#A9334D"} opacity={0.8} />
           <Text
             style={{
               fontFamily: fonts.semibold,
               fontSize: 14,
-              color: "#A9334D",
+              color: t.isDark ? t.text : "#A9334D",
             }}
           >
             Mark meds taken
           </Text>
           <ChevronRight
             size={16}
-            color="#A9334D"
+            color={t.isDark ? t.text : "#A9334D"}
             style={{ marginLeft: 4, opacity: 0.8 }}
           />
         </TouchableOpacity>
