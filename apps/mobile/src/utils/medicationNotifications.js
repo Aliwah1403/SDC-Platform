@@ -78,7 +78,7 @@ export async function scheduleMedicationNotifications(med) {
       trigger,
     });
     posthog.capture('medication_reminder_sent', {
-      medication_name: med.name,
+      medication_category: med.category,
       trigger_type: isWeekly ? 'weekly' : 'daily',
       offset_minutes: 0,
       notification_variant: 'dose',

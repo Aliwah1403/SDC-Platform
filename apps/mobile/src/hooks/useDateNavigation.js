@@ -3,6 +3,7 @@ import { useCallback, useMemo } from "react";
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 export function useDateNavigation() {
+  const todayKey = new Date().toDateString();
   const dates = useMemo(() => {
     const now = new Date();
     const result = [];
@@ -12,7 +13,7 @@ export function useDateNavigation() {
       result.push(date);
     }
     return result;
-  }, []);
+  }, [todayKey]);
 
   const formatNavDate = useCallback((date) => {
     return date.toLocaleDateString("en-US", { month: "long", day: "numeric" });

@@ -97,7 +97,7 @@ export function getDynamicMessage({
           label: 'WEATHER ALERT',
           headline: 'Freezing conditions today.',
           body: `Feels like ${Math.round(feelsLike)}°C. Extreme cold is a significant VOC trigger — dress in warm layers and cover your extremities.`,
-          basis: src,
+          // basis: src,
         };
       }
 
@@ -106,7 +106,7 @@ export function getDynamicMessage({
           label: 'WEATHER ALERT',
           headline: 'Snow in the forecast.',
           body: 'Cold and wet conditions increase vasoconstriction risk. Stay warm and dry, and limit outdoor exposure.',
-          basis: src,
+          // basis: src,
         };
       }
 
@@ -115,7 +115,7 @@ export function getDynamicMessage({
           label: "TODAY'S FORECAST",
           headline: 'Cold outside — layer up.',
           body: `Feels like ${Math.round(feelsLike)}°C. Cold is a common SCD trigger. An extra layer and warm drinks will help keep your circulation steady.`,
-          basis: src,
+          // basis: src,
         };
       }
 
@@ -124,7 +124,7 @@ export function getDynamicMessage({
           label: "TODAY'S FORECAST",
           headline: 'Storms bring pressure changes.',
           body: 'Barometric pressure shifts can trigger pain episodes. Take it steady and keep your medications close.',
-          basis: src,
+          // basis: src,
         };
       }
 
@@ -133,7 +133,7 @@ export function getDynamicMessage({
           label: 'WEATHER ALERT',
           headline: 'Extreme heat today.',
           body: `${Math.round(temp)}°C outside. Heat and dehydration sharply raise crisis risk. Stay indoors, drink frequently, and avoid direct sun.`,
-          basis: src,
+          // basis: src,
         };
       }
 
@@ -142,7 +142,7 @@ export function getDynamicMessage({
           label: "TODAY'S FORECAST",
           headline: 'Hot and humid — hydrate early.',
           body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least 8 glasses today.`,
-          basis: src,
+          // basis: src,
         };
       }
     }
