@@ -349,17 +349,20 @@ export async function addMedication(userId, med) {
       user_id: userId,
       name: med.name,
       dosage: med.dosage || null,
-      frequency: med.frequency || 'Daily',
+      frequency: med.frequency || 'Every Day',
       type: med.type || 'tablet',
       prescribed_by: med.prescribedBy || null,
       start_date: med.startDate || null,
       is_active: true,
       time: med.time || null,
+      times: med.times ?? [],
       notes: med.notes || null,
       category: med.category || 'Supportive',
       rxcui: med.rxcui || null,
       brand_names: med.brandNames || null,
       reminders: med.reminders ?? [],
+      selected_days: med.selectedDays ?? [],
+      weekday: med.weekday ?? null,
     })
     .select()
     .single();
