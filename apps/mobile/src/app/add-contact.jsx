@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -43,6 +44,7 @@ import { uploadContactPhoto } from "@/services/supabaseQueries";
 import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -67,6 +69,7 @@ function getInitials(name = "") {
 }
 
 export default function AddContactScreen() {
+  const posthog = usePostHog();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -98,6 +101,7 @@ export default function AddContactScreen() {
 
   // Contact picker mode (create only)
   const [mode, setMode] = useState(isEditing ? "form" : "gate"); // "gate" | "form"
+  const [phonePickerUsed, setPhonePickerUsed] = useState(false);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
   // Android contact picker modal
@@ -177,6 +181,7 @@ export default function AddContactScreen() {
       setPhotoUri(contact.image.uri);
       setPhotoRemoved(false);
     }
+    setPhonePickerUsed(true);
     setMode("form");
   };
 
@@ -250,7 +255,13 @@ export default function AddContactScreen() {
         );
       } else {
         addMutation.mutate(payload, {
-          onSuccess: () => router.back(),
+          onSuccess: () => {
+            posthog?.capture('emergency_contact_added', {
+              contact_type: relationship ?? 'other',
+              method: phonePickerUsed ? 'phone_picker' : 'manual',
+            });
+            router.back();
+          },
           onError: () => setSaving(false),
         });
       }
@@ -298,7 +309,7 @@ export default function AddContactScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

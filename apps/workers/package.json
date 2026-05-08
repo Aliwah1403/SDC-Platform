@@ -10,10 +10,10 @@
   "dependencies": {
     "@sentry/node": "^10.50.0",
     "@supabase/supabase-js": "^2.101.1",
-    "@trigger.dev/sdk": "^4.4.4"
+    "@trigger.dev/sdk": "4.4.5"
   },
   "devDependencies": {
-    "@trigger.dev/build": "^4.4.4",
+    "@trigger.dev/build": "4.4.5",
     "typescript": "~5.9.2"
   },
   "engines": {

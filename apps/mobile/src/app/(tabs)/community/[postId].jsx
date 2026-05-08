@@ -46,6 +46,7 @@ import {
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
@@ -244,6 +245,9 @@ export default function PostDetailScreen() {
     if (!text) return;
 
     posthog?.capture('comment_submitted', { is_reply: !!replyingTo });
+    if (replyingTo) {
+      posthog?.capture('comment_replied', { thread_depth: 1 });
+    }
 
     if (replyingTo) {
       addReply({
@@ -263,7 +267,10 @@ export default function PostDetailScreen() {
   const handleShare = async () => {
     try {
       const author = post.isAnonymous ? "Someone" : post.author.name;
-      await Share.share({ message: `${author} on Hemo: "${post.content}"` });
+      const result = await Share.share({ message: `${author} on Hemo: "${post.content}"` });
+      if (result.action === Share.sharedAction) {
+        posthog?.capture('post_shared', { share_destination: result.activityType ?? 'unknown' });
+      }
     } catch (_) {}
   };
 
@@ -271,7 +278,7 @@ export default function PostDetailScreen() {
     <View>
       {/* Gradient header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{

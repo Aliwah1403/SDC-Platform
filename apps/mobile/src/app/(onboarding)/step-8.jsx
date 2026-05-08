@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePostHog } from "posthog-react-native";
 import { MotiView } from "moti";
 import { ArrowLeft, Bell } from "lucide-react-native";
@@ -93,6 +93,11 @@ export default function Step8() {
       const { status } = await Notifications.requestPermissionsAsync({
         ios: { allowAlert: true, allowBadge: true, allowSound: true },
       });
+      if (status === 'granted') {
+        posthog?.capture('notification_permission_granted', { platform: Platform.OS, prompt_variant: 'onboarding' });
+      } else {
+        posthog?.capture('notification_permission_denied', { platform: Platform.OS, prompt_variant: 'onboarding' });
+      }
       setOnboardingField("notificationsEnabled", status === "granted");
       router.push("/(onboarding)/step-9");
     } catch {

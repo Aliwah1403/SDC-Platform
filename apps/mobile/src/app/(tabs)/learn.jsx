@@ -39,10 +39,6 @@ export default function LearnScreen() {
     useAppStore();
 
   useEffect(() => {
-    posthog?.capture('learn_viewed', { has_prior_messages: chatMessages.length > 0 });
-  }, []);
-
-  useEffect(() => {
     // Auto-scroll to bottom when new messages are added
     if (scrollViewRef.current && chatMessages.length > 0) {
       setTimeout(() => {

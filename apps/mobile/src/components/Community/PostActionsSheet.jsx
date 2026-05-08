@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect, useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import { View, Text, TouchableOpacity, TextInput } from "react-native";
 import BottomSheet, { BottomSheetView, BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { Flag, EyeOff, Trash2, ChevronRight, CheckCircle2, X } from "lucide-react-native";
@@ -47,6 +48,7 @@ const REPORT_REASONS = [
 
 // step: "actions" → "report" → "done"
 export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
+  const posthog = usePostHog();
   const t = useTheme();
   const bottomSheetRef = useRef(null);
   const [step, setStep] = useState("actions");
@@ -97,9 +99,16 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
     if (!selectedReason) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const reasonLabel = REPORT_REASONS.find((r) => r.id === selectedReason)?.label ?? selectedReason;
-    reportPost({ postId, reason: reasonLabel, description: extraNote || undefined });
-    setStep("done");
-  }, [postId, selectedReason, extraNote, reportPost]);
+    reportPost(
+      { postId, reason: reasonLabel, description: extraNote || undefined },
+      {
+        onSuccess: () => {
+          posthog?.capture('post_reported', { reason: reasonLabel });
+          setStep("done");
+        },
+      },
+    );
+  }, [postId, selectedReason, extraNote, reportPost, posthog]);
 
   return (
     <BottomSheet

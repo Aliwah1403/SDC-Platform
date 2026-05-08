@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import {
   View,
@@ -49,6 +50,7 @@ const REMINDER_OPTIONS = [
 ];
 
 export default function AppointmentForm() {
+  const posthog = usePostHog();
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -171,6 +173,16 @@ export default function AppointmentForm() {
     const navigate = () => router.back();
     const afterSave = () => {
       setSaving(false);
+      posthog?.capture('appointment_saved', {
+        appointment_type: type,
+        has_reminder: reminderIds.length > 0,
+        is_edit: !!existing,
+      });
+      if (reminderIds.length > 0) {
+        posthog?.capture('appointment_reminder_set', {
+          reminder_lead_time: reminderOffsets[0],
+        });
+      }
       if (remindersOn && reminderOffsets.length > 0 && reminderIds.length === 0) {
         Alert.alert(
           "Reminders not set",
@@ -632,7 +644,7 @@ export default function AppointmentForm() {
                     value={date}
                     mode="date"
                     display="spinner"
-                    themeVariant="light"
+                    themeVariant={t.isDark ? "dark" : "light"}
                     minimumDate={new Date(2020, 0, 1)}
                     onChange={(_, selected) => {
                       if (selected) setDate(selected);
@@ -712,7 +724,7 @@ export default function AppointmentForm() {
                     value={time}
                     mode="time"
                     display="spinner"
-                    themeVariant="light"
+                    themeVariant={t.isDark ? "dark" : "light"}
                     onChange={(_, selected) => {
                       if (selected) setTime(selected);
                     }}

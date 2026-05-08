@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -16,6 +17,28 @@ import { useTheme } from "@/hooks/useTheme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SLIDER_WIDTH = SCREEN_WIDTH - 48;
+
+function bucketGoalValue(metric, value) {
+  if (metric === 'hydration') {
+    if (value <= 4) return '1-4';
+    if (value <= 7) return '5-7';
+    if (value <= 10) return '8-10';
+    return '11-16';
+  }
+  if (metric === 'sleep') {
+    if (value < 6) return 'under_6';
+    if (value < 8) return '6-7.9';
+    if (value < 10) return '8-9.9';
+    return '10-12';
+  }
+  if (metric === 'steps') {
+    if (value < 5000) return 'under_5k';
+    if (value < 10000) return '5k-9.9k';
+    if (value < 15000) return '10k-14.9k';
+    return '15k+';
+  }
+  return 'unknown';
+}
 
 const GOAL_META = {
   hydration: {
@@ -176,6 +199,7 @@ function HydrationSetter({ value, onChange, meta }) {
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function MetricGoalScreen() {
+  const posthog = usePostHog();
   const router = useRouter();
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -212,7 +236,15 @@ export default function MetricGoalScreen() {
   };
 
   const handleSave = () => {
-    setGoalMutation.mutate({ metric, value }, { onSuccess: () => router.back() });
+    setGoalMutation.mutate(
+      { metric, value },
+      {
+        onSuccess: () => {
+          posthog?.capture('metric_goal_set', { metric_name: metric, goal_value: bucketGoalValue(metric, value) });
+          router.back();
+        },
+      },
+    );
   };
 
   const isBelowRecommended = value < meta.recommended.min;

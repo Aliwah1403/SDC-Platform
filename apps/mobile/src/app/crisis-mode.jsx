@@ -172,11 +172,16 @@ export default function CrisisModeScreen() {
   useEffect(() => {
     if (!crisisMode.isActive) {
       startCrisisMode(0);
+      posthog?.capture('crisis_mode_enabled', {
+        start_reason: 'manual',
+        crisis_step: 1,
+      });
+    } else {
+      posthog?.capture('crisis_mode_viewed', {
+        initial_step: crisisMode.currentStep,
+        has_emergency_contacts: contacts.length > 0,
+      });
     }
-    posthog?.capture('crisis_mode_viewed', {
-      initial_step: crisisMode.currentStep,
-      has_emergency_contacts: contacts.length > 0,
-    });
   }, []);
 
   useEffect(() => {
@@ -211,9 +216,11 @@ export default function CrisisModeScreen() {
       Linking.openURL(`sms:${contact.phone}?body=${encodeURIComponent(body)}`).catch(() => {});
       addCrisisAlert(contact.id);
     });
-    posthog?.capture('crisis_alert_sent', {
+    posthog?.capture('care_team_alert_sent', {
+      alert_type: 'sms',
+      delivery_method: 'sms',
       contacts_count: contactList.length,
-      step_level: step,
+      crisis_step: step,
     });
   }
 
@@ -221,6 +228,8 @@ export default function CrisisModeScreen() {
     async (response) => {
       posthog?.capture('crisis_checkin_submitted', {
         response,
+        pain_level: sliderValue,
+        crisis_step: crisisMode.currentStep,
         step_level: crisisMode.currentStep,
         checkins_so_far: crisisMode.checkInHistory.length,
       });
@@ -245,6 +254,11 @@ export default function CrisisModeScreen() {
         const prevStep = crisisMode.currentStep;
         recordCrisisCheckIn("worse");
         if (prevStep < 3) {
+          posthog?.capture('crisis_step_escalated', {
+            from_step: prevStep,
+            to_step: prevStep + 1,
+            pain_level: sliderValue,
+          });
           await scheduleEscalationAlert(prevStep + 1);
         }
       }

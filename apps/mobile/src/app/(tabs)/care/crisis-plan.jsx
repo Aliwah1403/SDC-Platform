@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Linking,
   Pressable,
@@ -20,6 +20,7 @@ import {
   ChevronDown,
   ShieldAlert,
 } from "lucide-react-native";
+import { usePostHog } from "posthog-react-native";
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -29,8 +30,8 @@ import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
-const HEADER_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
 const SCD_TYPE_LABELS = {
   HbSS: "HbSS — Sickle Cell Anaemia",
@@ -112,13 +113,17 @@ function SectionLabel({ label }) {
 
 // ── Tier row ────────────────────────────────────────────────────────────────────
 
-function TierRow({ tier }) {
+function TierRow({ tier, onExpand }) {
   const t = useTheme();
   const styles = useMemo(() => createStyles(t), [t]);
   const [expanded, setExpanded] = useState(false);
   return (
     <Pressable
-      onPress={() => setExpanded((v) => !v)}
+      onPress={() => {
+        const next = !expanded;
+        setExpanded(next);
+        if (next) onExpand?.();
+      }}
       style={[
         styles.tierRow,
         { borderLeftColor: tier.border, backgroundColor: tier.bg },
@@ -164,6 +169,7 @@ export default function CrisisPlanScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const sheetRef = useRef(null);
+  const posthog = usePostHog();
 
   const crisisPlan = useAppStore((s) => s.crisisPlan);
   const crisisMode = useAppStore((s) => s.crisisMode);
@@ -200,6 +206,10 @@ export default function CrisisPlanScreen() {
   const [editAllergyInput, setEditAllergyInput] = useState("");
   const [editNotes, setEditNotes] = useState(crisisPlan.erNotes);
 
+  useEffect(() => {
+    posthog?.capture('crisis_plan_viewed', {});
+  }, []);
+
   const toggleEditPreset = (p) =>
     setEditPresets((prev) =>
       prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p],
@@ -219,12 +229,17 @@ export default function CrisisPlanScreen() {
 
   const handleSaveEdit = () => {
     const updatedAllergies = [...editPresets, ...editCustom];
+    posthog?.capture('crisis_plan_saved', {
+      allergies_count: updatedAllergies.length,
+      has_er_notes: !!editNotes.trim(),
+    });
     updateCrisisPlan({ allergies: updatedAllergies, erNotes: editNotes });
     updateProfileMutation.mutate({ allergies: updatedAllergies });
     sheetRef.current?.close();
   };
 
   const openSheet = () => {
+    posthog?.capture('crisis_plan_edit_started', {});
     setEditPresets(
       allergies.filter((a) => PRESET_ALLERGIES.includes(a)),
     );
@@ -243,7 +258,7 @@ export default function CrisisPlanScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={HEADER_GRADIENT}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{
@@ -421,7 +436,11 @@ export default function CrisisPlanScreen() {
           </Text>
           <View style={{ gap: 8, marginTop: 12 }}>
             {ESCALATION_TIERS.map((tier) => (
-              <TierRow key={tier.step} tier={tier} />
+              <TierRow
+                key={tier.step}
+                tier={tier}
+                onExpand={() => posthog?.capture('crisis_escalation_tier_expanded', { step: tier.step, tier_label: tier.label })}
+              />
             ))}
           </View>
         </View>
@@ -446,7 +465,10 @@ export default function CrisisPlanScreen() {
               {contacts.map((contact, idx) => (
                 <View key={contact.id}>
                   <Pressable
-                    onPress={() => Linking.openURL(`tel:${contact.phone}`)}
+                    onPress={() => {
+                      posthog?.capture('crisis_contact_called', { contact_relationship: contact.relationship ?? 'unknown' });
+                      Linking.openURL(`tel:${contact.phone}`);
+                    }}
                     style={({ pressed }) => [
                       styles.contactRow,
                       pressed && { opacity: 0.7 },
@@ -497,9 +519,10 @@ export default function CrisisPlanScreen() {
               ) : null}
               {preferredHospital.phone ? (
                 <Pressable
-                  onPress={() =>
-                    Linking.openURL(`tel:${preferredHospital.phone}`)
-                  }
+                  onPress={() => {
+                    posthog?.capture('crisis_hospital_called', {});
+                    Linking.openURL(`tel:${preferredHospital.phone}`);
+                  }}
                   style={({ pressed }) => [
                     styles.callPillLarge,
                     pressed && { opacity: 0.8 },

@@ -168,7 +168,7 @@ export default function HomeScreen() {
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
   const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
-    typeof b === "object" ? b.id : b,
+    b != null && typeof b === "object" ? b.id : b,
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
@@ -233,13 +233,6 @@ export default function HomeScreen() {
     hydrationDays,
   ]);
 
-  useEffect(() => {
-    posthog?.capture("home_viewed", {
-      logged_today: hasLoggedData,
-      streak_days: healthStreak ?? 0,
-    });
-  }, []);
-
   const alertState = useAppStore((s) => s.computedAlertState);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
@@ -254,8 +247,8 @@ export default function HomeScreen() {
     alertState,
     weather,
   });
-  const gradientColors = getGradientColors(hasLoggedData);
   const t = useTheme();
+  const gradientColors = getGradientColors(hasLoggedData, t.isDark);
 
   const compactBarHeight = insets.top + 56;
   const [headerHeight, setHeaderHeight] = useState(350);
@@ -405,7 +398,7 @@ export default function HomeScreen() {
             });
             const existing = streak?.claimedBadges ?? [];
             const alreadyIds = existing.map((b) =>
-              typeof b === "object" ? b.id : b,
+              b != null && typeof b === "object" ? b.id : b,
             );
             const updated = alreadyIds.includes(pendingMilestone.milestoneId)
               ? existing

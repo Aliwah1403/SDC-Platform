@@ -76,6 +76,14 @@ export default function CommunityFeedScreen() {
   const { mutate: voteOnPoll } = useVoteMutation();
   const { mutate: followCategory } = useFollowCategoryMutation();
 
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const t = setTimeout(() => {
+      posthog?.capture('community_search_performed', { query_length: searchQuery.trim().length });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
   const filteredPosts = useMemo(() => {
     let posts = feedData.filter((p) => !hiddenPostIds.includes(p.id));
 

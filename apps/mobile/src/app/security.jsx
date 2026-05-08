@@ -92,12 +92,14 @@ function isEmailUser(user) {
 // ─── primitive components ─────────────────────────────────────────────────────
 
 function Divider() {
+  const t = useTheme();
   return (
-    <View style={{ height: 1, backgroundColor: "#F8E9E7", marginLeft: 54 }} />
+    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 54 }} />
   );
 }
 
 function SectionCard({ title, children }) {
+  const t = useTheme();
   const kids = React.Children.toArray(children).filter(Boolean);
   return (
     <View style={{ marginBottom: 24 }}>
@@ -106,7 +108,7 @@ function SectionCard({ title, children }) {
           style={{
             fontFamily: fonts.semibold,
             fontSize: 11,
-            color: "#9CA3AF",
+            color: t.textSecondary,
             letterSpacing: 0.8,
             textTransform: "uppercase",
             marginBottom: 6,
@@ -118,10 +120,10 @@ function SectionCard({ title, children }) {
       ) : null}
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           borderRadius: 14,
           borderWidth: 1,
-          borderColor: "#F0E4E1",
+          borderColor: t.border,
           overflow: "hidden",
         }}
       >
@@ -145,6 +147,7 @@ function Row({
   rightElement,
   danger = false,
 }) {
+  const t = useTheme();
   const content = (
     <View
       style={{
@@ -170,7 +173,7 @@ function Row({
         style={{
           fontFamily: fonts.medium,
           fontSize: 15,
-          color: danger ? "#DC2626" : "#1A1A1A",
+          color: danger ? "#DC2626" : t.text,
           flex: 1,
         }}
       >
@@ -181,7 +184,7 @@ function Row({
           style={{
             fontFamily: fonts.regular,
             fontSize: 14,
-            color: "#9CA3AF",
+            color: t.textSecondary,
             marginRight: 4,
           }}
         >
@@ -191,7 +194,7 @@ function Row({
       {rightElement !== undefined ? (
         rightElement
       ) : onPress ? (
-        <ChevronRight size={18} color="#C4A8A4" />
+        <ChevronRight size={18} color={t.textTertiary} />
       ) : null}
     </View>
   );
@@ -405,14 +408,14 @@ export default function SecurityScreen() {
       {/* ── Header ── */}
       <View
         style={{
-          backgroundColor: "#ffffff",
+          backgroundColor: t.surface,
           paddingTop: insets.top + 10,
           paddingBottom: 14,
           paddingHorizontal: 16,
           flexDirection: "row",
           alignItems: "center",
           borderBottomWidth: 1,
-          borderBottomColor: "#F0E4E1",
+          borderBottomColor: t.border,
         }}
       >
         <TouchableOpacity
@@ -422,17 +425,17 @@ export default function SecurityScreen() {
             width: 36,
             height: 36,
             borderRadius: 18,
-            backgroundColor: "#F8F4F0",
+            backgroundColor: t.background,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
           }}
         >
-          <ChevronLeft size={22} color="#1A1A1A" />
+          <ChevronLeft size={22} color={t.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text
-            style={{ fontFamily: fonts.bold, fontSize: 18, color: "#1A1A1A" }}
+            style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}
           >
             Password & Security
           </Text>
@@ -457,7 +460,7 @@ export default function SecurityScreen() {
             rightElement={
               <View
                 style={{
-                  backgroundColor: "#F0E4E1",
+                  backgroundColor: t.border,
                   borderRadius: 20,
                   paddingHorizontal: 10,
                   paddingVertical: 3,
@@ -488,7 +491,7 @@ export default function SecurityScreen() {
             {
               key: "apple",
               label: "Apple",
-              Icon: () => <AppleIcon size={18} color="#1A1A1A" />,
+              Icon: () => <AppleIcon size={18} color={t.text} />,
             },
           ].map(({ key, label, Icon }) => {
             const identity = user?.identities?.find((i) => i.provider === key);
@@ -498,7 +501,7 @@ export default function SecurityScreen() {
               <Row
                 key={key}
                 icon={Icon}
-                iconColor="#1A1A1A"
+                iconColor={t.text}
                 label={label}
                 rightElement={
                   isLoading ? (
@@ -534,7 +537,7 @@ export default function SecurityScreen() {
                         hitSlop={8}
                         activeOpacity={0.6}
                       >
-                        <Unlink size={16} color="#9CA3AF" />
+                        <Unlink size={16} color={t.textSecondary} />
                       </TouchableOpacity>
                     </View>
                   ) : (
@@ -545,7 +548,7 @@ export default function SecurityScreen() {
                         flexDirection: "row",
                         alignItems: "center",
                         gap: 4,
-                        backgroundColor: "#F0E4E1",
+                        backgroundColor: t.border,
                         borderRadius: 20,
                         paddingHorizontal: 12,
                         paddingVertical: 5,
@@ -616,7 +619,7 @@ export default function SecurityScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <View
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: t.surface,
             borderTopLeftRadius: 20,
             borderTopRightRadius: 20,
             paddingBottom: insets.bottom + 12,
@@ -632,7 +635,7 @@ export default function SecurityScreen() {
               paddingTop: 16,
               paddingBottom: 12,
               borderBottomWidth: 1,
-              borderBottomColor: "#F0E4E1",
+              borderBottomColor: t.border,
             }}
           >
             <Pressable onPress={closePasswordSheet} hitSlop={12}>
@@ -640,7 +643,7 @@ export default function SecurityScreen() {
                 style={{
                   fontFamily: fonts.regular,
                   fontSize: 16,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                 }}
               >
                 Cancel
@@ -650,7 +653,7 @@ export default function SecurityScreen() {
               style={{
                 fontFamily: fonts.semibold,
                 fontSize: 16,
-                color: "#1A1A1A",
+                color: t.text,
               }}
             >
               Change Password
@@ -684,7 +687,7 @@ export default function SecurityScreen() {
                 style={{
                   fontFamily: fonts.medium,
                   fontSize: 13,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                   marginBottom: 6,
                 }}
               >
@@ -695,9 +698,9 @@ export default function SecurityScreen() {
                   flexDirection: "row",
                   alignItems: "center",
                   borderWidth: 1,
-                  borderColor: "#F0E4E1",
+                  borderColor: t.border,
                   borderRadius: 12,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
                 }}
@@ -706,22 +709,22 @@ export default function SecurityScreen() {
                   value={newPassword}
                   onChangeText={setNewPassword}
                   placeholder="At least 8 characters"
-                  placeholderTextColor="#C4A8A4"
+                  placeholderTextColor={t.textTertiary}
                   secureTextEntry={!showNew}
                   autoFocus
                   style={{
                     flex: 1,
                     fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#1A1A1A",
+                    color: t.text,
                     padding: 0,
                   }}
                 />
                 <Pressable onPress={() => setShowNew((v) => !v)} hitSlop={8}>
                   {showNew ? (
-                    <EyeOff size={18} color="#9CA3AF" />
+                    <EyeOff size={18} color={t.textSecondary} />
                   ) : (
-                    <Eye size={18} color="#9CA3AF" />
+                    <Eye size={18} color={t.textSecondary} />
                   )}
                 </Pressable>
               </View>
@@ -733,7 +736,7 @@ export default function SecurityScreen() {
                 style={{
                   fontFamily: fonts.medium,
                   fontSize: 13,
-                  color: "#9CA3AF",
+                  color: t.textSecondary,
                   marginBottom: 6,
                 }}
               >
@@ -748,9 +751,9 @@ export default function SecurityScreen() {
                     confirmPassword.length > 0 &&
                     confirmPassword !== newPassword
                       ? "#DC2626"
-                      : "#F0E4E1",
+                      : t.border,
                   borderRadius: 12,
-                  backgroundColor: "#F8F4F0",
+                  backgroundColor: t.background,
                   paddingHorizontal: 14,
                   paddingVertical: 12,
                 }}
@@ -759,7 +762,7 @@ export default function SecurityScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                   placeholder="Re-enter new password"
-                  placeholderTextColor="#C4A8A4"
+                  placeholderTextColor={t.textTertiary}
                   secureTextEntry={!showConfirm}
                   returnKeyType="done"
                   onSubmitEditing={handleChangePassword}
@@ -767,7 +770,7 @@ export default function SecurityScreen() {
                     flex: 1,
                     fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#1A1A1A",
+                    color: t.text,
                     padding: 0,
                   }}
                 />
@@ -776,9 +779,9 @@ export default function SecurityScreen() {
                   hitSlop={8}
                 >
                   {showConfirm ? (
-                    <EyeOff size={18} color="#9CA3AF" />
+                    <EyeOff size={18} color={t.textSecondary} />
                   ) : (
-                    <Eye size={18} color="#9CA3AF" />
+                    <Eye size={18} color={t.textSecondary} />
                   )}
                 </Pressable>
               </View>

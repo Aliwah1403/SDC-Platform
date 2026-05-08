@@ -4,7 +4,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PostHogProvider } from "posthog-react-native";
-import { posthog } from "@/utils/analytics";
+import { posthog, registerSuperProperties } from "@/utils/analytics";
 import { initSentry, Sentry } from "@/utils/sentry";
 
 initSentry();
@@ -88,12 +88,13 @@ export default function RootLayout() {
 
   // Track cold start and identify user when auth resolves
   useEffect(() => {
-    posthog.capture('app_opened', { cold_start: true });
+    posthog.capture('app_opened', { cold_start: true, source: 'direct', notification_opened: false });
   }, []);
 
   useEffect(() => {
     if (!userId) return;
     posthog.identify(userId);
+    registerSuperProperties();
     Sentry.setUser({ id: userId });
   }, [userId]);
 
@@ -245,7 +246,11 @@ export default function RootLayout() {
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
-      posthog.capture('notification_opened', { type: data.type ?? data.screen ?? 'unknown' });
+      posthog.capture('notification_opened', {
+        type: data.type ?? data.screen ?? 'unknown',
+        trigger_type: response.notification.request.trigger?.type ?? 'unknown',
+        notification_variant: data.variant ?? null,
+      });
       if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
       } else if (data.type === "checkin") {
@@ -256,8 +261,8 @@ export default function RootLayout() {
         router.push("/(tabs)/home");
       } else if (data.type === "appointment") {
         router.push("/(tabs)/care/appointments");
-      } else if (data.type === "community") {
-        router.push(data.postId ? `/(tabs)/community/${data.postId}` : "/notifications");
+      } else if (data.type === "community" || data.type === "like" || data.type === "comment" || data.type === "reply") {
+        router.push(data.postId ? `/community/${data.postId}` : "/community/notifications");
       } else if (data.screen === "metric-detail" && data.metric) {
         router.push(`/metric-detail?metric=${data.metric}`);
       }

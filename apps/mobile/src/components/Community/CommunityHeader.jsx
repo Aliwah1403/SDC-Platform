@@ -4,13 +4,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Bell, Search, X, User } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNotifications, onProfile, notificationCount = 0 }) {
   const insets = useSafeAreaInsets();
+  const t = useTheme();
 
   return (
     <LinearGradient
-      colors={["#D09F9A", "#A9334D", "#781D11"]}
+      colors={getGradientColors(true, t.isDark)}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={{

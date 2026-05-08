@@ -29,6 +29,7 @@ import { usePostHog } from "posthog-react-native";
 import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUtils";
 import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const TYPE_COLORS = {
   "routine":     { bg: "#F8F4F0", text: "#374151" },
@@ -225,7 +226,7 @@ export default function AppointmentsScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: insets.top + 12, paddingHorizontal: 20, paddingBottom: 20, overflow: "hidden" }}

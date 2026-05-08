@@ -280,7 +280,12 @@ export function getDynamicMessage({
   };
 }
 
-export function getGradientColors(hasLoggedData) {
+export function getGradientColors(hasLoggedData, isDark = false) {
+  if (isDark) {
+    return hasLoggedData
+      ? ["#2A0F18", "#781D11", "#0D0D0D"]
+      : ["#1A0A10", "#4A1309", "#0D0D0D"];
+  }
   return hasLoggedData
     ? ["#D09F9A", "#A9334D", "#781D11"]
     : ["#C4A09C", "#A9334D", "#781D11"];

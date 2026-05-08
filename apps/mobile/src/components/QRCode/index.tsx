@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 import { useEffect, useRef } from 'react';
+import { useTheme } from '@/hooks/useTheme';
 
 import { Canvas, Picture, Skia, useImage } from '@shopify/react-native-skia';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -147,9 +148,18 @@ interface HemoQRCodeProps {
 export const HemoQRCode = ({ qrData }: HemoQRCodeProps) => {
   const animationRef = useRef<QRCodeAnimationRef | null>(null);
   const progress = useSharedValue(0);
+  const t = useTheme();
+
+  const topColors = t.isDark
+    ? (['#141414', 'rgba(20,20,20,0.8)', 'rgba(20,20,20,0)'] as const)
+    : (['#F8F4F0', 'rgba(248,244,240,0.8)', 'rgba(248,244,240,0)'] as const);
+
+  const bottomColors = t.isDark
+    ? (['rgba(20,20,20,0)', 'rgba(20,20,20,0.9)', '#141414'] as const)
+    : (['rgba(248,244,240,0)', 'rgba(248,244,240,0.9)', '#F8F4F0'] as const);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: t.background }]}>
       <QRCodeAnimation
         ref={animationRef}
         qrData={qrData}
@@ -158,14 +168,14 @@ export const HemoQRCode = ({ qrData }: HemoQRCodeProps) => {
       />
 
       <LinearGradient
-        colors={['#F8F4F0', 'rgba(248,244,240,0.8)', 'rgba(248,244,240,0)']}
+        colors={topColors}
         locations={[0, 0.4, 1]}
         style={styles.topGradient}
         pointerEvents="none"
       />
 
       <LinearGradient
-        colors={['rgba(248,244,240,0)', 'rgba(248,244,240,0.9)', '#F8F4F0']}
+        colors={bottomColors}
         locations={[0, 0.6, 1]}
         style={styles.bottomGradient}
         pointerEvents="none"
@@ -193,7 +203,6 @@ const styles = StyleSheet.create({
     width: CANVAS_WIDTH,
   },
   container: {
-    backgroundColor: '#F8F4F0',
     flex: 1,
   },
   topGradient: {

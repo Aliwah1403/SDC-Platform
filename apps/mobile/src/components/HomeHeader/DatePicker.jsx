@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -119,7 +119,7 @@ export function DatePicker({
   const flatListRef = useRef(null);
   const weeks = useMemo(() => generateWeeks(), []);
 
-  const renderWeek = ({ item: week }) => (
+  const renderWeek = useCallback(({ item: week }) => (
     <View style={{ width: SCREEN_WIDTH, flexDirection: "row" }}>
       {week.map((date, dayIndex) => (
         <DayItem
@@ -134,7 +134,7 @@ export function DatePicker({
         />
       ))}
     </View>
-  );
+  ), [selectedDate, setSelectedDate, isToday, isFuture, isSelected]);
 
   return (
     <FlatList

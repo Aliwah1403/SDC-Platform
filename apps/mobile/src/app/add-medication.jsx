@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -194,6 +195,7 @@ function parseTimeStr(timeStr) {
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
 export default function AddMedicationScreen() {
+  const posthog = usePostHog();
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -326,6 +328,10 @@ export default function AddMedicationScreen() {
         { id: medicationId, updates: med },
         {
           onSuccess: async () => {
+            posthog?.capture('medication_updated', {
+              medication_name: med.name,
+              change_type: 'edit',
+            });
             try {
               await scheduleMedicationNotifications({ ...med, id: medicationId });
             } catch (error) {
@@ -338,6 +344,19 @@ export default function AddMedicationScreen() {
     } else {
       addMed.mutate(med, {
         onSuccess: async (savedMed) => {
+          posthog?.capture('medication_added', {
+            medication_name: med.name,
+            dosage: med.dosage,
+            frequency: med.frequency,
+            has_reminder: med.reminders.length > 0,
+          });
+          if (med.time) {
+            posthog?.capture('medication_schedule_created', {
+              medication_name: med.name,
+              dose_times_count: 1,
+              schedule_type: med.frequency,
+            });
+          }
           try {
             await scheduleMedicationNotifications({ ...med, id: savedMed.id });
           } catch (error) {
@@ -363,6 +382,7 @@ export default function AddMedicationScreen() {
           }
           try {
             await deleteMed.mutateAsync(medicationId);
+            posthog?.capture('medication_deleted', { medication_name: name });
             router.back();
           } catch (error) {
             console.error("Failed to delete medication:", error);

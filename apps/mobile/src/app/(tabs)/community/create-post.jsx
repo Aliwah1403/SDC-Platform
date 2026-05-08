@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
@@ -52,6 +53,7 @@ const FLAIR_OPTIONS = [
 ];
 
 export default function CreatePostScreen() {
+  const posthog = usePostHog();
   const t = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -143,9 +145,19 @@ export default function CreatePostScreen() {
           : undefined,
       },
       {
-        onSuccess: () => router.back(),
+        onSuccess: () => {
+          posthog?.capture("post_created", {
+            post_type: pollEnabled ? "poll" : "text",
+            category,
+            is_anonymous: isAnonymous,
+          });
+          router.back();
+        },
         onError: (err) => {
-          Alert.alert("Couldn't post", err?.message ?? "Something went wrong. Please try again.");
+          Alert.alert(
+            "Couldn't post",
+            err?.message ?? "Something went wrong. Please try again.",
+          );
         },
       },
     );
@@ -189,9 +201,7 @@ export default function CreatePostScreen() {
             <X size={18} color={t.text} strokeWidth={2} />
           </TouchableOpacity>
 
-          <Text
-            style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}
-          >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}>
             New Post
           </Text>
 
@@ -246,7 +256,11 @@ export default function CreatePostScreen() {
                   justifyContent: "center",
                 }}
               >
-                <UserCircle size={26} color={t.textSecondary} strokeWidth={1.5} />
+                <UserCircle
+                  size={26}
+                  color={t.textSecondary}
+                  strokeWidth={1.5}
+                />
               </View>
             ) : (
               <View
@@ -505,20 +519,16 @@ export default function CreatePostScreen() {
               padding: 14,
               borderRadius: 12,
               borderWidth: 1,
-              borderColor: pollEnabled ? "#A9334D" : "#E2D9D6",
-              backgroundColor: pollEnabled ? "#FDF0F2" : "#FAFAFA",
+              borderColor: "#A9334D",
+              backgroundColor: "#A9334D",
             }}
           >
-            <BarChart2
-              size={18}
-              color={pollEnabled ? "#A9334D" : t.text}
-              strokeWidth={1.5}
-            />
+            <BarChart2 size={18} color={t.text} strokeWidth={1.5} />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: pollEnabled ? "#A9334D" : t.text,
+                color: t.text,
                 flex: 1,
               }}
             >

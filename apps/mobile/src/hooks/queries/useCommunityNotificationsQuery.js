@@ -27,20 +27,24 @@ export function useCommunityNotificationsQuery() {
   useEffect(() => {
     if (!userId) return;
 
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ['community_notifications', userId] });
+    };
+
     const channel = supabase
       .channel(`community_notifications:${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'community_notifications',
-          filter: `user_id=eq.${userId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['community_notifications', userId] });
-        },
-      )
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'community_notifications',
+        filter: `user_id=eq.${userId}`,
+      }, invalidate)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'community_notifications',
+        filter: `user_id=eq.${userId}`,
+      }, invalidate)
       .subscribe();
 
     return () => {

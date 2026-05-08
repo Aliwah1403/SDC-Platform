@@ -432,7 +432,7 @@ export async function markGroupTaken(userId, medIds) {
   const { error } = await supabase
     .from('medication_logs')
     .insert(rows);
-  if (error) throw error;
+  if (error && error.code !== '23505') throw error;
 }
 
 // ============================================================

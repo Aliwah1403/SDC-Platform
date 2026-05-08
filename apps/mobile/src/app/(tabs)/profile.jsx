@@ -457,7 +457,6 @@ export default function ProfileScreen() {
   }, [locationEnabled]);
 
   useEffect(() => {
-    posthog?.capture("profile_viewed", {});
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const currentSession = useAuthStore.getState().auth?.session;
@@ -579,15 +578,20 @@ export default function ProfileScreen() {
           await Notifications.requestPermissionsAsync({
             ios: { allowAlert: true, allowBadge: true, allowSound: true },
           });
-        if (newStatus !== "granted") return;
+        if (newStatus === 'granted') {
+          posthog?.capture('notification_permission_granted', { platform: Platform.OS, prompt_variant: 'profile' });
+        } else {
+          posthog?.capture('notification_permission_denied', { platform: Platform.OS, prompt_variant: 'profile' });
+          return;
+        }
       }
     }
-    posthog?.capture("notifications_toggled", { enabled: val });
     setNotificationsEnabled(val);
     updateProfile.mutate(
       { notificationsEnabled: val },
       {
         onSuccess: () => {
+          posthog?.capture("notifications_toggled", { enabled: val });
           if (val) {
             scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
           } else {
@@ -841,7 +845,12 @@ export default function ProfileScreen() {
   };
   const saveFullName = () => {
     const name = tempFullName.trim();
-    if (name) updateProfile.mutate({ fullName: name });
+    if (name) {
+      updateProfile.mutate(
+        { fullName: name },
+        { onSuccess: () => posthog?.capture('profile_updated', { fields_changed: ['full_name'] }) },
+      );
+    }
     setEditingFullName(false);
   };
 
@@ -851,7 +860,12 @@ export default function ProfileScreen() {
   };
   const saveNickname = () => {
     const nick = tempNickname.trim();
-    if (nick) updateProfile.mutate({ nickname: nick });
+    if (nick) {
+      updateProfile.mutate(
+        { nickname: nick },
+        { onSuccess: () => posthog?.capture('profile_updated', { fields_changed: ['nickname'] }) },
+      );
+    }
     setEditingNickname(false);
   };
 
@@ -1089,9 +1103,19 @@ export default function ProfileScreen() {
         onPress: () => router.push("/feedback-modal"),
       },
 
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     ],
-    [],
+    [
+      profile,
+      auth,
+      appleHealthConnected,
+      openFullNameSheet,
+      openNicknameSheet,
+      openPhotoSheet,
+      openDobSheet,
+      openAllergiesSheet,
+      handleExportData,
+      handleShareSummary,
+    ],
   );
 
   const filteredSettings = useMemo(() => {
@@ -2480,15 +2504,15 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
-                  posthog?.capture("check_in_frequency_changed", {
-                    frequency: opt.value,
-                  });
                   updateProfile.mutate(
                     { checkInFrequency: opt.value },
                     {
-                      onSuccess: () =>
-                        notificationsEnabled &&
-                        scheduleCheckInReminders(opt.value),
+                      onSuccess: () => {
+                        posthog?.capture("check_in_frequency_changed", {
+                          frequency: opt.value,
+                        });
+                        notificationsEnabled && scheduleCheckInReminders(opt.value);
+                      },
                     },
                   );
                   setEditingFrequency(false);

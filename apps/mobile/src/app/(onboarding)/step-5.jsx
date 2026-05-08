@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { CheckCircle2, HelpCircle } from 'lucide-react-native';
+import { usePostHog } from 'posthog-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 
@@ -49,6 +50,7 @@ const SCD_TYPES = [
 ];
 
 export default function Step5() {
+  const posthog = usePostHog();
   const { setOnboardingField } = useAppStore();
   const [scdType, setScdType] = useState(null);
 
@@ -56,6 +58,7 @@ export default function Step5() {
   const isUnsure = scdType === 'unsure';
 
   const handleNext = () => {
+    posthog?.capture('condition_selected', { condition_name: scdType });
     setOnboardingField('scdType', scdType);
     router.push('/(onboarding)/step-6');
   };

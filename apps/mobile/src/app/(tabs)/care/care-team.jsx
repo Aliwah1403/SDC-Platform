@@ -9,6 +9,7 @@ import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQ
 import { fonts } from "@/utils/fonts";
 import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
+import { getGradientColors } from "@/utils/homeHelpers";
 
 const RELATIONSHIP_COLORS = {
   doctor:    { color: "#2563EB", bg: "#DBEAFE" },
@@ -164,7 +165,7 @@ export default function CareTeamScreen() {
 
       {/* Header */}
       <LinearGradient
-        colors={["#D09F9A", "#A9334D", "#781D11"]}
+        colors={getGradientColors(true, t.isDark)}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={{ paddingTop: insets.top + 12, paddingHorizontal: 20, paddingBottom: 20, overflow: "hidden" }}

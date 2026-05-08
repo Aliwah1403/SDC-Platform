@@ -4,13 +4,15 @@ import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { Image } from "expo-image";
 import { getStreakFireAsset } from "@/utils/streakFire";
+import { useTheme } from "@/hooks/useTheme";
 
 export function CompactNavbar({ date, healthStreak, insets }) {
   const router = useRouter();
+  const t = useTheme();
   return (
     <View
       style={{
-        backgroundColor: "rgba(169, 51, 77, 0.88)",
+        backgroundColor: t.isDark ? "rgba(42, 15, 24, 0.95)" : "rgba(169, 51, 77, 0.88)",
         borderBottomWidth: 1,
         borderBottomColor: "rgba(248, 233, 231, 0.25)",
         paddingTop: insets.top,
