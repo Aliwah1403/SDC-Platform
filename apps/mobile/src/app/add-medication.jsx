@@ -348,7 +348,7 @@ export default function AddMedicationScreen() {
             medication_name: med.name,
             dosage: med.dosage,
             frequency: med.frequency,
-            has_reminder: !!med.time,
+            has_reminder: med.reminders.length > 0,
           });
           if (med.time) {
             posthog?.capture('medication_schedule_created', {

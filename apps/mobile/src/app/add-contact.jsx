@@ -101,6 +101,7 @@ export default function AddContactScreen() {
 
   // Contact picker mode (create only)
   const [mode, setMode] = useState(isEditing ? "form" : "gate"); // "gate" | "form"
+  const [phonePickerUsed, setPhonePickerUsed] = useState(false);
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
   // Android contact picker modal
@@ -180,6 +181,7 @@ export default function AddContactScreen() {
       setPhotoUri(contact.image.uri);
       setPhotoRemoved(false);
     }
+    setPhonePickerUsed(true);
     setMode("form");
   };
 
@@ -255,8 +257,8 @@ export default function AddContactScreen() {
         addMutation.mutate(payload, {
           onSuccess: () => {
             posthog?.capture('emergency_contact_added', {
-              contact_type: relationship ? 'family' : 'other',
-              method: mode === 'form' ? 'manual' : 'phone_picker',
+              contact_type: relationship ?? 'other',
+              method: phonePickerUsed ? 'phone_picker' : 'manual',
             });
             router.back();
           },

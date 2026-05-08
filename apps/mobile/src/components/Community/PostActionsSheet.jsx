@@ -99,9 +99,15 @@ export function PostActionsSheet({ isVisible, onClose, postId, isOwnPost }) {
     if (!selectedReason) return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const reasonLabel = REPORT_REASONS.find((r) => r.id === selectedReason)?.label ?? selectedReason;
-    posthog?.capture('post_reported', { reason: reasonLabel });
-    reportPost({ postId, reason: reasonLabel, description: extraNote || undefined });
-    setStep("done");
+    reportPost(
+      { postId, reason: reasonLabel, description: extraNote || undefined },
+      {
+        onSuccess: () => {
+          posthog?.capture('post_reported', { reason: reasonLabel });
+          setStep("done");
+        },
+      },
+    );
   }, [postId, selectedReason, extraNote, reportPost, posthog]);
 
   return (

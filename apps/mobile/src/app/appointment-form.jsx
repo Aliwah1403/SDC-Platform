@@ -175,10 +175,10 @@ export default function AppointmentForm() {
       setSaving(false);
       posthog?.capture('appointment_saved', {
         appointment_type: type,
-        has_reminder: remindersOn && reminderOffsets.length > 0,
+        has_reminder: reminderIds.length > 0,
         is_edit: !!existing,
       });
-      if (remindersOn && reminderOffsets.length > 0) {
+      if (reminderIds.length > 0) {
         posthog?.capture('appointment_reminder_set', {
           reminder_lead_time: reminderOffsets[0],
         });

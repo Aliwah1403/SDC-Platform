@@ -579,19 +579,19 @@ export default function ProfileScreen() {
             ios: { allowAlert: true, allowBadge: true, allowSound: true },
           });
         if (newStatus === 'granted') {
-          posthog?.capture('notification_permission_granted', { platform: 'ios', prompt_variant: 'settings' });
+          posthog?.capture('notification_permission_granted', { platform: Platform.OS, prompt_variant: 'profile' });
         } else {
-          posthog?.capture('notification_permission_denied', { platform: 'ios', prompt_variant: 'settings' });
+          posthog?.capture('notification_permission_denied', { platform: Platform.OS, prompt_variant: 'profile' });
           return;
         }
       }
     }
-    posthog?.capture("notifications_toggled", { enabled: val });
     setNotificationsEnabled(val);
     updateProfile.mutate(
       { notificationsEnabled: val },
       {
         onSuccess: () => {
+          posthog?.capture("notifications_toggled", { enabled: val });
           if (val) {
             scheduleCheckInReminders(profile?.checkInFrequency ?? 2);
           } else {
@@ -846,8 +846,10 @@ export default function ProfileScreen() {
   const saveFullName = () => {
     const name = tempFullName.trim();
     if (name) {
-      updateProfile.mutate({ fullName: name });
-      posthog?.capture('profile_updated', { fields_changed: ['full_name'] });
+      updateProfile.mutate(
+        { fullName: name },
+        { onSuccess: () => posthog?.capture('profile_updated', { fields_changed: ['full_name'] }) },
+      );
     }
     setEditingFullName(false);
   };
@@ -859,8 +861,10 @@ export default function ProfileScreen() {
   const saveNickname = () => {
     const nick = tempNickname.trim();
     if (nick) {
-      updateProfile.mutate({ nickname: nick });
-      posthog?.capture('profile_updated', { fields_changed: ['nickname'] });
+      updateProfile.mutate(
+        { nickname: nick },
+        { onSuccess: () => posthog?.capture('profile_updated', { fields_changed: ['nickname'] }) },
+      );
     }
     setEditingNickname(false);
   };
@@ -2500,15 +2504,15 @@ export default function ProfileScreen() {
             <React.Fragment key={opt.value}>
               <Pressable
                 onPress={() => {
-                  posthog?.capture("check_in_frequency_changed", {
-                    frequency: opt.value,
-                  });
                   updateProfile.mutate(
                     { checkInFrequency: opt.value },
                     {
-                      onSuccess: () =>
-                        notificationsEnabled &&
-                        scheduleCheckInReminders(opt.value),
+                      onSuccess: () => {
+                        posthog?.capture("check_in_frequency_changed", {
+                          frequency: opt.value,
+                        });
+                        notificationsEnabled && scheduleCheckInReminders(opt.value);
+                      },
                     },
                   );
                   setEditingFrequency(false);

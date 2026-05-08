@@ -500,12 +500,21 @@ function MedicationsSection({ selectedDate }) {
           medication={med}
           taken={!!med.taken}
           onToggle={() => {
+            const _now = new Date();
+            let _delayMinutes = null;
+            if (med.time) {
+              const [_hStr, _mStr] = med.time.split(':');
+              const _h = parseInt(_hStr, 10);
+              const _m = parseInt(_mStr, 10);
+              if (!isNaN(_h) && !isNaN(_m) && _h >= 0 && _h <= 23 && _m >= 0 && _m <= 59) {
+                const _scheduled = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), _h, _m);
+                _delayMinutes = Math.round((_now.getTime() - _scheduled.getTime()) / 60000);
+              }
+            }
             posthog?.capture("dose_logged", {
               medication_name: med.name,
               dose_time: med.time ?? null,
-              delay_minutes: med.time
-                ? Math.round((Date.now() - new Date(`${new Date().toISOString().split('T')[0]}T${med.time}`).getTime()) / 60000)
-                : null,
+              delay_minutes: _delayMinutes,
               new_state: !med.taken,
             });
             toggleTaken.mutate(med.id);

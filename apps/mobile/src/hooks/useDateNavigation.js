@@ -1,14 +1,14 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
+
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
 export function useDateNavigation() {
-  // Stable today reference — won't change across re-renders
-  const today = useRef(new Date()).current;
-
   const dates = useMemo(() => {
+    const now = new Date();
     const result = [];
     for (let i = -7; i <= 6; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+      const date = new Date(now);
+      date.setDate(now.getDate() + i);
       result.push(date);
     }
     return result;
@@ -27,11 +27,14 @@ export function useDateNavigation() {
   }, []);
 
   const isToday = useCallback(
-    (date) => date.toDateString() === today.toDateString(),
+    (date) => date.toDateString() === new Date().toDateString(),
     []
   );
 
-  const isFuture = useCallback((date) => date > today, []);
+  const isFuture = useCallback(
+    (date) => startOfDay(date) > startOfDay(new Date()),
+    []
+  );
 
   const isSelected = useCallback(
     (date, selectedDate) => date.toDateString() === selectedDate.toDateString(),
@@ -40,7 +43,7 @@ export function useDateNavigation() {
 
   return {
     dates,
-    today,
+    today: new Date(),
     formatNavDate,
     formatDatePickerDay,
     formatDatePickerDate,
