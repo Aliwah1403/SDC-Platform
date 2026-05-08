@@ -4,22 +4,19 @@ import { triggerNovu } from "../lib/novu";
 
 const WORKFLOW_ID = "hemo-streak-at-risk-gcuin8u2";
 
-function localToUTCMinutes(hh: number, mm: number, tz: string): number {
-  const now = new Date();
-  const utcMs = new Date(now.toLocaleString("en-US", { timeZone: "UTC" })).getTime();
-  const localMs = new Date(now.toLocaleString("en-US", { timeZone: tz })).getTime();
-  const offsetMin = (utcMs - localMs) / 60000;
-  return ((hh * 60 + mm) + offsetMin + 1440) % 1440;
+function localHour(tz: string): number {
+  return parseInt(
+    new Date().toLocaleString("en-US", { timeZone: tz, hour: "numeric", hour12: false }),
+    10,
+  );
 }
 
 export const streakAtRisk = schedules.task({
   id: "streak-at-risk",
-  // Daily at 20:00 UTC — by this time most users' check-in window has passed
-  cron: "0 20 * * *",
+  // Runs every hour — fires for each user when it's 11 PM in their local timezone
+  cron: "0 * * * *",
   run: async () => {
     const today = new Date().toISOString().split("T")[0];
-    const nowUTC = new Date();
-    const currentHourUTC = nowUTC.getUTCHours() * 60 + nowUTC.getUTCMinutes();
 
     // Get all users with push tokens (i.e. active devices)
     const { data: tokenRows, error: tokenError } = await supabase
@@ -42,23 +39,17 @@ export const streakAtRisk = schedules.task({
     const notLoggedIds = allUserIds.filter((id) => !loggedSet.has(id));
     if (notLoggedIds.length === 0) return { nudged: 0 };
 
-    // Filter to users whose check_in_time has already passed today
     const { data: profiles, error: profileError } = await supabase
       .from("profiles")
-      .select("user_id, check_in_time, nickname, timezone")
+      .select("user_id, nickname, timezone")
       .in("user_id", notLoggedIds);
     if (profileError) throw profileError;
 
     let nudged = 0;
     for (const profile of profiles ?? []) {
-      const checkInTime = profile.check_in_time as string | null;
-      if (checkInTime) {
-        const [hh, mm] = checkInTime.split(":").map(Number);
-        const tz = (profile.timezone as string | null) ?? "UTC";
-        const checkInMinutesUTC = localToUTCMinutes(hh, mm ?? 0, tz);
-        // Only nudge if check-in time has passed
-        if (currentHourUTC < checkInMinutesUTC) continue;
-      }
+      const tz = (profile.timezone as string | null) ?? "UTC";
+      // Only nudge users where it is currently 11 PM in their timezone
+      if (localHour(tz) !== 23) continue;
 
       await triggerNovu(WORKFLOW_ID, profile.user_id, {
         nickname: profile.nickname ?? "there",

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePostHog } from "posthog-react-native";
 import {
   View,
@@ -11,7 +11,10 @@ import {
   Alert,
   ActivityIndicator,
   Switch,
+  Modal,
+  Pressable,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -22,8 +25,13 @@ import {
   Camera,
 } from "lucide-react-native";
 import Svg, { Path, Rect, Line, Circle } from "react-native-svg";
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import MedicationBottle from "@/components/MedicationBottle";
-import { Picker } from "@react-native-picker/picker";
 import { MotiView } from "moti";
 import {
   useMedicationsQuery,
@@ -38,10 +46,13 @@ import MedicationIcon from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
 import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
+import { Sentry } from "@/utils/sentry";
 import {
   scheduleMedicationNotifications,
   cancelMedicationNotifications,
 } from "@/utils/medicationNotifications";
+
+const AnimatedSvgPath = Animated.createAnimatedComponent(Path);
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -64,20 +75,169 @@ const FREQUENCIES = [
   "As needed",
 ];
 
-const TIME_PRESETS = [
-  { label: "Morning", value: "8:00 AM" },
-  { label: "Afternoon", value: "12:00 PM" },
-  { label: "Evening", value: "6:00 PM" },
-  { label: "Night", value: "10:00 PM" },
-  { label: "Custom", value: "custom" },
+const UNITS = ["mg", "mcg", "g", "ml", "tablets", "units", "IU"];
+const REMINDER_MINS = [5, 10, 15, 30];
+
+const DOSE_LABELS = {
+  1: ["Dose time"],
+  2: ["Morning dose", "Evening dose"],
+  3: ["Morning dose", "Afternoon dose", "Evening dose"],
+};
+
+// Sunday = 1 per expo-notifications weekly trigger convention
+const WEEKDAYS = [
+  { label: "Mon", value: 2 },
+  { label: "Tue", value: 3 },
+  { label: "Wed", value: 4 },
+  { label: "Thu", value: 5 },
+  { label: "Fri", value: 6 },
+  { label: "Sat", value: 7 },
+  { label: "Sun", value: 1 },
 ];
 
-const UNITS = ["mg", "ml", "tablets", "units", "IU"];
-const REMINDER_MINS = [5, 10, 15, 30];
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
-const MINUTES_LIST = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+const STEP_LABELS = [
+  "",
+  "Find Drug",
+  "Medication Type",
+  "Dosage",
+  "Schedule",
+  "Review",
+];
 
-const STEP_LABELS = ["", "Find Drug", "Dosage", "Schedule", "Reminders"];
+const MED_TYPES = [
+  { key: "tablet", label: "Tablet" },
+  { key: "capsule", label: "Capsule" },
+  { key: "softgel", label: "Softgel" },
+  { key: "liquid", label: "Liquid" },
+  { key: "ointment", label: "Ointment" },
+  { key: "inhaler", label: "Inhaler" },
+  { key: "injection", label: "Injection" },
+];
+
+// ─── Animated checkbox (adapted from animated-checkbox) ──────────────────────
+const CHECKBOX_BOX_PATH =
+  "M24 0.5H40C48.5809 0.5 54.4147 2.18067 58.117 5.88299C61.8193 9.58532 63.5 15.4191 63.5 24V40C63.5 48.5809 61.8193 54.4147 58.117 58.117C54.4147 61.8193 48.5809 63.5 40 63.5H24C15.4191 63.5 9.58532 61.8193 5.88299 58.117C2.18067 54.4147 0.5 48.5809 0.5 40V24C0.5 15.4191 2.18067 9.58532 5.88299 5.88299C9.58532 2.18067 15.4191 0.5 24 0.5Z";
+const CHECKBOX_TICK_PATH = "M20 32L28 40L44 24";
+const CHECKBOX_PADDING = 10;
+const CHECKBOX_VIEWPORT = 64 + CHECKBOX_PADDING;
+// Pre-calculated total length of the tick path
+const TICK_LENGTH = 34;
+
+const UNIT_LABELS = {
+  mg: "Milligrams",
+  mcg: "Micrograms",
+  g: "Grams",
+  ml: "Millilitres",
+  tablets: "Tablets",
+  units: "Units",
+  IU: "Intl. Units",
+};
+
+function AnimatedCheckbox({ checked, color, size = 22 }) {
+  const animValue = useSharedValue(checked ? 1 : 0);
+
+  useEffect(() => {
+    animValue.value = withTiming(checked ? 1 : 0, {
+      duration: checked ? 280 : 200,
+      easing: checked
+        ? Easing.bezier(0.4, 0, 0.2, 1)
+        : Easing.bezier(0.4, 0, 0.6, 1),
+    });
+  }, [checked]);
+
+  const animatedTickProps = useAnimatedProps(() => ({
+    strokeDashoffset: TICK_LENGTH - TICK_LENGTH * animValue.value,
+    opacity: animValue.value > 0 ? 1 : 0,
+  }));
+
+  const viewBox = `${-CHECKBOX_PADDING} ${-CHECKBOX_PADDING} ${CHECKBOX_VIEWPORT + CHECKBOX_PADDING} ${CHECKBOX_VIEWPORT + CHECKBOX_PADDING}`;
+
+  return (
+    <Svg width={size} height={size} viewBox={viewBox}>
+      <Path
+        d={CHECKBOX_BOX_PATH}
+        stroke={color}
+        strokeWidth={1.5}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <AnimatedSvgPath
+        d={CHECKBOX_TICK_PATH}
+        stroke={color}
+        strokeWidth={2}
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray={TICK_LENGTH}
+        animatedProps={animatedTickProps}
+      />
+    </Svg>
+  );
+}
+
+function UnitSelector({ selected, onSelect }) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: t.border,
+        overflow: "hidden",
+      }}
+    >
+      {UNITS.map((unit, i) => {
+        const isSelected = selected === unit;
+        const isLast = i === UNITS.length - 1;
+        return (
+          <TouchableOpacity
+            key={unit}
+            onPress={() => onSelect(unit)}
+            activeOpacity={0.7}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: 13,
+              paddingHorizontal: 16,
+              backgroundColor: isSelected ? `${C.accent}0D` : t.surface,
+              borderBottomWidth: isLast ? 0 : 1,
+              borderBottomColor: t.border,
+              gap: 12,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 15,
+                  color: isSelected ? C.accent : t.text,
+                }}
+              >
+                {unit}
+              </Text>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 12,
+                  color: t.textSecondary,
+                  marginTop: 1,
+                }}
+              >
+                {UNIT_LABELS[unit]}
+              </Text>
+            </View>
+            <AnimatedCheckbox
+              checked={isSelected}
+              color={isSelected ? C.accent : t.border}
+              size={22}
+            />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 
 // ─── Tiny shared components ──────────────────────────────────────────────────
 function ChipRow({ options, selected, onSelect, getLabel }) {
@@ -326,14 +486,37 @@ function ScanIllustration() {
 }
 
 // ─── Helper: parse existing time string ──────────────────────────────────────
-function parseTimeStr(timeStr) {
+function makeTime(h, m = 0) {
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d;
+}
+
+function parseTimeToDate(timeStr) {
   const match = (timeStr ?? "").match(/(\d+):(\d+)\s*(AM|PM)/i);
-  if (!match) return { h: 8, m: 0, p: "AM" };
-  return {
-    h: parseInt(match[1], 10),
-    m: parseInt(match[2], 10),
-    p: match[3].toUpperCase(),
-  };
+  if (!match) return makeTime(8);
+  let h = parseInt(match[1], 10);
+  const m = parseInt(match[2], 10);
+  const period = match[3].toUpperCase();
+  if (period === "PM" && h !== 12) h += 12;
+  if (period === "AM" && h === 12) h = 0;
+  return makeTime(h, m);
+}
+
+function formatTime(d) {
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+function defaultTimesForFrequency(freq, existingTimeStr) {
+  const first = existingTimeStr ? parseTimeToDate(existingTimeStr) : makeTime(8);
+  if (freq === "Twice daily") return [first, makeTime(20)];
+  if (freq === "Three times daily") return [first, makeTime(12), makeTime(18)];
+  if (freq === "As needed") return [];
+  return [first];
 }
 
 // ─── Main screen ─────────────────────────────────────────────────────────────
@@ -356,10 +539,6 @@ export default function AddMedicationScreen() {
 
   // Parse existing dosage "500 mg" → parts
   const [existingAmount, existingUnit] = (existing?.dosage ?? "").split(" ");
-  const existingTimeParsed = parseTimeStr(existing?.time);
-  const existingTimeIsPreset = TIME_PRESETS.some(
-    (p) => p.value !== "custom" && p.value === existing?.time,
-  );
 
   // Parse prefill dosage "500mg" or "500 mg" → { amount, unit }
   const prefillParsed = (() => {
@@ -372,7 +551,7 @@ export default function AddMedicationScreen() {
   })();
 
   // ── Navigation state
-  const [step, setStep] = useState(isEditing ? 2 : prefillName ? 2 : 0);
+  const [step, setStep] = useState(isEditing ? 3 : prefillName ? 3 : 0);
 
   // ── Step 1: Drug
   const [name, setName] = useState(existing?.name ?? prefillName ?? "");
@@ -385,26 +564,30 @@ export default function AddMedicationScreen() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customNameInput, setCustomNameInput] = useState("");
 
-  // ── Step 2: Dosage
+  // ── Step 3: Dosage
   const [dosageAmount, setDosageAmount] = useState(
     existingAmount ?? prefillParsed.amount,
   );
   const [dosageUnit, setDosageUnit] = useState(
-    existingUnit ?? prefillParsed.unit,
+    existingUnit ?? (prefillDosage ? prefillParsed.unit : null),
   );
 
-  // ── Step 3: Schedule
+  // ── Step 4: Schedule
   const [frequency, setFrequency] = useState(existing?.frequency ?? "Daily");
-  const [time, setTime] = useState(
-    isEditing && !existingTimeIsPreset
-      ? "custom"
-      : (existing?.time ?? "8:00 AM"),
+  const [times, setTimes] = useState(() =>
+    defaultTimesForFrequency(existing?.frequency ?? "Daily", existing?.time),
   );
-  const [customHour, setCustomHour] = useState(existingTimeParsed.h);
-  const [customMinute, setCustomMinute] = useState(existingTimeParsed.m);
-  const [customPeriod, setCustomPeriod] = useState(existingTimeParsed.p);
+  const [showTimePickerIndex, setShowTimePickerIndex] = useState(null);
+  const [weekday, setWeekday] = useState(
+    existing?.weekday ?? new Date().getDay() + 1,
+  );
 
-  // ── Step 4: Reminders + Notes
+  const handleFrequencyChange = (freq) => {
+    setFrequency(freq);
+    setTimes((prev) => defaultTimesForFrequency(freq, prev[0] ? formatTime(prev[0]) : null));
+  };
+
+  // ── Step 5: Reminders + Notes
   const existingBefore = existing?.reminders?.find(
     (r) => r.direction === "before",
   );
@@ -428,10 +611,7 @@ export default function AddMedicationScreen() {
     error: drugError,
   } = useDrugSearch(searchQuery);
 
-  const computedTime =
-    time === "custom"
-      ? `${customHour}:${String(customMinute).padStart(2, "0")} ${customPeriod}`
-      : time;
+  const computedTime = times.length > 0 ? formatTime(times[0]) : "";
 
   const goBack = () => {
     if (step === 0) {
@@ -451,29 +631,18 @@ export default function AddMedicationScreen() {
     if (remindAfter)
       reminders.push({ offsetMinutes: remindAfterMin, direction: "after" });
 
-    // Sunday = 1 for expo-notifications weekly triggers.
-    // Persist weekday for weekly meds so rescheduling does not drift by current date.
-    const fallbackWeekday = new Date().getDay() + 1;
-    const persistedWeekday =
-      Number.isInteger(existing?.weekday) &&
-      existing.weekday >= 1 &&
-      existing.weekday <= 7
-        ? existing.weekday
-        : fallbackWeekday;
-
     const med = {
       name: name.trim(),
       category,
       dosage,
       frequency,
       time: computedTime,
+      times: times.map(formatTime),
       reminders,
       notes,
       rxcui: rxcui || null,
       type: medType,
-      ...(frequency === "Weekly"
-        ? { weekday: persistedWeekday }
-        : { weekday: null }),
+      ...(frequency === "Weekly" ? { weekday } : { weekday: null }),
     };
 
     if (isEditing) {
@@ -544,7 +713,9 @@ export default function AddMedicationScreen() {
           }
           try {
             await deleteMed.mutateAsync(medicationId);
-            posthog?.capture("medication_deleted", { medication_category: category });
+            posthog?.capture("medication_deleted", {
+              medication_category: category,
+            });
             router.back();
           } catch (error) {
             console.error("Failed to delete medication:", error);
@@ -619,7 +790,7 @@ export default function AddMedicationScreen() {
             borderBottomColor: t.border,
           }}
         >
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <View
               key={s}
               style={{
@@ -866,12 +1037,38 @@ export default function AddMedicationScreen() {
                               onPress={async () => {
                                 setName(drug.name);
                                 setCategory(drug.category);
+                                let typeResolved = false;
                                 if (drug.rxcui) {
                                   setRxcui(drug.rxcui);
-                                  const form = await fetchDoseForm(drug.rxcui);
-                                  if (form) setMedType(normalizeDoseForm(form));
+                                  try {
+                                    const form = await fetchDoseForm(
+                                      drug.rxcui,
+                                    );
+                                    if (form) {
+                                      setMedType(normalizeDoseForm(form));
+                                      typeResolved = true;
+                                    } else {
+                                      posthog?.capture(
+                                        "medication_dose_form_unavailable",
+                                        {
+                                          rxcui: drug.rxcui,
+                                          drug_name: drug.name,
+                                        },
+                                      );
+                                    }
+                                  } catch (err) {
+                                    Sentry.captureException(err);
+                                    posthog?.capture(
+                                      "medication_dose_form_fetch_failed",
+                                      {
+                                        rxcui: drug.rxcui,
+                                        drug_name: drug.name,
+                                        error: err?.message,
+                                      },
+                                    );
+                                  }
                                 }
-                                setStep(2);
+                                setStep(typeResolved ? 3 : 2);
                               }}
                               activeOpacity={0.7}
                               style={{
@@ -1160,15 +1357,38 @@ export default function AddMedicationScreen() {
                                   onPress={async () => {
                                     setName(drug.name);
                                     setCategory(drug.category);
+                                    let typeResolved = false;
                                     if (drug.rxcui) {
                                       setRxcui(drug.rxcui);
-                                      const form = await fetchDoseForm(
-                                        drug.rxcui,
-                                      );
-                                      if (form)
-                                        setMedType(normalizeDoseForm(form));
+                                      try {
+                                        const form = await fetchDoseForm(
+                                          drug.rxcui,
+                                        );
+                                        if (form) {
+                                          setMedType(normalizeDoseForm(form));
+                                          typeResolved = true;
+                                        } else {
+                                          posthog?.capture(
+                                            "medication_dose_form_unavailable",
+                                            {
+                                              rxcui: drug.rxcui,
+                                              drug_name: drug.name,
+                                            },
+                                          );
+                                        }
+                                      } catch (err) {
+                                        Sentry.captureException(err);
+                                        posthog?.capture(
+                                          "medication_dose_form_fetch_failed",
+                                          {
+                                            rxcui: drug.rxcui,
+                                            drug_name: drug.name,
+                                            error: err?.message,
+                                          },
+                                        );
+                                      }
                                     }
-                                    setStep(2);
+                                    setStep(typeResolved ? 3 : 2);
                                   }}
                                   activeOpacity={0.7}
                                   style={{
@@ -1247,8 +1467,84 @@ export default function AddMedicationScreen() {
               </View>
             )}
 
-            {/* ━━ Step 2: Dosage ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            {/* ━━ Step 2: Medication Type Picker ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
             {step === 2 && (
+              <View>
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 20,
+                    color: t.text,
+                    marginBottom: 6,
+                  }}
+                >
+                  What kind of medication is this?
+                </Text>
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: 14,
+                    color: t.textSecondary,
+                    marginBottom: 28,
+                  }}
+                >
+                  Select the form so we can show the right icon.
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 12,
+                  }}
+                >
+                  {MED_TYPES.map(({ key, label }) => {
+                    const isSelected = medType === key;
+                    return (
+                      <TouchableOpacity
+                        key={key}
+                        onPress={() => {
+                          setMedType(key);
+                          setStep(3);
+                        }}
+                        activeOpacity={0.75}
+                        style={{
+                          width: "30%",
+                          alignItems: "center",
+                          backgroundColor: isSelected
+                            ? `${C.accent}15`
+                            : t.surface,
+                          borderRadius: 16,
+                          borderWidth: 1.5,
+                          borderColor: isSelected ? C.accent : t.border,
+                          paddingVertical: 18,
+                          paddingHorizontal: 8,
+                          gap: 10,
+                        }}
+                      >
+                        <MedicationIcon
+                          type={key}
+                          color={isSelected ? C.accent : t.textSecondary}
+                          size={40}
+                        />
+                        <Text
+                          style={{
+                            fontFamily: fonts.medium,
+                            fontSize: 12,
+                            color: isSelected ? C.accent : t.text,
+                            textAlign: "center",
+                          }}
+                        >
+                          {label}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* ━━ Step 3: Dosage ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            {step === 3 && (
               <View>
                 {/* Drug confirmation pill */}
                 <View
@@ -1274,7 +1570,7 @@ export default function AddMedicationScreen() {
                       justifyContent: "center",
                     }}
                   >
-                    <MedicationIcon type="tablet" color={catColor} size={36} />
+                    <MedicationIcon type={medType} color={catColor} size={36} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text
@@ -1298,8 +1594,9 @@ export default function AddMedicationScreen() {
                     </Text>
                   </View>
                 </View>
+                
 
-                <FieldLabel optional>Dosage amount</FieldLabel>
+                <FieldLabel optional>Dosage strength</FieldLabel>
                 <TextInput
                   value={dosageAmount}
                   onChangeText={setDosageAmount}
@@ -1320,12 +1617,8 @@ export default function AddMedicationScreen() {
                   }}
                 />
 
-                <FieldLabel>Unit</FieldLabel>
-                <ChipRow
-                  options={UNITS}
-                  selected={dosageUnit}
-                  onSelect={setDosageUnit}
-                />
+                <FieldLabel optional>Unit</FieldLabel>
+                <UnitSelector selected={dosageUnit} onSelect={setDosageUnit} />
 
                 {dosageAmount.trim().length > 0 && (
                   <View
@@ -1353,152 +1646,112 @@ export default function AddMedicationScreen() {
               </View>
             )}
 
-            {/* ━━ Step 3: Schedule ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-            {step === 3 && (
+            {/* ━━ Step 4: Schedule & Reminders ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            {step === 4 && (
               <View>
                 <FieldLabel>Frequency</FieldLabel>
                 <View style={{ marginBottom: 28 }}>
                   <ChipRow
                     options={FREQUENCIES}
                     selected={frequency}
-                    onSelect={setFrequency}
+                    onSelect={handleFrequencyChange}
                   />
                 </View>
 
-                <FieldLabel>Time of day</FieldLabel>
-                <ChipRow
-                  options={TIME_PRESETS}
-                  selected={time}
-                  onSelect={setTime}
-                />
+                {/* Weekly: day of week selector */}
+                {frequency === "Weekly" && (
+                  <View style={{ marginBottom: 28 }}>
+                    <FieldLabel>Day</FieldLabel>
+                    <ChipRow
+                      options={WEEKDAYS}
+                      selected={weekday}
+                      onSelect={setWeekday}
+                    />
+                  </View>
+                )}
 
-                {/* Custom time drum-roll */}
-                {time === "custom" && (
+                {/* As needed: no time picker */}
+                {frequency === "As needed" ? (
                   <View
                     style={{
                       backgroundColor: t.surface,
                       borderRadius: 14,
                       borderWidth: 1,
                       borderColor: t.border,
-                      marginTop: 14,
-                      overflow: "hidden",
+                      padding: 16,
+                      marginBottom: 28,
                     }}
                   >
-                    <View style={{ flexDirection: "row" }}>
-                      <Picker
-                        selectedValue={customHour}
-                        onValueChange={setCustomHour}
-                        style={{ flex: 1 }}
-                        itemStyle={{
-                          fontFamily: fonts.regular,
-                          color: t.text,
-                          fontSize: 18,
-                        }}
-                      >
-                        {HOURS.map((h) => (
-                          <Picker.Item key={h} label={String(h)} value={h} />
-                        ))}
-                      </Picker>
-                      <Picker
-                        selectedValue={customMinute}
-                        onValueChange={setCustomMinute}
-                        style={{ flex: 1 }}
-                        itemStyle={{
-                          fontFamily: fonts.regular,
-                          color: t.text,
-                          fontSize: 18,
-                        }}
-                      >
-                        {MINUTES_LIST.map((m) => (
-                          <Picker.Item
-                            key={m}
-                            label={String(m).padStart(2, "0")}
-                            value={m}
-                          />
-                        ))}
-                      </Picker>
-                      <Picker
-                        selectedValue={customPeriod}
-                        onValueChange={setCustomPeriod}
-                        style={{ flex: 1 }}
-                        itemStyle={{
-                          fontFamily: fonts.regular,
-                          color: t.text,
-                          fontSize: 18,
-                        }}
-                      >
-                        {["AM", "PM"].map((p) => (
-                          <Picker.Item key={p} label={p} value={p} />
-                        ))}
-                      </Picker>
-                    </View>
-                  </View>
-                )}
-
-                {/* Confirmation banner */}
-                <View
-                  style={{
-                    marginTop: 16,
-                    backgroundColor: t.isDark
-                      ? "rgba(5,150,105,0.12)"
-                      : "#F0F9F5",
-                    borderRadius: 10,
-                    padding: 12,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontFamily: fonts.semibold,
-                      fontSize: 14,
-                      color: C.success,
-                    }}
-                  >
-                    Notification at {computedTime}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* ━━ Step 4: Reminders + Notes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
-            {step === 4 && (
-              <View>
-                {/* Summary chip */}
-                <View
-                  style={{
-                    backgroundColor: t.surface,
-                    borderRadius: 14,
-                    borderWidth: 1,
-                    borderColor: t.border,
-                    padding: 14,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 24,
-                  }}
-                >
-                  <MedicationIcon type="tablet" color={catColor} size={28} />
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.semibold,
-                        fontSize: 14,
-                        color: t.text,
-                      }}
-                    >
-                      {name}
-                    </Text>
                     <Text
                       style={{
                         fontFamily: fonts.regular,
-                        fontSize: 12,
+                        fontSize: 14,
                         color: t.textSecondary,
+                        lineHeight: 22,
                       }}
                     >
-                      {frequency} · {computedTime}
+                      Take this medication when needed.{"\n"}No scheduled
+                      reminder will be set.
                     </Text>
                   </View>
-                </View>
+                ) : (
+                  <View style={{ marginBottom: 28 }}>
+                    <FieldLabel>{times.length > 1 ? "Times" : "Time"}</FieldLabel>
+                    <View
+                      style={{
+                        borderRadius: 14,
+                        borderWidth: 1,
+                        borderColor: t.border,
+                        overflow: "hidden",
+                      }}
+                    >
+                      {times.map((timeDate, i) => {
+                        const slotLabels =
+                          DOSE_LABELS[times.length] ??
+                          Array(times.length).fill("Dose time");
+                        const isLast = i === times.length - 1;
+                        return (
+                          <TouchableOpacity
+                            key={i}
+                            onPress={() => setShowTimePickerIndex(i)}
+                            activeOpacity={0.7}
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                              paddingVertical: 15,
+                              paddingHorizontal: 16,
+                              backgroundColor: t.surface,
+                              borderBottomWidth: isLast ? 0 : 1,
+                              borderBottomColor: t.border,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                flex: 1,
+                                fontFamily: fonts.medium,
+                                fontSize: 14,
+                                color: t.text,
+                              }}
+                            >
+                              {slotLabels[i]}
+                            </Text>
+                            <Text
+                              style={{
+                                fontFamily: fonts.semibold,
+                                fontSize: 14,
+                                color: C.accent,
+                                marginRight: 6,
+                              }}
+                            >
+                              {formatTime(timeDate)}
+                            </Text>
+                            <ChevronRight size={16} color={t.textSecondary} />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
 
                 {/* Remind before */}
                 <View
@@ -1564,7 +1817,7 @@ export default function AddMedicationScreen() {
                     borderWidth: 1,
                     borderColor: t.border,
                     padding: 16,
-                    marginBottom: 24,
+                    marginBottom: 28,
                   }}
                 >
                   <View
@@ -1612,28 +1865,210 @@ export default function AddMedicationScreen() {
                   )}
                 </View>
 
-                {/* Notes */}
-                <FieldLabel optional>Notes</FieldLabel>
-                <TextInput
-                  value={notes}
-                  onChangeText={setNotes}
-                  placeholder="e.g. Take with food, avoid grapefruit…"
-                  placeholderTextColor={t.textSecondary}
-                  multiline
-                  numberOfLines={3}
+              </View>
+            )}
+
+            {/* ━━ Step 5: Review ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+            {step === 5 && (
+              <View style={{ gap: 16 }}>
+                {/* Medication header */}
+                <View
                   style={{
                     backgroundColor: t.surface,
+                    borderRadius: 16,
                     borderWidth: 1,
                     borderColor: t.border,
-                    borderRadius: 12,
-                    padding: 14,
-                    fontFamily: fonts.regular,
-                    fontSize: 15,
-                    color: t.text,
-                    minHeight: 80,
-                    textAlignVertical: "top",
+                    padding: 18,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    gap: 16,
                   }}
-                />
+                >
+                  <View
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 16,
+                      backgroundColor: `${catColor}15`,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <MedicationIcon type={medType} color={catColor} size={38} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontFamily: fonts.bold,
+                        fontSize: 18,
+                        color: t.text,
+                      }}
+                    >
+                      {name}
+                    </Text>
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 13,
+                        color: t.textSecondary,
+                        marginTop: 2,
+                      }}
+                    >
+                      {category}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Details card */}
+                <View
+                  style={{
+                    backgroundColor: t.surface,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: t.border,
+                    overflow: "hidden",
+                  }}
+                >
+                  {[
+                    {
+                      label: "Form",
+                      value:
+                        MED_TYPES.find((m) => m.key === medType)?.label ??
+                        medType,
+                    },
+                    ...(dosageAmount.trim()
+                      ? [
+                          {
+                            label: "Dosage",
+                            value: `${dosageAmount.trim()}${dosageUnit ? ` ${dosageUnit}` : ""}`,
+                          },
+                        ]
+                      : []),
+                    { label: "Frequency", value: frequency },
+                    {
+                      label: times.length > 1 ? "Times" : "Time",
+                      value:
+                        frequency === "As needed"
+                          ? "As needed"
+                          : times.map(formatTime).join(" · "),
+                    },
+                  ].map(({ label, value }, i, arr) => (
+                    <View
+                      key={label}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 13,
+                        paddingHorizontal: 16,
+                        borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                        borderBottomColor: t.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.regular,
+                          fontSize: 14,
+                          color: t.textSecondary,
+                          flex: 1,
+                        }}
+                      >
+                        {label}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: fonts.semibold,
+                          fontSize: 14,
+                          color: t.text,
+                        }}
+                      >
+                        {value}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Reminders card — only if at least one is on */}
+                {(remindBefore || remindAfter) && (
+                  <View
+                    style={{
+                      backgroundColor: t.surface,
+                      borderRadius: 14,
+                      borderWidth: 1,
+                      borderColor: t.border,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {[
+                      remindBefore && {
+                        label: "Before dose",
+                        value: `${remindBeforeMin} min before`,
+                      },
+                      remindAfter && {
+                        label: "If missed",
+                        value: `${remindAfterMin} min after`,
+                      },
+                    ]
+                      .filter(Boolean)
+                      .map(({ label, value }, i, arr) => (
+                        <View
+                          key={label}
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            paddingVertical: 13,
+                            paddingHorizontal: 16,
+                            borderBottomWidth: i < arr.length - 1 ? 1 : 0,
+                            borderBottomColor: t.border,
+                          }}
+                        >
+                          <Text
+                            style={{
+                              fontFamily: fonts.regular,
+                              fontSize: 14,
+                              color: t.textSecondary,
+                              flex: 1,
+                            }}
+                          >
+                            {label}
+                          </Text>
+                          <Text
+                            style={{
+                              fontFamily: fonts.semibold,
+                              fontSize: 14,
+                              color: t.text,
+                            }}
+                          >
+                            {value}
+                          </Text>
+                        </View>
+                      ))}
+                  </View>
+                )}
+
+                {/* Notes */}
+                <View>
+                  <FieldLabel optional>Notes</FieldLabel>
+                  <TextInput
+                    value={notes}
+                    onChangeText={setNotes}
+                    placeholder="e.g. Take with food, avoid grapefruit…"
+                    placeholderTextColor={t.textSecondary}
+                    multiline
+                    numberOfLines={3}
+                    style={{
+                      backgroundColor: t.surface,
+                      borderWidth: 1,
+                      borderColor: t.border,
+                      borderRadius: 12,
+                      padding: 14,
+                      fontFamily: fonts.regular,
+                      fontSize: 15,
+                      color: t.text,
+                      minHeight: 80,
+                      textAlignVertical: "top",
+                    }}
+                  />
+                </View>
 
                 {isEditing && (
                   <TouchableOpacity
@@ -1661,7 +2096,7 @@ export default function AddMedicationScreen() {
           </ScrollView>
         </MotiView>
 
-        {/* ── Footer: Next / Save (steps 2–4) ── */}
+        {/* ── Footer: Next / Save (steps 2–5) ── */}
         {step >= 2 && (
           <View
             style={{
@@ -1673,33 +2108,173 @@ export default function AddMedicationScreen() {
               borderTopColor: t.border,
             }}
           >
-            <TouchableOpacity
-              onPress={step === 4 ? handleSave : () => setStep((s) => s + 1)}
-              activeOpacity={0.8}
-              style={{
-                backgroundColor: C.accent,
-                borderRadius: 14,
-                paddingVertical: 16,
-                alignItems: "center",
-              }}
-            >
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 16,
-                  color: "#fff",
-                }}
-              >
-                {step === 4
-                  ? isEditing
-                    ? "Save Changes"
-                    : "Save Medication"
-                  : "Next"}
-              </Text>
-            </TouchableOpacity>
+            {(() => {
+              const dosageEmpty =
+                step === 3 && dosageAmount.trim() === "" && !dosageUnit;
+              const nextDisabled = dosageEmpty;
+              return (
+                <>
+                  <TouchableOpacity
+                    onPress={
+                      nextDisabled
+                        ? undefined
+                        : step === 5
+                          ? handleSave
+                          : () => setStep((s) => s + 1)
+                    }
+                    activeOpacity={nextDisabled ? 1 : 0.8}
+                    style={{
+                      backgroundColor: nextDisabled
+                        ? t.isDark
+                          ? "#3A3A3A"
+                          : "#E0D8D5"
+                        : C.accent,
+                      borderRadius: 14,
+                      paddingVertical: 16,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 16,
+                        color: nextDisabled ? t.textSecondary : "#fff",
+                      }}
+                    >
+                      {step === 5
+                        ? isEditing
+                          ? "Save Changes"
+                          : "Save Medication"
+                        : "Next"}
+                    </Text>
+                  </TouchableOpacity>
+                  {step === 3 && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setDosageAmount("");
+                        setDosageUnit(null);
+                        setStep(4);
+                      }}
+                      activeOpacity={0.7}
+                      style={{
+                        marginTop: 10,
+                        borderRadius: 14,
+                        paddingVertical: 14,
+                        alignItems: "center",
+                        borderWidth: 1.5,
+                        borderColor: t.border,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 15,
+                          color: t.textSecondary,
+                        }}
+                      >
+                        Skip
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </>
+              );
+            })()}
           </View>
         )}
       </KeyboardAvoidingView>
+
+      {/* ── Time picker modal ── */}
+      {Platform.OS === "ios" && showTimePickerIndex !== null && (
+        <Modal transparent animationType="slide" visible>
+          <Pressable
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(0,0,0,0.35)",
+              justifyContent: "flex-end",
+            }}
+            onPress={() => setShowTimePickerIndex(null)}
+          >
+            <Pressable>
+              <View
+                style={{
+                  backgroundColor: t.surface,
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  paddingBottom: insets.bottom + 16,
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    paddingHorizontal: 20,
+                    paddingTop: 16,
+                    paddingBottom: 8,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.regular,
+                      fontSize: 15,
+                      color: t.textSecondary,
+                    }}
+                  >
+                    {(DOSE_LABELS[times.length] ?? ["Dose time"])[
+                      showTimePickerIndex
+                    ] ?? "Select time"}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowTimePickerIndex(null)}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 15,
+                        color: C.accent,
+                      }}
+                    >
+                      Done
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={times[showTimePickerIndex] ?? makeTime(8)}
+                  mode="time"
+                  display="spinner"
+                  themeVariant={t.isDark ? "dark" : "light"}
+                  onChange={(_, selected) => {
+                    if (selected) {
+                      setTimes((prev) => {
+                        const next = [...prev];
+                        next[showTimePickerIndex] = selected;
+                        return next;
+                      });
+                    }
+                  }}
+                  style={{ alignSelf: "center" }}
+                />
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+      )}
+      {Platform.OS === "android" && showTimePickerIndex !== null && (
+        <DateTimePicker
+          value={times[showTimePickerIndex] ?? makeTime(8)}
+          mode="time"
+          onChange={(_, selected) => {
+            setShowTimePickerIndex(null);
+            if (selected) {
+              setTimes((prev) => {
+                const next = [...prev];
+                next[showTimePickerIndex] = selected;
+                return next;
+              });
+            }
+          }}
+        />
+      )}
     </View>
   );
 }
