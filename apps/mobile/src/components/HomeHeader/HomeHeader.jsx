@@ -6,8 +6,25 @@ import { getStreakFireAsset } from "@/utils/streakFire";
 import Svg, { Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
+import { Bone } from "@/components/Skeleton/Bone";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+
+const BONE_COLOR = "rgba(255,255,255,0.2)";
+
+function MessageSkeleton() {
+  return (
+    <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, alignItems: "center", gap: 10 }}>
+      <Bone width={90} height={22} borderRadius={11} color={BONE_COLOR} />
+      <Bone width="75%" height={28} borderRadius={8} color={BONE_COLOR} />
+      <Bone width="55%" height={28} borderRadius={8} color={BONE_COLOR} />
+      <View style={{ gap: 8, width: "100%", alignItems: "center", marginTop: 2 }}>
+        <Bone width="85%" height={13} borderRadius={6} color={BONE_COLOR} />
+        <Bone width="70%" height={13} borderRadius={6} color={BONE_COLOR} />
+      </View>
+    </View>
+  );
+}
 
 const { width } = Dimensions.get("window");
 
@@ -36,6 +53,7 @@ export function HomeHeader({
   isFuture,
   isSelected,
   message,
+  isMessageLoading = false,
 }) {
   const router = useRouter();
   const t = useTheme();
@@ -146,72 +164,76 @@ export function HomeHeader({
         />
 
         {/* Today's Forecast */}
-        <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, alignItems: "center" }}>
-          {message.label && (
-            <View
-              style={{
-                alignSelf: "center",
-                backgroundColor: "rgba(255,255,255,0.2)",
-                borderRadius: 20,
-                paddingHorizontal: 10,
-                paddingVertical: 4,
-                marginBottom: 10,
-              }}
-            >
-              <Text
+        {isMessageLoading ? (
+          <MessageSkeleton />
+        ) : (
+          <View style={{ paddingHorizontal: 20, paddingTop: 20, paddingBottom: 20, alignItems: "center" }}>
+            {message.label && (
+              <View
                 style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 11,
-                  color: "rgba(255,255,255,0.9)",
-                  letterSpacing: 0.8,
+                  alignSelf: "center",
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  borderRadius: 20,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                  marginBottom: 10,
                 }}
               >
-                {message.label}
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 11,
+                    color: "rgba(255,255,255,0.9)",
+                    letterSpacing: 0.8,
+                  }}
+                >
+                  {message.label}
+                </Text>
+              </View>
+            )}
+
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 28,
+                color: "#FFFFFF",
+                lineHeight: 34,
+                marginBottom: 8,
+                textAlign: "center",
+              }}
+            >
+              {message.headline}
+            </Text>
+
+            {message.body && (
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.8)",
+                  lineHeight: 19,
+                  marginBottom: 10,
+                  textAlign: "center",
+                }}
+              >
+                {message.body}
               </Text>
-            </View>
-          )}
+            )}
 
-          <Text
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 28,
-              color: "#FFFFFF",
-              lineHeight: 34,
-              marginBottom: 8,
-              textAlign: "center",
-            }}
-          >
-            {message.headline}
-          </Text>
-
-          {message.body && (
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 13,
-                color: "rgba(255,255,255,0.8)",
-                lineHeight: 19,
-                marginBottom: 10,
-                textAlign: "center",
-              }}
-            >
-              {message.body}
-            </Text>
-          )}
-
-          {message.basis && (
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 12,
-                color: "rgba(255,255,255,0.55)",
-                textAlign: "center",
-              }}
-            >
-              {message.basis}
-            </Text>
-          )}
-        </View>
+            {message.basis && (
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 12,
+                  color: "rgba(255,255,255,0.55)",
+                  textAlign: "center",
+                }}
+              >
+                {message.basis}
+              </Text>
+            )}
+          </View>
+        )}
 
       </LinearGradient>
       

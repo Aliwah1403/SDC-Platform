@@ -160,6 +160,7 @@ export default function HomeScreen() {
     setLostStreakVisible,
     streakLost,
     weather,
+    isWeatherLoading,
   } = useHomeData();
 
   const pendingMilestone = useAppStore((s) => s.pendingMilestone);
@@ -172,8 +173,8 @@ export default function HomeScreen() {
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
 
-  const { data: medications = [] } = useMedicationsQuery();
-  const { data: appointments = [] } = useAppointmentsQuery();
+  const { data: medications = [], isLoading: medsLoading } = useMedicationsQuery();
+  const { data: appointments = [], isLoading: apptLoading } = useAppointmentsQuery();
 
   const totalEntries = healthData.length;
   const symptomsLogged = useMemo(
@@ -310,6 +311,7 @@ export default function HomeScreen() {
           isFuture={isFuture}
           isSelected={isSelected}
           message={message}
+          isMessageLoading={isWeatherLoading}
         />
       </Animated.View>
 
@@ -359,6 +361,7 @@ export default function HomeScreen() {
         <ContextualCards
           appointments={appointments}
           medications={medications}
+          isLoading={medsLoading || apptLoading}
         />
       </Animated.ScrollView>
 

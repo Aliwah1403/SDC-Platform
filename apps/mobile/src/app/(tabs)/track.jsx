@@ -45,6 +45,8 @@ import {
   useMedicationsQuery,
   useToggleMedicationTakenMutation,
 } from "@/hooks/queries/useMedicationsQuery";
+import { MedicationsSkeleton } from "@/components/Track/MedicationsSkeleton";
+import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
@@ -462,8 +464,9 @@ function MedicationItem({ medication, taken, onToggle }) {
 }
 
 function MedicationsSection({ selectedDate }) {
-  const { data: medications = [] } = useMedicationsQuery();
+  const { data: medications = [], isLoading } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  if (isLoading) return <MedicationsSkeleton />;
   const posthog = usePostHog();
   const t = useTheme();
   const active = medications.filter((m) => m.isActive);
@@ -1064,17 +1067,7 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
         }}
       >
         {loading ? (
-          <View style={{ alignItems: "center", paddingVertical: 24 }}>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 14,
-                color: t.textTertiary,
-              }}
-            >
-              Loading workouts…
-            </Text>
-          </View>
+          <ActivitySkeleton />
         ) : workouts.length === 0 ? (
           <View
             style={{
