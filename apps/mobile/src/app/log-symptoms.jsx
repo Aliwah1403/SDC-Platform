@@ -10,6 +10,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -484,7 +485,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 6 — Summary
-function SummaryStep({ log, onSubmit }) {
+function SummaryStep({ log, onSubmit, isLoading }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -521,9 +522,13 @@ function SummaryStep({ log, onSubmit }) {
         ))}
       </ScrollView>
 
-      <TouchableOpacity onPress={onSubmit} style={styles.submitBtn}>
-        <Check color="#fff" size={20} strokeWidth={2.5} />
-        <Text style={styles.submitBtnText}>Save log</Text>
+      <TouchableOpacity onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Check color="#fff" size={20} strokeWidth={2.5} />
+        )}
+        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : "Save log"}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -765,7 +770,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 6 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} />
         )}
       </View>
 

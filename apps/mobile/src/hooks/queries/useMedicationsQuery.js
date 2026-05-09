@@ -9,6 +9,8 @@ import {
   deleteMedication,
   toggleMedicationTaken,
   addMedicationLog,
+  deleteMedicationLogById,
+  deleteLatestMedicationLog,
   markGroupTaken,
   fetchDrugInfo,
 } from '@/services/supabaseQueries';
@@ -120,6 +122,62 @@ export function useAddMedicationLogMutation() {
     onError: (_err, _medId, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
       Alert.alert('Couldn\'t log dose', 'Something went wrong. Please try again.');
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+}
+
+export function useDeleteLatestMedicationLogMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  const queryKey = ['medications', userId];
+
+  return useMutation({
+    mutationFn: (medId) => deleteLatestMedicationLog(userId, medId),
+    onMutate: async (medId) => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old) =>
+        (old || []).map((m) => {
+          if (m.id !== medId) return m;
+          const newLogs = (m.logs ?? []).slice(0, -1);
+          return { ...m, logs: newLogs, taken: newLogs.length > 0 };
+        })
+      );
+      return { prev };
+    },
+    onError: (_err, _medId, ctx) => {
+      queryClient.setQueryData(queryKey, ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+}
+
+export function useDeleteMedicationLogByIdMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  const queryKey = ['medications', userId];
+
+  return useMutation({
+    mutationFn: ({ logId }) => deleteMedicationLogById(logId),
+    onMutate: async ({ medId, logId }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const prev = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (old) =>
+        (old || []).map((m) => {
+          if (m.id !== medId) return m;
+          const newLogs = (m.logs ?? []).filter((l) => l.id !== logId);
+          return { ...m, logs: newLogs, taken: newLogs.length > 0 };
+        })
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      queryClient.setQueryData(queryKey, ctx.prev);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });

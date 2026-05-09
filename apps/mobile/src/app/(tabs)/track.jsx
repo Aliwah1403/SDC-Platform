@@ -44,6 +44,8 @@ import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import {
   useMedicationsQuery,
   useToggleMedicationTakenMutation,
+  useAddMedicationLogMutation,
+  useDeleteLatestMedicationLogMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { MedicationsSkeleton } from "@/components/Track/MedicationsSkeleton";
 import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
@@ -56,6 +58,7 @@ import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
 import { fetchWorkoutsForDate } from "@/services/healthKitService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
+import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -466,9 +469,11 @@ function MedicationItem({ medication, taken, onToggle }) {
 function MedicationsSection({ selectedDate }) {
   const { data: medications = [], isLoading } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
-  if (isLoading) return <MedicationsSkeleton />;
+  const addLog = useAddMedicationLogMutation();
+  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
   const posthog = usePostHog();
   const t = useTheme();
+  if (isLoading) return <MedicationsSkeleton />;
   const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", {
     month: "short",
@@ -520,7 +525,20 @@ function MedicationsSection({ selectedDate }) {
               delay_minutes: _delayMinutes,
               new_state: !med.taken,
             });
-            toggleTaken.mutate(med.id);
+            const isMultiDose = Array.isArray(med.times) && med.times.length > 1;
+            if (isMultiDose) {
+              if (!med.taken) {
+                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+                addLog.mutate(med.id);
+              } else {
+                deleteLatestLog.mutate(med.id);
+              }
+            } else {
+              if (!med.taken) {
+                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+              }
+              toggleTaken.mutate(med.id);
+            }
           }}
         />
       ))}

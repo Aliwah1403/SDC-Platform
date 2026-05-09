@@ -7,10 +7,12 @@ const STALE_MS = 60 * 60 * 1000; // 1 hour
 
 export function useWeatherData(locationEnabled) {
   const [coords, setCoords] = useState(null);
+  const [locationResolved, setLocationResolved] = useState(false);
 
   useEffect(() => {
     if (!locationEnabled) {
       setCoords(null);
+      setLocationResolved(false);
       return;
     }
 
@@ -19,15 +21,19 @@ export function useWeatherData(locationEnabled) {
     (async () => {
       try {
         const { status } = await Location.getForegroundPermissionsAsync();
-        if (status !== 'granted') return;
+        if (status !== 'granted') {
+          if (!cancelled) setLocationResolved(true);
+          return;
+        }
         const pos = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Low,
         });
         if (!cancelled) {
           setCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+          setLocationResolved(true);
         }
       } catch {
-        // silently ignore — weather is non-critical
+        if (!cancelled) setLocationResolved(true);
       }
     })();
 
@@ -43,8 +49,7 @@ export function useWeatherData(locationEnabled) {
     retry: 1,
   });
 
-  // True only when location is on and we haven't resolved weather yet
-  const isWeatherLoading = locationEnabled && (coords === null || isFetching);
+  const isWeatherLoading = locationEnabled && (!locationResolved || isFetching);
 
   return { weather, isWeatherLoading };
 }

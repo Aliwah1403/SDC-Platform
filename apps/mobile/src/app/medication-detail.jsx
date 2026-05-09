@@ -28,8 +28,8 @@ import {
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
-import { cancelMedicationNotifications } from "@/utils/medicationNotifications";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation, useDeleteMedicationLogByIdMutation } from "@/hooks/queries/useMedicationsQuery";
+import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
 
@@ -46,6 +46,16 @@ const CATEGORY_COLORS = {
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
+const WEEKDAYS = [
+  { label: "Mon", value: 2 },
+  { label: "Tue", value: 3 },
+  { label: "Wed", value: 4 },
+  { label: "Thu", value: 5 },
+  { label: "Fri", value: 6 },
+  { label: "Sat", value: 7 },
+  { label: "Sun", value: 1 },
+];
+
 // ── helpers ────────────────────────────────────────────────────────────────
 
 function parseTimes(timeStr) {
@@ -56,11 +66,23 @@ function parseTimes(timeStr) {
     .filter(Boolean);
 }
 
+function getMedTimes(med) {
+  if (Array.isArray(med.times) && med.times.length > 0) return med.times;
+  return parseTimes(med.time);
+}
+
+function isAsNeeded(f) {
+  return f === "As Needed" || f === "As needed";
+}
+
 function nextDoseLabel(med) {
-  if (!med.taken && med.time)
-    return `Today at ${parseTimes(med.time)[0] ?? med.time}`;
-  if (med.time) return `Tomorrow at ${parseTimes(med.time)[0] ?? med.time}`;
-  return null;
+  if (isAsNeeded(med.frequency)) return null;
+  const times = getMedTimes(med);
+  const first = times[0];
+  if (!first) return null;
+  const takenCount = med.logs?.length ?? (med.taken ? 1 : 0);
+  const nextTime = times[takenCount];
+  return nextTime ? `Today at ${nextTime}` : `Tomorrow at ${first}`;
 }
 
 function formatLogTime(isoString) {
@@ -125,7 +147,7 @@ function getAdherenceChartData(period, med, logDates, baseDate, logCountByDate) 
   const isActive = (d) => !startDate || d >= startDate;
 
   if (period === "D") {
-    const times = parseTimes(med.time);
+    const times = getMedTimes(med);
     const slots = times.length > 0 ? times : ["Today"];
     const todayCount = Math.min(dayLogCount(now), slots.length);
     const takenCount = todayCount;
@@ -445,6 +467,8 @@ export default function MedicationDetailScreen() {
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
   const addLog = useAddMedicationLogMutation();
+  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
+  const deleteLogById = useDeleteMedicationLogByIdMutation();
   const deleteMed = useDeleteMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
 
@@ -518,8 +542,9 @@ export default function MedicationDetailScreen() {
   }
 
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
-  const times = parseTimes(med.time);
-  const extraLogs = med.logs?.slice(1) ?? [];
+  const times = getMedTimes(med);
+  // Logs beyond the scheduled dose count are "extra" (unscheduled doses)
+  const extraLogs = (med.logs ?? []).slice(Math.max(times.length, 1));
 
   const logDates = useMemo(
     () => new Set(logHistory.map((l) => l.date)),
@@ -571,9 +596,27 @@ export default function MedicationDetailScreen() {
   );
   const CHART_WIDTH = SCREEN_WIDTH - 64;
 
-  const handleMarkTaken = () => {
+  const handleMarkTaken = (doseIndex = 0) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleTaken.mutate(med.id);
+    if (times.length > 1) {
+      const isDoseTaken = (med.logs?.length ?? 0) > doseIndex;
+      if (isDoseTaken) {
+        const targetLog = (med.logs ?? [])[doseIndex];
+        if (targetLog) {
+          deleteLogById.mutate({ medId: med.id, logId: targetLog.id });
+        } else {
+          deleteLatestLog.mutate(med.id);
+        }
+      } else {
+        addLog.mutate(med.id);
+        cancelAfterRemindersForTime(med.id, times[doseIndex]).catch(console.error);
+      }
+    } else {
+      if (!med.taken) {
+        cancelAfterRemindersForTime(med.id, times[0] ?? med.time).catch(console.error);
+      }
+      toggleTaken.mutate(med.id);
+    }
   };
 
   const handleAddLog = () => {
@@ -804,18 +847,20 @@ export default function MedicationDetailScreen() {
           <Card>
             {times.length > 0 ? (
               times.map((tm, idx) => {
-                const takenTime =
-                  med.taken && med.takenAt ? formatLogTime(med.takenAt) : null;
-                const isLast =
-                  idx === times.length - 1 && extraLogs.length === 0;
+                const isDoseTaken = (med.logs?.length ?? 0) > idx;
+                const log = med.logs?.[idx];
+                const takenTime = isDoseTaken && log?.takenAt
+                  ? formatLogTime(log.takenAt)
+                  : null;
+                const isLast = idx === times.length - 1 && extraLogs.length === 0;
                 return (
                   <DoseRow
                     key={tm}
                     color={color}
                     timeLabel={tm}
-                    isTaken={med.taken}
+                    isTaken={isDoseTaken}
                     takenTime={takenTime}
-                    onMark={handleMarkTaken}
+                    onMark={() => handleMarkTaken(idx)}
                     last={isLast}
                   />
                 );
@@ -828,7 +873,7 @@ export default function MedicationDetailScreen() {
                 takenTime={
                   med.taken && med.takenAt ? formatLogTime(med.takenAt) : null
                 }
-                onMark={handleMarkTaken}
+                onMark={() => handleMarkTaken(0)}
                 last={extraLogs.length === 0}
               />
             )}
@@ -1089,19 +1134,48 @@ export default function MedicationDetailScreen() {
               label="Frequency"
               value={med.frequency}
             />
-            <InfoRow
-              icon={Clock}
-              iconColor={color}
-              label="Time"
-              value={med.time}
-            />
-            <InfoRow
-              icon={Bell}
-              iconColor="#781D11"
-              label="Next dose"
-              value={nextDoseLabel(med)}
-              last
-            />
+            {med.frequency === "Specific Days" && (
+              <InfoRow
+                icon={Calendar}
+                iconColor={color}
+                label="Days"
+                value={
+                  Array.isArray(med.selectedDays) && med.selectedDays.length
+                    ? WEEKDAYS.filter((d) =>
+                        med.selectedDays.includes(d.value),
+                      )
+                        .map((d) => d.label)
+                        .join(", ")
+                    : "—"
+                }
+              />
+            )}
+            {!isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Clock}
+                iconColor={color}
+                label={getMedTimes(med).length > 1 ? "Times" : "Time"}
+                value={getMedTimes(med).join(" · ") || "—"}
+              />
+            )}
+            {!isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Bell}
+                iconColor="#781D11"
+                label="Next dose"
+                value={nextDoseLabel(med)}
+                last
+              />
+            )}
+            {isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Bell}
+                iconColor={color}
+                label="Schedule"
+                value="Take when required"
+                last
+              />
+            )}
           </Card>
 
           {/* Details */}
