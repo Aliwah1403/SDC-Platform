@@ -29,7 +29,7 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
-import { cancelMedicationNotifications } from "@/utils/medicationNotifications";
+import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
 
@@ -597,8 +597,16 @@ export default function MedicationDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (times.length > 1) {
       const isDoseTaken = (med.logs?.length ?? 0) > doseIndex;
-      isDoseTaken ? deleteLatestLog.mutate(med.id) : addLog.mutate(med.id);
+      if (isDoseTaken) {
+        deleteLatestLog.mutate(med.id);
+      } else {
+        addLog.mutate(med.id);
+        cancelAfterRemindersForTime(med.id, times[doseIndex]).catch(console.error);
+      }
     } else {
+      if (!med.taken) {
+        cancelAfterRemindersForTime(med.id, times[0] ?? med.time).catch(console.error);
+      }
       toggleTaken.mutate(med.id);
     }
   };

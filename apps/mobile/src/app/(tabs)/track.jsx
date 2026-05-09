@@ -56,6 +56,7 @@ import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
 import { fetchWorkoutsForDate } from "@/services/healthKitService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
+import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -520,6 +521,9 @@ function MedicationsSection({ selectedDate }) {
               delay_minutes: _delayMinutes,
               new_state: !med.taken,
             });
+            if (!med.taken) {
+              cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+            }
             toggleTaken.mutate(med.id);
           }}
         />

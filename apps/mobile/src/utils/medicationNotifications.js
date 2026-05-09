@@ -141,6 +141,22 @@ export async function scheduleMedicationNotifications(med) {
   }
 }
 
+export async function cancelAfterRemindersForTime(medId, timeStr) {
+  if (!timeStr) return;
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const toCancel = scheduled
+    .filter(
+      (n) =>
+        n.content.data?.medicationId === medId &&
+        n.identifier.includes("-after-") &&
+        n.identifier.includes(timeStr),
+    )
+    .map((n) => n.identifier);
+  await Promise.all(
+    toCancel.map((id) => Notifications.cancelScheduledNotificationAsync(id)),
+  );
+}
+
 export async function cancelMedicationNotifications(medId) {
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   const toCancel = scheduled

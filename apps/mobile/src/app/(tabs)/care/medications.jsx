@@ -31,6 +31,7 @@ import { fonts } from "@/utils/fonts";
 import MedicationIcon from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
+import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 
 const C_BRAND = {
   accent: "#A9334D",
@@ -679,7 +680,14 @@ export default function MedicationsScreen() {
                 <GroupHeader
                   group={group}
                   allTaken={allTaken}
-                  onLogAll={() => markGroupTaken.mutate(untakenIds)}
+                  onLogAll={() => {
+                    markGroupTaken.mutate(untakenIds);
+                    group.meds
+                      .filter((m) => !m.taken)
+                      .forEach((m) =>
+                        cancelAfterRemindersForTime(m.id, m._displayTime ?? m.time).catch(console.error)
+                      );
+                  }}
                 />
                 <View style={{ height: 1, backgroundColor: t.divider }} />
                 {group.meds.map((med, i) => (
@@ -689,10 +697,16 @@ export default function MedicationsScreen() {
                       index={gi * 4 + i}
                       onToggle={() => {
                         if ((med._totalDoses ?? 1) > 1) {
-                          med.taken
-                            ? deleteLatestLog.mutate(med.id)
-                            : addMedLog.mutate(med.id);
+                          if (med.taken) {
+                            deleteLatestLog.mutate(med.id);
+                          } else {
+                            addMedLog.mutate(med.id);
+                            cancelAfterRemindersForTime(med.id, med._displayTime).catch(console.error);
+                          }
                         } else {
+                          if (!med.taken) {
+                            cancelAfterRemindersForTime(med.id, med._displayTime ?? med.time).catch(console.error);
+                          }
                           toggleTaken.mutate(med.id);
                         }
                       }}
