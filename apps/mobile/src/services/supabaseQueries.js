@@ -423,6 +423,24 @@ export async function addMedicationLog(userId, medId) {
   if (error) throw error;
 }
 
+export async function deleteLatestMedicationLog(userId, medId) {
+  const { data } = await supabase
+    .from('medication_logs')
+    .select('id')
+    .eq('medication_id', medId)
+    .eq('user_id', userId)
+    .eq('date', today())
+    .order('taken_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!data) return;
+  const { error } = await supabase
+    .from('medication_logs')
+    .delete()
+    .eq('id', data.id);
+  if (error) throw error;
+}
+
 export async function markGroupTaken(userId, medIds) {
   const todayStr = today();
   const now = new Date().toISOString();

@@ -43,85 +43,100 @@ function dailyTrigger(hour, minute) {
 export async function scheduleMedicationNotifications(med) {
   await cancelMedicationNotifications(med.id);
 
-  // "As needed" meds have no fixed schedule
-  if (!med.time || med.frequency === "As needed") return;
+  const isAsNeeded = med.frequency === "As Needed" || med.frequency === "As needed";
+  if (isAsNeeded) return;
 
-  const isWeekly = med.frequency === "Weekly";
-  // Sunday = 1 in expo-notifications weekday convention
+  // Prefer new times[] array, fall back to splitting legacy time string
+  const timesArray =
+    Array.isArray(med.times) && med.times.length > 0
+      ? med.times
+      : med.time?.split(",").map((t) => t.trim()).filter(Boolean) ?? [];
+
+  if (timesArray.length === 0) return;
+
+  const isSpecificDays =
+    med.frequency === "Specific Days" || med.frequency === "Weekly";
+
+  // For specific days, build the list of weekdays to schedule; null = daily
   const fallbackWeekday = new Date().getDay() + 1;
-  const baseWeekday =
-    Number.isInteger(med.weekday) && med.weekday >= 1 && med.weekday <= 7
-      ? med.weekday
-      : fallbackWeekday;
-  const times = med.time
-    .split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const scheduleDays = isSpecificDays
+    ? Array.isArray(med.selectedDays) && med.selectedDays.length > 0
+      ? med.selectedDays
+      : med.weekday
+        ? [med.weekday]
+        : [fallbackWeekday]
+    : null;
 
-  for (const timeStr of times) {
+  const reminders = Array.isArray(med.reminders) ? med.reminders : [];
+
+  for (const timeStr of timesArray) {
     const parsed = parseTimeToHourMinute(timeStr);
     if (!parsed) continue;
 
-    const trigger = isWeekly
-      ? weekdayTrigger(baseWeekday, parsed.hour, parsed.minute)
-      : dailyTrigger(parsed.hour, parsed.minute);
+    const dayLoop = scheduleDays ?? [null];
 
-    // Main dose notification
-    await Notifications.scheduleNotificationAsync({
-      identifier: `med-${med.id}-${timeStr}-dose`,
-      content: {
-        title: `Time for ${med.name}`,
-        body: med.dosage ? `Take your ${med.dosage} dose` : "Take your dose",
-        data: { type: "medication", medicationId: med.id },
-        sound: true,
-      },
-      trigger,
-    });
-    posthog.capture('medication_reminder_sent', {
-      medication_category: med.category,
-      trigger_type: isWeekly ? 'weekly' : 'daily',
-      offset_minutes: 0,
-      notification_variant: 'dose',
-    });
+    for (const day of dayLoop) {
+      const dayKey = day != null ? `-d${day}` : "";
+      const makeTrigger = (h, m) =>
+        day != null ? weekdayTrigger(day, h, m) : dailyTrigger(h, m);
 
-    const reminders = Array.isArray(med.reminders) ? med.reminders : [];
-
-    // "Remind before" notifications
-    for (const r of reminders.filter((r) => r.direction === "before")) {
-      const t = offsetTime(parsed, -r.offsetMinutes);
-      const reminderWeekday =
-        ((((baseWeekday - 1 + t.dayShift) % 7) + 7) % 7) + 1;
+      // Main dose notification
       await Notifications.scheduleNotificationAsync({
-        identifier: `med-${med.id}-${timeStr}-before-${r.offsetMinutes}`,
+        identifier: `med-${med.id}-${timeStr}${dayKey}-dose`,
         content: {
-          title: `${med.name} in ${r.offsetMinutes} min`,
-          body: `A gentle reminder: your dose is soon.`,
+          title: `Time for ${med.name}`,
+          body: med.dosage ? `Take your ${med.dosage} dose` : "Take your dose",
           data: { type: "medication", medicationId: med.id },
           sound: true,
         },
-        trigger: isWeekly
-          ? weekdayTrigger(reminderWeekday, t.hour, t.minute)
-          : dailyTrigger(t.hour, t.minute),
+        trigger: makeTrigger(parsed.hour, parsed.minute),
       });
-    }
+      posthog.capture("medication_reminder_sent", {
+        medication_category: med.category,
+        trigger_type: day != null ? "weekly" : "daily",
+        offset_minutes: 0,
+        notification_variant: "dose",
+      });
 
-    // "Remind if missed" notifications
-    for (const r of reminders.filter((r) => r.direction === "after")) {
-      const t = offsetTime(parsed, r.offsetMinutes);
-      const reminderWeekday =
-        ((((baseWeekday - 1 + t.dayShift) % 7) + 7) % 7) + 1;
-      await Notifications.scheduleNotificationAsync({
-        identifier: `med-${med.id}-${timeStr}-after-${r.offsetMinutes}`,
-        content: {
-          title: `Did you take ${med.name}?`,
-          body: `Just checking in on your ${timeStr} dose.`,
-          data: { type: "medication", medicationId: med.id },
-          sound: true,
-        },
-        trigger: isWeekly
-          ? weekdayTrigger(reminderWeekday, t.hour, t.minute)
-          : dailyTrigger(t.hour, t.minute),
-      });
+      // "Remind before" notifications
+      for (const r of reminders.filter((r) => r.direction === "before")) {
+        const t = offsetTime(parsed, -r.offsetMinutes);
+        const adjDay =
+          day != null ? ((((day - 1 + t.dayShift) % 7) + 7) % 7) + 1 : null;
+        await Notifications.scheduleNotificationAsync({
+          identifier: `med-${med.id}-${timeStr}${dayKey}-before-${r.offsetMinutes}`,
+          content: {
+            title: `${med.name} in ${r.offsetMinutes} min`,
+            body: `A gentle reminder: your dose is soon.`,
+            data: { type: "medication", medicationId: med.id },
+            sound: true,
+          },
+          trigger:
+            adjDay != null
+              ? weekdayTrigger(adjDay, t.hour, t.minute)
+              : dailyTrigger(t.hour, t.minute),
+        });
+      }
+
+      // "Remind if missed" notifications
+      for (const r of reminders.filter((r) => r.direction === "after")) {
+        const t = offsetTime(parsed, r.offsetMinutes);
+        const adjDay =
+          day != null ? ((((day - 1 + t.dayShift) % 7) + 7) % 7) + 1 : null;
+        await Notifications.scheduleNotificationAsync({
+          identifier: `med-${med.id}-${timeStr}${dayKey}-after-${r.offsetMinutes}`,
+          content: {
+            title: `Did you take ${med.name}?`,
+            body: `Just checking in on your ${timeStr} dose.`,
+            data: { type: "medication", medicationId: med.id },
+            sound: true,
+          },
+          trigger:
+            adjDay != null
+              ? weekdayTrigger(adjDay, t.hour, t.minute)
+              : dailyTrigger(t.hour, t.minute),
+        });
+      }
     }
   }
 }

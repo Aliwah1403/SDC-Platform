@@ -46,6 +46,16 @@ const CATEGORY_COLORS = {
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
+const WEEKDAYS = [
+  { label: "Mon", value: 2 },
+  { label: "Tue", value: 3 },
+  { label: "Wed", value: 4 },
+  { label: "Thu", value: 5 },
+  { label: "Fri", value: 6 },
+  { label: "Sat", value: 7 },
+  { label: "Sun", value: 1 },
+];
+
 // ── helpers ────────────────────────────────────────────────────────────────
 
 function parseTimes(timeStr) {
@@ -56,11 +66,21 @@ function parseTimes(timeStr) {
     .filter(Boolean);
 }
 
+function getMedTimes(med) {
+  if (Array.isArray(med.times) && med.times.length > 0) return med.times;
+  return parseTimes(med.time);
+}
+
+function isAsNeeded(f) {
+  return f === "As Needed" || f === "As needed";
+}
+
 function nextDoseLabel(med) {
-  if (!med.taken && med.time)
-    return `Today at ${parseTimes(med.time)[0] ?? med.time}`;
-  if (med.time) return `Tomorrow at ${parseTimes(med.time)[0] ?? med.time}`;
-  return null;
+  if (isAsNeeded(med.frequency)) return null;
+  const first = getMedTimes(med)[0];
+  if (!first) return null;
+  if (!med.taken) return `Today at ${first}`;
+  return `Tomorrow at ${first}`;
 }
 
 function formatLogTime(isoString) {
@@ -125,7 +145,7 @@ function getAdherenceChartData(period, med, logDates, baseDate, logCountByDate) 
   const isActive = (d) => !startDate || d >= startDate;
 
   if (period === "D") {
-    const times = parseTimes(med.time);
+    const times = getMedTimes(med);
     const slots = times.length > 0 ? times : ["Today"];
     const todayCount = Math.min(dayLogCount(now), slots.length);
     const takenCount = todayCount;
@@ -518,7 +538,7 @@ export default function MedicationDetailScreen() {
   }
 
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
-  const times = parseTimes(med.time);
+  const times = getMedTimes(med);
   const extraLogs = med.logs?.slice(1) ?? [];
 
   const logDates = useMemo(
@@ -1089,19 +1109,48 @@ export default function MedicationDetailScreen() {
               label="Frequency"
               value={med.frequency}
             />
-            <InfoRow
-              icon={Clock}
-              iconColor={color}
-              label="Time"
-              value={med.time}
-            />
-            <InfoRow
-              icon={Bell}
-              iconColor="#781D11"
-              label="Next dose"
-              value={nextDoseLabel(med)}
-              last
-            />
+            {med.frequency === "Specific Days" && (
+              <InfoRow
+                icon={Calendar}
+                iconColor={color}
+                label="Days"
+                value={
+                  Array.isArray(med.selectedDays) && med.selectedDays.length
+                    ? WEEKDAYS.filter((d) =>
+                        med.selectedDays.includes(d.value),
+                      )
+                        .map((d) => d.label)
+                        .join(", ")
+                    : "—"
+                }
+              />
+            )}
+            {!isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Clock}
+                iconColor={color}
+                label={getMedTimes(med).length > 1 ? "Times" : "Time"}
+                value={getMedTimes(med).join(" · ") || "—"}
+              />
+            )}
+            {!isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Bell}
+                iconColor="#781D11"
+                label="Next dose"
+                value={nextDoseLabel(med)}
+                last
+              />
+            )}
+            {isAsNeeded(med.frequency) && (
+              <InfoRow
+                icon={Bell}
+                iconColor={color}
+                label="Schedule"
+                value="Take when required"
+                last
+              />
+            )}
           </Card>
 
           {/* Details */}

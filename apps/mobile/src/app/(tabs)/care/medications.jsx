@@ -23,6 +23,8 @@ import {
   useMedicationsQuery,
   useToggleMedicationTakenMutation,
   useMarkGroupTakenMutation,
+  useAddMedicationLogMutation,
+  useDeleteLatestMedicationLogMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
@@ -76,16 +78,54 @@ function getGroupKey(timeStr) {
 }
 
 function buildGroups(meds) {
+  const asNeeded = meds.filter(
+    (m) => m.frequency === "As Needed" || m.frequency === "As needed",
+  );
+  const scheduled = meds.filter(
+    (m) => m.frequency !== "As Needed" && m.frequency !== "As needed",
+  );
+
   const map = {};
   for (const g of TIME_GROUPS) map[g.key] = [];
-  for (const m of meds) {
-    const key = getGroupKey(m.time);
-    map[key].push(m);
+
+  for (const m of scheduled) {
+    const allTimes =
+      Array.isArray(m.times) && m.times.length > 0
+        ? m.times
+        : m.time
+          ? [m.time]
+          : ["8:00 AM"];
+    const seen = new Set();
+    for (let i = 0; i < allTimes.length; i++) {
+      const t = allTimes[i];
+      const key = getGroupKey(t);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      map[key].push({
+        ...m,
+        _displayTime: t,
+        _doseIndex: i,
+        _totalDoses: allTimes.length,
+        taken: (m.logs?.length ?? 0) > i,
+      });
+    }
   }
-  return TIME_GROUPS.filter((g) => map[g.key].length > 0).map((g) => ({
+
+  const groups = TIME_GROUPS.filter((g) => map[g.key].length > 0).map((g) => ({
     ...g,
     meds: map[g.key],
   }));
+
+  if (asNeeded.length > 0) {
+    groups.push({
+      key: "asNeeded",
+      label: "As Needed",
+      emoji: "💊",
+      meds: asNeeded,
+    });
+  }
+
+  return groups;
 }
 
 function SectionLabel({ title }) {
@@ -116,6 +156,8 @@ function Divider() {
 
 function GroupHeader({ group, onLogAll, allTaken }) {
   const t = useTheme();
+  const subtimeStr = group.meds[0]?._displayTime ?? group.meds[0]?.time ?? null;
+  const isAsNeeded = group.key === "asNeeded";
   return (
     <View
       style={{
@@ -145,42 +187,32 @@ function GroupHeader({ group, onLogAll, allTaken }) {
         >
           {group.label}
         </Text>
-        {group.meds[0]?.time ? (
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: t.textSecondary,
-              marginTop: 1,
-            }}
-          >
-            {group.meds[0].time} reminder
-          </Text>
-        ) : null}
       </View>
-      <TouchableOpacity
-        onPress={onLogAll}
-        disabled={allTaken}
-        activeOpacity={0.7}
-        style={{
-          borderWidth: 1,
-          borderColor: allTaken ? t.divider : t.border,
-          borderRadius: 20,
-          paddingHorizontal: 14,
-          paddingVertical: 6,
-          backgroundColor: allTaken ? t.background : t.surface,
-        }}
-      >
-        <Text
+      {!isAsNeeded && (
+        <TouchableOpacity
+          onPress={onLogAll}
+          disabled={allTaken}
+          activeOpacity={0.7}
           style={{
-            fontFamily: fonts.medium,
-            fontSize: 13,
-            color: allTaken ? t.textSecondary : t.text,
+            borderWidth: 1,
+            borderColor: allTaken ? t.divider : t.border,
+            borderRadius: 20,
+            paddingHorizontal: 14,
+            paddingVertical: 6,
+            backgroundColor: allTaken ? t.background : t.surface,
           }}
         >
-          {allTaken ? "All done ✓" : "Log all"}
-        </Text>
-      </TouchableOpacity>
+          <Text
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 13,
+              color: allTaken ? t.textSecondary : t.text,
+            }}
+          >
+            {allTaken ? "All done ✓" : "Log all"}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -257,7 +289,9 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
               opacity: 0.75,
             }}
           >
-            {medication.frequency}
+            {[medication.frequency, medication._displayTime ?? medication.time]
+              .filter(Boolean)
+              .join(" · ")}
           </Text>
         </View>
 
@@ -382,6 +416,8 @@ export default function MedicationsScreen() {
   const router = useRouter();
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  const addMedLog = useAddMedicationLogMutation();
+  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
   const markGroupTaken = useMarkGroupTakenMutation();
 
   const active = medications.filter((m) => m.isActive);
@@ -566,7 +602,8 @@ export default function MedicationsScreen() {
               style={{
                 height: "100%",
                 width: `${progressPct * 100}%`,
-                backgroundColor: progressPct === 1 ? C_BRAND.success : C_BRAND.accent,
+                backgroundColor:
+                  progressPct === 1 ? C_BRAND.success : C_BRAND.accent,
                 borderRadius: 3,
               }}
             />
@@ -650,7 +687,15 @@ export default function MedicationsScreen() {
                     <MedicationScheduleRow
                       medication={med}
                       index={gi * 4 + i}
-                      onToggle={() => toggleTaken.mutate(med.id)}
+                      onToggle={() => {
+                        if ((med._totalDoses ?? 1) > 1) {
+                          med.taken
+                            ? deleteLatestLog.mutate(med.id)
+                            : addMedLog.mutate(med.id);
+                        } else {
+                          toggleTaken.mutate(med.id);
+                        }
+                      }}
                       onPress={() =>
                         router.push({
                           pathname: "/medication-detail",
@@ -715,7 +760,6 @@ export default function MedicationsScreen() {
             Add Medication
           </Text>
         </TouchableOpacity>
-
       </ScrollView>
     </View>
   );
