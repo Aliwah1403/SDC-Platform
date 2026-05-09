@@ -17,6 +17,9 @@ import {
   Pressable,
   Image,
   Platform,
+} from "react-native";
+import { Image as ExpoImage } from "expo-image";
+import {
   StyleSheet,
   Linking,
 } from "react-native";
@@ -1370,21 +1373,22 @@ export default function ProfileScreen() {
                   justifyContent: "center",
                 }}
               >
-                {profile?.avatarUrl ? (
-                  <Image
+                <Text
+                  style={{
+                    fontFamily: fonts.bold,
+                    fontSize: 32,
+                    color: "#F8E9E7",
+                  }}
+                >
+                  {initials}
+                </Text>
+                {profile?.avatarUrl && (
+                  <ExpoImage
                     source={{ uri: profile.avatarUrl }}
-                    style={{ width: 96, height: 96, borderRadius: 48 }}
+                    style={{ position: "absolute", width: 96, height: 96, borderRadius: 48 }}
+                    contentFit="cover"
+                    transition={300}
                   />
-                ) : (
-                  <Text
-                    style={{
-                      fontFamily: fonts.bold,
-                      fontSize: 32,
-                      color: "#F8E9E7",
-                    }}
-                  >
-                    {initials}
-                  </Text>
                 )}
               </View>
               <View

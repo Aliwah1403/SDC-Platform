@@ -1,31 +1,6 @@
 import { View } from "react-native";
-import { MotiView } from "moti";
+import { Bone } from "@/components/Skeleton/Bone";
 import { useTheme } from "@/hooks/useTheme";
-
-function Bone({ width, height, borderRadius = 8, style }) {
-  const t = useTheme();
-  return (
-    <MotiView
-      from={{ opacity: 0.35 }}
-      animate={{ opacity: 0.9 }}
-      transition={{
-        type: "timing",
-        duration: 750,
-        loop: true,
-        repeatReverse: true,
-      }}
-      style={[
-        {
-          width,
-          height,
-          borderRadius,
-          backgroundColor: t.isDark ? t.surfaceElevated : "#E8DEDD",
-        },
-        style,
-      ]}
-    />
-  );
-}
 
 export function PostSkeleton() {
   const t = useTheme();

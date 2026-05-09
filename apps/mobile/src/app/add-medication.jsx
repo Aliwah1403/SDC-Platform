@@ -38,7 +38,10 @@ import MedicationIcon from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
 import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
-import { scheduleMedicationNotifications, cancelMedicationNotifications } from "@/utils/medicationNotifications";
+import {
+  scheduleMedicationNotifications,
+  cancelMedicationNotifications,
+} from "@/utils/medicationNotifications";
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 const C = {
@@ -160,24 +163,164 @@ function ScanIllustration() {
   return (
     <Svg width={82} height={82} viewBox="0 0 80 80">
       <Circle cx="40" cy="40" r="36" fill={bgFill} />
-      <Line x1="16" y1="24" x2="16" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
-      <Line x1="21" y1="24" x2="21" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
-      <Line x1="25" y1="24" x2="25" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
-      <Line x1="30" y1="24" x2="30" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
-      <Line x1="34" y1="24" x2="34" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
-      <Line x1="39" y1="24" x2="39" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
-      <Line x1="43" y1="24" x2="43" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.85" />
-      <Line x1="48" y1="24" x2="48" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
-      <Line x1="52" y1="24" x2="52" y2="56" stroke={lineColor} strokeWidth="3" strokeOpacity="0.9" />
-      <Line x1="57" y1="24" x2="57" y2="56" stroke={lineColor} strokeWidth="2" strokeOpacity="0.7" />
-      <Line x1="61" y1="24" x2="61" y2="56" stroke={lineColor} strokeWidth="1.5" strokeOpacity="0.55" />
-      <Line x1="64" y1="24" x2="64" y2="56" stroke={lineColor} strokeWidth="2.5" strokeOpacity="0.8" />
-      <Rect x="12" y="37.5" width="56" height="3" rx="1.5" fill="#F0531C" opacity="0.9" />
-      <Rect x="12" y="36" width="56" height="6" rx="3" fill="#F0531C" opacity="0.15" />
-      <Path d="M11 28 L11 20 L19 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M69 28 L69 20 L61 20" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M11 52 L11 60 L19 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M69 52 L69 60 L61 60" stroke="#A9334D" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <Line
+        x1="16"
+        y1="24"
+        x2="16"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="3"
+        strokeOpacity="0.9"
+      />
+      <Line
+        x1="21"
+        y1="24"
+        x2="21"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeOpacity="0.55"
+      />
+      <Line
+        x1="25"
+        y1="24"
+        x2="25"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="2.5"
+        strokeOpacity="0.85"
+      />
+      <Line
+        x1="30"
+        y1="24"
+        x2="30"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeOpacity="0.55"
+      />
+      <Line
+        x1="34"
+        y1="24"
+        x2="34"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="3"
+        strokeOpacity="0.9"
+      />
+      <Line
+        x1="39"
+        y1="24"
+        x2="39"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeOpacity="0.55"
+      />
+      <Line
+        x1="43"
+        y1="24"
+        x2="43"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="2.5"
+        strokeOpacity="0.85"
+      />
+      <Line
+        x1="48"
+        y1="24"
+        x2="48"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeOpacity="0.55"
+      />
+      <Line
+        x1="52"
+        y1="24"
+        x2="52"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="3"
+        strokeOpacity="0.9"
+      />
+      <Line
+        x1="57"
+        y1="24"
+        x2="57"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="2"
+        strokeOpacity="0.7"
+      />
+      <Line
+        x1="61"
+        y1="24"
+        x2="61"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeOpacity="0.55"
+      />
+      <Line
+        x1="64"
+        y1="24"
+        x2="64"
+        y2="56"
+        stroke={lineColor}
+        strokeWidth="2.5"
+        strokeOpacity="0.8"
+      />
+      <Rect
+        x="12"
+        y="37.5"
+        width="56"
+        height="3"
+        rx="1.5"
+        fill="#F0531C"
+        opacity="0.9"
+      />
+      <Rect
+        x="12"
+        y="36"
+        width="56"
+        height="6"
+        rx="3"
+        fill="#F0531C"
+        opacity="0.15"
+      />
+      <Path
+        d="M11 28 L11 20 L19 20"
+        stroke="#A9334D"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M69 28 L69 20 L61 20"
+        stroke="#A9334D"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M11 52 L11 60 L19 60"
+        stroke="#A9334D"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <Path
+        d="M69 52 L69 60 L61 60"
+        stroke="#A9334D"
+        strokeWidth="2.5"
+        fill="none"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -262,12 +405,20 @@ export default function AddMedicationScreen() {
   const [customPeriod, setCustomPeriod] = useState(existingTimeParsed.p);
 
   // ── Step 4: Reminders + Notes
-  const existingBefore = existing?.reminders?.find((r) => r.direction === "before");
-  const existingAfter = existing?.reminders?.find((r) => r.direction === "after");
+  const existingBefore = existing?.reminders?.find(
+    (r) => r.direction === "before",
+  );
+  const existingAfter = existing?.reminders?.find(
+    (r) => r.direction === "after",
+  );
   const [remindBefore, setRemindBefore] = useState(!!existingBefore);
-  const [remindBeforeMin, setRemindBeforeMin] = useState(existingBefore?.offsetMinutes ?? 10);
+  const [remindBeforeMin, setRemindBeforeMin] = useState(
+    existingBefore?.offsetMinutes ?? 10,
+  );
   const [remindAfter, setRemindAfter] = useState(!!existingAfter);
-  const [remindAfterMin, setRemindAfterMin] = useState(existingAfter?.offsetMinutes ?? 5);
+  const [remindAfterMin, setRemindAfterMin] = useState(
+    existingAfter?.offsetMinutes ?? 5,
+  );
   const [notes, setNotes] = useState(existing?.notes ?? "");
 
   // ── Step 1: Live drug search (saved medications + RxNorm API)
@@ -320,7 +471,9 @@ export default function AddMedicationScreen() {
       notes,
       rxcui: rxcui || null,
       type: medType,
-      ...(frequency === "Weekly" ? { weekday: persistedWeekday } : { weekday: null }),
+      ...(frequency === "Weekly"
+        ? { weekday: persistedWeekday }
+        : { weekday: null }),
     };
 
     if (isEditing) {
@@ -328,14 +481,20 @@ export default function AddMedicationScreen() {
         { id: medicationId, updates: med },
         {
           onSuccess: async () => {
-            posthog?.capture('medication_updated', {
-              medication_name: med.name,
-              change_type: 'edit',
+            posthog?.capture("medication_updated", {
+              medication_category: med.category,
+              change_type: "edit",
             });
             try {
-              await scheduleMedicationNotifications({ ...med, id: medicationId });
+              await scheduleMedicationNotifications({
+                ...med,
+                id: medicationId,
+              });
             } catch (error) {
-              console.error("Failed to schedule medication notifications:", error);
+              console.error(
+                "Failed to schedule medication notifications:",
+                error,
+              );
             }
             router.back();
           },
@@ -344,15 +503,15 @@ export default function AddMedicationScreen() {
     } else {
       addMed.mutate(med, {
         onSuccess: async (savedMed) => {
-          posthog?.capture('medication_added', {
-            medication_name: med.name,
-            dosage: med.dosage,
+          posthog?.capture("medication_added", {
+            medication_category: med.category,
             frequency: med.frequency,
+            has_dosage: Boolean(med.dosage),
             has_reminder: med.reminders.length > 0,
           });
           if (med.time) {
-            posthog?.capture('medication_schedule_created', {
-              medication_name: med.name,
+            posthog?.capture("medication_schedule_created", {
+              medication_category: med.category,
               dose_times_count: 1,
               schedule_type: med.frequency,
             });
@@ -360,7 +519,10 @@ export default function AddMedicationScreen() {
           try {
             await scheduleMedicationNotifications({ ...med, id: savedMed.id });
           } catch (error) {
-            console.error("Failed to schedule medication notifications:", error);
+            console.error(
+              "Failed to schedule medication notifications:",
+              error,
+            );
           }
           router.back();
         },
@@ -382,7 +544,7 @@ export default function AddMedicationScreen() {
           }
           try {
             await deleteMed.mutateAsync(medicationId);
-            posthog?.capture('medication_deleted', { medication_name: name });
+            posthog?.capture("medication_deleted", { medication_category: category });
             router.back();
           } catch (error) {
             console.error("Failed to delete medication:", error);
@@ -520,8 +682,19 @@ export default function AddMedicationScreen() {
                       gap: 14,
                     }}
                   >
-                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
-                      <MedicationBottle type="tablet" color={C.accent} drugName="" size={100} />
+                    <View
+                      style={{
+                        height: 100,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MedicationBottle
+                        type="tablet"
+                        color={C.accent}
+                        drugName=""
+                        size={100}
+                      />
                     </View>
                     <View style={{ alignItems: "center", gap: 4 }}>
                       <Text
@@ -565,7 +738,13 @@ export default function AddMedicationScreen() {
                       gap: 14,
                     }}
                   >
-                    <View style={{ height: 100, alignItems: "center", justifyContent: "center" }}>
+                    <View
+                      style={{
+                        height: 100,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <ScanIllustration />
                     </View>
                     <View style={{ alignItems: "center", gap: 4 }}>
@@ -646,7 +825,9 @@ export default function AddMedicationScreen() {
                 {drugError && (
                   <View
                     style={{
-                      backgroundColor: t.isDark ? "rgba(245,158,11,0.15)" : "#FEF3C7",
+                      backgroundColor: t.isDark
+                        ? "rgba(245,158,11,0.15)"
+                        : "#FEF3C7",
                       borderRadius: 10,
                       paddingHorizontal: 12,
                       paddingVertical: 8,
@@ -728,7 +909,9 @@ export default function AddMedicationScreen() {
                               {drug.source === "saved" && (
                                 <View
                                   style={{
-                                    backgroundColor: t.isDark ? "rgba(5,150,105,0.15)" : "#EBF5F0",
+                                    backgroundColor: t.isDark
+                                      ? "rgba(5,150,105,0.15)"
+                                      : "#EBF5F0",
                                     borderRadius: 6,
                                     paddingHorizontal: 7,
                                     paddingVertical: 2,
@@ -748,7 +931,9 @@ export default function AddMedicationScreen() {
                               {drug.source === "scd" && (
                                 <View
                                   style={{
-                                    backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
+                                    backgroundColor: t.isDark
+                                      ? "rgba(169,51,77,0.15)"
+                                      : "#F5EBF0",
                                     borderRadius: 6,
                                     paddingHorizontal: 7,
                                     paddingVertical: 2,
@@ -1018,7 +1203,9 @@ export default function AddMedicationScreen() {
                                   </View>
                                   <View
                                     style={{
-                                      backgroundColor: t.isDark ? "rgba(169,51,77,0.15)" : "#F5EBF0",
+                                      backgroundColor: t.isDark
+                                        ? "rgba(169,51,77,0.15)"
+                                        : "#F5EBF0",
                                       borderRadius: 6,
                                       paddingHorizontal: 7,
                                       paddingVertical: 2,
@@ -1035,7 +1222,10 @@ export default function AddMedicationScreen() {
                                       SCD
                                     </Text>
                                   </View>
-                                  <ChevronRight size={16} color={t.textSecondary} />
+                                  <ChevronRight
+                                    size={16}
+                                    color={t.textSecondary}
+                                  />
                                 </TouchableOpacity>
                                 {i < drugs.length - 1 && (
                                   <View
@@ -1141,7 +1331,9 @@ export default function AddMedicationScreen() {
                   <View
                     style={{
                       marginTop: 20,
-                      backgroundColor: t.isDark ? "rgba(5,150,105,0.12)" : "#F0F9F5",
+                      backgroundColor: t.isDark
+                        ? "rgba(5,150,105,0.12)"
+                        : "#F0F9F5",
                       borderRadius: 10,
                       padding: 12,
                       alignItems: "center",
@@ -1247,7 +1439,9 @@ export default function AddMedicationScreen() {
                 <View
                   style={{
                     marginTop: 16,
-                    backgroundColor: t.isDark ? "rgba(5,150,105,0.12)" : "#F0F9F5",
+                    backgroundColor: t.isDark
+                      ? "rgba(5,150,105,0.12)"
+                      : "#F0F9F5",
                     borderRadius: 10,
                     padding: 12,
                     alignItems: "center",

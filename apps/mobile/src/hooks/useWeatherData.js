@@ -34,7 +34,7 @@ export function useWeatherData(locationEnabled) {
     return () => { cancelled = true; };
   }, [locationEnabled]);
 
-  const { data: weather = null } = useQuery({
+  const { data: weather = null, isFetching } = useQuery({
     queryKey: ['weather', coords?.lat?.toFixed(2), coords?.lon?.toFixed(2)],
     queryFn: () => fetchCurrentWeather(coords.lat, coords.lon),
     enabled: !!coords,
@@ -43,5 +43,8 @@ export function useWeatherData(locationEnabled) {
     retry: 1,
   });
 
-  return { weather };
+  // True only when location is on and we haven't resolved weather yet
+  const isWeatherLoading = locationEnabled && (coords === null || isFetching);
+
+  return { weather, isWeatherLoading };
 }
