@@ -28,7 +28,7 @@ import {
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
 import { cancelMedicationNotifications } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
@@ -465,6 +465,7 @@ export default function MedicationDetailScreen() {
   const { data: medications = [] } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
   const addLog = useAddMedicationLogMutation();
+  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
   const deleteMed = useDeleteMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
 
@@ -539,7 +540,8 @@ export default function MedicationDetailScreen() {
 
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
   const times = getMedTimes(med);
-  const extraLogs = med.logs?.slice(1) ?? [];
+  // Logs beyond the scheduled dose count are "extra" (unscheduled doses)
+  const extraLogs = (med.logs ?? []).slice(Math.max(times.length, 1));
 
   const logDates = useMemo(
     () => new Set(logHistory.map((l) => l.date)),
@@ -591,9 +593,14 @@ export default function MedicationDetailScreen() {
   );
   const CHART_WIDTH = SCREEN_WIDTH - 64;
 
-  const handleMarkTaken = () => {
+  const handleMarkTaken = (doseIndex = 0) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleTaken.mutate(med.id);
+    if (times.length > 1) {
+      const isDoseTaken = (med.logs?.length ?? 0) > doseIndex;
+      isDoseTaken ? deleteLatestLog.mutate(med.id) : addLog.mutate(med.id);
+    } else {
+      toggleTaken.mutate(med.id);
+    }
   };
 
   const handleAddLog = () => {
@@ -824,18 +831,20 @@ export default function MedicationDetailScreen() {
           <Card>
             {times.length > 0 ? (
               times.map((tm, idx) => {
-                const takenTime =
-                  med.taken && med.takenAt ? formatLogTime(med.takenAt) : null;
-                const isLast =
-                  idx === times.length - 1 && extraLogs.length === 0;
+                const isDoseTaken = (med.logs?.length ?? 0) > idx;
+                const log = med.logs?.[idx];
+                const takenTime = isDoseTaken && log?.takenAt
+                  ? formatLogTime(log.takenAt)
+                  : null;
+                const isLast = idx === times.length - 1 && extraLogs.length === 0;
                 return (
                   <DoseRow
                     key={tm}
                     color={color}
                     timeLabel={tm}
-                    isTaken={med.taken}
+                    isTaken={isDoseTaken}
                     takenTime={takenTime}
-                    onMark={handleMarkTaken}
+                    onMark={() => handleMarkTaken(idx)}
                     last={isLast}
                   />
                 );
@@ -848,7 +857,7 @@ export default function MedicationDetailScreen() {
                 takenTime={
                   med.taken && med.takenAt ? formatLogTime(med.takenAt) : null
                 }
-                onMark={handleMarkTaken}
+                onMark={() => handleMarkTaken(0)}
                 last={extraLogs.length === 0}
               />
             )}
