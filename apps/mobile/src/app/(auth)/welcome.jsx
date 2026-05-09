@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, Image } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Circle, Ellipse } from "react-native-svg";
 import { ChartColumnIncreasing, Pill, ShieldAlert } from "lucide-react-native";
+import HemoLogo from "../../../assets/images/icon.png";
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
@@ -51,9 +52,11 @@ export default function WelcomeScreen() {
           }}
           style={styles.logoSection}
         >
-          <View style={styles.logoMark}>
-            <View style={styles.logoMarkDot} />
-          </View>
+          {/* <View style={styles.logoMark}>
+            {/* <View style={styles.logoMarkDot} /> */}
+          {/* <Image source={HemoLogo} style={{ width: 24, height: 24 }} /> 
+          </View> */}
+          <Image source={HemoLogo} style={{ width: 72, height: 72 }} />
           <Text style={styles.logo}>Hemo</Text>
           <Text style={styles.tagline}>Your sickle cell companion</Text>
         </MotiView>
@@ -67,15 +70,33 @@ export default function WelcomeScreen() {
         >
           {[
             {
-              icon: <ChartColumnIncreasing size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
+              icon: (
+                <ChartColumnIncreasing
+                  size={20}
+                  color="rgba(248, 233, 231, 0.75)"
+                  strokeWidth={1.75}
+                />
+              ),
               text: "Track symptoms & health metrics daily",
             },
             {
-              icon: <Pill size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
+              icon: (
+                <Pill
+                  size={20}
+                  color="rgba(248, 233, 231, 0.75)"
+                  strokeWidth={1.75}
+                />
+              ),
               text: "Manage medications & care team",
             },
             {
-              icon: <ShieldAlert size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
+              icon: (
+                <ShieldAlert
+                  size={20}
+                  color="rgba(248, 233, 231, 0.75)"
+                  strokeWidth={1.75}
+                />
+              ),
               text: "Emergency SOS at your fingertips",
             },
           ].map(({ icon, text }) => (
