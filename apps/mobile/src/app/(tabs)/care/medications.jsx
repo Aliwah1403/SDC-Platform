@@ -25,6 +25,7 @@ import {
   useMarkGroupTakenMutation,
   useAddMedicationLogMutation,
   useDeleteLatestMedicationLogMutation,
+  useDeleteMedicationLogByIdMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
@@ -96,12 +97,9 @@ function buildGroups(meds) {
         : m.time
           ? [m.time]
           : ["8:00 AM"];
-    const seen = new Set();
     for (let i = 0; i < allTimes.length; i++) {
       const t = allTimes[i];
       const key = getGroupKey(t);
-      if (seen.has(key)) continue;
-      seen.add(key);
       map[key].push({
         ...m,
         _displayTime: t,
@@ -419,6 +417,7 @@ export default function MedicationsScreen() {
   const toggleTaken = useToggleMedicationTakenMutation();
   const addMedLog = useAddMedicationLogMutation();
   const deleteLatestLog = useDeleteLatestMedicationLogMutation();
+  const deleteLogById = useDeleteMedicationLogByIdMutation();
   const markGroupTaken = useMarkGroupTakenMutation();
 
   const active = medications.filter((m) => m.isActive);
@@ -698,7 +697,12 @@ export default function MedicationsScreen() {
                       onToggle={() => {
                         if ((med._totalDoses ?? 1) > 1) {
                           if (med.taken) {
-                            deleteLatestLog.mutate(med.id);
+                            const targetLog = (med.logs ?? [])[med._doseIndex ?? 0];
+                            if (targetLog) {
+                              deleteLogById.mutate({ medId: med.id, logId: targetLog.id });
+                            } else {
+                              deleteLatestLog.mutate(med.id);
+                            }
                           } else {
                             addMedLog.mutate(med.id);
                             cancelAfterRemindersForTime(med.id, med._displayTime).catch(console.error);

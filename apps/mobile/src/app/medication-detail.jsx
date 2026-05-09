@@ -28,7 +28,7 @@ import {
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import * as Haptics from "expo-haptics";
 import { BarChart } from "react-native-gifted-charts";
-import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation } from "@/hooks/queries/useMedicationsQuery";
+import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation, useDeleteMedicationLogByIdMutation } from "@/hooks/queries/useMedicationsQuery";
 import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import MedicationBottle from "@/components/MedicationBottle";
@@ -77,10 +77,12 @@ function isAsNeeded(f) {
 
 function nextDoseLabel(med) {
   if (isAsNeeded(med.frequency)) return null;
-  const first = getMedTimes(med)[0];
+  const times = getMedTimes(med);
+  const first = times[0];
   if (!first) return null;
-  if (!med.taken) return `Today at ${first}`;
-  return `Tomorrow at ${first}`;
+  const takenCount = med.logs?.length ?? (med.taken ? 1 : 0);
+  const nextTime = times[takenCount];
+  return nextTime ? `Today at ${nextTime}` : `Tomorrow at ${first}`;
 }
 
 function formatLogTime(isoString) {
@@ -466,6 +468,7 @@ export default function MedicationDetailScreen() {
   const toggleTaken = useToggleMedicationTakenMutation();
   const addLog = useAddMedicationLogMutation();
   const deleteLatestLog = useDeleteLatestMedicationLogMutation();
+  const deleteLogById = useDeleteMedicationLogByIdMutation();
   const deleteMed = useDeleteMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
 
@@ -598,7 +601,12 @@ export default function MedicationDetailScreen() {
     if (times.length > 1) {
       const isDoseTaken = (med.logs?.length ?? 0) > doseIndex;
       if (isDoseTaken) {
-        deleteLatestLog.mutate(med.id);
+        const targetLog = (med.logs ?? [])[doseIndex];
+        if (targetLog) {
+          deleteLogById.mutate({ medId: med.id, logId: targetLog.id });
+        } else {
+          deleteLatestLog.mutate(med.id);
+        }
       } else {
         addLog.mutate(med.id);
         cancelAfterRemindersForTime(med.id, times[doseIndex]).catch(console.error);

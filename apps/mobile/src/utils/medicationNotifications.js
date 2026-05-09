@@ -149,7 +149,7 @@ export async function cancelAfterRemindersForTime(medId, timeStr) {
       (n) =>
         n.content.data?.medicationId === medId &&
         n.identifier.includes("-after-") &&
-        n.identifier.includes(timeStr),
+        n.identifier.startsWith(`med-${medId}-${timeStr}`),
     )
     .map((n) => n.identifier);
   await Promise.all(

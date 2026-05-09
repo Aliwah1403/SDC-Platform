@@ -44,6 +44,8 @@ import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import {
   useMedicationsQuery,
   useToggleMedicationTakenMutation,
+  useAddMedicationLogMutation,
+  useDeleteLatestMedicationLogMutation,
 } from "@/hooks/queries/useMedicationsQuery";
 import { MedicationsSkeleton } from "@/components/Track/MedicationsSkeleton";
 import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
@@ -467,6 +469,8 @@ function MedicationItem({ medication, taken, onToggle }) {
 function MedicationsSection({ selectedDate }) {
   const { data: medications = [], isLoading } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
+  const addLog = useAddMedicationLogMutation();
+  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
   const posthog = usePostHog();
   const t = useTheme();
   if (isLoading) return <MedicationsSkeleton />;
@@ -521,10 +525,20 @@ function MedicationsSection({ selectedDate }) {
               delay_minutes: _delayMinutes,
               new_state: !med.taken,
             });
-            if (!med.taken) {
-              cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+            const isMultiDose = Array.isArray(med.times) && med.times.length > 1;
+            if (isMultiDose) {
+              if (!med.taken) {
+                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+                addLog.mutate(med.id);
+              } else {
+                deleteLatestLog.mutate(med.id);
+              }
+            } else {
+              if (!med.taken) {
+                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
+              }
+              toggleTaken.mutate(med.id);
             }
-            toggleTaken.mutate(med.id);
           }}
         />
       ))}

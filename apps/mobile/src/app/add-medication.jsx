@@ -596,12 +596,15 @@ export default function AddMedicationScreen() {
   const [frequency, setFrequency] = useState(
     () => migrateFrequency(existing?.frequency),
   );
-  const [times, setTimes] = useState(() =>
-    defaultTimesForFrequency(
+  const [times, setTimes] = useState(() => {
+    if (Array.isArray(existing?.times) && existing.times.length > 0) {
+      return existing.times.map(parseTimeToDate);
+    }
+    return defaultTimesForFrequency(
       migrateFrequency(existing?.frequency),
       existing?.time,
-    ),
-  );
+    );
+  });
   const [showTimePickerIndex, setShowTimePickerIndex] = useState(null);
   const [showFrequencyPicker, setShowFrequencyPicker] = useState(false);
   const [selectedDays, setSelectedDays] = useState(
@@ -644,10 +647,11 @@ export default function AddMedicationScreen() {
   };
 
   const handleSave = () => {
-    const dosage =
-      dosageAmount.trim() && dosageUnit
+    const dosage = dosageAmount.trim()
+      ? dosageUnit
         ? `${dosageAmount.trim()} ${dosageUnit}`
-        : "";
+        : dosageAmount.trim()
+      : "";
     const reminders = [];
     if (remindBefore)
       reminders.push({ offsetMinutes: remindBeforeMin, direction: "before" });
@@ -2270,9 +2274,11 @@ export default function AddMedicationScreen() {
             {(() => {
               const dosageEmpty =
                 step === 3 && dosageAmount.trim() === "" && !dosageUnit;
+              const noDaysSelected =
+                step === 4 && frequency === "Specific Days" && selectedDays.length === 0;
               const isSaving =
                 step === 5 && (addMed.isPending || updateMed.isPending);
-              const nextDisabled = dosageEmpty || isSaving;
+              const nextDisabled = dosageEmpty || noDaysSelected || isSaving;
               return (
                 <>
                   <TouchableOpacity
@@ -2513,7 +2519,11 @@ export default function AddMedicationScreen() {
                     onPress={() => {
                       setFrequency(opt.value);
                       setTimes(
-                        defaultTimesForFrequency(opt.value, times.length > 0 ? formatTime(times[0]) : null)
+                        opt.value === "As Needed"
+                          ? []
+                          : times.length > 0
+                            ? times
+                            : defaultTimesForFrequency(opt.value, null)
                       );
                       setShowFrequencyPicker(false);
                     }}

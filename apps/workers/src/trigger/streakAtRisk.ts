@@ -5,10 +5,17 @@ import { triggerNovu } from "../lib/novu";
 const WORKFLOW_ID = "hemo-streak-at-risk-gcuin8u2";
 
 function localHour(tz: string): number {
-  return parseInt(
-    new Date().toLocaleString("en-US", { timeZone: tz, hour: "numeric", hour12: false }),
-    10,
-  );
+  try {
+    return parseInt(
+      new Date().toLocaleString("en-US", { timeZone: tz, hour: "numeric", hour12: false }),
+      10,
+    );
+  } catch {
+    return parseInt(
+      new Date().toLocaleString("en-US", { timeZone: "UTC", hour: "numeric", hour12: false }),
+      10,
+    );
+  }
 }
 
 export const streakAtRisk = schedules.task({
@@ -51,10 +58,14 @@ export const streakAtRisk = schedules.task({
       // Only nudge users where it is currently 11 PM in their timezone
       if (localHour(tz) !== 23) continue;
 
-      await triggerNovu(WORKFLOW_ID, profile.user_id, {
-        nickname: profile.nickname ?? "there",
-      });
-      nudged++;
+      try {
+        await triggerNovu(WORKFLOW_ID, profile.user_id, {
+          nickname: profile.nickname ?? "there",
+        });
+        nudged++;
+      } catch (err) {
+        console.error(`[streak-at-risk] Failed to nudge user ${profile.user_id}:`, err);
+      }
     }
 
     console.log(`[streak-at-risk] Nudged ${nudged} users`);

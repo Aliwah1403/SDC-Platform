@@ -423,8 +423,16 @@ export async function addMedicationLog(userId, medId) {
   if (error) throw error;
 }
 
+export async function deleteMedicationLogById(logId) {
+  const { error } = await supabase
+    .from('medication_logs')
+    .delete()
+    .eq('id', logId);
+  if (error) throw error;
+}
+
 export async function deleteLatestMedicationLog(userId, medId) {
-  const { data } = await supabase
+  const { data, error: lookupError } = await supabase
     .from('medication_logs')
     .select('id')
     .eq('medication_id', medId)
@@ -433,6 +441,7 @@ export async function deleteLatestMedicationLog(userId, medId) {
     .order('taken_at', { ascending: false })
     .limit(1)
     .maybeSingle();
+  if (lookupError) throw lookupError;
   if (!data) return;
   const { error } = await supabase
     .from('medication_logs')
