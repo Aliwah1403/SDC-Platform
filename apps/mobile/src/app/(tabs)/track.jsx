@@ -467,9 +467,9 @@ function MedicationItem({ medication, taken, onToggle }) {
 function MedicationsSection({ selectedDate }) {
   const { data: medications = [], isLoading } = useMedicationsQuery();
   const toggleTaken = useToggleMedicationTakenMutation();
-  if (isLoading) return <MedicationsSkeleton />;
   const posthog = usePostHog();
   const t = useTheme();
+  if (isLoading) return <MedicationsSkeleton />;
   const active = medications.filter((m) => m.isActive);
   const dateLabel = selectedDate.toLocaleDateString("en-US", {
     month: "short",

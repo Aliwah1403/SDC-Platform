@@ -32,20 +32,8 @@ function WorkoutRowSkeleton({ isLast }) {
 }
 
 export function ActivitySkeleton() {
-  const t = useTheme();
   return (
-    <View
-      style={{
-        backgroundColor: t.surface,
-        borderRadius: 20,
-        overflow: "hidden",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 2,
-      }}
-    >
+    <View>
       <WorkoutRowSkeleton />
       <WorkoutRowSkeleton isLast />
     </View>
