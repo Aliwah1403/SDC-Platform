@@ -5,6 +5,7 @@ import { Iphone } from "@/components/ui/iphone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
+// import HomeScreen from "@/screenshots/home-screen.png";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
@@ -22,11 +23,11 @@ const PHONES = [
 const BASE = "https://api.dicebear.com/9.x/notionists/svg?seed=";
 
 const avatars = [
-  { alt: "Amara",   src: `${BASE}Amara&backgroundColor=ffd5dc`  },
-  { alt: "Kwame",   src: `${BASE}Kwame&backgroundColor=d1d4f9`  },
-  { alt: "James",   src: `${BASE}James&backgroundColor=b6e3f4`  },
-  { alt: "Fatima",  src: `${BASE}Fatima&backgroundColor=c0aede` },
-  { alt: "Esi",     src: `${BASE}Esi&backgroundColor=ffdfbf`    },
+  { alt: "Amara", src: `${BASE}Amara&backgroundColor=ffd5dc` },
+  { alt: "Kwame", src: `${BASE}Kwame&backgroundColor=d1d4f9` },
+  { alt: "James", src: `${BASE}James&backgroundColor=b6e3f4` },
+  { alt: "Fatima", src: `${BASE}Fatima&backgroundColor=c0aede` },
+  { alt: "Esi", src: `${BASE}Esi&backgroundColor=ffdfbf` },
 ];
 
 const HeroSection = () => {

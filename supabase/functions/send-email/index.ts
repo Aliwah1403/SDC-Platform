@@ -21,34 +21,24 @@ interface EmailPayload {
 
 interface TemplateConfig {
   id: string;
-  subject: string;
-  from: string;
   getVars: (payload: EmailPayload) => Record<string, string>;
 }
 
 const TEMPLATE_MAP: Record<string, TemplateConfig> = {
   signup: {
     id: "signup-confirmation",
-    subject: "Confirm your Hemo account",
-    from: "Hemo <noreply@info.hemo-scd.com>",
     getVars: (p) => ({ CONFIRMATION_URL: buildVerifyUrl(p) }),
   },
   recovery: {
     id: "password-reset-verification",
-    subject: "Your Hemo password reset code",
-    from: "Hemo Security <security@info.hemo-scd.com>",
     getVars: (p) => ({ TOKEN: p.email_data.token }),
   },
   magiclink: {
     id: "magic-link",
-    subject: "Your Hemo sign-in link",
-    from: "Hemo <noreply@info.hemo-scd.com>",
     getVars: (p) => ({ MAGIC_LINK_URL: buildVerifyUrl(p) }),
   },
   email_change: {
     id: "email-change-confirmation",
-    subject: "Confirm your new Hemo email address",
-    from: "Hemo <noreply@info.hemo-scd.com>",
     getVars: (p) => ({
       NEW_EMAIL: p.email_data.new_email ?? "",
       CONFIRMATION_URL: buildVerifyUrl(p),
@@ -56,8 +46,6 @@ const TEMPLATE_MAP: Record<string, TemplateConfig> = {
   },
   invite: {
     id: "user-invite",
-    subject: "You've been invited to Hemo",
-    from: "Hemo <hello@info.hemo-scd.com>",
     getVars: (p) => ({
       INVITE_URL: buildVerifyUrl(p),
       INVITER_NAME: "The Hemo Team",
@@ -65,8 +53,6 @@ const TEMPLATE_MAP: Record<string, TemplateConfig> = {
   },
   reauthentication: {
     id: "password-reset-verification",
-    subject: "Your Hemo verification code",
-    from: "Hemo Security <security@info.hemo-scd.com>",
     getVars: (p) => ({ TOKEN: p.email_data.token }),
   },
 };
@@ -144,9 +130,7 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: template.from,
       to: [user.email],
-      subject: template.subject,
       template: {
         id: template.id,
         variables: {
