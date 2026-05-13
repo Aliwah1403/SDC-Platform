@@ -2,15 +2,11 @@ import {
   Activity,
   BookOpen,
   CalendarCheck,
-  Files,
   HeartPulse,
   ShieldCheck,
   Users,
 } from "lucide-react";
-import PageWaitlistCTA from "@/components/PageWaitlistCTA";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import WaitlistCTAButton from "@/components/WaitlistCTAButton";
 import WaitlistCTA from "../Homepage/WaitlistCTA";
 import { cn } from "@/lib/utils";
 
@@ -113,45 +109,32 @@ const WhyHemoPage = () => {
         </div>
       </section>
 
-      {/* Our approach */}
-      <section className="mt-20">
-        <div className="mb-8 max-w-2xl">
-          <h2 className="text-3xl font-semibold tracking-tight">
-            How Hemo works
+      {/* Mission / origin */}
+      <section className="mt-20 grid gap-8  pt-14 lg:grid-cols-2">
+        <div>
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+            Why this app exists
           </h2>
-          <p className="mt-3 text-muted-foreground">
-            Built for real life with SCD: quick to log, easy to understand,
-            useful in care visits.
-          </p>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-lg border bg-secondary p-6">
-            <p className="text-sm font-medium text-muted-foreground">Step 1</p>
-            <h3 className="mt-2 text-xl font-semibold">Log in 2 minutes</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Track pain, mood, hydration, sleep, triggers, and notes quickly,
-              even on hard days.
-            </p>
-          </article>
-
-          <article className="rounded-lg border bg-secondary p-6">
-            <p className="text-sm font-medium text-muted-foreground">Step 2</p>
-            <h3 className="mt-2 text-xl font-semibold">See your patterns</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Turn daily entries into weekly and monthly trends with
-              plain-language insights.
-            </p>
-          </article>
-
-          <article className="rounded-lg border bg-secondary p-6">
-            <p className="text-sm font-medium text-muted-foreground">Step 3</p>
-            <h3 className="mt-2 text-xl font-semibold">Speak with clarity</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Bring meaningful context to appointments so conversations with
-              your care team are better.
-            </p>
-          </article>
+        <div className="space-y-4 text-muted-foreground">
+          <p>
+            Hemo was built because the tools available to people with Sickle
+            Cell Disease weren't built with them in mind. Generic symptom
+            trackers, note apps, and spreadsheets all require too much effort to
+            maintain, and they don't speak the language of SCD care.
+          </p>
+          <p>
+            We wanted to build something that patients would actually use on
+            their worst days — not just their best ones. Something that turns
+            consistent, low-effort logging into the kind of long-term health
+            context that changes clinic conversations.
+          </p>
+          <p>
+            Hemo is for patients first, caregivers second, and clinicians third.
+            That order is deliberate. The app only works if the person living
+            with SCD finds value in it daily. Everything else is downstream from
+            that.
+          </p>
         </div>
       </section>
 
@@ -188,56 +171,8 @@ const WhyHemoPage = () => {
             );
           })}
         </div>
-        {/* <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {AUDIENCE.map((item) => (
-            <Card key={item.title}>
-              <CardContent className="p-6">
-                <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                  <item.icon className="size-5" />
-                </div>
-                <h3 className="mt-4 text-lg font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div> */}
       </section>
 
-      {/* Mission / origin */}
-      <section className="mt-20 grid gap-8  pt-14 lg:grid-cols-2">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-            Why this app exists
-          </h2>
-        </div>
-        <div className="space-y-4 text-muted-foreground">
-          <p>
-            Hemo was built because the tools available to people with Sickle
-            Cell Disease weren't built with them in mind. Generic symptom
-            trackers, note apps, and spreadsheets all require too much effort to
-            maintain, and they don't speak the language of SCD care.
-          </p>
-          <p>
-            We wanted to build something that patients would actually use on
-            their worst days — not just their best ones. Something that turns
-            consistent, low-effort logging into the kind of long-term health
-            context that changes clinic conversations.
-          </p>
-          <p>
-            Hemo is for patients first, caregivers second, and clinicians third.
-            That order is deliberate. The app only works if the person living
-            with SCD finds value in it daily. Everything else is downstream from
-            that.
-          </p>
-        </div>
-      </section>
-
-      {/* <PageWaitlistCTA
-        title="Be among the first to use Hemo."
-        description="Join the waitlist for early access and launch updates."
-      /> */}
       <WaitlistCTA />
     </div>
   );
