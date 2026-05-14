@@ -6,7 +6,8 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
+
+const WAITLIST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -26,23 +27,26 @@ const WaitlistCTA = () => {
       return;
     }
 
-    if (!supabase) {
-      setWaitlistStatus("error");
-      setWaitlistMessage(
-        "Waitlist is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      );
-      return;
-    }
-
     setWaitlistStatus("submitting");
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: normalizedEmail,
-      source: "homepage-modern-white-v1",
-    });
 
-    if (error) {
+    try {
+      const res = await fetch(WAITLIST_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, source: "homepage-modern-white-v1" }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setWaitlistStatus("error");
+        setWaitlistMessage(
+          typeof data.error === "string" ? data.error : "Please try again in a moment.",
+        );
+        return;
+      }
+    } catch {
       setWaitlistStatus("error");
-      setWaitlistMessage(error.message || "Please try again in a moment.");
+      setWaitlistMessage("Please try again in a moment.");
       return;
     }
 

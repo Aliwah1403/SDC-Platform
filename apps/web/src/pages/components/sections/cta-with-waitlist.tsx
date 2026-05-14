@@ -6,7 +6,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/lib/supabase";
+
+const WAITLIST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -55,30 +56,32 @@ const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
       return;
     }
 
-    if (!supabase) {
-      setStatus("error");
-      setStatusMessage(
-        "Waitlist is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      );
-      return;
-    }
-
     setStatus("submitting");
     setStatusMessage("");
 
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: normalizedEmail,
-      source,
-    });
+    try {
+      const res = await fetch(WAITLIST_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, source }),
+      });
 
-    if (error) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setStatus("error");
+        setStatusMessage(
+          typeof data.error === "string" ? data.error : "Please try again in a moment.",
+        );
+        return;
+      }
+    } catch {
       setStatus("error");
-      setStatusMessage(error.message || "Please try again in a moment.");
+      setStatusMessage("Please try again in a moment.");
       return;
     }
 
     setStatus("success");
-    setStatusMessage("Thanks for joining. We&apos;ll share launch updates soon.");
+    setStatusMessage("Thanks for joining. We'll share launch updates soon.");
     setEmail("");
   };
 
