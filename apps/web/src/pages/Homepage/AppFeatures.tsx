@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
+import CareScreen from "@/assets/screenshots/care-screen.jpeg";
 const FEATURE_STORIES = [
   {
     title: "Daily Health Log",
@@ -14,6 +15,7 @@ const FEATURE_STORIES = [
     description:
       "Track pain, mood, hydration, sleep, steps, and heart rate over 7 and 30 days with clear visual history.",
     result: "You stop guessing and start spotting what helps.",
+    source: undefined,
   },
   {
     title: "Insights",
@@ -21,6 +23,7 @@ const FEATURE_STORIES = [
     description:
       "Hemo compares this week to last week and calls out meaningful changes in plain language.",
     result: "Context, not just numbers.",
+    source: undefined,
   },
   {
     title: "Streak System",
@@ -28,6 +31,7 @@ const FEATURE_STORIES = [
     description:
       "Streak repairs and milestone badges reward consistency without making missed days feel like failure.",
     result: "Better routine, less pressure.",
+    source: undefined,
   },
   {
     title: "Care Hub",
@@ -35,6 +39,7 @@ const FEATURE_STORIES = [
     description:
       "Medication details, appointments, contacts, crisis plan, and emergency profile stay organized and easy to reach.",
     result: "Less scrambling when you need clarity.",
+    source: CareScreen,
   },
   {
     title: "Emergency + Assistant + Community",
@@ -42,6 +47,7 @@ const FEATURE_STORIES = [
     description:
       "Use one-tap SOS, ask the AI assistant in plain language, and connect with a community that understands SCD.",
     result: "Support that feels practical and human.",
+    source: undefined,
   },
 ] as const;
 
@@ -74,7 +80,7 @@ const AppFeatures = () => {
               <p className="mt-3 text-base font-medium">{feature.result}</p>
             </div>
             <div className={index % 2 === 1 ? "lg:order-1" : ""}>
-              <Iphone className="max-w-84" />
+              <Iphone className="max-w-84" src={feature.source} />
             </div>
           </motion.article>
         ))}

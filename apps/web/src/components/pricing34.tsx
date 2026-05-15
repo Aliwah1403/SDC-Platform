@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
+import NumberFlow from "@number-flow/react";
 
 const PLANS = [
   {
     name: "Free",
-    monthlyPrice: "$0",
-    yearlyPrice: "$0",
+    monthlyPrice: 0,
+    yearlyPrice: 0,
     period: { monthly: "forever", yearly: "forever" },
     description: {
       monthly:
@@ -34,8 +35,8 @@ const PLANS = [
   },
   {
     name: "Pro",
-    monthlyPrice: "$4.99",
-    yearlyPrice: "$39.99",
+    monthlyPrice: 4.99,
+    yearlyPrice: 39.99,
     period: { monthly: "per month", yearly: "per year — save 33%" },
     description: {
       monthly:
@@ -57,8 +58,8 @@ const PLANS = [
   },
   {
     name: "Plus",
-    monthlyPrice: "$9.99",
-    yearlyPrice: "$79.99",
+    monthlyPrice: 9.99,
+    yearlyPrice: 79.99,
     period: { monthly: "per month", yearly: "per year — save 33%" },
     description: {
       monthly: "Advanced tools and priority support for power users.",
@@ -78,12 +79,12 @@ const PLANS = [
   },
   {
     name: "Family",
-    monthlyPrice: "$14.99",
-    yearlyPrice: "$119.99",
+    monthlyPrice: 14.99,
+    yearlyPrice: 119.99,
     period: { monthly: "per month", yearly: "per year — save 33%" },
     description: {
       monthly:
-        "One plan for the whole household. Supports patients and caregivers together.",
+        "One plan for the whole household. Share health data and insights with loved ones.",
       yearly: "One plan for the whole household. Best value.",
     },
     buttonText: "Get Family",
@@ -153,7 +154,18 @@ const Pricing34 = ({ className, showCTA = false }: Pricing34Props) => {
               </CardTitle>
               <div className="mt-3">
                 <span className="text-4xl font-semibold tracking-tight">
-                  {billing === "monthly" ? plan.monthlyPrice : plan.yearlyPrice}
+                  <NumberFlow
+                    value={
+                      billing === "monthly"
+                        ? plan.monthlyPrice
+                        : plan.yearlyPrice
+                    }
+                    format={{
+                      style: "currency",
+                      currency: "USD",
+                      trailingZeroDisplay: "stripIfInteger",
+                    }}
+                  />
                 </span>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {billing === "monthly"

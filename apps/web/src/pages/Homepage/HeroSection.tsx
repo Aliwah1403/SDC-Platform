@@ -5,12 +5,15 @@ import { Iphone } from "@/components/ui/iphone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
+import HomeScreen from "@/assets/screenshots/home-screen.jpeg";
+import CareScreen from "@/assets/screenshots/care-screen.jpeg";
+import InsightsScreen from "@/assets/screenshots/insights.jpeg";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
-  { x: -290, scale: 0.8, delay: 0.45, zIndex: 1, src: undefined },
-  { x: 0, scale: 1, delay: 0.2, zIndex: 3, src: undefined },
-  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: undefined },
+  { x: -290, scale: 0.8, delay: 0.45, zIndex: 1, src: CareScreen },
+  { x: 0, scale: 1, delay: 0.2, zIndex: 3, src: HomeScreen },
+  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: InsightsScreen },
 ] satisfies {
   x: number;
   scale: number;
@@ -22,11 +25,11 @@ const PHONES = [
 const BASE = "https://api.dicebear.com/9.x/notionists/svg?seed=";
 
 const avatars = [
-  { alt: "Amara",   src: `${BASE}Amara&backgroundColor=ffd5dc`  },
-  { alt: "Kwame",   src: `${BASE}Kwame&backgroundColor=d1d4f9`  },
-  { alt: "James",   src: `${BASE}James&backgroundColor=b6e3f4`  },
-  { alt: "Fatima",  src: `${BASE}Fatima&backgroundColor=c0aede` },
-  { alt: "Esi",     src: `${BASE}Esi&backgroundColor=ffdfbf`    },
+  { alt: "Amara", src: `${BASE}Amara&backgroundColor=ffd5dc` },
+  { alt: "Kwame", src: `${BASE}Kwame&backgroundColor=d1d4f9` },
+  { alt: "James", src: `${BASE}James&backgroundColor=b6e3f4` },
+  { alt: "Fatima", src: `${BASE}Fatima&backgroundColor=c0aede` },
+  { alt: "Esi", src: `${BASE}Esi&backgroundColor=ffdfbf` },
 ];
 
 const HeroSection = () => {

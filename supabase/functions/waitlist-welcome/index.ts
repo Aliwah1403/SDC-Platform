@@ -18,6 +18,17 @@ interface WebhookPayload {
 }
 
 Deno.serve(async (req: Request) => {
+  // Verify the request comes from Supabase database webhook
+  const webhookSecret = Deno.env.get("WAITLIST_WEBHOOK_SECRET");
+  if (!webhookSecret) {
+    console.error("[waitlist-welcome] WAITLIST_WEBHOOK_SECRET not configured");
+    return new Response("Service misconfigured", { status: 500 });
+  }
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader !== `Bearer ${webhookSecret}`) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   if (!resendApiKey) {
     console.error("[waitlist-welcome] RESEND_API_KEY not configured");
@@ -56,15 +67,8 @@ Deno.serve(async (req: Request) => {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "The Hemo Team <thehemoteam@info.hemo-scd.com>",
       to: [email],
-      subject: "Welcome to the Hemo SCD Community!",
-      template: {
-        id: "waitlist-email",
-        variables: {
-          first_name: "there",
-        },
-      },
+      template: { id: "waitlist-email" },
     }),
   });
 
