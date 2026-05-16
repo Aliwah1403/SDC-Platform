@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
 import CareScreen from "@/assets/screenshots/care-screen.jpeg";
+import HealthTrends from "@/assets/screenshots/health-trends.jpeg";
 const FEATURE_STORIES = [
   {
     title: "Daily Health Log",
@@ -15,7 +16,7 @@ const FEATURE_STORIES = [
     description:
       "Track pain, mood, hydration, sleep, steps, and heart rate over 7 and 30 days with clear visual history.",
     result: "You stop guessing and start spotting what helps.",
-    source: undefined,
+    source: HealthTrends,
   },
   {
     title: "Insights",
