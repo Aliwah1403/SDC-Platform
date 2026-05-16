@@ -24,12 +24,12 @@ const router = createBrowserRouter([
           Component: (await import("./pages/FeaturesPage/FeaturesPage")).default,
         }),
       },
-      {
-        path: "/pricing",
-        lazy: async () => ({
-          Component: (await import("./pages/Pricing/PricingPage")).default,
-        }),
-      },
+      // {
+      //   path: "/pricing",
+      //   lazy: async () => ({
+      //     Component: (await import("./pages/Pricing/PricingPage")).default,
+      //   }),
+      // },
       {
         path: "/contact",
         lazy: async () => ({

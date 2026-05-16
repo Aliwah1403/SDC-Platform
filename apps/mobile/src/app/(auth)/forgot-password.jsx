@@ -15,24 +15,33 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft, Mail } from 'lucide-react-native';
 import { resetPassword } from '@/utils/auth/supabase';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function ForgotPasswordScreen() {
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
+  const theme = useTheme();
+  const dark = theme.isDark;
+
+  const c = {
+    surface: dark ? 'rgba(248,233,231,0.07)' : 'rgba(26,26,26,0.04)',
+    surfaceBtn: dark ? 'rgba(248,233,231,0.08)' : 'rgba(26,26,26,0.06)',
+    border: dark ? 'rgba(248,233,231,0.1)' : theme.border,
+    placeholder: dark ? 'rgba(248,233,231,0.35)' : 'rgba(26,26,26,0.32)',
+    iconMuted: dark ? 'rgba(248,233,231,0.4)' : 'rgba(26,26,26,0.35)',
+    textMuted: dark ? 'rgba(248,233,231,0.5)' : 'rgba(26,26,26,0.5)',
+  };
 
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [focused, setFocused] = useState(false);
 
-  useEffect(() => {
-    posthog?.capture('password_reset_screen_viewed', {});
-  }, []);
+  useEffect(() => { posthog?.capture('password_reset_screen_viewed', {}); }, []);
 
   const handleReset = async () => {
     if (!email.trim()) { setError('Please enter your email address.'); return; }
-    setError('');
-    setLoading(true);
+    setError(''); setLoading(true);
     try {
       await resetPassword(email.trim().toLowerCase());
       posthog?.capture('password_reset_requested', {});
@@ -40,75 +49,73 @@ export default function ForgotPasswordScreen() {
     } catch {
       posthog?.capture('password_reset_failed', {});
       setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-        <View style={[styles.content, { paddingBottom: insets.bottom + 32 }]}>
+        <View style={[styles.content, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 32 }]}>
           <View style={styles.header}>
             <Pressable
-              style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [styles.backBtn, { backgroundColor: c.surfaceBtn }, pressed && { opacity: 0.6 }]}
               onPress={() => router.back()}
             >
-              <ArrowLeft size={22} color="#F8E9E7" strokeWidth={2} />
+              <ArrowLeft size={22} color={theme.text} strokeWidth={2} />
             </Pressable>
           </View>
 
-          <>
-            <MotiView
-              from={{ opacity: 0, translateY: 16 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 80 }}
+          <MotiView
+            from={{ opacity: 0, translateY: 16 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 80 }}
+          >
+            <Text style={[styles.title, { color: theme.text }]}>Reset password</Text>
+            <Text style={[styles.subtitle, { color: c.textMuted }]}>
+              Enter your email and we'll send you a verification code.
+            </Text>
+          </MotiView>
+
+          <MotiView
+            from={{ opacity: 0, translateY: 20 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 180 }}
+            style={styles.form}
+          >
+            <View style={[
+              styles.inputWrapper,
+              { backgroundColor: c.surface, borderColor: focused ? '#A9334D' : c.border },
+              focused && { backgroundColor: 'rgba(169,51,77,0.06)' },
+            ]}>
+              <Mail size={18} color={focused ? '#A9334D' : c.iconMuted} strokeWidth={1.8} />
+              <TextInput
+                style={[styles.input, { color: theme.text }]}
+                placeholder="Email address"
+                placeholderTextColor={c.placeholder}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+              />
+            </View>
+
+            {!!error && <Text style={styles.errorText}>{error}</Text>}
+
+            <Pressable
+              style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && { opacity: 0.7 }]}
+              onPress={handleReset}
+              disabled={loading}
             >
-              <Text style={styles.title}>Reset password</Text>
-              <Text style={styles.subtitle}>
-                Enter your email and we'll send you a verification code.
-              </Text>
-            </MotiView>
-
-            <MotiView
-              from={{ opacity: 0, translateY: 20 }}
-              animate={{ opacity: 1, translateY: 0 }}
-              transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 180 }}
-              style={styles.form}
-            >
-              <View style={[styles.inputWrapper, focused && styles.inputFocused]}>
-                <Mail size={18} color={focused ? '#F0531C' : 'rgba(248,233,231,0.4)'} strokeWidth={1.8} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email address"
-                  placeholderTextColor="rgba(248,233,231,0.35)"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  autoFocus
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                />
-              </View>
-
-              {!!error && (
-                <Text style={styles.errorText}>{error}</Text>
-              )}
-
-              <Pressable
-                style={({ pressed }) => [styles.primaryBtn, pressed && { opacity: 0.85 }, loading && { opacity: 0.7 }]}
-                onPress={handleReset}
-                disabled={loading}
-              >
-                {loading
-                  ? <ActivityIndicator color="#FFFFFF" size="small" />
-                  : <Text style={styles.primaryBtnText}>Send Code</Text>
-                }
-              </Pressable>
-            </MotiView>
-          </>
+              {loading
+                ? <ActivityIndicator color="#FFFFFF" size="small" />
+                : <Text style={styles.primaryBtnText}>Send Code</Text>
+              }
+            </Pressable>
+          </MotiView>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -116,39 +123,20 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0D0D0D' },
-  content: { flex: 1, paddingHorizontal: 24, paddingTop: 8 },
+  container: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 24 },
   header: { marginBottom: 32 },
-  backBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: 'rgba(248,233,231,0.08)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  title: {
-    fontFamily: 'Geist_700Bold', fontSize: 32, color: '#F8E9E7',
-    letterSpacing: -1.2, marginBottom: 8,
-  },
-  subtitle: {
-    fontFamily: 'Geist_400Regular', fontSize: 15,
-    color: 'rgba(248,233,231,0.5)', lineHeight: 22,
-  },
+  backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: 'Geist_700Bold', fontSize: 32, letterSpacing: -1.2, marginBottom: 8 },
+  subtitle: { fontFamily: 'Geist_400Regular', fontSize: 15, lineHeight: 22 },
   form: { marginTop: 36, gap: 14 },
   inputWrapper: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(248,233,231,0.07)',
     borderRadius: 14, borderWidth: 1.5,
-    borderColor: 'rgba(248,233,231,0.1)',
     paddingHorizontal: 16, paddingVertical: 14, gap: 12,
   },
-  inputFocused: { borderColor: '#F0531C', backgroundColor: 'rgba(240,83,28,0.06)' },
-  input: {
-    flex: 1, fontFamily: 'Geist_400Regular', fontSize: 15,
-    color: '#F8E9E7', padding: 0, margin: 0,
-  },
+  input: { flex: 1, fontFamily: 'Geist_400Regular', fontSize: 15, padding: 0, margin: 0 },
   errorText: { fontFamily: 'Geist_400Regular', fontSize: 13, color: '#EF4444', marginTop: -4 },
-  primaryBtn: {
-    backgroundColor: '#F0531C', borderRadius: 14,
-    paddingVertical: 16, alignItems: 'center',
-  },
+  primaryBtn: { backgroundColor: '#A9334D', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   primaryBtnText: { fontFamily: 'Geist_700Bold', fontSize: 16, color: '#FFFFFF', letterSpacing: 0.2 },
 });

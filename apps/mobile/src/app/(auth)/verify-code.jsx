@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti';
 import { ArrowLeft } from 'lucide-react-native';
 import { verifyOtp } from '@/utils/auth/supabase';
+import { useTheme } from '@/hooks/useTheme';
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 55;
@@ -22,6 +23,18 @@ const RESEND_SECONDS = 55;
 export default function VerifyCodeScreen() {
   const insets = useSafeAreaInsets();
   const { email } = useLocalSearchParams();
+  const theme = useTheme();
+  const dark = theme.isDark;
+
+  const c = {
+    surface: dark ? 'rgba(248,233,231,0.06)' : 'rgba(26,26,26,0.04)',
+    surfaceBtn: dark ? 'rgba(248,233,231,0.08)' : 'rgba(26,26,26,0.06)',
+    border: dark ? 'rgba(248,233,231,0.15)' : theme.border,
+    textFaint: dark ? 'rgba(248,233,231,0.45)' : 'rgba(26,26,26,0.45)',
+    textMuted: dark ? 'rgba(248,233,231,0.5)' : 'rgba(26,26,26,0.5)',
+    emailHighlight: dark ? 'rgba(248,233,231,0.75)' : 'rgba(26,26,26,0.75)',
+    timerText: dark ? 'rgba(248,233,231,0.45)' : 'rgba(26,26,26,0.45)',
+  };
 
   const [digits, setDigits] = useState(Array(CODE_LENGTH).fill(''));
   const [loading, setLoading] = useState(false);
@@ -52,9 +65,7 @@ export default function VerifyCodeScreen() {
   const handleOtpChange = (text) => {
     const cleaned = text.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH);
     const next = Array(CODE_LENGTH).fill('');
-    for (let i = 0; i < cleaned.length; i++) {
-      next[i] = cleaned[i];
-    }
+    for (let i = 0; i < cleaned.length; i++) next[i] = cleaned[i];
     setDigits(next);
     setError('');
   };
@@ -64,8 +75,8 @@ export default function VerifyCodeScreen() {
 
   const handleVerify = async () => {
     if (!allFilled) return;
-    setError('');
-    setLoading(true);
+    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
+    setError(''); setLoading(true);
     try {
       const { error: verifyError } = await verifyOtp(email, code);
       if (verifyError) {
@@ -77,15 +88,13 @@ export default function VerifyCodeScreen() {
       router.replace('/(auth)/reset-password');
     } catch {
       setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const handleResend = async () => {
     if (secondsLeft > 0 || resending) return;
-    setResending(true);
-    setError('');
+    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
+    setResending(true); setError('');
     setDigits(Array(CODE_LENGTH).fill(''));
     try {
       const { resetPassword } = await import('@/utils/auth/supabase');
@@ -94,42 +103,35 @@ export default function VerifyCodeScreen() {
       setTimeout(() => hiddenInputRef.current?.focus(), 50);
     } catch {
       setError('Failed to resend. Please try again.');
-    } finally {
-      setResending(false);
-    }
+    } finally { setResending(false); }
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Back button */}
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
             <Pressable
-              style={({ pressed }) => [styles.backBtn, pressed && { opacity: 0.6 }]}
+              style={({ pressed }) => [styles.backBtn, { backgroundColor: c.surfaceBtn }, pressed && { opacity: 0.6 }]}
               onPress={() => router.back()}
             >
-              <ArrowLeft size={22} color="#F8E9E7" strokeWidth={2} />
+              <ArrowLeft size={22} color={theme.text} strokeWidth={2} />
             </Pressable>
           </View>
 
-          {/* Title */}
           <MotiView
             from={{ opacity: 0, translateY: 16 }}
             animate={{ opacity: 1, translateY: 0 }}
             transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 80 }}
           >
-            <Text style={styles.title}>Enter verification{'\n'}code</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: theme.text }]}>Enter verification{'\n'}code</Text>
+            <Text style={[styles.subtitle, { color: c.textMuted }]}>
               We sent a 6-digit code to{'\n'}
-              <Text style={styles.emailHighlight}>{email || 'your email'}</Text>
+              <Text style={[styles.emailHighlight, { color: c.emailHighlight }]}>{email || 'your email'}</Text>
             </Text>
           </MotiView>
 
@@ -139,17 +141,12 @@ export default function VerifyCodeScreen() {
             transition={{ type: 'spring', damping: 18, stiffness: 80, delay: 180 }}
             style={styles.form}
           >
-            {/* Error message */}
             {!!error && (
-              <MotiView
-                from={{ opacity: 0, translateY: -4 }}
-                animate={{ opacity: 1, translateY: 0 }}
-              >
+              <MotiView from={{ opacity: 0, translateY: -4 }} animate={{ opacity: 1, translateY: 0 }}>
                 <Text style={styles.errorText}>{error}</Text>
               </MotiView>
             )}
 
-            {/* OTP input — hidden TextInput captures full paste/autofill, View boxes show digits */}
             <Pressable onPress={() => hiddenInputRef.current?.focus()} style={styles.codeRow}>
               <TextInput
                 ref={hiddenInputRef}
@@ -167,30 +164,28 @@ export default function VerifyCodeScreen() {
                   key={i}
                   style={[
                     styles.codeBox,
-                    digit && styles.codeBoxFilled,
-                    !!error && styles.codeBoxError,
+                    { backgroundColor: c.surface, borderColor: c.border },
+                    digit && { borderColor: '#A9334D', backgroundColor: 'rgba(169,51,77,0.06)' },
+                    !!error && { borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.07)' },
                   ]}
                   pointerEvents="none"
                 >
-                  <Text style={styles.codeBoxText}>{digit}</Text>
+                  <Text style={[styles.codeBoxText, { color: theme.text }]}>{digit}</Text>
                 </View>
               ))}
             </Pressable>
 
-            {/* Resend row */}
             <View style={styles.resendRow}>
               {resending ? (
-                <ActivityIndicator size="small" color="#F0531C" />
+                <ActivityIndicator size="small" color="#A9334D" />
               ) : secondsLeft > 0 ? (
-                <Text style={styles.resendText}>
+                <Text style={[styles.resendText, { color: c.textFaint }]}>
                   Didn't get a code?{' '}
-                  <Text style={styles.resendTimer}>
-                    Resend it in {secondsLeft}s
-                  </Text>
+                  <Text style={[styles.resendTimer, { color: c.timerText }]}>Resend it in {secondsLeft}s</Text>
                 </Text>
               ) : (
                 <Pressable onPress={handleResend} hitSlop={8}>
-                  <Text style={styles.resendText}>
+                  <Text style={[styles.resendText, { color: c.textFaint }]}>
                     Didn't get a code?{' '}
                     <Text style={styles.resendLink}>Resend it Now</Text>
                   </Text>
@@ -198,7 +193,6 @@ export default function VerifyCodeScreen() {
               )}
             </View>
 
-            {/* Verify CTA */}
             <Pressable
               style={({ pressed }) => [
                 styles.primaryBtn,
@@ -215,12 +209,11 @@ export default function VerifyCodeScreen() {
               }
             </Pressable>
 
-            {/* Change email */}
             <Pressable
               style={({ pressed }) => [styles.changeEmailBtn, pressed && { opacity: 0.6 }]}
               onPress={() => router.back()}
             >
-              <Text style={styles.changeEmailText}>Change Email address</Text>
+              <Text style={[styles.changeEmailText, { color: c.textFaint }]}>Change Email address</Text>
             </Pressable>
           </MotiView>
         </ScrollView>
@@ -230,132 +223,30 @@ export default function VerifyCodeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0D0D0D',
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    flexGrow: 1,
-  },
-  header: {
-    marginBottom: 32,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(248,233,231,0.08)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontFamily: 'Geist_700Bold',
-    fontSize: 32,
-    color: '#F8E9E7',
-    letterSpacing: -1.2,
-    marginBottom: 10,
-    lineHeight: 40,
-  },
-  subtitle: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 15,
-    color: 'rgba(248,233,231,0.5)',
-    lineHeight: 22,
-  },
-  emailHighlight: {
-    fontFamily: 'Geist_500Medium',
-    color: 'rgba(248,233,231,0.75)',
-  },
-  form: {
-    marginTop: 40,
-    gap: 20,
-  },
-  errorText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 13,
-    color: '#EF4444',
-    textAlign: 'center',
-    marginBottom: -6,
-  },
-  hiddenInput: {
-    position: 'absolute',
-    width: 1,
-    height: 1,
-    opacity: 0,
-  },
-  codeRow: {
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
-  },
+  container: { flex: 1 },
+  scrollContent: { paddingHorizontal: 24, paddingTop: 8, flexGrow: 1 },
+  header: { marginBottom: 32 },
+  backBtn: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: 'Geist_700Bold', fontSize: 32, letterSpacing: -1.2, marginBottom: 10, lineHeight: 40 },
+  subtitle: { fontFamily: 'Geist_400Regular', fontSize: 15, lineHeight: 22 },
+  emailHighlight: { fontFamily: 'Geist_500Medium' },
+  form: { marginTop: 40, gap: 20 },
+  errorText: { fontFamily: 'Geist_400Regular', fontSize: 13, color: '#EF4444', textAlign: 'center', marginBottom: -6 },
+  hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0 },
+  codeRow: { flexDirection: 'row', gap: 12, justifyContent: 'center' },
   codeBox: {
-    width: 50,
-    height: 62,
-    borderRadius: 16,
+    width: 50, height: 62, borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(248,233,231,0.15)',
-    backgroundColor: 'rgba(248,233,231,0.06)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
-  codeBoxFilled: {
-    borderColor: '#F0531C',
-    backgroundColor: 'rgba(240,83,28,0.08)',
-  },
-  codeBoxError: {
-    borderColor: '#EF4444',
-    backgroundColor: 'rgba(239,68,68,0.07)',
-  },
-  codeBoxText: {
-    fontFamily: 'Geist_700Bold',
-    fontSize: 28,
-    color: '#F8E9E7',
-    textAlign: 'center',
-  },
-  resendRow: {
-    alignItems: 'center',
-    marginTop: -4,
-  },
-  resendText: {
-    fontFamily: 'Geist_400Regular',
-    fontSize: 13,
-    color: 'rgba(248,233,231,0.45)',
-    textAlign: 'center',
-  },
-  resendTimer: {
-    fontFamily: 'Geist_500Medium',
-    color: 'rgba(248,233,231,0.45)',
-  },
-  resendLink: {
-    fontFamily: 'Geist_600SemiBold',
-    color: '#F0531C',
-  },
-  primaryBtn: {
-    backgroundColor: '#F0531C',
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  primaryBtnDisabled: {
-    backgroundColor: 'rgba(248,233,231,0.12)',
-  },
-  primaryBtnText: {
-    fontFamily: 'Geist_700Bold',
-    fontSize: 16,
-    color: '#FFFFFF',
-    letterSpacing: 0.2,
-  },
-  changeEmailBtn: {
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  changeEmailText: {
-    fontFamily: 'Geist_500Medium',
-    fontSize: 14,
-    color: 'rgba(248,233,231,0.45)',
-    textDecorationLine: 'underline',
-  },
+  codeBoxText: { fontFamily: 'Geist_700Bold', fontSize: 28, textAlign: 'center' },
+  resendRow: { alignItems: 'center', marginTop: -4 },
+  resendText: { fontFamily: 'Geist_400Regular', fontSize: 13, textAlign: 'center' },
+  resendTimer: { fontFamily: 'Geist_500Medium' },
+  resendLink: { fontFamily: 'Geist_600SemiBold', color: '#A9334D' },
+  primaryBtn: { backgroundColor: '#A9334D', borderRadius: 14, paddingVertical: 16, alignItems: 'center', marginTop: 4 },
+  primaryBtnDisabled: { backgroundColor: 'rgba(169,51,77,0.25)' },
+  primaryBtnText: { fontFamily: 'Geist_700Bold', fontSize: 16, color: '#FFFFFF', letterSpacing: 0.2 },
+  changeEmailBtn: { alignItems: 'center', paddingVertical: 4 },
+  changeEmailText: { fontFamily: 'Geist_500Medium', fontSize: 14, textDecorationLine: 'underline' },
 });

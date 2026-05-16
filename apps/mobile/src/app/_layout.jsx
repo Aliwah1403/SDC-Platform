@@ -65,7 +65,8 @@ export default function RootLayout() {
   const router = useRouter();
   const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout } = useAppStore();
   const userId = useAuthStore((s) => s.auth?.user?.id);
-  const [splashDone, setSplashDone] = useState(false);
+  const [splashExiting, setSplashExiting] = useState(false);
+  const [splashGone, setSplashGone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Unlock Hemo");
   const backgroundedAt = useRef(null);
@@ -275,12 +276,12 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
       const elapsed = Date.now() - startTime.current;
       const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
-      const timer = setTimeout(() => setSplashDone(true), remaining);
+      const timer = setTimeout(() => setSplashExiting(true), remaining);
       return () => clearTimeout(timer);
     }
   }, [isReady, fontsLoaded, fontError]);
 
-  if (!isReady || (!fontsLoaded && !fontError) || !splashDone) {
+  if (!isReady || (!fontsLoaded && !fontError)) {
     return <SplashAnimation />;
   }
 
@@ -378,6 +379,14 @@ export default function RootLayout() {
         </Stack>
 
         <StatusBar style={theme.isDark ? "light" : "dark"} />
+
+        {/* Splash overlay — fades out once ready */}
+        {!splashGone && (
+          <SplashAnimation
+            exiting={splashExiting}
+            onExitComplete={() => setSplashGone(true)}
+          />
+        )}
 
         {/* App Lock overlay — rendered above everything */}
         {isLocked && (

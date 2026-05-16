@@ -1,240 +1,339 @@
 import { router } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Dimensions,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Circle, Ellipse } from "react-native-svg";
-import { ChartColumnIncreasing, Pill, ShieldAlert } from "lucide-react-native";
+import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
+import { useTheme } from "@/hooks/useTheme";
+import HemoLogo from "../../../assets/images/icon.png";
+
+const { width: W, height: H } = Dimensions.get("window");
 
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
+  const dark = theme.isDark;
 
   return (
-    <LinearGradient
-      colors={["#781D11", "#4A1309", "#0D0D0D", "#0A0A0A"]}
-      style={StyleSheet.absoluteFill}
-      start={{ x: 0.2, y: 0 }}
-      end={{ x: 0.8, y: 1 }}
+    <View
+      style={[styles.root, { backgroundColor: dark ? "#0D0D0D" : "#F8E9E7" }]}
     >
-      {/* Decorative abstract shapes */}
+      {/* Ambient glow orbs */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Svg style={StyleSheet.absoluteFill}>
-          <Circle cx="330" cy="80" r="140" fill="#A9334D" fillOpacity={0.18} />
-          <Circle cx="-40" cy="200" r="110" fill="#781D11" fillOpacity={0.22} />
-          <Ellipse
-            cx="200"
-            cy="720"
-            rx="200"
-            ry="140"
-            fill="#D09F9A"
-            fillOpacity={0.07}
-          />
-          <Circle cx="360" cy="600" r="90" fill="#A9334D" fillOpacity={0.1} />
+        <Svg width={W} height={H}>
+          <Defs>
+            {/* Secondary orb — offset left, deeper tone */}
+            <RadialGradient
+              id="orb2"
+              cx={W * 0.3}
+              cy={H * 0.2}
+              r={W * 0.55}
+              gradientUnits="userSpaceOnUse"
+            >
+              <Stop
+                offset="0%"
+                stopColor={dark ? "#781D11" : "#C4A8A4"}
+                stopOpacity={dark ? 0.55 : 0.35}
+              />
+              <Stop
+                offset="100%"
+                stopColor={dark ? "#0D0D0D" : "#F8E9E7"}
+                stopOpacity={0}
+              />
+            </RadialGradient>
+
+            {/* Primary orb — warm center, centered horizontally */}
+            <RadialGradient
+              id="orb1"
+              cx={W * 0.52}
+              cy={H * 0.29}
+              r={W * 0.72}
+              gradientUnits="userSpaceOnUse"
+            >
+              <Stop
+                offset="0%"
+                stopColor="#F0531C"
+                stopOpacity={dark ? 0.82 : 0.5}
+              />
+              <Stop
+                offset="28%"
+                stopColor="#A9334D"
+                stopOpacity={dark ? 0.65 : 0.45}
+              />
+              <Stop
+                offset="55%"
+                stopColor={dark ? "#781D11" : "#D09F9A"}
+                stopOpacity={dark ? 0.35 : 0.25}
+              />
+              <Stop
+                offset="100%"
+                stopColor={dark ? "#0D0D0D" : "#F8E9E7"}
+                stopOpacity={0}
+              />
+            </RadialGradient>
+
+            {/* Accent orb — small, right side, adds dimension */}
+            <RadialGradient
+              id="orb3"
+              cx={W * 0.78}
+              cy={H * 0.15}
+              r={W * 0.3}
+              gradientUnits="userSpaceOnUse"
+            >
+              <Stop
+                offset="0%"
+                stopColor={dark ? "#A9334D" : "#D09F9A"}
+                stopOpacity={dark ? 0.3 : 0.2}
+              />
+              <Stop
+                offset="100%"
+                stopColor={dark ? "#0D0D0D" : "#F8E9E7"}
+                stopOpacity={0}
+              />
+            </RadialGradient>
+          </Defs>
+
+          <Rect x={0} y={0} width={W} height={H} fill="url(#orb2)" />
+          <Rect x={0} y={0} width={W} height={H} fill="url(#orb1)" />
+          <Rect x={0} y={0} width={W} height={H} fill="url(#orb3)" />
         </Svg>
       </View>
 
+      {/* Content */}
       <View
         style={[
-          styles.container,
-          { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 24 },
+          styles.content,
+          {
+            paddingTop: insets.top + 12,
+            paddingBottom: insets.bottom + 28,
+          },
         ]}
       >
-        {/* Logo section */}
-        <MotiView
-          from={{ opacity: 0, translateY: -20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{
-            type: "spring",
-            damping: 18,
-            stiffness: 80,
-            delay: 100,
-          }}
-          style={styles.logoSection}
-        >
-          <View style={styles.logoMark}>
-            <View style={styles.logoMarkDot} />
-          </View>
-          <Text style={styles.logo}>Hemo</Text>
-          <Text style={styles.tagline}>Your sickle cell companion</Text>
-        </MotiView>
+        {/* Spacer — lets the orb breathe */}
+        <View style={{ flex: 1 }} />
 
-        {/* Feature highlights */}
+        {/* Icon + heading cluster */}
         <MotiView
-          from={{ opacity: 0, translateY: 20 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "timing", duration: 500, delay: 400 }}
-          style={styles.highlights}
-        >
-          {[
-            {
-              icon: <ChartColumnIncreasing size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
-              text: "Track symptoms & health metrics daily",
-            },
-            {
-              icon: <Pill size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
-              text: "Manage medications & care team",
-            },
-            {
-              icon: <ShieldAlert size={20} color="rgba(248, 233, 231, 0.75)" strokeWidth={1.75} />,
-              text: "Emergency SOS at your fingertips",
-            },
-          ].map(({ icon, text }) => (
-            <View key={text} style={styles.highlightRow}>
-              <View style={styles.highlightIcon}>{icon}</View>
-              <Text style={styles.highlightText}>{text}</Text>
-            </View>
-          ))}
-        </MotiView>
-
-        {/* CTA Buttons */}
-        <MotiView
-          from={{ opacity: 0, translateY: 30 }}
+          from={{ opacity: 0, translateY: 24 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{
             type: "spring",
             damping: 20,
             stiffness: 80,
-            delay: 600,
+            delay: 200,
           }}
-          style={styles.ctaContainer}
+          style={styles.headingCluster}
+        >
+          {dark ? (
+              <Image
+                source={HemoLogo}
+                style={styles.iconImg}
+                resizeMode="contain"
+              />
+          
+          ) : (
+            <Image
+              source={HemoLogo}
+              style={[styles.iconImg, { borderRadius: 14 }]}
+              resizeMode="contain"
+            />
+          )}
+
+          <Text style={[styles.title, { color: dark ? "#F8E9E7" : "#1A1A1A" }]}>
+            Welcome to Hemo
+          </Text>
+          <Text
+            style={[
+              styles.subtitle,
+              {
+                color: dark
+                  ? "rgba(248, 233, 231, 0.55)"
+                  : "rgba(26, 26, 26, 0.5)",
+              },
+            ]}
+          >
+            Your daily companion for living well with sickle cell.
+          </Text>
+        </MotiView>
+
+        <View style={{ height: 36 }} />
+
+        {/* CTA area */}
+        <MotiView
+          from={{ opacity: 0, translateY: 28 }}
+          animate={{ opacity: 1, translateY: 0 }}
+          transition={{
+            type: "spring",
+            damping: 20,
+            stiffness: 80,
+            delay: 380,
+          }}
+          style={styles.ctaArea}
         >
           <Pressable
             style={({ pressed }) => [
               styles.primaryBtn,
-              pressed && styles.pressed,
+              { opacity: pressed ? 0.85 : 1 },
             ]}
             onPress={() => router.push("/(auth)/signup")}
           >
-            <Text style={styles.primaryBtnText}>Create Account</Text>
+            <Text style={styles.primaryBtnText}>Get started</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              styles.secondaryBtn,
-              pressed && styles.pressed,
+              styles.loginRow,
+              { opacity: pressed ? 0.7 : 1 },
             ]}
             onPress={() => router.push("/(auth)/signin")}
           >
-            <Text style={styles.secondaryBtnText}>
-              I already have an account
+            <Text
+              style={[
+                styles.loginText,
+                {
+                  color: dark
+                    ? "rgba(248, 233, 231, 0.6)"
+                    : "rgba(26, 26, 26, 0.55)",
+                },
+              ]}
+            >
+              Already have an account?{" "}
+              <Text
+                style={[
+                  styles.loginLink,
+                  { color: dark ? "#F8E9E7" : "#1A1A1A" },
+                ]}
+              >
+                Log in
+              </Text>
             </Text>
           </Pressable>
 
-          <Text style={styles.legalText}>
+          <Text
+            style={[
+              styles.legalText,
+              {
+                color: dark
+                  ? "rgba(248, 233, 231, 0.28)"
+                  : "rgba(26, 26, 26, 0.32)",
+              },
+            ]}
+          >
             By continuing, you agree to our{" "}
-            <Text style={styles.legalLink}>Terms of Service</Text>
-            {" & "}
-            <Text style={styles.legalLink}>Privacy Policy</Text>
+            <Text
+              style={[
+                styles.legalLink,
+                {
+                  color: dark
+                    ? "rgba(248, 233, 231, 0.45)"
+                    : "rgba(26, 26, 26, 0.5)",
+                },
+              ]}
+            >
+              Terms
+            </Text>
+            {" and "}
+            <Text
+              style={[
+                styles.legalLink,
+                {
+                  color: dark
+                    ? "rgba(248, 233, 231, 0.45)"
+                    : "rgba(26, 26, 26, 0.5)",
+                },
+              ]}
+            >
+              Privacy Policy
+            </Text>
+            .
           </Text>
         </MotiView>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  root: {
+    flex: 1,
+  },
+  content: {
     flex: 1,
     paddingHorizontal: 28,
-    justifyContent: "space-between",
   },
-  logoSection: {
-    alignItems: "flex-start",
-    paddingTop: 40,
+  headingCluster: {
+    alignItems: "center",
   },
-  logoMark: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "rgba(248, 233, 231, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(248, 233, 231, 0.2)",
+  iconCard: {
+    width: 68,
+    height: 68,
+    borderRadius: 16,
+    backgroundColor: "#F8E9E7",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 20,
+    marginBottom: 24,
+    overflow: "hidden",
   },
-  logoMarkDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#F0531C",
+  iconImg: {
+    width: 68,
+    height: 68,
+    marginBottom: 24,
   },
-  logo: {
+  title: {
     fontFamily: "Geist_800ExtraBold",
-    fontSize: 52,
-    color: "#F8E9E7",
-    letterSpacing: -2.5,
-    lineHeight: 56,
+    fontSize: 34,
+    letterSpacing: -1,
+    textAlign: "center",
+    lineHeight: 40,
+    marginBottom: 12,
   },
-  tagline: {
+  subtitle: {
     fontFamily: "Geist_400Regular",
     fontSize: 16,
-    color: "rgba(248, 233, 231, 0.55)",
-    marginTop: 8,
-    letterSpacing: 0.2,
+    lineHeight: 24,
+    textAlign: "center",
+    paddingHorizontal: 12,
   },
-  highlights: {
-    gap: 16,
-    paddingVertical: 20,
-  },
-  highlightRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  ctaArea: {
     gap: 14,
   },
-  highlightIcon: {
-    width: 25,
-    alignItems: "center",
-  },
-  highlightText: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: "rgba(248, 233, 231, 0.75)",
-    flex: 1,
-    lineHeight: 22,
-  },
-  ctaContainer: {
-    gap: 12,
-  },
   primaryBtn: {
-    backgroundColor: "#F0531C",
+    backgroundColor: "#A9334D",
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 17,
     alignItems: "center",
   },
   primaryBtnText: {
     fontFamily: "Geist_700Bold",
     fontSize: 16,
     color: "#FFFFFF",
-    letterSpacing: 0.2,
-  },
-  secondaryBtn: {
-    backgroundColor: "rgba(248, 233, 231, 0.1)",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(248, 233, 231, 0.18)",
-  },
-  secondaryBtnText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 16,
-    color: "#F8E9E7",
     letterSpacing: 0.1,
   },
-  pressed: {
-    opacity: 0.75,
+  loginRow: {
+    alignItems: "center",
+    paddingVertical: 2,
+  },
+  loginText: {
+    fontFamily: "Geist_400Regular",
+    fontSize: 15,
+  },
+  loginLink: {
+    fontFamily: "Geist_700Bold",
   },
   legalText: {
     fontFamily: "Geist_400Regular",
     fontSize: 12,
-    color: "rgba(248, 233, 231, 0.35)",
     textAlign: "center",
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: 2,
   },
   legalLink: {
-    color: "rgba(248, 233, 231, 0.55)",
     textDecorationLine: "underline",
   },
 });

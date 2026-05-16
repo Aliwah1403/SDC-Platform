@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  Image,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -29,7 +30,7 @@ import {
 } from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
-import MedicationIcon from "@/components/MedicationIcon";
+import MedicationIcon, { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
@@ -241,17 +242,29 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
             width: 56,
             height: 56,
             borderRadius: 14,
-            backgroundColor: `${color}12`,
+            backgroundColor: MED_TYPE_IMAGES[medication.type] ? t.surface : `${color}12`,
+            borderWidth: MED_TYPE_IMAGES[medication.type] ? 1 : 0,
+            borderColor: t.border,
             alignItems: "center",
             justifyContent: "center",
             marginRight: 12,
+            overflow: "hidden",
+            padding: MED_TYPE_IMAGES[medication.type] ? 6 : 0,
           }}
         >
-          <MedicationIcon
-            type={medication.type ?? "tablet"}
-            color={color}
-            size={40}
-          />
+          {MED_TYPE_IMAGES[medication.type] ? (
+            <Image
+              source={MED_TYPE_IMAGES[medication.type]}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="contain"
+            />
+          ) : (
+            <MedicationIcon
+              type={medication.type ?? "tablet"}
+              color={color}
+              size={40}
+            />
+          )}
         </View>
 
         {/* Info */}
@@ -340,16 +353,25 @@ function MedicationGridCard({ medication, onPress }) {
       <View
         style={{
           height: 96,
-          backgroundColor: `${color}10`,
+          backgroundColor: MED_TYPE_IMAGES[medication.type] ? t.surface : `${color}10`,
           alignItems: "center",
           justifyContent: "center",
+          padding: MED_TYPE_IMAGES[medication.type] ? 12 : 0,
         }}
       >
-        <MedicationIcon
-          type={medication.type ?? "tablet"}
-          color={color}
-          size={52}
-        />
+        {MED_TYPE_IMAGES[medication.type] ? (
+          <Image
+            source={MED_TYPE_IMAGES[medication.type]}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="contain"
+          />
+        ) : (
+          <MedicationIcon
+            type={medication.type ?? "tablet"}
+            color={color}
+            size={52}
+          />
+        )}
       </View>
 
       {/* Info area */}

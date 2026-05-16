@@ -6,7 +6,12 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
+
+const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+if (!_supabaseUrl) {
+  console.error("VITE_SUPABASE_URL is not defined — cannot build waitlist endpoint");
+}
+const WAITLIST_URL = _supabaseUrl ? `${_supabaseUrl}/functions/v1/waitlist-signup` : null;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -26,23 +31,32 @@ const WaitlistCTA = () => {
       return;
     }
 
-    if (!supabase) {
+    if (!WAITLIST_URL) {
       setWaitlistStatus("error");
-      setWaitlistMessage(
-        "Waitlist is not configured yet. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      );
+      setWaitlistMessage("Waitlist is temporarily unavailable. Please try again later.");
       return;
     }
 
     setWaitlistStatus("submitting");
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: normalizedEmail,
-      source: "homepage-modern-white-v1",
-    });
 
-    if (error) {
+    try {
+      const res = await fetch(WAITLIST_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, source: "homepage-modern-white-v1" }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setWaitlistStatus("error");
+        setWaitlistMessage(
+          typeof data.error === "string" ? data.error : "Please try again in a moment.",
+        );
+        return;
+      }
+    } catch {
       setWaitlistStatus("error");
-      setWaitlistMessage(error.message || "Please try again in a moment.");
+      setWaitlistMessage("Please try again in a moment.");
       return;
     }
 
@@ -85,7 +99,7 @@ const WaitlistCTA = () => {
                 className="h-11 bg-white"
                 disabled={waitlistStatus === "submitting"}
               />
-              <Button type="submit" className="h-11 px-6">
+              <Button type="submit" className="h-11 px-6" disabled={waitlistStatus === "submitting"}>
                 {waitlistStatus === "submitting"
                   ? "Joining..."
                   : "Join waitlist"}

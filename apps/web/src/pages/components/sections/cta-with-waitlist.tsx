@@ -6,7 +6,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/lib/supabase";
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -17,6 +16,14 @@ type WaitlistCTAProps = {
 };
 
 const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
+  const waitlistUrl = import.meta.env.VITE_SUPABASE_URL
+    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`
+    : null;
+
+  if (!waitlistUrl) {
+    console.error("[WaitlistCTA] VITE_SUPABASE_URL is not set — waitlist form disabled");
+  }
+
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -55,30 +62,38 @@ const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
       return;
     }
 
-    if (!supabase) {
+    if (!waitlistUrl) {
       setStatus("error");
-      setStatusMessage(
-        "Waitlist is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.",
-      );
+      setStatusMessage("Waitlist is temporarily unavailable. Please try again later.");
       return;
     }
 
     setStatus("submitting");
     setStatusMessage("");
 
-    const { error } = await supabase.from("waitlist_signups").insert({
-      email: normalizedEmail,
-      source,
-    });
+    try {
+      const res = await fetch(waitlistUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: normalizedEmail, source }),
+      });
 
-    if (error) {
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setStatus("error");
+        setStatusMessage(
+          typeof data.error === "string" ? data.error : "Please try again in a moment.",
+        );
+        return;
+      }
+    } catch {
       setStatus("error");
-      setStatusMessage(error.message || "Please try again in a moment.");
+      setStatusMessage("Please try again in a moment.");
       return;
     }
 
     setStatus("success");
-    setStatusMessage("Thanks for joining. We&apos;ll share launch updates soon.");
+    setStatusMessage("Thanks for joining. We'll share launch updates soon.");
     setEmail("");
   };
 
@@ -101,12 +116,12 @@ const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               aria-label="Email address"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !waitlistUrl}
               className="rounded-full"
             />
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !waitlistUrl}
               className="shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/85"
             >
               {isSubmitting ? "Joining..." : "Join Waitlist"}
