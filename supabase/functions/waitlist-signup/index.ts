@@ -45,10 +45,17 @@ Deno.serve(async (req: Request) => {
       ? body.source.slice(0, 100)
       : "landing-page";
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !supabaseKey) {
+    console.error("[waitlist-signup] Supabase env vars not configured");
+    return new Response(JSON.stringify({ error: "Service misconfigured" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   const { error } = await supabase
     .from("waitlist_signups")

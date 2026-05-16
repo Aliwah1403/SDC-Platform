@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const WAITLIST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`;
-
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -18,6 +16,14 @@ type WaitlistCTAProps = {
 };
 
 const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
+  const waitlistUrl = import.meta.env.VITE_SUPABASE_URL
+    ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`
+    : null;
+
+  if (!waitlistUrl) {
+    console.error("[WaitlistCTA] VITE_SUPABASE_URL is not set — waitlist form disabled");
+  }
+
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<SubmitStatus>("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -56,11 +62,17 @@ const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
       return;
     }
 
+    if (!waitlistUrl) {
+      setStatus("error");
+      setStatusMessage("Waitlist is temporarily unavailable. Please try again later.");
+      return;
+    }
+
     setStatus("submitting");
     setStatusMessage("");
 
     try {
-      const res = await fetch(WAITLIST_URL, {
+      const res = await fetch(waitlistUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail, source }),
@@ -104,12 +116,12 @@ const WaitlistCTA = ({ source = "landing-page" }: WaitlistCTAProps) => {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
               aria-label="Email address"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !waitlistUrl}
               className="rounded-full"
             />
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !waitlistUrl}
               className="shrink-0 rounded-full bg-foreground text-background hover:bg-foreground/85"
             >
               {isSubmitting ? "Joining..." : "Join Waitlist"}

@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Activity,
   Brain,
@@ -139,7 +139,7 @@ const STATS = [
   { value: "8", label: "Core features" },
   { value: "90 days", label: "Health history" },
   { value: "7 steps", label: "Guided log" },
-];
+] as const;
 
 const DIFFERENTIATORS = [
   "Built specifically for Sickle Cell Disease — not a generic tracker",
@@ -157,6 +157,7 @@ function FeaturePlaceholder({
   icon: React.ElementType;
   accent: string;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="flex items-center justify-center">
       <div className="relative flex items-center justify-center">
@@ -170,8 +171,8 @@ function FeaturePlaceholder({
               backgroundColor: accent,
               opacity: 0.06 - i * 0.015,
             }}
-            animate={{ scale: [1, 1.04, 1] }}
-            transition={{
+            animate={reducedMotion ? { scale: 1 } : { scale: [1, 1.04, 1] }}
+            transition={reducedMotion ? {} : {
               duration: 3.5,
               delay: i * 0.4,
               repeat: Infinity,
@@ -324,7 +325,7 @@ const FeaturesPage = () => {
                 className={`flex items-center justify-center ${isEven ? "" : "lg:order-1"}`}
               >
                 {feature.screenshot ? (
-                  <Iphone className="max-w-72" src={feature.screenshot} />
+                  <Iphone className="max-w-72" src={feature.screenshot} alt={feature.label ? `${feature.label} feature screenshot` : "Feature screenshot"} />
                 ) : (
                   <FeaturePlaceholder icon={feature.icon} accent={feature.accent} />
                 )}

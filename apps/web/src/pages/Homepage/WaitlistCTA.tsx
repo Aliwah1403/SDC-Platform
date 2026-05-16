@@ -7,7 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const WAITLIST_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/waitlist-signup`;
+const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+if (!_supabaseUrl) {
+  console.error("VITE_SUPABASE_URL is not defined — cannot build waitlist endpoint");
+}
+const WAITLIST_URL = _supabaseUrl ? `${_supabaseUrl}/functions/v1/waitlist-signup` : null;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -24,6 +28,12 @@ const WaitlistCTA = () => {
     if (!EMAIL_REGEX.test(normalizedEmail)) {
       setWaitlistStatus("error");
       setWaitlistMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (!WAITLIST_URL) {
+      setWaitlistStatus("error");
+      setWaitlistMessage("Waitlist is temporarily unavailable. Please try again later.");
       return;
     }
 
@@ -89,7 +99,7 @@ const WaitlistCTA = () => {
                 className="h-11 bg-white"
                 disabled={waitlistStatus === "submitting"}
               />
-              <Button type="submit" className="h-11 px-6">
+              <Button type="submit" className="h-11 px-6" disabled={waitlistStatus === "submitting"}>
                 {waitlistStatus === "submitting"
                   ? "Joining..."
                   : "Join waitlist"}

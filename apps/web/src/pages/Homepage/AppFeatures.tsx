@@ -9,6 +9,7 @@ const FEATURE_STORIES = [
     description:
       "Capture pain, symptoms, hydration, mood, triggers, and notes in one guided check-in. It is short enough to complete on difficult days.",
     result: "Two minutes today gives you answers later.",
+    source: undefined,
   },
   {
     title: "Health Trends",

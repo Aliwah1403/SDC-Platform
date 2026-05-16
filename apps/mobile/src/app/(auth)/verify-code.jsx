@@ -75,6 +75,7 @@ export default function VerifyCodeScreen() {
 
   const handleVerify = async () => {
     if (!allFilled) return;
+    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
     setError(''); setLoading(true);
     try {
       const { error: verifyError } = await verifyOtp(email, code);
@@ -92,6 +93,7 @@ export default function VerifyCodeScreen() {
 
   const handleResend = async () => {
     if (secondsLeft > 0 || resending) return;
+    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
     setResending(true); setError('');
     setDigits(Array(CODE_LENGTH).fill(''));
     try {

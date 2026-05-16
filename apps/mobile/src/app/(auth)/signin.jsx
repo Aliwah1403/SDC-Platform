@@ -88,7 +88,7 @@ export default function SignInScreen() {
       if (authError) { posthog?.capture('sign_in_failed', { method: 'google', error_type: 'auth_error' }); setError(authError.message || "Google sign-in failed."); return; }
       if (!data?.session || !data?.user) { posthog?.capture('sign_in_failed', { method: 'google', error_type: 'no_session' }); setError("Google sign-in failed. Please try again."); return; }
       posthog?.capture('sign_in_succeeded', { method: 'google' });
-      await AsyncStorage.setItem("lastAuthProvider", "google");
+      AsyncStorage.setItem("lastAuthProvider", "google").catch((e) => console.error('[signin] AsyncStorage error:', e));
       setAuth(data.session, data.user); router.replace("/");
     } catch (e) {
       if (e.code !== "ERR_REQUEST_CANCELED") { posthog?.capture('sign_in_failed', { method: 'google', error_type: 'network' }); setError("Google sign-in failed. Please try again."); }
@@ -102,7 +102,7 @@ export default function SignInScreen() {
       if (authError) { posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'auth_error' }); setError(authError.message || "Apple sign-in failed."); return; }
       if (!data?.session || !data?.user) { posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'no_session' }); setError("Apple sign-in failed. Please try again."); return; }
       posthog?.capture('sign_in_succeeded', { method: 'apple' });
-      await AsyncStorage.setItem("lastAuthProvider", "apple");
+      AsyncStorage.setItem("lastAuthProvider", "apple").catch((e) => console.error('[signin] AsyncStorage error:', e));
       setAuth(data.session, data.user); router.replace("/");
     } catch (e) {
       if (e.code !== "ERR_REQUEST_CANCELED") { posthog?.capture('sign_in_failed', { method: 'apple', error_type: 'network' }); setError("Apple sign-in failed. Please try again."); }
@@ -117,7 +117,7 @@ export default function SignInScreen() {
       if (authError) { posthog?.capture('sign_in_failed', { method: 'email', error_type: 'auth_error' }); setError(authError.message || "Sign in failed. Please try again."); return; }
       if (!data?.session || !data?.user) { posthog?.capture('sign_in_failed', { method: 'email', error_type: 'no_session' }); setError("Sign in failed. Please try again."); return; }
       posthog?.capture('sign_in_succeeded', { method: 'email' });
-      await AsyncStorage.setItem("lastAuthProvider", "email");
+      AsyncStorage.setItem("lastAuthProvider", "email").catch((e) => console.error('[signin] AsyncStorage error:', e));
       setAuth(data.session, data.user); router.replace("/");
     } catch {
       posthog?.capture('sign_in_failed', { method: 'email', error_type: 'network' });

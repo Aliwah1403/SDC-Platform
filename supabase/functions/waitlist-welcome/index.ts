@@ -17,6 +17,11 @@ interface WebhookPayload {
   old_record: WaitlistRecord | null;
 }
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  return `${local[0]}***@${domain}`;
+}
+
 Deno.serve(async (req: Request) => {
   // Verify the request comes from Supabase database webhook
   const webhookSecret = Deno.env.get("WAITLIST_WEBHOOK_SECRET");
@@ -60,17 +65,33 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const res = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      to: [email],
-      template: { id: "waitlist-email" },
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+  let res: Response;
+  try {
+    res = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: [email],
+        template: { id: "waitlist-email" },
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const message = controller.signal.aborted ? "Resend request timed out" : "Resend request failed";
+    console.error(`[waitlist-welcome] ${message}`, err);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  clearTimeout(timeoutId);
 
   if (!res.ok) {
     const body = await res.text();
@@ -81,7 +102,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  console.log(`[waitlist-welcome] Sent welcome email to ${email}`);
+  console.log(`[waitlist-welcome] Sent welcome email to ${maskEmail(email)}`);
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },
   });

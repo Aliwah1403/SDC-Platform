@@ -81,19 +81,21 @@ Deno.serve(async (req: Request) => {
 
   // Supabase sends the hook secret as "v1,whsec_<base64>" — strip "v1," for the library
   const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
-  if (hookSecret) {
-    try {
-      const secret = hookSecret.startsWith("v1,") ? hookSecret.slice(3) : hookSecret;
-      const wh = new Webhook(secret);
-      wh.verify(rawBody, {
-        "webhook-id": req.headers.get("webhook-id") ?? "",
-        "webhook-timestamp": req.headers.get("webhook-timestamp") ?? "",
-        "webhook-signature": req.headers.get("webhook-signature") ?? "",
-      });
-    } catch (err) {
-      console.error("[send-email] Signature verification failed:", err.message);
-      return new Response("Unauthorized", { status: 401 });
-    }
+  if (!hookSecret) {
+    console.error("[send-email] SEND_EMAIL_HOOK_SECRET not configured");
+    return new Response("Unauthorized", { status: 401 });
+  }
+  try {
+    const secret = hookSecret.startsWith("v1,") ? hookSecret.slice(3) : hookSecret;
+    const wh = new Webhook(secret);
+    wh.verify(rawBody, {
+      "webhook-id": req.headers.get("webhook-id") ?? "",
+      "webhook-timestamp": req.headers.get("webhook-timestamp") ?? "",
+      "webhook-signature": req.headers.get("webhook-signature") ?? "",
+    });
+  } catch (err) {
+    console.error("[send-email] Signature verification failed:", err.message);
+    return new Response("Unauthorized", { status: 401 });
   }
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
@@ -123,23 +125,39 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const res = await fetch(RESEND_API_URL, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      to: [user.email],
-      template: {
-        id: template.id,
-        variables: {
-          FIRST_NAME: getFirstName(user),
-          ...template.getVars(payload),
-        },
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  let res: Response;
+  try {
+    res = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        to: [user.email],
+        template: {
+          id: template.id,
+          variables: {
+            FIRST_NAME: getFirstName(user),
+            ...template.getVars(payload),
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+  } catch (err) {
+    const message = controller.signal.aborted ? "Resend request timed out" : "Resend request failed";
+    console.error(`[send-email] ${message}`, err);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const body = await res.text();
