@@ -13,6 +13,7 @@ import {
   Switch,
   Modal,
   Pressable,
+  Image,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -42,9 +43,8 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
-import MedicationIcon from "@/components/MedicationIcon";
+import MedicationIcon, { normalizeDoseForm, MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
-import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { fetchDoseForm } from "@/services/supabaseQueries";
 import { Sentry } from "@/utils/sentry";
 import {
@@ -109,13 +109,23 @@ const STEP_LABELS = [
 ];
 
 const MED_TYPES = [
-  { key: "tablet", label: "Tablet" },
-  { key: "capsule", label: "Capsule" },
-  { key: "softgel", label: "Softgel" },
-  { key: "liquid", label: "Liquid" },
-  { key: "ointment", label: "Ointment" },
-  { key: "inhaler", label: "Inhaler" },
-  { key: "injection", label: "Injection" },
+  { key: "tablet",       label: "Tablet",       image: MED_TYPE_IMAGES.tablet },
+  { key: "capsule",      label: "Capsule",      image: null },
+  { key: "softgel",      label: "Softgel",      image: null },
+  { key: "liquid",       label: "Liquid",       image: MED_TYPE_IMAGES.liquid },
+  { key: "ointment",     label: "Ointment",     image: MED_TYPE_IMAGES.ointment },
+  { key: "inhaler",      label: "Inhaler",      image: null },
+  { key: "injection",    label: "Injection",    image: MED_TYPE_IMAGES.injection },
+  { key: "chewable",     label: "Chewable",     image: MED_TYPE_IMAGES.chewable },
+  { key: "drops",        label: "Drops",        image: MED_TYPE_IMAGES.drops },
+  { key: "effervescent", label: "Effervescent", image: MED_TYPE_IMAGES.effervescent },
+  { key: "enema",        label: "Enema",        image: MED_TYPE_IMAGES.enema },
+  { key: "lozenge",      label: "Lozenge",      image: MED_TYPE_IMAGES.lozenge },
+  { key: "mouthwash",    label: "Mouthwash",    image: MED_TYPE_IMAGES.mouthwash },
+  { key: "nasal-spray",  label: "Nasal Spray",  image: MED_TYPE_IMAGES["nasal-spray"] },
+  { key: "patch",        label: "Patch",        image: MED_TYPE_IMAGES.patch },
+  { key: "powder",       label: "Powder",       image: MED_TYPE_IMAGES.powder },
+  { key: "spray",        label: "Spray",        image: MED_TYPE_IMAGES.spray },
 ];
 
 // ─── Animated checkbox (adapted from animated-checkbox) ──────────────────────
@@ -593,8 +603,8 @@ export default function AddMedicationScreen() {
   );
 
   // ── Step 4: Schedule
-  const [frequency, setFrequency] = useState(
-    () => migrateFrequency(existing?.frequency),
+  const [frequency, setFrequency] = useState(() =>
+    migrateFrequency(existing?.frequency),
   );
   const [times, setTimes] = useState(() => {
     if (Array.isArray(existing?.times) && existing.times.length > 0) {
@@ -1538,7 +1548,7 @@ export default function AddMedicationScreen() {
                     gap: 12,
                   }}
                 >
-                  {MED_TYPES.map(({ key, label }) => {
+                  {MED_TYPES.map(({ key, label, image }) => {
                     const isSelected = medType === key;
                     return (
                       <TouchableOpacity
@@ -1546,34 +1556,69 @@ export default function AddMedicationScreen() {
                         onPress={() => setMedType(key)}
                         activeOpacity={0.75}
                         style={{
-                          width: "30%",
-                          alignItems: "center",
+                          width: "47%",
                           backgroundColor: isSelected
                             ? `${C.accent}15`
                             : t.surface,
                           borderRadius: 16,
                           borderWidth: 1.5,
                           borderColor: isSelected ? C.accent : t.border,
-                          paddingVertical: 18,
-                          paddingHorizontal: 8,
-                          gap: 10,
+                          overflow: "hidden",
                         }}
                       >
-                        <MedicationIcon
-                          type={key}
-                          color={isSelected ? C.accent : t.textSecondary}
-                          size={40}
-                        />
-                        <Text
+                        {image ? (
+                          <View
+                            style={{
+                              width: "100%",
+                              height: 120,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              padding: 12,
+                            }}
+                          >
+                            <Image
+                              source={image}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                              }}
+                              resizeMode="contain"
+                            />
+                          </View>
+                        ) : (
+                          <View
+                            style={{
+                              height: 130,
+                              alignItems: "center",
+                              justifyContent: "center",
+                              backgroundColor: isSelected
+                                ? `${C.accent}10`
+                                : t.background,
+                            }}
+                          >
+                            <MedicationIcon
+                              type={key}
+                              color={isSelected ? C.accent : t.textSecondary}
+                              size={56}
+                            />
+                          </View>
+                        )}
+                        <View
                           style={{
-                            fontFamily: fonts.medium,
-                            fontSize: 12,
-                            color: isSelected ? C.accent : t.text,
-                            textAlign: "center",
+                            paddingVertical: 12,
+                            paddingHorizontal: 14,
                           }}
                         >
-                          {label}
-                        </Text>
+                          <Text
+                            style={{
+                              fontFamily: fonts.semibold,
+                              fontSize: 13,
+                              color: isSelected ? C.accent : t.text,
+                            }}
+                          >
+                            {label}
+                          </Text>
+                        </View>
                       </TouchableOpacity>
                     );
                   })}
@@ -1632,7 +1677,6 @@ export default function AddMedicationScreen() {
                     </Text>
                   </View>
                 </View>
-                
 
                 <FieldLabel optional>Dosage strength</FieldLabel>
                 <TextInput
@@ -2008,7 +2052,6 @@ export default function AddMedicationScreen() {
                     />
                   )}
                 </View>
-
               </View>
             )}
 
@@ -2275,7 +2318,9 @@ export default function AddMedicationScreen() {
               const dosageEmpty =
                 step === 3 && dosageAmount.trim() === "" && !dosageUnit;
               const noDaysSelected =
-                step === 4 && frequency === "Specific Days" && selectedDays.length === 0;
+                step === 4 &&
+                frequency === "Specific Days" &&
+                selectedDays.length === 0;
               const isSaving =
                 step === 5 && (addMed.isPending || updateMed.isPending);
               const nextDisabled = dosageEmpty || noDaysSelected || isSaving;
@@ -2523,7 +2568,7 @@ export default function AddMedicationScreen() {
                           ? []
                           : times.length > 0
                             ? times
-                            : defaultTimesForFrequency(opt.value, null)
+                            : defaultTimesForFrequency(opt.value, null),
                       );
                       setShowFrequencyPicker(false);
                     }}

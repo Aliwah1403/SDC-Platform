@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchStreak, repairStreak, updateClaimedBadges } from '@/services/supabaseQueries';
+import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabaseQueries';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
@@ -87,6 +87,17 @@ export function useStreakLost() {
   if (previousStreak < 3) return null; // not meaningful enough to mourn
 
   return { lostStreak: previousStreak };
+}
+
+export function useAcknowledgeStreakLossMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => acknowledgeStreakLoss(userId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+    },
+  });
 }
 
 export function useStreakRepairMutation() {

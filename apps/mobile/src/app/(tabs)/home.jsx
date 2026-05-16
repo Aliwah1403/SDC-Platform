@@ -16,6 +16,7 @@ import { useAppStore } from "@/store/appStore";
 import {
   useStreakQuery,
   useClaimBadgeMutation,
+  useAcknowledgeStreakLossMutation,
 } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
@@ -172,6 +173,7 @@ export default function HomeScreen() {
     b != null && typeof b === "object" ? b.id : b,
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
+  const { mutate: acknowledgeStreakLoss } = useAcknowledgeStreakLossMutation();
 
   const { data: medications = [], isLoading: medsLoading } = useMedicationsQuery();
   const { data: appointments = [], isLoading: apptLoading } = useAppointmentsQuery();
@@ -384,6 +386,10 @@ export default function HomeScreen() {
         <LostStreakModal
           visible={lostStreakVisible}
           lostStreak={streakLost?.lostStreak ?? 0}
+          onStartFresh={() => {
+            acknowledgeStreakLoss();
+            setLostStreakVisible(false);
+          }}
           onClose={() => setLostStreakVisible(false)}
         />
       </View>

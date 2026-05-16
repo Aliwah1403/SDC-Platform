@@ -6,7 +6,7 @@ import AppFeatures from "./AppFeatures";
 import Testimonials from "./Testimonials";
 import WaitlistCTA from "./WaitlistCTA";
 import FaqSection from "./FaqSection";
-import PricingSection from "./PricingSection";
+// import PricingSection from "./PricingSection";
 import Benefits from "./Benefits";
 
 const FAQS = [
@@ -24,7 +24,7 @@ const FAQS = [
   },
   {
     q: "Is Hemo free to use?",
-    a: "Yes. Core daily logging, trend tracking, emergency SOS, and care hub tools are free. Optional paid plans unlock deeper history, AI insights, and multi-member support.",
+    a: "Yes. Core daily logging, trend tracking, emergency SOS, and care hub tools are free with no time limit.",
   },
 ];
 
@@ -82,7 +82,7 @@ const Homepage = () => {
         <AppFeatures />
         <Benefits />
         <Testimonials />
-        <PricingSection />
+        {/* <PricingSection /> */}
         <FaqSection />
         <WaitlistCTA />
       </div>

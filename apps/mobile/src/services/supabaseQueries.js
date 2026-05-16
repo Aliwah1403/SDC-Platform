@@ -551,6 +551,14 @@ export async function fetchStreak(userId) {
  * - Inserts a repaired daily_summary for the missed date
  * - Decrements repairs_available, increments repairs_used
  */
+export async function acknowledgeStreakLoss(userId) {
+  const { error } = await supabase
+    .from('streaks')
+    .update({ current_streak: 0 })
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
 export async function repairStreak(userId) {
   const { data: streakRow, error: fetchError } = await supabase
     .from('streaks')

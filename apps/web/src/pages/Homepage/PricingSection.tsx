@@ -11,10 +11,12 @@ const PricingSection = () => {
             Pricing
           </Badge>
           <h2 className="mx-auto mt-4 max-w-xl text-balance text-4xl font-semibold tracking-[-0.02em] sm:text-5xl">
-            Simple plans for every need
+            Free to start. Upgrade when it matters.
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            Start free. Upgrade when you want more. No surprises.
+            Core daily tracking is free with no time limit. Hemo+ unlocks
+            unlimited history, AI insights, and the full care toolkit for
+            $7.99/month — or $59.99/year.
           </p>
         </div>
         <Pricing34 showCTA />

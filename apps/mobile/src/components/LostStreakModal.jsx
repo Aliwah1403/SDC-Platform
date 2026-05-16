@@ -7,7 +7,7 @@ import { fonts } from "@/utils/fonts";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
 
-export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
+export default function LostStreakModal({ visible, lostStreak = 0, onStartFresh, onClose }) {
   const t = useTheme();
   const posthog = usePostHog();
   const flameScale = useRef(new Animated.Value(0.8)).current;
@@ -140,7 +140,7 @@ export default function LostStreakModal({ visible, lostStreak = 0, onClose }) {
 
           {/* Start Fresh CTA */}
           <TouchableOpacity
-            onPress={onClose}
+            onPress={onStartFresh ?? onClose}
             activeOpacity={0.88}
             style={{ width: "100%", marginBottom: 12 }}
           >

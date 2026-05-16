@@ -22,7 +22,7 @@ const footerLinks = [
     label: "Product",
     links: [
       { title: "Features", href: "#features" },
-      { title: "Pricing", href: "#pricing" },
+      // { title: "Pricing", href: "#pricing" },
       { title: "Testimonials", href: "#testimonials" },
       { title: "Integration", href: "/" },
     ],

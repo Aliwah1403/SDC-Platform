@@ -7,152 +7,94 @@ import { Separator } from "@/components/ui/separator";
 
 type CellValue = string | boolean;
 
-const COMPARISON: {
-  feature: string;
-  free: CellValue;
-  pro: CellValue;
-  plus: CellValue;
-  family: CellValue;
-}[] = [
+type ComparisonRow =
+  | { type: "category"; label: string }
+  | { type: "feature"; feature: string; free: CellValue; plus: CellValue };
+
+const COMPARISON: ComparisonRow[] = [
+  { type: "category", label: "Deeper Tracking" },
   {
-    feature: "Daily health log",
+    type: "feature",
+    feature: "Daily symptom log (pain, mood, hydration, sleep, triggers, notes)",
     free: true,
-    pro: true,
     plus: true,
-    family: true,
   },
-  {
-    feature: "Trend history",
-    free: "7 days",
-    pro: "90 days",
-    plus: "90 days",
-    family: "90 days",
-  },
-  { feature: "Emergency SOS", free: true, pro: true, plus: true, family: true },
-  {
-    feature: "Care hub (meds & contacts)",
-    free: true,
-    pro: true,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "Full care hub (appts, crisis…)",
-    free: false,
-    pro: true,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "AI health insights",
-    free: false,
-    pro: true,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "AI assistant queries",
-    free: false,
-    pro: "20/month",
-    plus: "Unlimited",
-    family: "Unlimited",
-  },
-  {
-    feature: "Streak repairs",
-    free: "1/month",
-    pro: "Unlimited",
-    plus: "Unlimited",
-    family: "Unlimited",
-  },
-  {
-    feature: "Custom metric goals",
-    free: false,
-    pro: false,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "PDF health export",
-    free: false,
-    pro: true,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "Advanced analytics",
-    free: false,
-    pro: false,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "Early feature access",
-    free: false,
-    pro: false,
-    plus: true,
-    family: true,
-  },
-  {
-    feature: "Member profiles",
-    free: "1",
-    pro: "1",
-    plus: "1",
-    family: "Up to 5",
-  },
-  {
-    feature: "Caregiver view",
-    free: false,
-    pro: false,
-    plus: false,
-    family: true,
-  },
-  {
-    feature: "Shared emergency contacts",
-    free: false,
-    pro: false,
-    plus: false,
-    family: true,
-  },
-  {
-    feature: "Support",
-    free: "Community",
-    pro: "Email",
-    plus: "Priority email",
-    family: "Priority email",
-  },
+  { type: "feature", feature: "Emergency SOS", free: "Always free", plus: "Always free" },
+  { type: "feature", feature: "Learn section", free: true, plus: true },
+  { type: "feature", feature: "Custom metric goals (hydration, sleep, steps)", free: true, plus: true },
+  { type: "feature", feature: "Trend charts", free: "7-day", plus: "Unlimited + month view" },
+  { type: "feature", feature: "Browse past days in detail", free: false, plus: true },
+  { type: "feature", feature: "AI health insights", free: false, plus: true },
+  { type: "feature", feature: "PDF health reports", free: false, plus: true },
+
+  { type: "category", label: "Care Coordination" },
+  { type: "feature", feature: "Crisis plan", free: "1 basic plan", plus: "Multiple scenarios, shareable + PDF export" },
+  { type: "feature", feature: "Care team members", free: "1", plus: "Unlimited + appointment coordination" },
+  { type: "feature", feature: "Hospital & facility finder", free: false, plus: true },
+  { type: "feature", feature: "Medications you can add", free: "Up to 2", plus: "Unlimited" },
+  { type: "feature", feature: "SCD drug safety warnings", free: true, plus: true },
+  { type: "feature", feature: "Daily dose check-off", free: true, plus: true },
+  { type: "feature", feature: "Adherence history", free: "7-day", plus: "Full history (M / 6M / Y)" },
+  { type: "feature", feature: "Specific Days scheduling (e.g. Mon / Wed / Fri)", free: false, plus: true },
+  { type: "feature", feature: "Multiple daily dose times (up to 6)", free: false, plus: true },
+  { type: "feature", feature: "Dose reminders & missed-dose alerts", free: false, plus: true },
+  { type: "feature", feature: "Upcoming appointments", free: "Up to 3", plus: "Unlimited" },
+  { type: "feature", feature: "Appointment history", free: "Last 3", plus: "Full history" },
+  { type: "feature", feature: "Appointment push reminders (5 min – 2 days before)", free: false, plus: true },
+  { type: "feature", feature: "Sync to device calendar", free: false, plus: true },
+
+  { type: "category", label: "Smarter Support" },
+  { type: "feature", feature: "Drug info cards (uses, side effects, interactions)", free: false, plus: true },
+  { type: "feature", feature: "Barcode scanner for instant drug lookup", free: false, plus: true },
+  { type: "feature", feature: "Identify a pill from a photo (Photo AI)", free: false, plus: true },
+
+  { type: "category", label: "Community" },
+  { type: "feature", feature: "General community access", free: true, plus: true },
+  { type: "feature", feature: "Expert forum & verified Q&A", free: false, plus: true },
+
+  { type: "category", label: "Streak & Rewards" },
+  { type: "feature", feature: "Health streak, milestones & rewards", free: true, plus: true },
+  { type: "feature", feature: "Streak repairs", free: "2 / month", plus: "Unlimited" },
+
+  { type: "category", label: "Support" },
+  { type: "feature", feature: "Support channel", free: "Community", plus: "Priority email" },
 ];
 
 const FAQS = [
   {
     question: "Is the Free plan actually free forever?",
     answer:
-      "Yes. Core daily logging, 7-day trends, emergency SOS, and community access stay free with no time limit.",
+      "Yes. Symptom logging, 7-day health stats, Emergency SOS, community access, and the core care hub stay free with no time limit.",
   },
   {
-    question: "Can I switch plans at any time?",
+    question: "Is there a free trial for Hemo+?",
     answer:
-      "Yes. You can upgrade, downgrade, or cancel at any time. Yearly plans are billed upfront and are non-refundable after 14 days.",
+      "Yes — Hemo+ includes a 7-day free trial. No credit card required to start.",
   },
   {
-    question: "What happens to my data if I downgrade?",
+    question: "Can I switch between monthly and annual billing?",
     answer:
-      "Your logs are always yours. If you downgrade from Pro, you keep access to your full history in read-only mode but trend views return to 7 days.",
+      "Yes. You can upgrade to annual at any time and the remaining monthly value will be credited. Annual plans are billed upfront and are non-refundable after 14 days.",
   },
   {
-    question:
-      "Does the Family plan share one account or have separate profiles?",
+    question: "What happens to my data if I cancel Hemo+?",
     answer:
-      "Each family member gets their own private profile. The plan owner can view a shared overview but individual health data remains personal.",
+      "Your logs are always yours. If you downgrade, your full health history is preserved in read-only mode and trend views return to 7 days.",
   },
   {
-    question: "Is there a free trial for paid plans?",
+    question: "Is there a discount for financial hardship?",
     answer:
-      "Pro includes a 14-day free trial. No credit card required to start the trial.",
+      "Yes. We offer an income-based discount program — 50% off Hemo+ for qualifying users. Apply through the app. We believe everyone living with SCD deserves access.",
+  },
+  {
+    question: "Is Hemo+ free for patients under 18?",
+    answer:
+      "Yes. Pediatric SCD patients get Hemo+ free. Contact us through the app to verify and activate.",
   },
   {
     question: "Are prices in USD?",
     answer:
-      "Yes. Prices are listed in USD. Local currency billing will be available at checkout.",
+      "Yes. Prices are listed in USD. Local currency billing is available at checkout.",
   },
 ];
 
@@ -171,11 +113,11 @@ const PricingPage = () => {
           Pricing
         </Badge>
         <h1 className="mx-auto mt-4 max-w-2xl text-balance text-4xl font-semibold tracking-[-0.03em] sm:text-5xl">
-          Simple plans for every stage
+          Free to start. More when you need it.
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-          Start free and upgrade when you need more. All plans include the core
-          tools that make Hemo useful every day.
+          The core Hemo experience is free with no time limit. Upgrade to Hemo+
+          for unlimited history, AI insights, and the full care toolkit.
         </p>
       </div>
 
@@ -197,34 +139,38 @@ const PricingPage = () => {
                   Free
                 </th>
                 <th className="px-5 py-4 text-center font-semibold text-primary">
-                  Pro
-                </th>
-                <th className="px-5 py-4 text-center font-semibold text-foreground">
-                  Plus
-                </th>
-                <th className="px-5 py-4 text-center font-semibold text-foreground">
-                  Family
+                  Hemo+
                 </th>
               </tr>
             </thead>
             <tbody>
-              {COMPARISON.map((row) => (
-                <tr key={row.feature} className="border-t">
-                  <td className="px-5 py-3.5 text-foreground">{row.feature}</td>
-                  <td className="px-5 py-3.5 text-center">
-                    <Cell value={row.free} />
-                  </td>
-                  <td className="bg-primary/[0.03] px-5 py-3.5 text-center">
-                    <Cell value={row.pro} />
-                  </td>
-                  <td className="px-5 py-3.5 text-center">
-                    <Cell value={row.plus} />
-                  </td>
-                  <td className="px-5 py-3.5 text-center">
-                    <Cell value={row.family} />
-                  </td>
-                </tr>
-              ))}
+              {COMPARISON.map((row, i) => {
+                if (row.type === "category") {
+                  return (
+                    <tr key={`cat-${i}`} className="border-t bg-muted/20">
+                      <td
+                        colSpan={3}
+                        className="px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                      >
+                        {row.label}
+                      </td>
+                    </tr>
+                  );
+                }
+                return (
+                  <tr key={row.feature} className="border-t">
+                    <td className="px-5 py-3.5 text-foreground">
+                      {row.feature}
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      <Cell value={row.free} />
+                    </td>
+                    <td className="bg-primary/[0.03] px-5 py-3.5 text-center">
+                      <Cell value={row.plus} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -240,10 +186,10 @@ const PricingPage = () => {
       {/* Support */}
       <div className="flex flex-col justify-between gap-12 md:flex-row md:items-end">
         <div className="lg:col-span-2">
-          <h1 className="mt-4 text-2xl font-semibold">Still have questions?</h1>
+          <h2 className="mt-4 text-2xl font-semibold">Still have questions?</h2>
           <p className="mt-6 font-medium text-muted-foreground">
-            We&apos;re here to provide clarity and assist with any queries you
-            may have.
+            We&apos;re here to help with anything — pricing, accessibility
+            discounts, or institutional partnerships.
           </p>
         </div>
         <div className="flex md:justify-end">
