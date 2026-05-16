@@ -173,7 +173,7 @@ export default function HomeScreen() {
     b != null && typeof b === "object" ? b.id : b,
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
-  const { mutate: acknowledgeStreakLoss } = useAcknowledgeStreakLossMutation();
+  const { mutateAsync: acknowledgeStreakLoss } = useAcknowledgeStreakLossMutation();
 
   const { data: medications = [], isLoading: medsLoading } = useMedicationsQuery();
   const { data: appointments = [], isLoading: apptLoading } = useAppointmentsQuery();
@@ -386,9 +386,13 @@ export default function HomeScreen() {
         <LostStreakModal
           visible={lostStreakVisible}
           lostStreak={streakLost?.lostStreak ?? 0}
-          onStartFresh={() => {
-            acknowledgeStreakLoss();
-            setLostStreakVisible(false);
+          onStartFresh={async () => {
+            try {
+              await acknowledgeStreakLoss();
+              setLostStreakVisible(false);
+            } catch {
+              // keep modal open on failure
+            }
           }}
           onClose={() => setLostStreakVisible(false)}
         />

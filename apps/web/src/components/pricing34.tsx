@@ -25,7 +25,7 @@ type Plan = {
   label: string;
   monthlyPrice: number;
   yearlyPrice: number;
-  period: { monthly: string };
+  period: { monthly: string; yearly: string };
   description: { monthly: string; yearly: string };
   buttonText: string;
   buttonVariant: "outline" | "default";
@@ -67,7 +67,7 @@ const PLANS: Plan[] = [
     label: "Hemo+",
     monthlyPrice: 7.99,
     yearlyPrice: 59.99,
-    period: { monthly: "per month" },
+    period: { monthly: "per month", yearly: "per year" },
     description: {
       monthly:
         "Unlimited history, AI insights, and the full care hub. Try free for 7 days.",
@@ -183,7 +183,12 @@ const Pricing34 = ({ className, showCTA = false }: Pricing34Props) => {
                 </p>
                 {billing === "yearly" && plan.yearlyPrice > 0 && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    $4.99/month equivalent
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                      trailingZeroDisplay: "stripIfInteger",
+                    }).format(plan.yearlyPrice / 12)}
+                    /month equivalent
                   </p>
                 )}
               </div>

@@ -39,11 +39,15 @@ const WaitlistCTA = () => {
 
     setWaitlistStatus("submitting");
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
+
     try {
       const res = await fetch(WAITLIST_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: normalizedEmail, source: "homepage-modern-white-v1" }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -54,10 +58,16 @@ const WaitlistCTA = () => {
         );
         return;
       }
-    } catch {
+    } catch (err) {
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "Request timed out. Please try again."
+          : "Please try again in a moment.";
       setWaitlistStatus("error");
-      setWaitlistMessage("Please try again in a moment.");
+      setWaitlistMessage(message);
       return;
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     setWaitlistStatus("success");

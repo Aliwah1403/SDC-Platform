@@ -58,8 +58,9 @@ const TEMPLATE_MAP: Record<string, TemplateConfig> = {
 };
 
 function buildVerifyUrl(payload: EmailPayload): string {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!supabaseUrl) throw new Error("Missing SUPABASE_URL env var when building verify URL");
   const { token_hash, email_action_type, redirect_to } = payload.email_data;
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const params = new URLSearchParams({
     token: token_hash,
     type: email_action_type,

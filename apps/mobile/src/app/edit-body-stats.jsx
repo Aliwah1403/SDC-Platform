@@ -13,11 +13,14 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Picker } from "@react-native-picker/picker";
-import { Heart, PenLine } from "lucide-react-native";
+import { Image } from "react-native";
+import { PenLine } from "lucide-react-native";
 import {
   useProfileQuery,
   useUpdateProfileMutation,
 } from "@/hooks/queries/useProfileQuery";
+import { useAppStore } from "@/store/appStore";
+import { writeBodyStats, isHKAvailable } from "@/services/healthKitService";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -82,19 +85,24 @@ export default function EditBodyStats() {
   const [editingHeight, setEditingHeight] = useState(false);
   const [editingWeight, setEditingWeight] = useState(false);
 
-  const [heightReadHealth, setHeightReadHealth] = useState(false);
-  const [heightWriteHealth, setHeightWriteHealth] = useState(false);
-  const [weightReadHealth, setWeightReadHealth] = useState(false);
-  const [weightWriteHealth, setWeightWriteHealth] = useState(false);
+  const {
+    healthKitConnected,
+    healthKitPreferences,
+    setHealthKitPreference,
+  } = useAppStore();
 
-  const handleHealthToggle = (setter) => (val) => {
-    if (val) {
-      Alert.alert("Apple Health", "Apple Health integration is coming soon.", [
-        { text: "OK" },
-      ]);
-    } else {
-      setter(false);
+  const hkAvailable = isHKAvailable() && healthKitConnected;
+
+  const handleHealthToggle = (prefKey) => (val) => {
+    if (val && !hkAvailable) {
+      Alert.alert(
+        "Apple Health not connected",
+        "Connect Apple Health in your profile settings first.",
+        [{ text: "OK" }]
+      );
+      return;
     }
+    setHealthKitPreference(prefKey, val);
   };
 
   useEffect(() => {
@@ -149,7 +157,18 @@ export default function EditBodyStats() {
 
     updateProfile.mutate(
       { height: heightInCm, weight: weightInKg },
-      { onSuccess: () => router.back() },
+      {
+        onSuccess: () => {
+          if (hkAvailable) {
+            writeBodyStats({
+              heightCm: healthKitPreferences.writeHeight ? heightInCm : null,
+              weightKg: healthKitPreferences.writeWeight ? weightInKg : null,
+              prefs: healthKitPreferences,
+            });
+          }
+          router.back();
+        },
+      },
     );
   };
 
@@ -277,23 +296,15 @@ export default function EditBodyStats() {
             <View style={styles.appleHealthCard}>
               <Text style={styles.appleHealthLabel}>Apple Health</Text>
               <View style={styles.appleHealthRow}>
-                <Heart size={16} color="#EF4444" fill="#EF4444" />
-                <Text style={styles.appleHealthText}>Read height from Health</Text>
-                <Switch
-                  value={heightReadHealth}
-                  onValueChange={handleHealthToggle(setHeightReadHealth)}
-                  trackColor={{ false: t.border, true: "#A9334D" }}
-                  thumbColor="#ffffff"
-                  ios_backgroundColor={t.border}
+                <Image
+                  source={require("../../assets/images/icon-apple-health.png")}
+                  style={{ width: 20, height: 20 }}
+                  resizeMode="contain"
                 />
-              </View>
-              <View style={styles.appleHealthDivider} />
-              <View style={styles.appleHealthRow}>
-                <Heart size={16} color="#EF4444" fill="#EF4444" />
                 <Text style={styles.appleHealthText}>Write height to Health</Text>
                 <Switch
-                  value={heightWriteHealth}
-                  onValueChange={handleHealthToggle(setHeightWriteHealth)}
+                  value={healthKitPreferences.writeHeight ?? true}
+                  onValueChange={handleHealthToggle("writeHeight")}
                   trackColor={{ false: t.border, true: "#A9334D" }}
                   thumbColor="#ffffff"
                   ios_backgroundColor={t.border}
@@ -352,23 +363,15 @@ export default function EditBodyStats() {
             <View style={styles.appleHealthCard}>
               <Text style={styles.appleHealthLabel}>Apple Health</Text>
               <View style={styles.appleHealthRow}>
-                <Heart size={16} color="#EF4444" fill="#EF4444" />
-                <Text style={styles.appleHealthText}>Read weight from Health</Text>
-                <Switch
-                  value={weightReadHealth}
-                  onValueChange={handleHealthToggle(setWeightReadHealth)}
-                  trackColor={{ false: t.border, true: "#A9334D" }}
-                  thumbColor="#ffffff"
-                  ios_backgroundColor={t.border}
+                <Image
+                  source={require("../../assets/images/icon-apple-health.png")}
+                  style={{ width: 20, height: 20 }}
+                  resizeMode="contain"
                 />
-              </View>
-              <View style={styles.appleHealthDivider} />
-              <View style={styles.appleHealthRow}>
-                <Heart size={16} color="#EF4444" fill="#EF4444" />
                 <Text style={styles.appleHealthText}>Write weight to Health</Text>
                 <Switch
-                  value={weightWriteHealth}
-                  onValueChange={handleHealthToggle(setWeightWriteHealth)}
+                  value={healthKitPreferences.writeWeight ?? true}
+                  onValueChange={handleHealthToggle("writeWeight")}
                   trackColor={{ false: t.border, true: "#A9334D" }}
                   thumbColor="#ffffff"
                   ios_backgroundColor={t.border}

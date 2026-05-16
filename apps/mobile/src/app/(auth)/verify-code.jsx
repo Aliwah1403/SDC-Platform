@@ -22,7 +22,8 @@ const RESEND_SECONDS = 55;
 
 export default function VerifyCodeScreen() {
   const insets = useSafeAreaInsets();
-  const { email } = useLocalSearchParams();
+  const { email: _emailParam } = useLocalSearchParams();
+  const emailParam = (Array.isArray(_emailParam) ? _emailParam[0] : String(_emailParam ?? '')).trim();
   const theme = useTheme();
   const dark = theme.isDark;
 
@@ -75,10 +76,10 @@ export default function VerifyCodeScreen() {
 
   const handleVerify = async () => {
     if (!allFilled) return;
-    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
+    if (!emailParam) { setError('Email address is missing. Please go back and try again.'); return; }
     setError(''); setLoading(true);
     try {
-      const { error: verifyError } = await verifyOtp(email, code);
+      const { error: verifyError } = await verifyOtp(emailParam, code);
       if (verifyError) {
         setError('Incorrect Code. Please Try Again');
         setDigits(Array(CODE_LENGTH).fill(''));
@@ -93,12 +94,12 @@ export default function VerifyCodeScreen() {
 
   const handleResend = async () => {
     if (secondsLeft > 0 || resending) return;
-    if (!email?.trim()) { setError('Email address is missing. Please go back and try again.'); return; }
+    if (!emailParam) { setError('Email address is missing. Please go back and try again.'); return; }
     setResending(true); setError('');
     setDigits(Array(CODE_LENGTH).fill(''));
     try {
       const { resetPassword } = await import('@/utils/auth/supabase');
-      await resetPassword(email);
+      await resetPassword(emailParam);
       startTimer();
       setTimeout(() => hiddenInputRef.current?.focus(), 50);
     } catch {
@@ -131,7 +132,7 @@ export default function VerifyCodeScreen() {
             <Text style={[styles.title, { color: theme.text }]}>Enter verification{'\n'}code</Text>
             <Text style={[styles.subtitle, { color: c.textMuted }]}>
               We sent a 6-digit code to{'\n'}
-              <Text style={[styles.emailHighlight, { color: c.emailHighlight }]}>{email || 'your email'}</Text>
+              <Text style={[styles.emailHighlight, { color: c.emailHighlight }]}>{emailParam || 'your email'}</Text>
             </Text>
           </MotiView>
 
