@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 interface ContactFormDetailsProps {
@@ -319,7 +320,21 @@ const Contact2 = (props: Props) => {
 };
 
 const ContactPage = () => {
-  return <Contact2 />;
+  const handleSubmit = async (data: ContactFormData) => {
+    if (!supabase) {
+      throw new Error("Contact form is unavailable. Please try again later.");
+    }
+    const { error } = await supabase.from("contact_submissions").insert({
+      first_name: data.firstName,
+      last_name: data.lastName,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+    });
+    if (error) throw error;
+  };
+
+  return <Contact2 onSubmit={handleSubmit} />;
 };
 
 export { Contact2 };
