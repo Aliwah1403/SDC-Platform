@@ -5,15 +5,15 @@ import { Iphone } from "@/components/ui/iphone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
-import HomeScreen from "@/assets/screenshots/home-screen.jpeg";
-import CareScreen from "@/assets/screenshots/care-screen.jpeg";
-import InsightsScreen from "@/assets/screenshots/insights.jpeg";
+import HomeScreen from "@/assets/screenshots/home-screen.png";
+import CareScreen from "@/assets/screenshots/care-screen.png";
+import Streaks from "@/assets/screenshots/streaks.png";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
   { x: -290, scale: 0.8, delay: 0.45, zIndex: 1, src: CareScreen },
   { x: 0, scale: 1, delay: 0.2, zIndex: 3, src: HomeScreen },
-  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: InsightsScreen },
+  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: Streaks },
 ] satisfies {
   x: number;
   scale: number;

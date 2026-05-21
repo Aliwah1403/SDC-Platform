@@ -6,17 +6,18 @@ import {
   CheckCircle2,
   Flame,
   LifeBuoy,
-  MessageSquareText,
-  Siren,
   Users,
 } from "lucide-react";
 
 import PageWaitlistCTA from "@/components/PageWaitlistCTA";
 import { Badge } from "@/components/ui/badge";
 import { Iphone } from "@/components/ui/iphone";
-import HomeScreen from "@/assets/screenshots/home-screen.jpeg";
-import InsightsScreen from "@/assets/screenshots/insights.jpeg";
-import CareScreen from "@/assets/screenshots/care-screen.jpeg";
+import DailyLogScreen from "@/assets/screenshots/daily-log.png";
+import CareScreen from "@/assets/screenshots/care-screen.png";
+import CommunityPhoto from "@/assets/community.jpeg";
+import HealthMetrics from "@/assets/screenshots/health-trends.png";
+import StreaksScreen from "@/assets/screenshots/streaks.png";
+import InsightsScreen from "@/assets/screenshots/insights.png";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ const HERO_FEATURES = [
     ],
     outcome: "Two minutes today gives you answers later.",
     icon: Activity,
-    screenshot: HomeScreen,
+    screenshot: DailyLogScreen,
     accent: "#A9334D",
   },
   {
@@ -48,7 +49,7 @@ const HERO_FEATURES = [
     ],
     outcome: "Stop guessing. Start spotting what helps.",
     icon: CalendarCheck,
-    screenshot: undefined,
+    screenshot: HealthMetrics,
     accent: "#A9334D",
   },
   {
@@ -78,7 +79,7 @@ const HERO_FEATURES = [
     ],
     outcome: "Better routine, less pressure.",
     icon: Flame,
-    screenshot: undefined,
+    screenshot: StreaksScreen,
     accent: "#F0531C",
   },
   {
@@ -96,42 +97,21 @@ const HERO_FEATURES = [
     screenshot: CareScreen,
     accent: "#A9334D",
   },
-  {
-    label: "Emergency SOS",
-    headline: "Help is one tap away.",
-    description:
-      "During a crisis, speed and clarity matter. Hemo's SOS flow is designed to get help moving with minimal friction — no menus, no searching.",
-    bullets: [
-      "One-tap SOS with a countdown and confirmation step",
-      "Direct emergency contact dialing or 911",
-      "Emergency profile accessible even from the lock screen",
-    ],
-    outcome: "Speed when it matters most.",
-    icon: Siren,
-    screenshot: undefined,
-    accent: "#DC2626",
-  },
-] as const;
-
-const SUPPORT_FEATURES = [
-  {
-    label: "AI Health Assistant",
-    headline: "Plain-language answers, always on.",
-    description:
-      "SCD-specific Q&A with persistent chat history. Reliable information in one place — not scattered across search results.",
-    outcome: "Guidance you can actually understand.",
-    icon: MessageSquareText,
-    accent: "#A9334D",
-  },
-  {
-    label: "Community Feed",
-    headline: "You're not doing this alone.",
-    description:
-      "A peer-support feed for experiences, tips, questions, and encouragement from others who understand what SCD actually feels like.",
-    outcome: "Less isolation. More support.",
-    icon: Users,
-    accent: "#781D11",
-  },
+  // {
+  //   label: "Emergency SOS",
+  //   headline: "Help is one tap away.",
+  //   description:
+  //     "During a crisis, speed and clarity matter. Hemo's SOS flow is designed to get help moving with minimal friction — no menus, no searching.",
+  //   bullets: [
+  //     "One-tap SOS with a countdown and confirmation step",
+  //     "Direct emergency contact dialing or 911",
+  //     "Emergency profile accessible even from the lock screen",
+  //   ],
+  //   outcome: "Speed when it matters most.",
+  //   icon: Siren,
+  //   screenshot: undefined,
+  //   accent: "#DC2626",
+  // },
 ] as const;
 
 const STATS = [
@@ -172,17 +152,24 @@ function FeaturePlaceholder({
               opacity: 0.06 - i * 0.015,
             }}
             animate={reducedMotion ? { scale: 1 } : { scale: [1, 1.04, 1] }}
-            transition={reducedMotion ? {} : {
-              duration: 3.5,
-              delay: i * 0.4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            transition={
+              reducedMotion
+                ? {}
+                : {
+                    duration: 3.5,
+                    delay: i * 0.4,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }
+            }
           />
         ))}
         <div
           className="relative z-10 flex size-24 items-center justify-center rounded-3xl shadow-xl"
-          style={{ backgroundColor: `${accent}18`, border: `1.5px solid ${accent}22` }}
+          style={{
+            backgroundColor: `${accent}18`,
+            border: `1.5px solid ${accent}22`,
+          }}
         >
           <Icon className="size-10" style={{ color: accent }} />
         </div>
@@ -196,7 +183,6 @@ function FeaturePlaceholder({
 const FeaturesPage = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: 14 }}
@@ -221,8 +207,9 @@ const FeaturesPage = () => {
         transition={{ duration: 0.55, delay: 0.2 }}
         className="mt-5 max-w-2xl text-md text-balance text-muted-foreground"
       >
-        Each feature is built around one principle: give people with Sickle Cell Disease
-        clearer control, better context, and faster access to support when needed.
+        Each feature is built around one principle: give people with Sickle Cell
+        Disease clearer control, better context, and faster access to support
+        when needed.
       </motion.p>
 
       {/* ── Stats row ── */}
@@ -272,7 +259,10 @@ const FeaturesPage = () => {
                     className="flex size-9 items-center justify-center rounded-xl"
                     style={{ backgroundColor: `${feature.accent}18` }}
                   >
-                    <Icon className="size-4.5" style={{ color: feature.accent }} />
+                    <Icon
+                      className="size-4.5"
+                      style={{ color: feature.accent }}
+                    />
                   </div>
                   <p
                     className="text-xs font-semibold uppercase tracking-[0.16em]"
@@ -286,7 +276,9 @@ const FeaturesPage = () => {
                   {feature.headline}
                 </h2>
 
-                <p className="mt-4 text-muted-foreground">{feature.description}</p>
+                <p className="mt-4 text-muted-foreground">
+                  {feature.description}
+                </p>
 
                 <ul className="mt-6 space-y-3">
                   {feature.bullets.map((bullet, bi) => (
@@ -295,21 +287,30 @@ const FeaturesPage = () => {
                       initial={{ opacity: 0, x: -10 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true, amount: 0.5 }}
-                      transition={{ duration: 0.38, delay: 0.2 + bi * 0.07, ease: "easeOut" }}
+                      transition={{
+                        duration: 0.38,
+                        delay: 0.2 + bi * 0.07,
+                        ease: "easeOut",
+                      }}
                       className="flex items-start gap-2.5"
                     >
                       <CheckCircle2
                         className="mt-0.5 size-4 shrink-0"
                         style={{ color: feature.accent }}
                       />
-                      <span className="text-sm text-muted-foreground">{bullet}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {bullet}
+                      </span>
                     </motion.li>
                   ))}
                 </ul>
 
                 <div
                   className="mt-7 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium"
-                  style={{ backgroundColor: `${feature.accent}12`, color: feature.accent }}
+                  style={{
+                    backgroundColor: `${feature.accent}12`,
+                    color: feature.accent,
+                  }}
                 >
                   <CheckCircle2 className="size-3.5" />
                   {feature.outcome}
@@ -325,9 +326,16 @@ const FeaturesPage = () => {
                 className={`flex items-center justify-center ${isEven ? "" : "lg:order-1"}`}
               >
                 {feature.screenshot ? (
-                  <Iphone className="max-w-72" src={feature.screenshot} alt={feature.label ? `${feature.label} feature screenshot` : "Feature screenshot"} />
+                  <Iphone
+                    className="max-w-64"
+                    src={feature.screenshot}
+                    alt={`${feature.label} feature screenshot`}
+                  />
                 ) : (
-                  <FeaturePlaceholder icon={feature.icon} accent={feature.accent} />
+                  <FeaturePlaceholder
+                    icon={feature.icon}
+                    accent={feature.accent}
+                  />
                 )}
               </motion.div>
             </motion.article>
@@ -335,44 +343,52 @@ const FeaturesPage = () => {
         })}
       </div>
 
-      {/* ── Supporting features ── */}
-      <div className="mt-20 grid gap-5 sm:grid-cols-2">
-        {SUPPORT_FEATURES.map((feature, i) => {
-          const Icon = feature.icon;
-          return (
-            <motion.div
-              key={feature.label}
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.5, delay: i * 0.1, ease: "easeOut" }}
-              className="relative overflow-hidden rounded-3xl border p-8"
-            >
-              <div
-                className="mb-5 flex size-12 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: `${feature.accent}15` }}
-              >
-                <Icon className="size-5" style={{ color: feature.accent }} />
-              </div>
-              <p
-                className="mb-1.5 text-xs font-semibold uppercase tracking-[0.16em]"
-                style={{ color: feature.accent }}
-              >
-                {feature.label}
-              </p>
-              <h3 className="text-xl font-semibold tracking-tight">{feature.headline}</h3>
-              <p className="mt-3 text-sm text-muted-foreground">{feature.description}</p>
-              <p className="mt-5 text-sm font-medium" style={{ color: feature.accent }}>
-                {feature.outcome}
-              </p>
-              <div
-                className="pointer-events-none absolute -bottom-14 -right-14 size-44 rounded-full opacity-[0.05]"
-                style={{ backgroundColor: feature.accent }}
-              />
-            </motion.div>
-          );
-        })}
-      </div>
+      {/* ── Community card ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 28 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="relative mt-20 overflow-hidden rounded-3xl"
+        style={{ minHeight: 420 }}
+      >
+        {/* Photo background */}
+        <img
+          src={CommunityPhoto}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+
+        {/* Dark overlay for text legibility */}
+        <div className="absolute inset-0 bg-linear-to-r from-black/70 via-black/40 to-black/10" />
+
+        {/* Content */}
+        <div className="relative z-10 flex h-full flex-col justify-center px-10 py-16 sm:px-14 lg:max-w-2xl">
+          <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+            <Users className="size-7 text-white" />
+          </div>
+
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#D09F9A]">
+            Community
+          </p>
+
+          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-[-0.02em] text-white sm:text-4xl lg:text-5xl">
+            You're not doing this alone.
+          </h2>
+
+          <p className="mt-5 max-w-lg text-base text-white/75">
+            A peer-support space for people who actually understand what SCD
+            feels like — share what works, ask questions, and find encouragement
+            from others who've been there.
+          </p>
+
+          <div className="mt-8 inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-5 py-2.5 text-sm font-medium text-white backdrop-blur-sm">
+            <CheckCircle2 className="size-4 text-[#D09F9A]" />
+            Less isolation. More support.
+          </div>
+        </div>
+      </motion.div>
 
       {/* ── Built differently ── */}
       <motion.section
@@ -388,12 +404,14 @@ const FeaturesPage = () => {
               Built differently
             </p>
             <h2 className="mt-3 text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-              Not a generic tracker dressed up for SCD — built for it from the start.
+              Not a generic tracker dressed up for SCD — built for it from the
+              start.
             </h2>
             <p className="mt-4 text-muted-foreground">
-              Most health apps are designed for general wellness and retrofitted for specific
-              conditions. Hemo started with the realities of Sickle Cell Disease — pain crises,
-              clinic visits, emergency access, and consistent logging on bad days.
+              Most health apps are designed for general wellness and retrofitted
+              for specific conditions. Hemo started with the realities of Sickle
+              Cell Disease — pain crises, clinic visits, emergency access, and
+              consistent logging on bad days.
             </p>
           </div>
 
@@ -433,8 +451,9 @@ const FeaturesPage = () => {
             Arrive with 90 days of context, not guesswork.
           </h3>
           <p className="mt-3 text-muted-foreground">
-            Structured symptom, mood, hydration, and medication logs give your care team real
-            data — improving the quality of every appointment conversation.
+            Structured symptom, mood, hydration, and medication logs give your
+            care team real data — improving the quality of every appointment
+            conversation.
           </p>
           <div className="pointer-events-none absolute -bottom-12 -right-12 size-40 rounded-full bg-primary opacity-[0.05]" />
         </motion.div>
@@ -453,7 +472,7 @@ const FeaturesPage = () => {
             Critical information, always within reach.
           </h3>
           <p className="mt-3 text-muted-foreground">
-            From one-tap SOS to crisis planning and emergency profile access — speed and clarity
+            From crisis planning to emergency profile access — speed and clarity
             are built into every part of the experience.
           </p>
           <div className="pointer-events-none absolute -bottom-12 -right-12 size-40 rounded-full bg-destructive opacity-[0.05]" />

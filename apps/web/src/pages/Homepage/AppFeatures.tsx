@@ -1,7 +1,11 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
-import CareScreen from "@/assets/screenshots/care-screen.jpeg";
-import HealthTrends from "@/assets/screenshots/health-trends.jpeg";
+import CareScreen from "@/assets/screenshots/care-screen.png";
+import HealthTrends from "@/assets/screenshots/health-trends.png";
+import Streaks from "@/assets/screenshots/streaks.png";
+import Community from "@/assets/screenshots/community.png";
+import DailyLog from "@/assets/screenshots/daily-log.png";
+import Insights from "@/assets/screenshots/insights.png";
 const FEATURE_STORIES = [
   {
     title: "Daily Health Log",
@@ -9,7 +13,7 @@ const FEATURE_STORIES = [
     description:
       "Capture pain, symptoms, hydration, mood, triggers, and notes in one guided check-in. It is short enough to complete on difficult days.",
     result: "Two minutes today gives you answers later.",
-    source: undefined,
+    source: DailyLog,
   },
   {
     title: "Health Trends",
@@ -25,7 +29,7 @@ const FEATURE_STORIES = [
     description:
       "Hemo compares this week to last week and calls out meaningful changes in plain language.",
     result: "Context, not just numbers.",
-    source: undefined,
+    source: Insights,
   },
   {
     title: "Streak System",
@@ -33,7 +37,7 @@ const FEATURE_STORIES = [
     description:
       "Streak repairs and milestone badges reward consistency without making missed days feel like failure.",
     result: "Better routine, less pressure.",
-    source: undefined,
+    source: Streaks,
   },
   {
     title: "Care Hub",
@@ -44,12 +48,12 @@ const FEATURE_STORIES = [
     source: CareScreen,
   },
   {
-    title: "Emergency + Assistant + Community",
-    headline: "Fast support, clear answers, shared experience.",
+    title: "Community",
+    headline: "Find people who actually get it.",
     description:
-      "Use one-tap SOS, ask the AI assistant in plain language, and connect with a community that understands SCD.",
-    result: "Support that feels practical and human.",
-    source: undefined,
+      "Connect with others living with SCD — share what works, ask questions, and feel less alone on the harder days.",
+    result: "Support from people who understand firsthand.",
+    source: Community,
   },
 ] as const;
 
@@ -81,8 +85,14 @@ const AppFeatures = () => {
               </p>
               <p className="mt-3 text-base font-medium">{feature.result}</p>
             </div>
-            <div className={index % 2 === 1 ? "lg:order-1" : ""}>
-              <Iphone className="max-w-84" src={feature.source} />
+            <div
+              className={`flex items-center justify-center ${index % 2 === 1 ? "lg:order-1" : ""}`}
+            >
+              <Iphone
+                className="w-full max-w-72"
+                src={feature.source as string | undefined}
+                alt={`${feature.title} screenshot`}
+              />
             </div>
           </motion.article>
         ))}
