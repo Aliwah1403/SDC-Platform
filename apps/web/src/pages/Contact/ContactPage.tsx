@@ -324,7 +324,9 @@ const ContactPage = () => {
     if (!supabase) {
       throw new Error("Contact form is unavailable. Please try again later.");
     }
-    posthog?.capture("contact_form_submitted", { subject: data.subject });
+    const subjectLen = data.subject.trim().length;
+    const subjectLengthBucket = subjectLen === 0 ? "empty" : subjectLen <= 30 ? "short" : subjectLen <= 80 ? "medium" : "long";
+    posthog?.capture("contact_form_submitted", { subjectLengthBucket });
     const { error } = await supabase.from("contact_submissions").insert({
       first_name: data.firstName,
       last_name: data.lastName,

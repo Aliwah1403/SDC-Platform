@@ -47,6 +47,7 @@ const WaitlistCTA = () => {
 
     posthog?.capture("waitlist_signup_submitted", { source: "homepage" });
     setWaitlistStatus("submitting");
+    setWaitlistMessage("");
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -65,7 +66,8 @@ const WaitlistCTA = () => {
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         const errorMsg = typeof data.error === "string" ? data.error : "Please try again in a moment.";
-        posthog?.capture("waitlist_signup_error", { source: "homepage", reason: errorMsg });
+        const errorCode = res.status === 409 ? "already_registered" : res.status >= 500 ? "server_error" : "request_failed";
+        posthog?.capture("waitlist_signup_error", { source: "homepage", errorCode });
         setWaitlistStatus("error");
         setWaitlistMessage(errorMsg);
         return;
@@ -131,7 +133,7 @@ const WaitlistCTA = () => {
               </Button>
             </div>
             <AnimatePresence>
-              {waitlistStatus !== "idle" && (
+              {waitlistStatus !== "idle" && waitlistMessage && (
                 <motion.p
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}

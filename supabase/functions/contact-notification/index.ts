@@ -67,7 +67,14 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { first_name, last_name, email, subject, message, created_at } = payload.record;
+  if (!payload.record || typeof payload.record !== "object") {
+    return new Response(JSON.stringify({ error: "Invalid payload: missing record" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { id: submissionId, first_name, last_name, email, subject, message, created_at } = payload.record;
   if (!email || !first_name || !subject || !message) {
     console.error("[contact-notification] Missing required fields in record");
     return new Response(JSON.stringify({ error: "Missing required fields" }), {
@@ -124,7 +131,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  console.log(`[contact-notification] Admin notification sent for submission from ${first_name} ${last_name}`);
+  console.log(`[contact-notification] Admin notification sent for submission ${submissionId}`);
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },
   });

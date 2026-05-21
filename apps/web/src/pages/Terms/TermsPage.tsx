@@ -1,3 +1,5 @@
+import { Section } from "@/components/Section";
+
 const TermsPage = () => {
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
@@ -116,14 +118,5 @@ const TermsPage = () => {
     </div>
   );
 };
-
-function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <h2 className="text-2xl font-semibold tracking-tight">{heading}</h2>
-      {children}
-    </section>
-  );
-}
 
 export default TermsPage;

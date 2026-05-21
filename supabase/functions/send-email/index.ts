@@ -126,6 +126,16 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  if (!Deno.env.get("SUPABASE_URL")) {
+    console.error("[send-email] SUPABASE_URL not configured");
+    return new Response(JSON.stringify({ error: "Email service not configured" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const templateVars = template.getVars(payload);
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -143,7 +153,7 @@ Deno.serve(async (req: Request) => {
           id: template.id,
           variables: {
             FIRST_NAME: getFirstName(user),
-            ...template.getVars(payload),
+            ...templateVars,
           },
         },
       }),

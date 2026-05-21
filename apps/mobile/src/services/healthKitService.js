@@ -326,13 +326,19 @@ export async function writeBodyStats({ heightCm, weightKg, prefs = {} }) {
   if (p.writeHeight && heightCm != null) {
     try {
       await saveQuantitySample(QT.HEIGHT, "m", heightCm / 100, now, now);
-    } catch {}
+    } catch (e) {
+      console.error("[HealthKit] Failed to write HEIGHT sample:", e);
+      throw e;
+    }
   }
 
   if (p.writeWeight && weightKg != null) {
     try {
       await saveQuantitySample(QT.WEIGHT, "kg", weightKg, now, now);
-    } catch {}
+    } catch (e) {
+      console.error("[HealthKit] Failed to write WEIGHT sample:", e);
+      throw e;
+    }
   }
 }
 

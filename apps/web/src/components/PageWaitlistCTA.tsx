@@ -42,6 +42,7 @@ const PageWaitlistCTA = ({ title, description }: PageWaitlistCTAProps) => {
     }
 
     setStatus("submitting");
+    setMessage("");
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10_000);
@@ -116,7 +117,7 @@ const PageWaitlistCTA = ({ title, description }: PageWaitlistCTAProps) => {
             </Button>
           </div>
           <AnimatePresence>
-            {status !== "idle" && (
+            {status !== "idle" && message && (
               <motion.p
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
