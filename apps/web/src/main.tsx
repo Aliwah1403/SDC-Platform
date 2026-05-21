@@ -1,11 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import posthog from "posthog-js";
+import { PostHogProvider, PostHogErrorBoundary } from "@posthog/react";
 
 import PageLayout from "./layouts/PageLayout";
 import Homepage from "./pages/Homepage/Homepage";
 
 import "./index.css";
+
+posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+  api_host: import.meta.env.VITE_POSTHOG_HOST,
+  defaults: "2026-01-30",
+});
 
 const router = createBrowserRouter([
   {
@@ -36,12 +43,12 @@ const router = createBrowserRouter([
           Component: (await import("./pages/Contact/ContactPage")).default,
         }),
       },
-      {
-        path: "/faq",
-        lazy: async () => ({
-          Component: (await import("./pages/FAQ/FaqPage")).default,
-        }),
-      },
+      // {
+      //   path: "/faq",
+      //   lazy: async () => ({
+      //     Component: (await import("./pages/FAQ/FaqPage")).default,
+      //   }),
+      // },
       {
         path: "/privacy",
         lazy: async () => ({
@@ -66,6 +73,10 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <PostHogProvider client={posthog}>
+      <PostHogErrorBoundary>
+        <RouterProvider router={router} />
+      </PostHogErrorBoundary>
+    </PostHogProvider>
   </React.StrictMode>,
 );

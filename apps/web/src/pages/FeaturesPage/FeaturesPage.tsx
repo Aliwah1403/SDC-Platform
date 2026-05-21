@@ -184,13 +184,13 @@ const FeaturesPage = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       {/* ── Header ── */}
-      <motion.div
+      {/* <motion.div
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
         <Badge variant="secondary">Features</Badge>
-      </motion.div>
+      </motion.div> */}
 
       <motion.h1
         initial={{ opacity: 0, y: 18 }}

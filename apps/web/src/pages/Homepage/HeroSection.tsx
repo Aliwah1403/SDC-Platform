@@ -40,10 +40,6 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Badge variant="secondary" className="px-3 py-1 text-xs">
-          Built for Sickle Cell Disease
-        </Badge>
-
         <h1 className="mx-auto mt-6 max-w-4xl text-balance text-5xl font-semibold tracking-[-0.03em] sm:text-6xl lg:text-7xl">
           Stop piecing together symptoms from memory.
         </h1>
@@ -91,7 +87,7 @@ const HeroSection = () => {
           </AvatarGroup> */}
           <SocialProofAvatars avatars={avatars} stars={false}>
             <p className="text-sm text-muted-foreground">
-              Join 1,200+ people with Sickle Cell Disease already waiting
+              Be among the first to get early access
             </p>
           </SocialProofAvatars>
         </div>

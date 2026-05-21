@@ -1,5 +1,3 @@
-"use client";
-
 import { motion } from "motion/react";
 import type { RefObject } from "react";
 import React, { useRef } from "react";

@@ -32,11 +32,6 @@ const FAQS = [
       "Hemo is built with a privacy-first approach. Your health data is stored securely and is never sold or shared with third parties. Full details are on the Privacy page.",
   },
   {
-    question: "Is Hemo free to use?",
-    answer:
-      "Yes. Core daily logging, trend tracking, emergency SOS, and care hub tools are free. Optional paid plans unlock deeper history, AI insights, and multi-member support for families.",
-  },
-  {
     question: "When is Hemo launching?",
     answer:
       "Hemo is currently pre-launch. Waitlist members get timing updates and early access news as milestones are reached.",

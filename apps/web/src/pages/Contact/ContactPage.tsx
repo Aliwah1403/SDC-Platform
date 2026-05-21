@@ -1,10 +1,9 @@
-"use client";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-import { GlobeIcon, LoaderIcon, MailIcon, PhoneIcon } from "lucide-react";
+import { GlobeIcon, LoaderIcon, MailIcon } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
+import { usePostHog } from "@posthog/react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,7 +42,7 @@ const defaultProps: Contact2Props = {
   description:
     "Have a question about support, clinician access, partnerships, or launch timing? Send us a message and our team will get back to you.",
   phone: "+1 (555) 010-2400",
-  email: "hello@hemo-scd.com",
+  email: "info@hemo-scd.com",
   web: {
     label: "hemo-scd.com",
     url: "https://www.hemo-scd.com",
@@ -69,7 +68,6 @@ const Contact2 = (props: Props) => {
   const {
     title,
     description,
-    phone,
     email,
     web,
     formHeading,
@@ -131,13 +129,13 @@ const Contact2 = (props: Props) => {
               </p>
             </div>
             <div className="flex flex-col gap-6">
-              <a
+              {/* <a
                 href={`tel:${phone}`}
                 className="group flex items-center gap-3"
               >
                 <PhoneIcon className="size-5 text-muted-foreground" />
                 <span className="group-hover:underline">{phone}</span>
-              </a>
+              </a> */}
               <a
                 href={`mailto:${email}`}
                 className="group flex items-center gap-3"
@@ -320,10 +318,13 @@ const Contact2 = (props: Props) => {
 };
 
 const ContactPage = () => {
+  const posthog = usePostHog();
+
   const handleSubmit = async (data: ContactFormData) => {
     if (!supabase) {
       throw new Error("Contact form is unavailable. Please try again later.");
     }
+    posthog?.capture("contact_form_submitted", { subject: data.subject });
     const { error } = await supabase.from("contact_submissions").insert({
       first_name: data.firstName,
       last_name: data.lastName,
@@ -332,6 +333,7 @@ const ContactPage = () => {
       message: data.message,
     });
     if (error) throw error;
+    posthog?.capture("contact_form_success");
   };
 
   return <Contact2 onSubmit={handleSubmit} />;

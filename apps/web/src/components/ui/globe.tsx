@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 const MOVEMENT_DAMPING = 1400
 
-const GLOBE_CONFIG: COBEOptions = {
+const GLOBE_CONFIG = {
   width: 800,
   height: 800,
   onRender: () => {},
@@ -32,7 +32,7 @@ const GLOBE_CONFIG: COBEOptions = {
     { location: [34.6937, 135.5022], size: 0.05 },
     { location: [41.0082, 28.9784], size: 0.06 },
   ],
-}
+} as unknown as COBEOptions
 
 export function Globe({
   className,
@@ -83,13 +83,13 @@ export function Globe({
       ...config,
       width: widthRef.current * 2,
       height: widthRef.current * 2,
-      onRender: (state) => {
+      onRender: (state: Record<string, number>) => {
         if (!pointerInteracting.current) phiRef.current += 0.005
         state.phi = phiRef.current + rs.get()
         state.width = widthRef.current * 2
         state.height = widthRef.current * 2
       },
-    })
+    } as unknown as COBEOptions)
 
     setTimeout(() => (canvasRef.current!.style.opacity = "1"), 0)
     return () => {

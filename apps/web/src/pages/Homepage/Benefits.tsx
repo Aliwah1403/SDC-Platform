@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useRef } from "react";
 import { motion } from "motion/react";
 import {
@@ -225,7 +223,7 @@ function CommunityCluster() {
       >
         <span className="size-1.5 rounded-full bg-primary" />
         <span className="text-xs font-semibold text-primary">
-          1,200+ on the waitlist
+          Be the first to join
         </span>
       </motion.div>
     </div>

@@ -1,59 +1,45 @@
-import React from "react";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, ElementType, ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import {
-  BookIcon,
-  BookImage,
-  FrameIcon,
-  MoonIcon,
-  SunIcon,
-} from "lucide-react";
 
-import { SECONDARY_NAV_ITEMS, SOCIAL_LINKS } from "@/lib/site";
-import {
-  IconBrandFacebook,
-  IconBrandInstagram,
-  IconBrandYoutube,
-  IconBrandLinkedin,
-} from "@tabler/icons-react";
+type FooterLink = { title: string; href: string; icon?: ElementType<{ className?: string }> };
 
-const footerLinks = [
+const footerLinks: { label: string; links: FooterLink[] }[] = [
   {
     label: "Product",
     links: [
-      { title: "Features", href: "#features" },
+      { title: "Features", href: "/features" },
       // { title: "Pricing", href: "#pricing" },
-      { title: "Testimonials", href: "#testimonials" },
-      { title: "Integration", href: "/" },
+      // { title: "Testimonials", href: "#testimonials" },
+      // { title: "Integration", href: "/" },
     ],
   },
   {
     label: "Company",
     links: [
-      { title: "FAQs", href: "/faqs" },
-      { title: "About Us", href: "/about" },
+      { title: "FAQs", href: "/#faq" },
+      { title: "About Us", href: "/why-hemo" },
       { title: "Privacy Policy", href: "/privacy" },
       { title: "Terms of Services", href: "/terms" },
     ],
   },
-  {
-    label: "Resources",
-    links: [
-      { title: "Blog", href: "/blog" },
-      { title: "Changelog", href: "/changelog" },
-      { title: "Brand", href: "/brand" },
-      { title: "Help", href: "/help" },
-    ],
-  },
-  {
-    label: "Social Links",
-    links: [
-      { title: "Facebook", href: "#", icon: IconBrandFacebook },
-      { title: "Instagram", href: "#", icon: IconBrandInstagram },
-      { title: "Youtube", href: "#", icon: IconBrandYoutube },
-      { title: "LinkedIn", href: "#", icon: IconBrandLinkedin },
-    ],
-  },
+  // {
+  //   label: "Resources",
+  //   links: [
+  //     { title: "Blog", href: "/blog" },
+  //     { title: "Changelog", href: "/changelog" },
+  //     { title: "Brand", href: "/brand" },
+  //     { title: "Help", href: "/help" },
+  //   ],
+  // },
+  // {
+  //   label: "Social Links",
+  //   links: [
+  //     { title: "Facebook", href: "#", icon: IconBrandFacebook },
+  //     { title: "Instagram", href: "#", icon: IconBrandInstagram },
+  //     { title: "Youtube", href: "#", icon: IconBrandYoutube },
+  //     { title: "LinkedIn", href: "#", icon: IconBrandLinkedin },
+  //   ],
+  // },
 ];
 
 const Footer = () => {
@@ -71,7 +57,8 @@ const Footer = () => {
           </p>
         </AnimatedContainer>
 
-        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 xl:col-span-2 xl:mt-0">
+        {/* restore md:grid-cols-4 when Resources + Social Links sections are uncommented */}
+        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-2 xl:col-span-2 xl:mt-0">
           {footerLinks.map((section, index) => (
             <AnimatedContainer key={section.label} delay={0.1 + index * 0.1}>
               <div className="mb-10 md:mb-0">
