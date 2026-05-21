@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import WaitlistCTA from "../Homepage/WaitlistCTA";
 import { cn } from "@/lib/utils";
 
