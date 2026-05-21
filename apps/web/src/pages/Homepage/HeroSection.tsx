@@ -59,7 +59,7 @@ const HeroSection = () => {
             variant="outline"
             size="lg"
             className="px-8"
-            render={<a href="#story" />}
+            render={<a href="/features" />}
           >
             See how it works
           </Button>
