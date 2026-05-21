@@ -2,7 +2,6 @@ import { motion } from "framer-motion";
 
 import WaitlistCTAButton from "@/components/WaitlistCTAButton";
 import { Iphone } from "@/components/ui/iphone";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
 import HomeScreen from "@/assets/screenshots/home-screen.png";

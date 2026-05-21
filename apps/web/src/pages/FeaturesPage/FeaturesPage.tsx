@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import PageWaitlistCTA from "@/components/PageWaitlistCTA";
-import { Badge } from "@/components/ui/badge";
 import { Iphone } from "@/components/ui/iphone";
 import DailyLogScreen from "@/assets/screenshots/daily-log.png";
 import CareScreen from "@/assets/screenshots/care-screen.png";
