@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import HeroSection from "./HeroSection";
 import TrustLogoSection from "./TrustLogoSection";
 import AppFeatures from "./AppFeatures";
-import Testimonials from "./Testimonials";
 import WaitlistCTA from "./WaitlistCTA";
 import FaqSection from "./FaqSection";
 // import PricingSection from "./PricingSection";
@@ -21,10 +20,6 @@ const FAQS = [
   {
     q: "Is Hemo a replacement for emergency care?",
     a: "No. Hemo is a tracking and preparedness tool. In an emergency, contact local emergency services immediately.",
-  },
-  {
-    q: "Is Hemo free to use?",
-    a: "Yes. Core daily logging, trend tracking, emergency SOS, and care hub tools are free with no time limit.",
   },
 ];
 
@@ -81,7 +76,7 @@ const Homepage = () => {
         <TrustLogoSection />
         <AppFeatures />
         <Benefits />
-        <Testimonials />
+        {/* <Testimonials /> */}
         {/* <PricingSection /> */}
         <FaqSection />
         <WaitlistCTA />

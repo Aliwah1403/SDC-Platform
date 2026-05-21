@@ -5,15 +5,15 @@ import { Iphone } from "@/components/ui/iphone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
-import HomeScreen from "@/assets/screenshots/home-screen.jpeg";
-import CareScreen from "@/assets/screenshots/care-screen.jpeg";
-import InsightsScreen from "@/assets/screenshots/insights.jpeg";
+import HomeScreen from "@/assets/screenshots/home-screen.png";
+import CareScreen from "@/assets/screenshots/care-screen.png";
+import Streaks from "@/assets/screenshots/streaks.png";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
   { x: -290, scale: 0.8, delay: 0.45, zIndex: 1, src: CareScreen },
   { x: 0, scale: 1, delay: 0.2, zIndex: 3, src: HomeScreen },
-  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: InsightsScreen },
+  { x: 290, scale: 0.8, delay: 0.45, zIndex: 1, src: Streaks },
 ] satisfies {
   x: number;
   scale: number;
@@ -40,10 +40,6 @@ const HeroSection = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Badge variant="secondary" className="px-3 py-1 text-xs">
-          Built for Sickle Cell Disease
-        </Badge>
-
         <h1 className="mx-auto mt-6 max-w-4xl text-balance text-5xl font-semibold tracking-[-0.03em] sm:text-6xl lg:text-7xl">
           Stop piecing together symptoms from memory.
         </h1>
@@ -91,7 +87,7 @@ const HeroSection = () => {
           </AvatarGroup> */}
           <SocialProofAvatars avatars={avatars} stars={false}>
             <p className="text-sm text-muted-foreground">
-              Join 1,200+ people with Sickle Cell Disease already waiting
+              Be among the first to get early access
             </p>
           </SocialProofAvatars>
         </div>

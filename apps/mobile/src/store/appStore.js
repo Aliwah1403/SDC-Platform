@@ -248,6 +248,8 @@ export const useAppStore = create((set) => ({
     writeHydration: true,
     writeSymptoms: true,
     writeMood: true,
+    writeHeight: true,
+    writeWeight: true,
   },
 
   healthKitBaselines: null,

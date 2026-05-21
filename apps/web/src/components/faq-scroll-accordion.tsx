@@ -1,5 +1,3 @@
-"use client";
-
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
@@ -108,7 +106,7 @@ export function FAQScrollAccordion({
   const [active, setActive] = React.useState<number | null>(defaultActive);
   const itemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
   const scrollPausedRef = React.useRef(false);
-  const pauseTimerRef = React.useRef<ReturnType<typeof setTimeout>>();
+  const pauseTimerRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Callback ref for the scroll container — triggers re-render
   // when mounted so the IntersectionObserver effect can use it.

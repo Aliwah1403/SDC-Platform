@@ -53,9 +53,9 @@ const WhyHemoPage = () => {
   return (
     <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Page header */}
-      <Badge variant="secondary" className="px-3 py-1 text-xs">
+      {/* <Badge variant="secondary" className="px-3 py-1 text-xs">
         Why Hemo
-      </Badge>
+      </Badge> */}
       <h1 className="mt-4 max-w-4xl text-balance text-4xl font-semibold tracking-[-0.02em] sm:text-5xl lg:text-6xl">
         Sickle Cell Disease is already hard enough. Managing the information
         shouldn't be.

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { usePostHog } from "@posthog/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +10,13 @@ import { Label } from "@/components/ui/label";
 
 const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 if (!_supabaseUrl) {
-  console.error("VITE_SUPABASE_URL is not defined — cannot build waitlist endpoint");
+  console.error(
+    "VITE_SUPABASE_URL is not defined — cannot build waitlist endpoint",
+  );
 }
-const WAITLIST_URL = _supabaseUrl ? `${_supabaseUrl}/functions/v1/waitlist-signup` : null;
+const WAITLIST_URL = _supabaseUrl
+  ? `${_supabaseUrl}/functions/v1/waitlist-signup`
+  : null;
 
 type SubmitStatus = "idle" | "submitting" | "success" | "error";
 
@@ -20,6 +25,7 @@ const WaitlistCTA = () => {
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistStatus, setWaitlistStatus] = useState<SubmitStatus>("idle");
   const [waitlistMessage, setWaitlistMessage] = useState("");
+  const posthog = usePostHog();
 
   const handleWaitlist = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,33 +39,52 @@ const WaitlistCTA = () => {
 
     if (!WAITLIST_URL) {
       setWaitlistStatus("error");
-      setWaitlistMessage("Waitlist is temporarily unavailable. Please try again later.");
+      setWaitlistMessage(
+        "Waitlist is temporarily unavailable. Please try again later.",
+      );
       return;
     }
 
+    posthog?.capture("waitlist_signup_submitted", { source: "homepage" });
     setWaitlistStatus("submitting");
+    setWaitlistMessage("");
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10_000);
 
     try {
       const res = await fetch(WAITLIST_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: normalizedEmail, source: "homepage-modern-white-v1" }),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          source: "homepage-modern-white-v1",
+        }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        const errorMsg = typeof data.error === "string" ? data.error : "Please try again in a moment.";
+        const errorCode = res.status === 409 ? "already_registered" : res.status >= 500 ? "server_error" : "request_failed";
+        posthog?.capture("waitlist_signup_error", { source: "homepage", errorCode });
         setWaitlistStatus("error");
-        setWaitlistMessage(
-          typeof data.error === "string" ? data.error : "Please try again in a moment.",
-        );
+        setWaitlistMessage(errorMsg);
         return;
       }
-    } catch {
+    } catch (err) {
+      const message =
+        err instanceof Error && err.name === "AbortError"
+          ? "Request timed out. Please try again."
+          : "Please try again in a moment.";
       setWaitlistStatus("error");
-      setWaitlistMessage("Please try again in a moment.");
+      setWaitlistMessage(message);
       return;
+    } finally {
+      clearTimeout(timeoutId);
     }
 
+    posthog?.capture("waitlist_signup_success", { source: "homepage" });
     setWaitlistStatus("success");
     setWaitlistMessage(
       "You are on the waitlist. We will share launch updates soon.",
@@ -80,9 +105,6 @@ const WaitlistCTA = () => {
             <p className="mt-4 max-w-xl text-muted-foreground">
               Join the waitlist for launch updates and early access.
             </p>
-            <p className="mt-5 text-sm text-muted-foreground">
-              1,200+ people already waiting
-            </p>
           </div>
 
           <form onSubmit={handleWaitlist} className="space-y-3">
@@ -99,7 +121,11 @@ const WaitlistCTA = () => {
                 className="h-11 bg-white"
                 disabled={waitlistStatus === "submitting"}
               />
-              <Button type="submit" className="h-11 px-6" disabled={waitlistStatus === "submitting"}>
+              <Button
+                type="submit"
+                className="h-11 px-6"
+                disabled={waitlistStatus === "submitting"}
+              >
                 {waitlistStatus === "submitting"
                   ? "Joining..."
                   : "Join waitlist"}
@@ -107,7 +133,7 @@ const WaitlistCTA = () => {
               </Button>
             </div>
             <AnimatePresence>
-              {waitlistStatus !== "idle" && (
+              {waitlistStatus !== "idle" && waitlistMessage && (
                 <motion.p
                   initial={{ opacity: 0, y: 6 }}
                   animate={{ opacity: 1, y: 0 }}

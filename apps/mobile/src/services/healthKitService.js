@@ -33,6 +33,8 @@ const QT = {
   TEMPERATURE: "HKQuantityTypeIdentifierBodyTemperature",
   RESP_RATE: "HKQuantityTypeIdentifierRespiratoryRate",
   WATER: "HKQuantityTypeIdentifierDietaryWater",
+  HEIGHT: "HKQuantityTypeIdentifierHeight",
+  WEIGHT: "HKQuantityTypeIdentifierBodyMass",
 };
 
 const CT = {
@@ -57,6 +59,8 @@ const READ_TYPES = [
 
 const WRITE_TYPES = [
   QT.WATER,
+  QT.HEIGHT,
+  QT.WEIGHT,
   CT.MINDFUL,
   CT.FATIGUE, CT.SHORTNESS_OF_BREATH, CT.DIZZINESS,
   CT.HEADACHE, CT.NAUSEA, CT.FEVER, CT.CHEST_TIGHTNESS,
@@ -308,6 +312,33 @@ export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLe
     try {
       await saveCategorySample(CT.MINDFUL, CategoryValue.notApplicable, start, now);
     } catch {}
+  }
+}
+
+// Write height (cm) and/or weight (kg) to Apple Health.
+// Called from the Body Stats screen when the user saves with write toggles enabled.
+export async function writeBodyStats({ heightCm, weightKg, prefs = {} }) {
+  if (!isHKAvailable()) return;
+
+  const p = { writeHeight: true, writeWeight: true, ...prefs };
+  const now = new Date();
+
+  if (p.writeHeight && heightCm != null) {
+    try {
+      await saveQuantitySample(QT.HEIGHT, "m", heightCm / 100, now, now);
+    } catch (e) {
+      console.error("[HealthKit] Failed to write HEIGHT sample:", e);
+      throw e;
+    }
+  }
+
+  if (p.writeWeight && weightKg != null) {
+    try {
+      await saveQuantitySample(QT.WEIGHT, "kg", weightKg, now, now);
+    } catch (e) {
+      console.error("[HealthKit] Failed to write WEIGHT sample:", e);
+      throw e;
+    }
   }
 }
 

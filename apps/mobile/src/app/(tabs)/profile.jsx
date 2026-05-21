@@ -207,6 +207,7 @@ function Divider() {
 function SettingRow({
   icon: Icon,
   iconColor = "#A9334D",
+  iconImage,
   label,
   value,
   rightElement,
@@ -233,7 +234,11 @@ function SettingRow({
           marginRight: 12,
         }}
       >
-        <Icon size={18} color={iconColor} />
+        {iconImage ? (
+          <Image source={iconImage} style={{ width: 28, height: 28 }} resizeMode="contain" />
+        ) : (
+          <Icon size={18} color={iconColor} />
+        )}
       </View>
       <Text
         style={{
@@ -1574,8 +1579,7 @@ export default function ProfileScreen() {
               onPress={handleShareSummary}
             />
             <SettingRow
-              icon={Heart}
-              iconColor="#EF4444"
+              iconImage={require("../../../assets/images/icon-apple-health.png")}
               label="Apple Health"
               value={appleHealthConnected ? "Connected" : "Not connected"}
               rightElement="chevron"

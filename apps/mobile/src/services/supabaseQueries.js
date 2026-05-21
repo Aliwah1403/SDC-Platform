@@ -554,7 +554,7 @@ export async function fetchStreak(userId) {
 export async function acknowledgeStreakLoss(userId) {
   const { error } = await supabase
     .from('streaks')
-    .update({ current_streak: 0 })
+    .update({ current_streak: 0, updated_at: new Date().toISOString() })
     .eq('user_id', userId);
   if (error) throw error;
 }

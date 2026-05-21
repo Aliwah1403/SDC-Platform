@@ -382,6 +382,17 @@ const ICONS = {
   ointment: OintmentIcon,
   inhaler: InhalerIcon,
   injection: InjectionIcon,
+  // aliases for normalized dose-form keys
+  effervescent: TabletIcon,
+  chewable: TabletIcon,
+  lozenge: SoftgelIcon,
+  patch: OintmentIcon,
+  enema: LiquidIcon,
+  mouthwash: LiquidIcon,
+  "nasal-spray": InhalerIcon,
+  drops: LiquidIcon,
+  powder: TabletIcon,
+  spray: InhalerIcon,
 };
 
 export default function MedicationIcon({
