@@ -16,6 +16,30 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
 
 const router = createBrowserRouter([
   {
+    path: "/export-test",
+    lazy: async () => ({
+      Component: (await import("./pages/Export/ExportTestPage")).default,
+    }),
+  },
+  {
+    path: "/summary-test",
+    lazy: async () => ({
+      Component: (await import("./pages/Summary/SummaryTestPage")).default,
+    }),
+  },
+  {
+    path: "/export/:token",
+    lazy: async () => ({
+      Component: (await import("./pages/Export/ExportPage")).default,
+    }),
+  },
+  {
+    path: "/summary/:token",
+    lazy: async () => ({
+      Component: (await import("./pages/Summary/SummaryPage")).default,
+    }),
+  },
+  {
     element: <PageLayout />,
     children: [
       { path: "/", element: <Homepage /> },
@@ -28,7 +52,8 @@ const router = createBrowserRouter([
       {
         path: "/features",
         lazy: async () => ({
-          Component: (await import("./pages/FeaturesPage/FeaturesPage")).default,
+          Component: (await import("./pages/FeaturesPage/FeaturesPage"))
+            .default,
         }),
       },
       // {
