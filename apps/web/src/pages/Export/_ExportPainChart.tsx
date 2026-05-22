@@ -1,5 +1,38 @@
+import {
+  EvilAreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Grid,
+  ActiveDot,
+} from "@/components/evilcharts/charts/area-chart";
+import { type ChartConfig } from "@/components/evilcharts/ui/chart";
+import { ReferenceArea, ReferenceLine, Tooltip as RechartsTooltip } from "recharts";
 import type { FullExportData } from "@/components/pdfx/FullExportDocument";
 import { formatDay, formatDayLong } from "./_exportUtils";
+
+function fmtDDMMYYYY(iso: string) {
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y}`;
+}
+
+function PainTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: { payload: { date: string; pain: number | null } }[];
+}) {
+  if (!active || !payload?.length) return null;
+  const { date, pain } = payload[0].payload;
+  if (pain == null) return null;
+  return (
+    <div className="rounded-[10px] border border-[#F0E4E1] bg-white px-3 py-2 text-[11px] leading-snug shadow-[0_1px_8px_rgba(0,0,0,0.06)]">
+      <div className="font-semibold text-[#1A1414]">{fmtDDMMYYYY(date)}</div>
+      <div className="text-[#A9334D]">Pain: {pain}/10</div>
+    </div>
+  );
+}
 
 type HealthLog = FullExportData["healthLogs"][number];
 
@@ -9,162 +42,123 @@ interface PainChartProps {
   endISO: string;
 }
 
-export function ExportPainChart({ logs, startISO, endISO }: PainChartProps) {
-  const W = 880;
-  const H = 240;
-  const PAD = { top: 20, right: 18, bottom: 28, left: 36 };
-  const innerW = W - PAD.left - PAD.right;
-  const innerH = H - PAD.top - PAD.bottom;
+const MARGIN = { top: 20, right: 18, bottom: 28, left: 36 };
 
+const chartConfig = {
+  pain: {
+    label: "Pain level",
+    colors: {
+      light: ["#A9334D"],
+      dark: ["#A9334D"],
+    },
+  },
+} satisfies ChartConfig;
+
+export function ExportPainChart({ logs, startISO, endISO }: PainChartProps) {
+  const dayMs = 24 * 60 * 60 * 1000;
   const start = new Date(startISO + "T00:00:00").getTime();
   const end = new Date(endISO + "T00:00:00").getTime();
-  const dayMs = 24 * 60 * 60 * 1000;
   const totalDays = Math.max(1, Math.round((end - start) / dayMs));
 
-  const x = (iso: string) => {
-    const t = new Date(iso + "T00:00:00").getTime();
-    const days = (t - start) / dayMs;
-    return PAD.left + (days / totalDays) * innerW;
-  };
-  const y = (p: number) => PAD.top + innerH - (p / 10) * innerH;
+  const logMap = new Map(logs.map((l) => [l.date, l]));
 
-  const points = logs.map((l) => ({ ...l, cx: x(l.date), cy: y(l.pain_level ?? 0) }));
+  const data = Array.from({ length: totalDays + 1 }, (_, i) => {
+    const t = new Date(start + i * dayMs);
+    const iso = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+    const log = logMap.get(iso);
+    return { date: iso, pain: log?.pain_level ?? null };
+  });
 
-  const linePath =
-    points.length > 1
-      ? points.reduce((acc, p, i) => {
-          if (i === 0) return `M ${p.cx} ${p.cy}`;
-          const prev = points[i - 1];
-          const cx1 = prev.cx + (p.cx - prev.cx) / 2;
-          const cy1 = prev.cy;
-          const cx2 = prev.cx + (p.cx - prev.cx) / 2;
-          const cy2 = p.cy;
-          return acc + ` C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p.cx} ${p.cy}`;
-        }, "")
-      : "";
-
-  const areaPath = linePath
-    ? linePath +
-      ` L ${points[points.length - 1].cx} ${PAD.top + innerH} L ${points[0].cx} ${PAD.top + innerH} Z`
-    : "";
+  const xTicks: string[] = [];
+  for (let i = 0; i <= totalDays; i += 7) {
+    const t = new Date(start + i * dayMs);
+    xTicks.push(
+      `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`,
+    );
+  }
+  if (xTicks[xTicks.length - 1] !== endISO) xTicks.push(endISO);
 
   const crisis = logs.length
-    ? logs.reduce((a, b) => ((b.pain_level ?? 0) > (a.pain_level ?? 0) ? b : a), logs[0])
+    ? logs.reduce(
+        (a, b) => ((b.pain_level ?? 0) > (a.pain_level ?? 0) ? b : a),
+        logs[0],
+      )
     : null;
-  const crisisX = crisis ? x(crisis.date) : 0;
-  const crisisY = crisis ? y(crisis.pain_level ?? 0) : 0;
 
-  const isoAtOffset = (i: number) => {
-    const t = new Date(start + i * dayMs);
-    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
-  };
-
-  const ticks: { x: number; label: string }[] = [];
-  for (let i = 0; i <= totalDays; i += 7) {
-    const iso = isoAtOffset(i);
-    ticks.push({ x: x(iso), label: formatDay(iso) });
-  }
-  if (ticks.length === 0 || ticks[ticks.length - 1].label !== formatDay(endISO)) {
-    ticks.push({ x: x(endISO), label: formatDay(endISO) });
-  }
+  const crisisDayIndex = crisis
+    ? Math.round(
+        (new Date(crisis.date + "T00:00:00").getTime() - start) / dayMs,
+      )
+    : 0;
 
   return (
     <div className="relative">
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        className="block h-[240px] w-full overflow-visible"
-        aria-label="Pain level over time"
+      <EvilAreaChart
+        data={data}
+        config={chartConfig}
+        className="h-60 w-full"
+        curveType="monotone"
+        animationType="left-to-right"
+        chartProps={{ margin: MARGIN }}
       >
-        <defs>
-          <linearGradient id="hemo-pain-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#A9334D" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#A9334D" stopOpacity="0.02" />
-          </linearGradient>
-        </defs>
+        <Grid vertical={false} stroke="#F0E4E1" strokeDasharray="3 4" />
 
-        {[0, 3, 7, 10].map((v) => (
-          <g key={v}>
-            <line
-              x1={PAD.left}
-              x2={W - PAD.right}
-              y1={y(v)}
-              y2={y(v)}
-              stroke="#F0E4E1"
-              strokeWidth={1}
-              strokeDasharray={v === 0 || v === 10 ? "0" : "3 4"}
-            />
-            <text
-              x={PAD.left - 8}
-              y={y(v) + 3}
-              textAnchor="end"
-              className="fill-[#1A1414]/45 font-mono text-[10px] tracking-wider"
-            >
-              {v}
-            </text>
-          </g>
-        ))}
-
-        {ticks.map((t, i) => (
-          <text
-            key={i}
-            x={t.x}
-            y={H - 8}
-            textAnchor="middle"
-            className="fill-[#1A1414]/45 font-mono text-[10px] tracking-wider"
-          >
-            {t.label}
-          </text>
-        ))}
-
-        <rect
-          x={PAD.left}
-          y={y(10)}
-          width={innerW}
-          height={y(7) - y(10)}
-          fill="#DC2626"
-          fillOpacity={0.04}
+        <XAxis
+          dataKey="date"
+          ticks={xTicks}
+          tickFormatter={formatDay}
+          tick={{
+            fontSize: 10,
+            fill: "rgba(26,20,20,0.45)",
+            fontFamily: "monospace",
+          }}
+          height={28}
         />
 
-        <path d={areaPath} fill="url(#hemo-pain-area)" />
-        <path
-          d={linePath}
-          fill="none"
-          stroke="#A9334D"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+        <YAxis
+          domain={[0, 10]}
+          ticks={[0, 3, 7, 10]}
+          tick={{
+            fontSize: 10,
+            fill: "rgba(26,20,20,0.45)",
+            fontFamily: "monospace",
+          }}
+          width={36}
         />
 
-        {points.map((p, i) => (
-          <circle
-            key={i}
-            cx={p.cx}
-            cy={p.cy}
-            r={(p.pain_level ?? 0) >= 7 ? 5 : 3.2}
-            fill="#FFFFFF"
-            stroke={(p.pain_level ?? 0) >= 7 ? "#DC2626" : "#A9334D"}
-            strokeWidth={(p.pain_level ?? 0) >= 7 ? 2.5 : 1.6}
-          />
-        ))}
+        {/* Crisis zone band */}
+        <ReferenceArea y1={7} y2={10} fill="#DC2626" fillOpacity={0.04} stroke="none" />
 
+        {/* Vertical dashed line at crisis peak */}
         {crisis && (
-          <line
-            x1={crisisX}
-            x2={crisisX}
-            y1={crisisY - 8}
-            y2={PAD.top - 4}
+          <ReferenceLine
+            x={crisis.date}
             stroke="#DC2626"
             strokeWidth={1}
             strokeDasharray="2 3"
           />
         )}
-      </svg>
 
+        <RechartsTooltip content={<PainTooltip />} cursor={{ strokeDasharray: "3 3" }} />
+
+        <Area
+          dataKey="pain"
+          variant="gradient"
+          strokeVariant="solid"
+          connectNulls
+        >
+          <ActiveDot variant="colored-border" />
+        </Area>
+      </EvilAreaChart>
+
+      {/* Crisis callout card */}
       {crisis && (
         <div
-          className="pointer-events-none absolute max-w-[160px] -translate-x-1/2 -translate-y-2 rounded-[10px] border border-[#F0E4E1] bg-white px-[11px] py-2 text-[11px] leading-snug text-[#781D11] shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
-          style={{ left: `${(crisisX / W) * 100}%`, top: 0 }}
+          className="pointer-events-none absolute max-w-40 -translate-x-1/2 -translate-y-2 rounded-[10px] border border-[#F0E4E1] bg-white px-2.75 py-2 text-[11px] leading-snug text-[#781D11] shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
+          style={{
+            left: `calc(${MARGIN.left}px + (100% - ${MARGIN.left + MARGIN.right}px) * ${crisisDayIndex / totalDays})`,
+            top: MARGIN.top,
+          }}
         >
           <div className="font-semibold text-[#DC2626]">Crisis warning</div>
           <div>
