@@ -4,6 +4,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import posthog from "posthog-js";
 import { PostHogProvider, PostHogErrorBoundary } from "@posthog/react";
 
+import { TooltipProvider } from "@/components/ui/tooltip";
 import PageLayout from "./layouts/PageLayout";
 import Homepage from "./pages/Homepage/Homepage";
 
@@ -100,7 +101,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <PostHogProvider client={posthog}>
       <PostHogErrorBoundary>
-        <RouterProvider router={router} />
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
       </PostHogErrorBoundary>
     </PostHogProvider>
   </React.StrictMode>,
