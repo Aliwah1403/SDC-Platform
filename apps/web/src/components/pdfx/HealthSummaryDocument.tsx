@@ -1,9 +1,19 @@
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import {
+  Document,
+  Page,
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Svg,
+  Rect,
+  Defs,
+  LinearGradient,
+  Stop,
+} from "@react-pdf/renderer";
 import { PdfxThemeProvider } from "../../lib/pdfx-theme-context";
 import { theme } from "../../lib/pdfx-theme";
-import { KeyValue } from "./key-value/pdfx-key-value";
 import { PdfAlert } from "./alert/pdfx-alert";
-import { PageFooter } from "./page-footer/pdfx-page-footer";
 
 interface Medication {
   id: string;
@@ -70,12 +80,10 @@ export interface HealthSummaryData {
 }
 
 const BURGUNDY = "#A9334D";
-const CREAM = "#F8E9E7";
 const INK = "#1A1A1A";
 const MUTED = "#6B6B6B";
 const BORDER = "#F0E4E1";
 const BG = "#F8F4F0";
-const ORANGE = "#F0531C";
 
 const styles = StyleSheet.create({
   page: {
@@ -86,32 +94,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
   },
-  headerBand: {
-    backgroundColor: BURGUNDY,
-    marginHorizontal: -48,
-    marginTop: -56,
-    paddingHorizontal: 48,
-    paddingTop: 32,
-    paddingBottom: 24,
-    marginBottom: 24,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontFamily: "Helvetica-Bold",
-    color: CREAM,
-    marginBottom: 4,
-  },
-  headerSub: {
-    fontSize: 11,
-    fontFamily: "Helvetica",
-    color: "#D09F9A",
-  },
-  sectionTitle: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-    color: INK,
-    marginBottom: 8,
-    marginTop: 16,
+  masthead: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    borderBottomStyle: "solid",
+    marginBottom: 20,
   },
   statsGrid: {
     flexDirection: "row",
@@ -121,12 +111,14 @@ const styles = StyleSheet.create({
   },
   statCard: {
     width: "22%",
-    backgroundColor: BG,
+    backgroundColor: "#ffffff",
     borderRadius: 6,
     padding: 10,
     borderWidth: 1,
     borderColor: BORDER,
-    borderStyle: "solid",
+    borderTopWidth: 3,
+    borderTopColor: BURGUNDY,
+    marginBottom: 8,
   },
   statValue: {
     fontSize: 18,
@@ -139,15 +131,19 @@ const styles = StyleSheet.create({
     color: MUTED,
     fontFamily: "Helvetica",
   },
-  trendUp: { color: "#EF4444" },
-  trendDown: { color: "#10B981" },
+  statSub: {
+    fontSize: 8,
+    color: BURGUNDY,
+    fontFamily: "Helvetica",
+    marginTop: 2,
+  },
   pill: {
     backgroundColor: BG,
     borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    marginRight: 5,
-    marginBottom: 5,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginRight: 4,
+    marginBottom: 4,
     borderWidth: 1,
     borderColor: BORDER,
     borderStyle: "solid",
@@ -159,19 +155,12 @@ const styles = StyleSheet.create({
   },
   medRow: {
     flexDirection: "row",
-    paddingVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignItems: "flex-start",
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
     borderBottomStyle: "solid",
-    alignItems: "flex-start",
-  },
-  medDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: BURGUNDY,
-    marginTop: 2,
-    marginRight: 8,
   },
   medName: {
     fontSize: 10,
@@ -184,11 +173,6 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica",
     marginTop: 2,
   },
-  adherenceRow: {
-    flexDirection: "row",
-    marginTop: 4,
-    gap: 0,
-  },
   adherenceBar: {
     height: 4,
     borderRadius: 2,
@@ -197,17 +181,11 @@ const styles = StyleSheet.create({
 
 function fmt(date?: string | null): string {
   if (!date) return "—";
-  return new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-      {sub ? <Text style={[styles.statLabel, { marginTop: 2, color: "#A9334D" }]}>{sub}</Text> : null}
-    </View>
-  );
+  return new Date(date).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 function adherenceColor(pct: number): string {
@@ -216,115 +194,411 @@ function adherenceColor(pct: number): string {
   return "#EF4444";
 }
 
+function GradientStrip() {
+  return (
+    <View
+      style={{
+        height: 8,
+        marginHorizontal: -48,
+        marginTop: -56,
+        marginBottom: 0,
+      }}
+    >
+      <Svg width={595} height={8} viewBox="0 0 595 8">
+        <Defs>
+          <LinearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#D09F9A" />
+            <Stop offset="50%" stopColor="#A9334D" />
+            <Stop offset="100%" stopColor="#781D11" />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={595} height={8} fill="url(#hg)" />
+      </Svg>
+    </View>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        marginTop: 20,
+        marginBottom: 8,
+      }}
+    >
+      <View
+        style={{
+          width: 3,
+          height: 14,
+          backgroundColor: BURGUNDY,
+          borderRadius: 2,
+          marginRight: 8,
+        }}
+      />
+      <Text
+        style={{
+          fontSize: 10,
+          fontFamily: "Helvetica-Bold",
+          color: INK,
+          letterSpacing: 0.8,
+        }}
+      >
+        {title.toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <View style={styles.statCard}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+      {sub && <Text style={styles.statSub}>{sub}</Text>}
+    </View>
+  );
+}
+
+function BrandMark() {
+  const src =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/logo.png`
+      : "/logo.png";
+  return <Image src={src} style={{ width: 36, height: 36 }} />;
+}
+
+function DocFooter({ generatedAt }: { generatedAt: string }) {
+  return (
+    <>
+      <Text
+        fixed
+        style={{
+          position: "absolute",
+          bottom: 28,
+          left: 48,
+          fontSize: 8,
+          color: MUTED,
+          fontFamily: "Helvetica",
+        }}
+        render={({ pageNumber, totalPages }) =>
+          `Hemo · Health Summary · Page ${pageNumber} of ${totalPages}`
+        }
+      />
+      <Text
+        fixed
+        style={{
+          position: "absolute",
+          bottom: 28,
+          right: 48,
+          fontSize: 8,
+          color: MUTED,
+          fontFamily: "Helvetica",
+          textAlign: "right",
+        }}
+      >
+        {`Generated ${fmt(generatedAt)}`}
+      </Text>
+    </>
+  );
+}
+
 export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
-  const { profile, streak, stats, topSymptoms, topTriggers, medications, aiInsights, dateRange, periodDays } = data;
+  const {
+    profile,
+    streak,
+    stats,
+    topSymptoms,
+    topTriggers,
+    medications,
+    aiInsights,
+    dateRange,
+    periodDays,
+  } = data;
   const name = profile.full_name || profile.nickname || "Patient";
-  const period = `Last ${periodDays} days`;
+  const period = `${fmt(dateRange.start)} – ${fmt(dateRange.end)}`;
+  const activeMeds = medications.filter((m) => m.is_active);
 
   return (
     <PdfxThemeProvider theme={theme}>
-      <Document title={`Hemo Health Summary — ${name}`} author="Hemo" creator="Hemo">
+      <Document
+        title={`Hemo Health Summary — ${name}`}
+        author="Hemo"
+        creator="Hemo"
+      >
         <Page size="A4" style={styles.page}>
-          {/* Header */}
-          <View style={styles.headerBand}>
-            <Text style={styles.headerTitle}>{period} Health Summary</Text>
-            <Text style={styles.headerSub}>
-              {name} · {fmt(dateRange.start)} – {fmt(dateRange.end)} · Generated {fmt(data.generatedAt)}
-            </Text>
+          <GradientStrip />
+
+          {/* Masthead */}
+          <View style={styles.masthead}>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 8,
+                  fontFamily: "Helvetica-Bold",
+                  color: BURGUNDY,
+                  marginBottom: 6,
+                  letterSpacing: 1,
+                }}
+              >
+                HEMO HEALTH SUMMARY
+              </Text>
+              <Text
+                style={{
+                  fontSize: 22,
+                  fontFamily: "Helvetica-Bold",
+                  color: INK,
+                  marginBottom: 4,
+                }}
+              >
+                {`Last ${periodDays} Days`}
+              </Text>
+              <Text
+                style={{ fontSize: 10, fontFamily: "Helvetica", color: MUTED }}
+              >
+                {`${name} · ${period} · Generated ${fmt(data.generatedAt)}`}
+              </Text>
+            </View>
+            <BrandMark />
           </View>
 
-          {/* Profile snapshot */}
-          <KeyValue
-            items={[
-              { key: "Name", value: name },
-              { key: "SCD Type", value: profile.scd_type ?? "—" },
-              { key: "Preferred Hospital", value: profile.preferred_hospital ?? "—" },
-            ]}
-            divided
-            labelColor="mutedForeground"
-            style={{ marginBottom: 4 }}
-          />
+          {/* Profile pills */}
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 6,
+              marginBottom: 4,
+            }}
+          >
+            <View
+              style={{
+                borderRadius: 20,
+                backgroundColor: BG,
+                paddingHorizontal: 8,
+                paddingVertical: 3,
+                borderWidth: 1,
+                borderColor: BORDER,
+                borderStyle: "solid",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 9,
+                  color: INK,
+                  fontFamily: "Helvetica-Bold",
+                }}
+              >
+                {name}
+              </Text>
+            </View>
+            {profile.scd_type && (
+              <View
+                style={{
+                  borderRadius: 20,
+                  backgroundColor: BG,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  borderStyle: "solid",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 9, color: MUTED, fontFamily: "Helvetica" }}
+                >
+                  {profile.scd_type}
+                </Text>
+              </View>
+            )}
+            {profile.preferred_hospital && (
+              <View
+                style={{
+                  borderRadius: 20,
+                  backgroundColor: BG,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderWidth: 1,
+                  borderColor: BORDER,
+                  borderStyle: "solid",
+                }}
+              >
+                <Text
+                  style={{ fontSize: 9, color: MUTED, fontFamily: "Helvetica" }}
+                >
+                  {profile.preferred_hospital}
+                </Text>
+              </View>
+            )}
+          </View>
 
-          {/* Stats */}
-          <Text style={styles.sectionTitle}>Period Metrics</Text>
+          {/* Period Metrics */}
+          <SectionHeader title="Period Metrics" />
           <View style={styles.statsGrid}>
-            <StatCard label="Days Logged" value={String(stats.totalDaysLogged)} sub={`of ${periodDays}`} />
-            <StatCard label="Avg Pain" value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"} />
-            <StatCard label="Avg Hydration" value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"} />
-            <StatCard label="Avg Mood" value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"} />
-            <StatCard label="Avg Sleep" value={stats.avgSleep != null ? `${stats.avgSleep}h` : "—"} />
-            <StatCard label="Avg Steps" value={stats.avgSteps != null ? String(Math.round(stats.avgSteps)) : "—"} />
-            <StatCard label="Avg Heart Rate" value={stats.avgHeartRate != null ? `${stats.avgHeartRate} bpm` : "—"} />
-            <StatCard label="Current Streak" value={String(streak.current)} sub={`Best: ${streak.longest}`} />
+            <StatCard
+              label="Days Logged"
+              value={String(stats.totalDaysLogged)}
+              sub={`of ${periodDays}`}
+            />
+            <StatCard
+              label="Avg Pain"
+              value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"}
+            />
+            <StatCard
+              label="Avg Hydration"
+              value={
+                stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"
+              }
+            />
+            <StatCard
+              label="Avg Mood"
+              value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"}
+            />
+            <StatCard
+              label="Avg Sleep"
+              value={stats.avgSleep != null ? `${stats.avgSleep}h` : "—"}
+            />
+            <StatCard
+              label="Avg Steps"
+              value={
+                stats.avgSteps != null
+                  ? String(Math.round(stats.avgSteps))
+                  : "—"
+              }
+            />
+            <StatCard
+              label="Avg Heart Rate"
+              value={
+                stats.avgHeartRate != null ? `${stats.avgHeartRate} bpm` : "—"
+              }
+            />
+            <StatCard
+              label="Current Streak"
+              value={String(streak.current)}
+              sub={`Best: ${streak.longest}`}
+            />
           </View>
 
           {/* AI Insights */}
           {aiInsights && aiInsights.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>AI Health Insights</Text>
+              <SectionHeader title="Health Insights" />
               {aiInsights.map((insight, i) => (
                 <PdfAlert
                   key={i}
-                  tone={insight.tone}
+                  variant={insight.tone === "danger" ? "error" : insight.tone}
                   title={insight.headline}
-                  description={insight.detail}
                   style={{ marginBottom: 8 }}
-                />
+                >
+                  {insight.detail}
+                </PdfAlert>
               ))}
             </>
           )}
 
-          {/* Top Symptoms & Triggers */}
+          {/* Top Symptoms */}
           {topSymptoms.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Top Symptoms This Period</Text>
+              <SectionHeader title="Top Symptoms This Period" />
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {topSymptoms.map((s) => (
                   <View key={s.name} style={styles.pill}>
-                    <Text style={styles.pillText}>{s.name} ({s.count}×)</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
-          {topTriggers.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Top Triggers This Period</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                {topTriggers.map((t) => (
-                  <View key={t.name} style={styles.pill}>
-                    <Text style={styles.pillText}>{t.name} ({t.count}×)</Text>
+                    <Text style={styles.pillText}>
+                      {s.name} ({s.count}×)
+                    </Text>
                   </View>
                 ))}
               </View>
             </>
           )}
 
-          {/* Medications */}
-          {medications.filter((m) => m.is_active).length > 0 && (
+          {/* Top Triggers */}
+          {topTriggers.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Active Medications</Text>
-              {medications.filter((m) => m.is_active).map((med) => {
-                const adherencePct = med.adherence && med.adherence.scheduled > 0
-                  ? Math.round((med.adherence.taken / med.adherence.scheduled) * 100)
-                  : null;
+              <SectionHeader title="Top Triggers This Period" />
+              <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                {topTriggers.map((t) => (
+                  <View key={t.name} style={styles.pill}>
+                    <Text style={styles.pillText}>
+                      {t.name} ({t.count}×)
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Active Medications */}
+          {activeMeds.length > 0 && (
+            <>
+              <SectionHeader title="Active Medications" />
+              {activeMeds.map((med, medIndex) => {
+                const adherencePct =
+                  med.adherence && med.adherence.scheduled > 0
+                    ? Math.round(
+                        (med.adherence.taken / med.adherence.scheduled) * 100,
+                      )
+                    : null;
                 return (
-                  <View key={med.id} style={styles.medRow} wrap={false}>
-                    <View style={styles.medDot} />
+                  <View
+                    key={med.id}
+                    style={[
+                      styles.medRow,
+                      {
+                        borderLeftWidth: 3,
+                        borderLeftColor: BURGUNDY,
+                        borderLeftStyle: "solid",
+                        backgroundColor: medIndex % 2 === 0 ? BG : "#ffffff",
+                      },
+                    ]}
+                    wrap={false}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.medName}>{med.name}</Text>
                       <Text style={styles.medDetail}>
-                        {[med.dosage, med.frequency, med.category].filter(Boolean).join(" · ")}
+                        {[med.dosage, med.frequency, med.category]
+                          .filter(Boolean)
+                          .join(" · ")}
                         {med.prescribed_by ? ` · ${med.prescribed_by}` : ""}
                       </Text>
                       {adherencePct != null && (
-                        <View>
-                          <Text style={[styles.medDetail, { marginTop: 3 }]}>
-                            Adherence: {med.adherence!.taken}/{med.adherence!.scheduled} doses ({adherencePct}%)
+                        <View style={{ marginTop: 3 }}>
+                          <Text
+                            style={[
+                              styles.medDetail,
+                              { marginTop: 0, marginBottom: 2 },
+                            ]}
+                          >
+                            {`Adherence: ${med.adherence!.taken}/${med.adherence!.scheduled} doses (${adherencePct}%)`}
                           </Text>
-                          <View style={styles.adherenceRow}>
-                            <View style={[styles.adherenceBar, { flex: adherencePct, backgroundColor: adherenceColor(adherencePct) }]} />
-                            <View style={[styles.adherenceBar, { flex: 100 - adherencePct, backgroundColor: "#E5E7EB" }]} />
+                          <View style={{ flexDirection: "row" }}>
+                            <View
+                              style={[
+                                styles.adherenceBar,
+                                {
+                                  flex: adherencePct,
+                                  backgroundColor: adherenceColor(adherencePct),
+                                },
+                              ]}
+                            />
+                            <View
+                              style={[
+                                styles.adherenceBar,
+                                {
+                                  flex: 100 - adherencePct,
+                                  backgroundColor: "#E5E7EB",
+                                },
+                              ]}
+                            />
                           </View>
                         </View>
                       )}
@@ -335,10 +609,7 @@ export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
             </>
           )}
 
-          <PageFooter
-            leftText="Hemo · Health Summary"
-            rightText={`Generated ${fmt(data.generatedAt)}`}
-                      />
+          <DocFooter generatedAt={data.generatedAt} />
         </Page>
       </Document>
     </PdfxThemeProvider>

@@ -1,8 +1,6 @@
-import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, View, Text, Image, StyleSheet, Svg, Rect, Defs, LinearGradient, Stop } from "@react-pdf/renderer";
 import { PdfxThemeProvider } from "../../lib/pdfx-theme-context";
 import { theme } from "../../lib/pdfx-theme";
-import { KeyValue } from "./key-value/pdfx-key-value";
-import { PageFooter } from "./page-footer/pdfx-page-footer";
 
 interface HealthLog {
   date: string;
@@ -87,7 +85,6 @@ export interface FullExportData {
 }
 
 const BURGUNDY = "#A9334D";
-const CREAM = "#F8E9E7";
 const INK = "#1A1A1A";
 const MUTED = "#6B6B6B";
 const BORDER = "#F0E4E1";
@@ -102,80 +99,104 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     fontFamily: "Helvetica",
   },
-  // Header band
-  headerBand: {
-    backgroundColor: BURGUNDY,
-    marginHorizontal: -48,
-    marginTop: -56,
-    paddingHorizontal: 48,
-    paddingTop: 32,
-    paddingBottom: 24,
-    marginBottom: 24,
+  masthead: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    borderBottomStyle: "solid",
+    marginBottom: 20,
   },
-  headerTitle: {
-    fontSize: 26,
-    fontFamily: "Helvetica-Bold",
-    color: CREAM,
+  mastheadCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    borderBottomStyle: "solid",
+    marginBottom: 20,
+  },
+  profileGrid: {
+    flexDirection: "row",
+    gap: 16,
     marginBottom: 4,
   },
-  headerSub: {
-    fontSize: 11,
-    fontFamily: "Helvetica",
-    color: "#D09F9A",
+  profileCol: {
+    flex: 1,
   },
-  // Stat card row
+  profileRow: {
+    flexDirection: "row",
+    paddingVertical: 4,
+  },
+  profileRowDivided: {
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    borderBottomStyle: "solid",
+  },
+  profileKey: {
+    flex: 1,
+    fontSize: 9,
+    color: MUTED,
+    fontFamily: "Helvetica",
+  },
+  profileValue: {
+    flex: 1,
+    fontSize: 9,
+    color: INK,
+    fontFamily: "Helvetica",
+    textAlign: "right",
+  },
   statsRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 20,
+    marginBottom: 8,
   },
   statCard: {
     flex: 1,
-    backgroundColor: BG,
+    backgroundColor: "#ffffff",
     borderRadius: 6,
     padding: 10,
     borderWidth: 1,
     borderColor: BORDER,
-    borderStyle: "solid",
+    borderTopWidth: 3,
+    borderTopColor: BURGUNDY,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: "Helvetica-Bold",
     color: BURGUNDY,
     marginBottom: 2,
   },
   statLabel: {
-    fontSize: 9,
+    fontSize: 8,
     color: MUTED,
     fontFamily: "Helvetica",
   },
-  // Section header
-  sectionTitle: {
-    fontSize: 13,
-    fontFamily: "Helvetica-Bold",
-    color: INK,
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  // Activity grid
   gridRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 3,
+    gap: 4,
     marginBottom: 4,
   },
   gridCell: {
-    width: 10,
-    height: 10,
+    width: 12,
+    height: 12,
     borderRadius: 2,
   },
-  // Log row
-  logRow: {
+  logTableHeader: {
     flexDirection: "row",
     paddingVertical: 5,
+    paddingHorizontal: 4,
+    backgroundColor: BG,
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
     borderBottomStyle: "solid",
+  },
+  logRow: {
+    flexDirection: "row",
+    paddingVertical: 5,
+    paddingHorizontal: 4,
   },
   logDate: {
     width: 70,
@@ -194,22 +215,14 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     color: MUTED,
   },
-  // Med row
   medRow: {
     flexDirection: "row",
-    paddingVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    alignItems: "flex-start",
     borderBottomWidth: 1,
     borderBottomColor: BORDER,
     borderBottomStyle: "solid",
-    alignItems: "flex-start",
-  },
-  medDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: BURGUNDY,
-    marginTop: 2,
-    marginRight: 8,
   },
   medName: {
     fontSize: 10,
@@ -259,12 +272,63 @@ function fmt(date?: string | null): string {
   return new Date(date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+function GradientStrip() {
+  return (
+    <View style={{ height: 8, marginHorizontal: -48, marginTop: -56, marginBottom: 0 }}>
+      <Svg width={595} height={8} viewBox="0 0 595 8">
+        <Defs>
+          <LinearGradient id="hg" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0%" stopColor="#D09F9A" />
+            <Stop offset="50%" stopColor="#A9334D" />
+            <Stop offset="100%" stopColor="#781D11" />
+          </LinearGradient>
+        </Defs>
+        <Rect x={0} y={0} width={595} height={8} fill="url(#hg)" />
+      </Svg>
+    </View>
+  );
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20, marginBottom: 8 }}>
+      <View style={{ width: 3, height: 14, backgroundColor: BURGUNDY, borderRadius: 2, marginRight: 8 }} />
+      <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: INK, letterSpacing: 0.8 }}>
+        {title.toUpperCase()}
+      </Text>
+    </View>
+  );
+}
+
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.statCard}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
+  );
+}
+
+function BrandMark() {
+  const src = typeof window !== "undefined" ? `${window.location.origin}/logo.png` : "/logo.png";
+  return <Image src={src} style={{ width: 36, height: 36 }} />;
+}
+
+function DocFooter({ generatedAt, label }: { generatedAt: string; label: string }) {
+  return (
+    <>
+      <Text
+        fixed
+        style={{ position: "absolute", bottom: 28, left: 48, fontSize: 8, color: MUTED, fontFamily: "Helvetica" }}
+        render={({ pageNumber, totalPages }) => `Hemo · ${label} · Page ${pageNumber} of ${totalPages}`}
+      />
+      <Text
+        fixed
+        style={{ position: "absolute", bottom: 28, right: 48, fontSize: 8, color: MUTED, fontFamily: "Helvetica", textAlign: "right" }}
+      >
+        {`Generated ${fmt(generatedAt)}`}
+      </Text>
+    </>
   );
 }
 
@@ -279,7 +343,6 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
   const summaryMap: Record<string, DailySummary> = {};
   for (const s of dailySummaries) summaryMap[s.date] = s;
 
-  // Build sorted date list spanning the range
   const allDates: string[] = [];
   const start = new Date(dateRange.start);
   const end = new Date(dateRange.end);
@@ -287,71 +350,97 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
     allDates.push(d.toISOString().split("T")[0]);
   }
 
-  // Grid rows of 26 per row
   const COLS = 26;
   const gridRows: string[][] = [];
   for (let i = 0; i < allDates.length; i += COLS) {
     gridRows.push(allDates.slice(i, i + COLS));
   }
 
+  const profileLeft = [
+    { key: "Full Name", value: name },
+    { key: "Date of Birth", value: fmt(profile.dob) },
+    { key: "SCD Type", value: profile.scd_type ?? "—" },
+  ];
+  const profileRight = [
+    { key: "Blood Type", value: profile.blood_type ?? "—" },
+    { key: "Height / Weight", value: profile.height ? `${profile.height} cm / ${profile.weight ?? "—"} kg` : "—" },
+    { key: "Preferred Hospital", value: profile.preferred_hospital ?? "—" },
+  ];
+
   return (
     <PdfxThemeProvider theme={theme}>
       <Document title={`Hemo Health Export — ${name}`} author="Hemo" creator="Hemo">
-        {/* ─── Page 1: Overview ─── */}
+
+        {/* ── Page 1: Overview ── */}
         <Page size="A4" style={styles.page}>
-          {/* Header */}
-          <View style={styles.headerBand} fixed>
-            <Text style={styles.headerTitle}>Health Export — {name}</Text>
-            <Text style={styles.headerSub}>Period: {period} · Generated {fmt(data.generatedAt)}</Text>
+          <GradientStrip />
+
+          {/* Masthead */}
+          <View style={styles.masthead}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: BURGUNDY, marginBottom: 6, letterSpacing: 1 }}>
+                HEMO HEALTH EXPORT
+              </Text>
+              <Text style={{ fontSize: 22, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 4 }}>
+                {name}
+              </Text>
+              <Text style={{ fontSize: 10, fontFamily: "Helvetica", color: MUTED }}>
+                {`Period: ${period} · Generated ${fmt(data.generatedAt)}`}
+              </Text>
+            </View>
+            <BrandMark />
           </View>
 
-          {/* Profile */}
-          <Text style={styles.sectionTitle}>Profile</Text>
-          <KeyValue
-            items={[
-              { key: "Name", value: name },
-              { key: "Date of Birth", value: fmt(profile.dob) },
-              { key: "SCD Type", value: profile.scd_type ?? "—" },
-              { key: "Blood Type", value: profile.blood_type ?? "—" },
-              { key: "Height / Weight", value: profile.height ? `${profile.height} cm / ${profile.weight ?? "—"} kg` : "—" },
-              { key: "Preferred Hospital", value: profile.preferred_hospital ?? "—" },
-            ]}
-            divided
-            labelColor="mutedForeground"
-          />
+          {/* Profile — 2-column */}
+          <SectionHeader title="Profile" />
+          <View style={styles.profileGrid}>
+            <View style={styles.profileCol}>
+              {profileLeft.map((item, i) => (
+                <View key={item.key} style={[styles.profileRow, i < profileLeft.length - 1 ? styles.profileRowDivided : {}]}>
+                  <Text style={styles.profileKey}>{item.key}</Text>
+                  <Text style={styles.profileValue}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.profileCol}>
+              {profileRight.map((item, i) => (
+                <View key={item.key} style={[styles.profileRow, i < profileRight.length - 1 ? styles.profileRowDivided : {}]}>
+                  <Text style={styles.profileKey}>{item.key}</Text>
+                  <Text style={styles.profileValue}>{item.value}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
-          {/* Stats row */}
-          <Text style={styles.sectionTitle}>Period Snapshot</Text>
+          {/* Period Snapshot */}
+          <SectionHeader title="Period Snapshot" />
           <View style={styles.statsRow}>
             <StatCard label="Days Logged" value={String(stats.totalDaysLogged)} />
             <StatCard label="Avg Pain" value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"} />
             <StatCard label="Avg Hydration" value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"} />
             <StatCard label="Avg Mood" value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"} />
           </View>
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, { marginBottom: 0 }]}>
             <StatCard label="Avg Sleep" value={stats.avgSleep != null ? `${stats.avgSleep}h` : "—"} />
             <StatCard label="Avg Steps" value={stats.avgSteps != null ? String(Math.round(stats.avgSteps)) : "—"} />
             <StatCard label="Avg Heart Rate" value={stats.avgHeartRate != null ? `${stats.avgHeartRate} bpm` : "—"} />
-            <StatCard label="Streak (Best)" value={String(streak.longest)} />
+            <StatCard label="Best Streak" value={String(streak.longest)} />
           </View>
 
-          {/* Activity grid */}
-          <Text style={styles.sectionTitle}>Logging Activity</Text>
+          {/* Logging Activity heatmap */}
+          <SectionHeader title="Logging Activity" />
           {gridRows.map((row, ri) => (
             <View key={ri} style={styles.gridRow}>
               {row.map((date) => {
                 const logged = !!logsMap[date] || !!summaryMap[date];
                 const pain = logsMap[date]?.pain_level ?? summaryMap[date]?.pain_level;
                 return (
-                  <View
-                    key={date}
-                    style={[styles.gridCell, { backgroundColor: logged ? painColor(pain) : "#E5E7EB" }]}
-                  />
+                  <View key={date} style={[styles.gridCell, { backgroundColor: logged ? painColor(pain) : "#E5E7EB" }]} />
                 );
               })}
             </View>
           ))}
-          <View style={{ flexDirection: "row", gap: 12, marginTop: 6 }}>
+          <View style={{ flexDirection: "row", gap: 12, marginTop: 6, marginBottom: 4 }}>
             {[
               { color: "#10B981", label: "No/low pain" },
               { color: "#FDE047", label: "Moderate" },
@@ -359,16 +448,16 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
               { color: "#E5E7EB", label: "Not logged" },
             ].map((item) => (
               <View key={item.label} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: item.color }} />
+                <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: item.color }} />
                 <Text style={{ fontSize: 8, color: MUTED, fontFamily: "Helvetica" }}>{item.label}</Text>
               </View>
             ))}
           </View>
 
-          {/* Top symptoms + triggers */}
+          {/* Symptoms */}
           {topSymptoms.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Most Reported Symptoms</Text>
+              <SectionHeader title="Most Reported Symptoms" />
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {topSymptoms.map((s) => (
                   <View key={s.name} style={styles.pill}>
@@ -378,9 +467,11 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
               </View>
             </>
           )}
+
+          {/* Triggers */}
           {topTriggers.length > 0 && (
             <>
-              <Text style={styles.sectionTitle}>Most Reported Triggers</Text>
+              <SectionHeader title="Most Reported Triggers" />
               <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
                 {topTriggers.map((t) => (
                   <View key={t.name} style={styles.pill}>
@@ -391,27 +482,47 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
             </>
           )}
 
-          <PageFooter
-            leftText="Hemo · Health Export"
-            rightText={`Generated ${fmt(data.generatedAt)}`}
-                      />
+          <DocFooter generatedAt={data.generatedAt} label="Health Export" />
         </Page>
 
-        {/* ─── Page 2: Medications ─── */}
+        {/* ── Page 2: Medications ── */}
         {medications.length > 0 && (
           <Page size="A4" style={styles.page}>
-            <View style={styles.headerBand}>
-              <Text style={styles.headerTitle}>Medication List</Text>
-              <Text style={styles.headerSub}>{name} · {period}</Text>
+            <GradientStrip />
+
+            <View style={styles.mastheadCompact}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: BURGUNDY, marginBottom: 4, letterSpacing: 1 }}>
+                  HEMO HEALTH EXPORT
+                </Text>
+                <Text style={{ fontSize: 16, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 2 }}>
+                  Medication List
+                </Text>
+                <Text style={{ fontSize: 9, fontFamily: "Helvetica", color: MUTED }}>
+                  {`${name} · ${period}`}
+                </Text>
+              </View>
+              <BrandMark />
             </View>
 
-            {medications.map((med) => {
+            {medications.map((med, medIndex) => {
               const adherencePct = med.adherence && med.adherence.scheduled > 0
                 ? Math.round((med.adherence.taken / med.adherence.scheduled) * 100)
                 : null;
               return (
-                <View key={med.id} style={styles.medRow} wrap={false}>
-                  <View style={[styles.medDot, { backgroundColor: med.is_active ? BURGUNDY : MUTED }]} />
+                <View
+                  key={med.id}
+                  style={[
+                    styles.medRow,
+                    {
+                      borderLeftWidth: 3,
+                      borderLeftColor: med.is_active ? BURGUNDY : MUTED,
+                      borderLeftStyle: "solid",
+                      backgroundColor: medIndex % 2 === 0 ? BG : "#ffffff",
+                    },
+                  ]}
+                  wrap={false}
+                >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.medName}>{med.name}{!med.is_active ? " (inactive)" : ""}</Text>
                     <Text style={styles.medDetail}>
@@ -421,9 +532,9 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
                     {adherencePct != null && (
                       <View style={{ marginTop: 4 }}>
                         <Text style={{ fontSize: 8, color: MUTED, fontFamily: "Helvetica", marginBottom: 2 }}>
-                          Adherence: {med.adherence!.taken}/{med.adherence!.scheduled} doses ({adherencePct}%)
+                          {`Adherence: ${med.adherence!.taken}/${med.adherence!.scheduled} doses (${adherencePct}%)`}
                         </Text>
-                        <View style={{ flexDirection: "row", gap: 0 }}>
+                        <View style={{ flexDirection: "row" }}>
                           <View style={[styles.adherenceBar, { flex: adherencePct, backgroundColor: adherencePct >= 80 ? "#10B981" : adherencePct >= 50 ? "#F59E0B" : "#EF4444" }]} />
                           <View style={[styles.adherenceBar, { flex: 100 - adherencePct, backgroundColor: "#E5E7EB" }]} />
                         </View>
@@ -434,36 +545,52 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
               );
             })}
 
-            <PageFooter
-              leftText="Hemo · Health Export"
-              rightText={`Generated ${fmt(data.generatedAt)}`}
-                          />
+            <DocFooter generatedAt={data.generatedAt} label="Health Export" />
           </Page>
         )}
 
-        {/* ─── Page 3+: Daily Logs ─── */}
+        {/* ── Page 3+: Daily Logs ── */}
         {healthLogs.length > 0 && (
           <Page size="A4" style={styles.page}>
-            <View style={styles.headerBand}>
-              <Text style={styles.headerTitle}>Daily Health Logs</Text>
-              <Text style={styles.headerSub}>{name} · {period}</Text>
+            <GradientStrip />
+
+            <View style={styles.mastheadCompact}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: BURGUNDY, marginBottom: 4, letterSpacing: 1 }}>
+                  HEMO HEALTH EXPORT
+                </Text>
+                <Text style={{ fontSize: 16, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 2 }}>
+                  Daily Health Logs
+                </Text>
+                <Text style={{ fontSize: 9, fontFamily: "Helvetica", color: MUTED }}>
+                  {`${name} · ${period}`}
+                </Text>
+              </View>
+              <BrandMark />
             </View>
 
             {/* Table header */}
-            <View style={[styles.logRow, { borderBottomWidth: 1, borderBottomColor: BORDER, borderBottomStyle: "solid" }]}>
-              <Text style={[styles.logDate, styles.logHeader]}>Date</Text>
-              <Text style={[styles.logCell, styles.logHeader]}>Pain</Text>
-              <Text style={[styles.logCell, styles.logHeader]}>Mood</Text>
-              <Text style={[styles.logCell, styles.logHeader]}>Hydration</Text>
+            <View style={styles.logTableHeader}>
+              <Text style={[{ width: 70 }, styles.logHeader]}>Date</Text>
+              <Text style={[{ flex: 1 }, styles.logHeader]}>Pain</Text>
+              <Text style={[{ flex: 1 }, styles.logHeader]}>Mood</Text>
+              <Text style={[{ flex: 1 }, styles.logHeader]}>Hydration</Text>
               <Text style={[{ flex: 2 }, styles.logHeader]}>Symptoms / Notes</Text>
             </View>
 
-            {healthLogs.map((log) => (
-              <View key={log.date} style={styles.logRow} wrap={false}>
+            {healthLogs.map((log, logIndex) => (
+              <View
+                key={log.date}
+                style={[styles.logRow, { backgroundColor: logIndex % 2 === 0 ? "#ffffff" : BG }]}
+                wrap={false}
+              >
                 <Text style={styles.logDate}>{fmt(log.date)}{log.is_repaired ? " ✦" : ""}</Text>
-                <Text style={[styles.logCell, { color: painColor(log.pain_level) }]}>
-                  {log.pain_level != null ? `${log.pain_level}/10` : "—"}
-                </Text>
+                <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                  <View style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: painColor(log.pain_level), marginRight: 4 }} />
+                  <Text style={{ fontSize: 9, color: INK, fontFamily: "Helvetica" }}>
+                    {log.pain_level != null ? `${log.pain_level}/10` : "—"}
+                  </Text>
+                </View>
                 <Text style={styles.logCell}>{log.mood != null ? `${log.mood}/5` : "—"}</Text>
                 <Text style={styles.logCell}>{log.hydration != null ? `${log.hydration}/10` : "—"}</Text>
                 <Text style={[styles.logCell, { flex: 2 }]}>
@@ -476,12 +603,10 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
               <Text style={{ fontSize: 8, color: MUTED, fontFamily: "Helvetica" }}>✦ Repaired entry</Text>
             </View>
 
-            <PageFooter
-              leftText="Hemo · Health Export"
-              rightText={`Generated ${fmt(data.generatedAt)}`}
-                          />
+            <DocFooter generatedAt={data.generatedAt} label="Health Export" />
           </Page>
         )}
+
       </Document>
     </PdfxThemeProvider>
   );
