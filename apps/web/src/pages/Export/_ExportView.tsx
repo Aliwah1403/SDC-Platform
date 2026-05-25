@@ -1,6 +1,6 @@
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { Download, ExternalLink, Lock, Flame, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Lock, Flame, Calendar } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   FullExportDocument,
   type FullExportData,
@@ -13,75 +13,10 @@ import {
   formatDayLong,
   painColor,
 } from "./_exportUtils";
+import { ChartCard21 } from "@/components/chart-card21";
 import { ExportPainChart } from "./_ExportPainChart";
 import { ExportHeatmap } from "./_ExportHeatmap";
-
-// ── Utility bar ──────────────────────────────────────────────────────────────
-
-function UtilityBar({
-  data,
-  testMode,
-}: {
-  data: FullExportData;
-  testMode?: boolean;
-}) {
-  const firstName =
-    data.profile.nickname || data.profile.full_name?.split(" ")[0] || "Patient";
-  const filename = `hemo-export-${firstName.toLowerCase()}.pdf`;
-
-  return (
-    <div className="sticky top-0 z-30 border-b border-[#F0E4E1] bg-[#F8F4F0]/85 backdrop-blur supports-[backdrop-filter]:bg-[#F8F4F0]/65">
-      <div className="mx-auto flex max-w-[960px] items-center gap-4 px-6 py-3 max-sm:px-4">
-        {/* Hemo Logo */}
-        <a href="/" className="relative z-20 mr-4 flex items-center px-2 py-1">
-          <img src="/logo.png" alt="Hemo" className="h-9 w-9" />
-          <span className="text-sm font-bold text-primary">Hemo</span>
-        </a>
-
-        {/* Meta — middle */}
-        <div className="flex flex-1 items-center gap-2.5 text-[13px] text-[#1A1414]/65 max-md:hidden">
-          <span>
-            Shared by{" "}
-            <b className="font-semibold text-[#781D11]">{firstName}</b>
-          </span>
-          <span className="size-0.75 rounded-full bg-[#1A1414]/30" />
-          <span>Snapshot · {formatGeneratedAt(data.generatedAt)}</span>
-        </div>
-
-        {/* Actions — right */}
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <PDFDownloadLink
-            document={<FullExportDocument data={data} />}
-            fileName={filename}
-          >
-            {({ loading }) => (
-              <Button
-                size="sm"
-                variant="ghost"
-                className="gap-1.5 rounded-full text-[13px] font-semibold text-[#1A1414]/65 hover:bg-[#1A1414]/[0.07] hover:text-[#1A1414]"
-              >
-                <Download className="size-3.5" />
-                {loading ? "Preparing…" : "PDF"}
-              </Button>
-            )}
-          </PDFDownloadLink>
-          <a
-            href="https://hemo-scd.com"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button
-              size="lg"
-              className="hover:bg-primary/80 transition-colors cursor-pointer"
-            >
-              Get Hemo
-            </Button>
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { PageNav, PageFooter } from "../_PageShells";
 
 // ── Masthead ─────────────────────────────────────────────────────────────────
 
@@ -108,12 +43,6 @@ function Masthead({ data }: { data: FullExportData }) {
       />
 
       <div className="relative mx-auto max-w-5xl px-6">
-        {/* Eyebrow */}
-        <div className="mb-5 flex items-center gap-2 text-[13px] font-medium text-white/70">
-          <span className="size-2 animate-pulse rounded-full bg-white/80" />
-          Shared health snapshot
-        </div>
-
         {/* Name */}
         <h1
           className="font-bold leading-tight tracking-tight text-white"
@@ -127,10 +56,6 @@ function Masthead({ data }: { data: FullExportData }) {
           <span className="flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5 text-[13px] font-medium backdrop-blur-sm">
             <Calendar className="size-3.5 opacity-80" />
             {formatRange(data.dateRange.start, data.dateRange.end)}
-          </span>
-          <span className="flex items-center gap-1.5 rounded-full bg-black/20 px-3 py-1.5 text-[13px] font-medium backdrop-blur-sm">
-            <Flame className="size-3.5 opacity-80" />
-            {data.streak.current}-day streak
           </span>
         </div>
 
@@ -396,78 +321,31 @@ function HeatmapSection({ data }: { data: FullExportData }) {
 
 // ── Symptoms & triggers ───────────────────────────────────────────────────────
 
-function BarCol({
-  eyebrow,
-  title,
-  items,
-  accent,
-  maxCount,
-}: {
-  eyebrow: string;
-  title: string;
-  items: { name: string; count: number }[];
-  accent: string;
-  maxCount: number;
-}) {
-  return (
-    <Card>
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[1.4px] text-[#A9334D]">
-        {eyebrow}
-      </div>
-      <h3 className="mb-5 text-[18px] font-bold tracking-tight text-[#1A1A1A]">
-        {title}
-      </h3>
-      <div className="space-y-4">
-        {items.map((it) => (
-          <div key={it.name}>
-            <div className="mb-1.5 flex items-center justify-between text-[13px]">
-              <span className="font-medium text-[#1A1A1A]">{it.name}</span>
-              <span className="text-[#1A1A1A]/50">
-                {it.count}×{" "}
-                <span className="text-[#1A1A1A]/35">
-                  · {Math.round((it.count / 30) * 100)}%
-                </span>
-              </span>
-            </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-[#F0E4E1]">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${(it.count / maxCount) * 100}%`,
-                  background: accent,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  );
-}
-
 function SymptomsTriggers({ data }: { data: FullExportData }) {
   const { topSymptoms, topTriggers } = data;
-  const maxCount = Math.max(
-    ...[...topSymptoms, ...topTriggers].map((i) => i.count),
-    1,
-  );
 
   return (
     <Section eyebrow="Patterns" title="What came up, and what set it off">
       <div className="grid gap-4 sm:grid-cols-2">
-        <BarCol
-          eyebrow="Reported"
+        <ChartCard21
           title="Top symptoms"
-          items={topSymptoms}
-          accent="#A9334D"
-          maxCount={maxCount}
+          description="Most reported this period"
+          data={topSymptoms.map((s) => ({
+            label: s.name,
+            value: s.count,
+            color: "#A9334D",
+          }))}
+          className="rounded-[20px] border-[#F0E4E1] shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
         />
-        <BarCol
-          eyebrow="Suspected"
+        <ChartCard21
           title="Top triggers"
-          items={topTriggers}
-          accent="#F0531C"
-          maxCount={maxCount}
+          description="Most suspected this period"
+          data={topTriggers.map((t) => ({
+            label: t.name,
+            value: t.count,
+            color: "#781D11",
+          }))}
+          className="rounded-[20px] border-[#F0E4E1] shadow-[0_1px_8px_rgba(0,0,0,0.06)]"
         />
       </div>
     </Section>
@@ -536,17 +414,19 @@ function Medications({ data }: { data: FullExportData }) {
                     </span>
                   )}
                   {med.category && (
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "h-auto border-transparent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider",
                         med.category === "Disease-modifying"
-                          ? "bg-[#A9334D]/10 text-[#A9334D]"
+                          ? "bg-[#A9334D]/[0.08] text-[#A9334D]"
                           : med.category === "Pain management"
                             ? "bg-[#F0531C]/10 text-[#F0531C]"
-                            : "bg-[#1A1A1A]/08 text-[#1A1A1A]/60"
-                      }`}
+                            : "bg-[#1A1414]/[0.07] text-[#1A1414]/65",
+                      )}
                     >
                       {med.category}
-                    </span>
+                    </Badge>
                   )}
                 </div>
                 <div className="mt-0.5 text-[12px] text-[#1A1A1A]/50">
@@ -652,35 +532,52 @@ function NotableDays({ data }: { data: FullExportData }) {
                 {/* Chips */}
                 <div className="flex flex-wrap gap-1.5">
                   {l.pain_level != null && (
-                    <Chip
+                    <Badge
+                      variant="outline"
+                      className="border-transparent"
                       style={{
                         background: painColor(l.pain_level) + "33",
                         color: "#781D11",
                       }}
                     >
                       Pain {l.pain_level}/10
-                    </Chip>
+                    </Badge>
                   )}
                   {l.hydration != null && (
-                    <Chip style={{ background: "#D09F9A22", color: "#781D11" }}>
+                    <Badge
+                      variant="outline"
+                      className="border-transparent"
+                      style={{ background: "#D09F9A22", color: "#781D11" }}
+                    >
                       Hydration {l.hydration}/10
-                    </Chip>
+                    </Badge>
                   )}
                   {(l.symptoms ?? []).map((s) => (
-                    <Chip key={s}>{s}</Chip>
+                    <Badge
+                      key={s}
+                      variant="outline"
+                      className="border-transparent bg-[#F0E4E1] text-[#1A1414]"
+                    >
+                      {s}
+                    </Badge>
                   ))}
                   {(l.triggers ?? []).map((t) => (
-                    <Chip
+                    <Badge
                       key={t}
+                      variant="outline"
+                      className="border-transparent"
                       style={{ background: "#F0531C1A", color: "#F0531C" }}
                     >
                       {t}
-                    </Chip>
+                    </Badge>
                   ))}
                   {l.is_repaired && (
-                    <Chip style={{ background: "#1A1A1A12", color: "#1A1A1A" }}>
+                    <Badge
+                      variant="outline"
+                      className="border-transparent bg-[#1A1414]/[0.07] text-[#1A1414]"
+                    >
                       Logged later
-                    </Chip>
+                    </Badge>
                   )}
                 </div>
               </div>
@@ -689,23 +586,6 @@ function NotableDays({ data }: { data: FullExportData }) {
         </div>
       </Card>
     </Section>
-  );
-}
-
-function Chip({
-  children,
-  style,
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <span
-      className="inline-flex items-center rounded-full bg-[#F0E4E1] px-2.5 py-0.5 text-[11px] font-medium text-[#1A1A1A]"
-      style={style}
-    >
-      {children}
-    </span>
   );
 }
 
@@ -730,22 +610,11 @@ function ProfileSection({ data }: { data: FullExportData }) {
     },
     { label: "Height", value: p.height != null ? `${p.height} cm` : null },
     { label: "Weight", value: p.weight != null ? `${p.weight} kg` : null },
-    {
-      label: "Avg sleep",
-      value: data.stats.avgSleep != null ? `${data.stats.avgSleep} hrs` : null,
-    },
-    {
-      label: "Avg heart rate",
-      value:
-        data.stats.avgHeartRate != null
-          ? `${data.stats.avgHeartRate} bpm`
-          : null,
-    },
   ];
 
   return (
     <Section eyebrow="About" title="A few facts">
-      <div className="grid grid-cols-2 gap-[1px] overflow-hidden rounded-2xl border border-[#F0E4E1] bg-[#F0E4E1] sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl border border-[#F0E4E1] bg-[#F0E4E1] max-sm:grid-cols-2">
         {facts.map((f) => (
           <div key={f.label} className="bg-[#F8F4F0] px-5 py-5">
             <div className="mb-1 text-[11px] font-medium uppercase tracking-[1px] text-[#1A1A1A]/45">
@@ -779,62 +648,17 @@ function PrivacyBanner({ data }: { data: FullExportData }) {
     data.profile.nickname || data.profile.full_name?.split(" ")[0] || "Patient";
   return (
     <div className="mx-auto max-w-5xl px-6 pb-6">
-      <div className="flex gap-3 rounded-xl border-l-4 border-[#A9334D] bg-[#F8F4F0] px-5 py-4 text-[13px] text-[#1A1A1A]/70">
+      <div className="flex gap-3 rounded-xl  bg-[#F8F4F0] px-5 py-4 text-[13px] text-[#1A1A1A]/70">
         <Lock className="mt-px size-3.5 shrink-0 text-[#A9334D]" />
         <p>
           <strong className="font-semibold text-[#1A1A1A]">
             {firstName} chose what to share.
           </strong>{" "}
-          Name partially redacted. Hospital and blood type are hidden from this
-          snapshot. This link can be revoked at any time from the Hemo app.
+          Full personal information visible as shared. This link can be revoked
+          at any time from the Hemo app.
         </p>
       </div>
     </div>
-  );
-}
-
-// ── Footer ────────────────────────────────────────────────────────────────────
-
-function Footer({ data }: { data: FullExportData }) {
-  return (
-    <footer className="border-t border-[#F0E4E1] bg-white">
-      <div className="mx-auto max-w-5xl px-6 py-10">
-        <div className="flex flex-wrap items-start justify-between gap-8">
-          <div>
-            <div className="text-xl font-bold text-[#A9334D]">Hemo</div>
-            <p className="mt-1.5 max-w-xs text-[13px] leading-relaxed text-[#1A1A1A]/55">
-              A daily companion for people living with sickle cell disease.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href="https://hemoscd.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-lg border border-[#F0E4E1] px-4 py-2 text-[13px] font-medium text-[#1A1A1A] hover:bg-[#F8F4F0] transition-colors"
-            >
-              <ExternalLink className="size-3.5" />
-              View live in Hemo
-            </a>
-            <a
-              href="https://hemoscd.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="rounded-lg bg-[#F0531C] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#d44518] transition-colors"
-            >
-              Get the app
-            </a>
-          </div>
-        </div>
-        <p className="mt-8 text-[12px] leading-relaxed text-[#1A1A1A]/40">
-          This snapshot is generated automatically from daily logs in Hemo on{" "}
-          {formatGeneratedAt(data.generatedAt)}. It is a self-reported record,
-          not a clinical diagnosis or a substitute for medical advice. If you
-          are a clinician reviewing this, please discuss findings directly with
-          the patient.
-        </p>
-      </div>
-    </footer>
   );
 }
 
@@ -842,14 +666,30 @@ function Footer({ data }: { data: FullExportData }) {
 
 export default function ExportView({
   data,
-  testMode = false,
 }: {
   data: FullExportData;
   testMode?: boolean;
 }) {
+  const firstName =
+    data.profile.nickname || data.profile.full_name?.split(" ")[0] || "Patient";
+  const filename = `hemo-export-${firstName.toLowerCase()}.pdf`;
+
   return (
     <div className="min-h-screen bg-[#F8F4F0]">
-      <UtilityBar data={data} testMode={testMode} />
+      <PageNav
+        document={<FullExportDocument data={data} />}
+        fileName={filename}
+        meta={
+          <>
+            <span>
+              Shared by{" "}
+              <b className="font-semibold text-[#781D11]">{firstName}</b>
+            </span>
+            <span className="size-0.75 rounded-full bg-[#1A1414]/30" />
+            <span>Snapshot · {formatGeneratedAt(data.generatedAt)}</span>
+          </>
+        }
+      />
       <Masthead data={data} />
       <SummaryCard data={data} />
 
@@ -868,7 +708,19 @@ export default function ExportView({
         <PrivacyBanner data={data} />
       </main>
 
-      <Footer data={data} />
+      <PageFooter
+        className="bg-white"
+        containerClassName="mx-auto max-w-5xl px-6 py-10"
+        disclaimer={
+          <>
+            This snapshot is generated automatically from daily logs in Hemo on{" "}
+            {formatGeneratedAt(data.generatedAt)}. It is a self-reported record,
+            not a clinical diagnosis or a substitute for medical advice. If you
+            are a clinician reviewing this, please discuss findings directly
+            with the patient.
+          </>
+        }
+      />
     </div>
   );
 }
