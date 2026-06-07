@@ -11,7 +11,6 @@ import {
   Heart,
   BookOpen,
   Target,
-  Lock,
   X,
   Clock,
   Zap,
@@ -37,24 +36,26 @@ const HEMO = {
 };
 
 const MILESTONE_BADGE = {
-  "onboarding-done": require("../../assets/images/badges/getting-started.svg"),
-  "streak-1": require("../../assets/images/badges/first-streak.svg"),
-  "streak-3": require("../../assets/images/badges/on-track.svg"),
-  "streak-7": require("../../assets/images/badges/habit-builder.png"),
-  "streak-14": require("../../assets/images/badges/fortnight-fighter.svg"),
-  "streak-30": require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60": require("../../assets/images/badges/pattern-seeker.svg"),
-  "hydration-7": require("../../assets/images/badges/hydration-junkie.png"),
-  "care-10": require("../../assets/images/badges/self-care.svg"),
-  "learning-5": require("../../assets/images/badges/knowledge-seeker.svg"),
-  "repair-1": require("../../assets/images/badges/back-on-track.svg"),
-  "restart-1": require("../../assets/images/badges/resilient-restart.svg"),
-  "meds-streak-7": require("../../assets/images/badges/on-time.svg"),
-  "meds-first": require("../../assets/images/badges/dose-one.svg"),
-  "week-perfect": require("../../assets/images/badges/perfect-week.svg"),
-  "days-1": require("../../assets/images/badges/first-streak.svg"),
-  "days-5": require("../../assets/images/badges/getting-started.svg"),
-  // TODO: add images for days-10, days-25, days-50, days-100, symptoms-25
+  "days-1":       require("../../assets/images/badges-3/first-step.png"),
+  "days-5":       require("../../assets/images/badges-3/getting-started.png"),
+  "days-10":      require("../../assets/images/badges-3/double-digits.png"),
+  "days-25":      require("../../assets/images/badges-3/quarter-century.png"),
+  "days-50":      require("../../assets/images/badges-3/health-champion.png"),
+  "days-100":     require("../../assets/images/badges-3/century-master.png"),
+  "streak-3":     require("../../assets/images/badges-3/on-track.png"),
+  "streak-7":     require("../../assets/images/badges-3/habit-builder.png"),
+  "streak-14":    require("../../assets/images/badges-3/fortnight-fighter.png"),
+  "streak-30":    require("../../assets/images/badges-3/monthly-monster.png"),
+  "week-perfect": require("../../assets/images/badges-3/perfect-week.png"),
+  "symptoms-10":  require("../../assets/images/badges-3/pattern-seeker.png"),
+  "symptoms-25":  require("../../assets/images/badges-3/symptom-tracker.png"),
+  "hydration-7":  require("../../assets/images/badges-3/hydration-junkie.png"),
+  "care-10":      require("../../assets/images/badges-3/self-care.png"),
+  "learning-5":   require("../../assets/images/badges-3/knowledge-seeker.png"),
+  "repair-1":     require("../../assets/images/badges-3/back-on-track.png"),
+  "restart-1":    require("../../assets/images/badges-3/resilient-restart.png"),
+  "meds-first":   require("../../assets/images/badges-3/dose-one.png"),
+  "meds-streak-7": require("../../assets/images/badges-3/on-time-hero.png"),
 };
 
 export default function StreakModal() {
@@ -112,11 +113,11 @@ export default function StreakModal() {
     return parseFloat((sum / last7.length).toFixed(1));
   }, [healthData]);
   const totalEntries = healthData.length;
-  const daysLogged = healthStreak;
+  const totalDaysLogged = new Set(healthData.map((d) => d.date?.split("T")[0]).filter(Boolean)).size;
   const avgSteps = 8200;
 
   const stats = [
-    { label: "Days", value: daysLogged },
+    { label: "Days", value: totalDaysLogged },
     { label: "Entries", value: totalEntries },
     {
       label: "Avg Steps",
@@ -126,6 +127,7 @@ export default function StreakModal() {
   ];
 
   const currentStreak = healthStreak;
+  const daysLogged = totalDaysLogged;
   const symptomsLogged = healthData.reduce(
     (sum, day) => sum + (day.symptoms?.length || 0),
     0,
@@ -398,7 +400,8 @@ export default function StreakModal() {
       day: "numeric",
       year: "numeric",
     });
-    return { ...m, unlockedDate };
+    // Badge was earned at some point — keep it unlocked permanently
+    return { ...m, unlocked: true, unlockedDate };
   });
 
   const unlockedCount = milestonesWithDates.filter((m) => m.unlocked).length;
@@ -466,15 +469,27 @@ export default function StreakModal() {
         }}
       >
         <View style={{ width: "100%", aspectRatio: 1, marginBottom: 16 }}>
-          {badgeSource ? (
-            <Image
-              source={badgeSource}
+          {!isUnlocked ? (
+            <View
               style={{
                 width: "100%",
                 height: "100%",
                 borderRadius: 12,
-                opacity: isUnlocked ? 1 : 0.4,
+                backgroundColor: t.isDark ? t.surfaceElevated : "#F0E4E1",
+                alignItems: "center",
+                justifyContent: "center",
               }}
+            >
+              <Image
+                source={require("../../assets/images/lock.png")}
+                style={{ width: 40, height: 48, opacity: t.isDark ? 0.3 : 0.2 }}
+                contentFit="contain"
+              />
+            </View>
+          ) : badgeSource ? (
+            <Image
+              source={badgeSource}
+              style={{ width: "100%", height: "100%", borderRadius: 12 }}
               contentFit="cover"
             />
           ) : (
@@ -484,7 +499,6 @@ export default function StreakModal() {
                 height: "100%",
                 borderRadius: 12,
                 backgroundColor: "#A9334D",
-                opacity: isUnlocked ? 1 : 0.4,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -510,22 +524,6 @@ export default function StreakModal() {
               >
                 {milestone.id}
               </Text>
-            </View>
-          )}
-
-          {!isUnlocked && (
-            <View
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Lock size={32} color="#FFFFFF" strokeWidth={2} />
             </View>
           )}
         </View>

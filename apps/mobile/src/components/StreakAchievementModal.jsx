@@ -32,16 +32,26 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 // ── Badge images ─────────────────────────────────────────────────────────────
 
 const BADGE_MAP = {
-  "streak-1": require("../../assets/images/badges/first-streak.svg"),
-  "streak-3": require("../../assets/images/badges/on-track.svg"),
-  "streak-7": require("../../assets/images/badges/habit-builder.png"),
-  "streak-14": require("../../assets/images/badges/fortnight-fighter.svg"),
-  "streak-30": require("../../assets/images/badges/monthly-monster.svg"),
-  "streak-60": require("../../assets/images/badges/pattern-seeker.svg"),
-  "days-1": require("../../assets/images/badges/first-streak.svg"),
-  "days-5": require("../../assets/images/badges/getting-started.svg"),
-  "hydration-7": require("../../assets/images/badges/hydration-junkie.png"),
-  // TODO: add images for symptoms-10, symptoms-25, days-10, days-25, days-50, days-100
+  "days-1":       require("../../assets/images/badges-3/first-step.png"),
+  "days-5":       require("../../assets/images/badges-3/getting-started.png"),
+  "days-10":      require("../../assets/images/badges-3/double-digits.png"),
+  "days-25":      require("../../assets/images/badges-3/quarter-century.png"),
+  "days-50":      require("../../assets/images/badges-3/health-champion.png"),
+  "days-100":     require("../../assets/images/badges-3/century-master.png"),
+  "streak-3":     require("../../assets/images/badges-3/on-track.png"),
+  "streak-7":     require("../../assets/images/badges-3/habit-builder.png"),
+  "streak-14":    require("../../assets/images/badges-3/fortnight-fighter.png"),
+  "streak-30":    require("../../assets/images/badges-3/monthly-monster.png"),
+  "week-perfect": require("../../assets/images/badges-3/perfect-week.png"),
+  "symptoms-10":  require("../../assets/images/badges-3/pattern-seeker.png"),
+  "symptoms-25":  require("../../assets/images/badges-3/symptom-tracker.png"),
+  "hydration-7":  require("../../assets/images/badges-3/hydration-junkie.png"),
+  "care-10":      require("../../assets/images/badges-3/self-care.png"),
+  "learning-5":   require("../../assets/images/badges-3/knowledge-seeker.png"),
+  "repair-1":     require("../../assets/images/badges-3/back-on-track.png"),
+  "restart-1":    require("../../assets/images/badges-3/resilient-restart.png"),
+  "meds-first":   require("../../assets/images/badges-3/dose-one.png"),
+  "meds-streak-7": require("../../assets/images/badges-3/on-time-hero.png"),
 };
 
 // ── Confetti ──────────────────────────────────────────────────────────────────

@@ -3,9 +3,19 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import posthog from "posthog-js";
 import { PostHogProvider, PostHogErrorBoundary } from "@posthog/react";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import PageLayout from "./layouts/PageLayout";
 import Homepage from "./pages/Homepage/Homepage";
+import NotFoundPage from "./pages/NotFoundPage";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({
+        default: m.ReactQueryDevtools,
+      }))
+    )
+  : () => null;
 
 import "./index.css";
 
@@ -15,6 +25,30 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
 });
 
 const router = createBrowserRouter([
+  {
+    path: "/export-test",
+    lazy: async () => ({
+      Component: (await import("./pages/Export/ExportTestPage")).default,
+    }),
+  },
+  {
+    path: "/summary-test",
+    lazy: async () => ({
+      Component: (await import("./pages/Summary/SummaryTestPage")).default,
+    }),
+  },
+  {
+    path: "/export/:token",
+    lazy: async () => ({
+      Component: (await import("./pages/Export/ExportPage")).default,
+    }),
+  },
+  {
+    path: "/summary/:token",
+    lazy: async () => ({
+      Component: (await import("./pages/Summary/SummaryPage")).default,
+    }),
+  },
   {
     element: <PageLayout />,
     children: [
@@ -28,7 +62,8 @@ const router = createBrowserRouter([
       {
         path: "/features",
         lazy: async () => ({
-          Component: (await import("./pages/FeaturesPage/FeaturesPage")).default,
+          Component: (await import("./pages/FeaturesPage/FeaturesPage"))
+            .default,
         }),
       },
       // {
@@ -69,13 +104,25 @@ const router = createBrowserRouter([
       },
     ],
   },
+  { path: "*", element: <NotFoundPage /> },
 ]);
+
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <PostHogProvider client={posthog}>
       <PostHogErrorBoundary>
-        <RouterProvider router={router} />
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+          {import.meta.env.DEV && (
+            <React.Suspense fallback={null}>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </React.Suspense>
+          )}
+        </QueryClientProvider>
       </PostHogErrorBoundary>
     </PostHogProvider>
   </React.StrictMode>,
