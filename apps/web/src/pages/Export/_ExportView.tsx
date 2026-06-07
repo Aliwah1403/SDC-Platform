@@ -194,7 +194,7 @@ function AtGlance({ data }: { data: FullExportData }) {
   const { stats, streak, healthLogs } = data;
   const goodDays = healthLogs.filter((l) => (l.pain_level ?? 11) <= 2).length;
 
-  const items = [
+  const items: { label: string; value: string; unit?: string; foot?: string; footGood?: boolean; footWarn?: boolean }[] = [
     {
       label: "Days logged",
       value: String(stats.totalDaysLogged),
@@ -211,9 +211,8 @@ function AtGlance({ data }: { data: FullExportData }) {
       label: "Avg hydration",
       value: stats.avgHydration != null ? stats.avgHydration.toFixed(1) : "—",
       unit: "/10",
-      ...(stats.avgHydration != null && stats.avgHydration < 8
-        ? { foot: "below goal of 8", footWarn: true }
-        : {}),
+      foot: stats.avgHydration != null && stats.avgHydration < 8 ? "below goal of 8" : undefined,
+      footWarn: stats.avgHydration != null && stats.avgHydration < 8,
     },
     {
       label: "Good days",
