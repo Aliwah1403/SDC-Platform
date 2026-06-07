@@ -1,7 +1,7 @@
 import type { FullExportData } from "@/components/pdfx/FullExportDocument";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { formatDayLong, painColor, painColorContrast, toLocalISO } from "./_exportUtils";
+import { painColor, painColorContrast, toLocalISO } from "./_exportUtils";
 
 type HealthLog = FullExportData["healthLogs"][number];
 

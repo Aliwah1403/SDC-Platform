@@ -4,7 +4,7 @@
 // This module is the single source of truth for PDFX styling tokens.
 // Update the exported `theme` object to customize component styles.
 
-interface PdfxTheme {
+export interface PdfxTheme {
   name: string;
   primitives: {
     typography: Record<string, number>;

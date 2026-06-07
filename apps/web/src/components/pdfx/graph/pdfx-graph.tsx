@@ -17,7 +17,7 @@ import {
   polarToCartesian,
   smoothPath,
   truncate,
-} from './graph.utils';
+} from './pdfx-graph.utils';
 
 /**
  * Shared Y-axis grid lines and tick labels for cartesian charts (bar, line, area).

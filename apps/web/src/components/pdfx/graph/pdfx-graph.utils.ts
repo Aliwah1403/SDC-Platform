@@ -1,3 +1,4 @@
+import type { PdfxTheme } from '../../../lib/pdfx-theme';
 import type { ChartLayout, GraphDataPoint, GraphSeries, GraphWidthOptions } from './pdfx-graph.types';
 
 /** Standard A4 page width in PDF points. */

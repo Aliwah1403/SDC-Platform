@@ -3,8 +3,6 @@ import { motion, useReducedMotion } from "motion/react";
 import {
   IconBrandFacebook,
   IconBrandInstagram,
-  IconBrandYoutube,
-  IconBrandLinkedin,
   IconBrandReddit,
   IconBrandTiktok,
 } from "@tabler/icons-react";

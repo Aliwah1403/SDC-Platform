@@ -1,4 +1,4 @@
-import { Lock, Flame, Calendar } from "lucide-react";
+import { Lock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {

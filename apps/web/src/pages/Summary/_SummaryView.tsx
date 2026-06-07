@@ -60,7 +60,6 @@ function Masthead({
       ? "border-b border-[#F0E4E1] bg-[#F8F4F0] text-[#1A1414]"
       : "border-b border-[#F0E4E1] bg-[#FFF9F9] text-[#1A1414]";
 
-  const eyebrowCls = isGradient ? "text-[#F8E9E7]/75" : "text-[#A9334D]";
   const nameCls = isGradient ? "text-white" : "text-[#781D11]";
   const metaCls = isGradient ? "text-[#F8E9E7]/85" : "text-[#1A1414]/65";
   const metaBoldCls = isGradient ? "text-white" : "text-[#1A1414]";
@@ -146,7 +145,7 @@ function Masthead({
   );
 }
 
-function PeriodTabs({
+export function PeriodTabs({
   current,
   variant,
 }: {
@@ -487,7 +486,7 @@ function Unit({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ProfileSection({
+export function ProfileSection({
   data,
   anonymization,
 }: {

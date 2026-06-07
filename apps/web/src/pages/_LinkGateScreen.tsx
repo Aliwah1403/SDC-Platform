@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 
 function LockIllustration(props: React.ComponentPropsWithoutRef<"svg">) {
   return (
@@ -64,13 +63,12 @@ export default function LinkGateScreen({ variant, sub }: { variant: Variant; sub
           {sub ?? defaultSub}
         </p>
 
-        <Button
-          size="lg"
-          className="mt-10 bg-[#A9334D] hover:bg-[#8a2940] text-white"
-          asChild
+        <a
+          href="/"
+          className="mt-10 inline-flex items-center justify-center px-6 py-3 bg-[#A9334D] hover:bg-[#8a2940] text-white font-semibold rounded-xl transition-colors text-base"
         >
-          <a href="/">Visit hemo-scd.com</a>
-        </Button>
+          Visit hemo-scd.com
+        </a>
       </motion.div>
     </div>
   );
