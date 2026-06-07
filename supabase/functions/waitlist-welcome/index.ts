@@ -85,35 +85,47 @@ Deno.serve(async (req: Request) => {
       clearTimeout(timeoutId);
       if (!res.ok) {
         const body = await res.text();
-        console.error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
-      } else {
-        console.log(`[waitlist-welcome] ${label} sent`);
+        throw new Error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
       }
+      console.log(`[waitlist-welcome] ${label} sent`);
     } catch (err) {
       clearTimeout(timeoutId);
-      const message = controller.signal.aborted ? "timed out" : "failed";
-      console.error(`[waitlist-welcome] ${label} ${message}`, err);
+      if (controller.signal.aborted) {
+        throw new Error(`[waitlist-welcome] ${label} timed out`);
+      }
+      throw err;
     }
   };
 
-  await Promise.all([
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL")?.trim();
+
+  const sends: Promise<void>[] = [
     sendEmail(
       { to: [email], template: { id: "waitlist-email" } },
       `Welcome email to ${maskEmail(email)}`,
     ),
-    sendEmail(
-      {
-        to: ["hemocell00@gmail.com"],
-        template: { id: "admin-waitlist-notification" },
-        variables: {
-          SIGNUP_EMAIL: email,
-          SOURCE: source || "landing-page",
-          SIGNED_UP_AT: signedUpAt,
+  ];
+
+  if (adminEmail) {
+    sends.push(
+      sendEmail(
+        {
+          to: [adminEmail],
+          template: { id: "admin-waitlist-notification" },
+          variables: {
+            SIGNUP_EMAIL: email,
+            SOURCE: source || "landing-page",
+            SIGNED_UP_AT: signedUpAt,
+          },
         },
-      },
-      "Admin waitlist notification",
-    ),
-  ]);
+        "Admin waitlist notification",
+      ),
+    );
+  } else {
+    console.log("[waitlist-welcome] ADMIN_NOTIFICATION_EMAIL not set, skipping admin notify");
+  }
+
+  await Promise.all(sends);
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },

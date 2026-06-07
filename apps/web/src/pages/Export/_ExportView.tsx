@@ -211,8 +211,9 @@ function AtGlance({ data }: { data: FullExportData }) {
       label: "Avg hydration",
       value: stats.avgHydration != null ? stats.avgHydration.toFixed(1) : "—",
       unit: "/10",
-      foot: "below goal of 8",
-      footWarn: true,
+      ...(stats.avgHydration != null && stats.avgHydration < 8
+        ? { foot: "below goal of 8", footWarn: true }
+        : {}),
     },
     {
       label: "Good days",
@@ -460,7 +461,7 @@ function Medications({ data }: { data: FullExportData }) {
                 </div>
               ) : (
                 <span className="shrink-0 text-[12px] font-medium text-[#1A1A1A]/40">
-                  Discontinued
+                  {isInactive ? "Discontinued" : "—"}
                 </span>
               )}
             </div>

@@ -23,7 +23,7 @@ export interface ListItem {
 
 /**
  * List of items with multiple style variants including bullet, numbered, checklist, and descriptive.
- * Props - `items` | `variant` | `gap` | `style` | `_level` | `noWrap`
+ * Props - `items` | `variant` | `gap` | `style` | `noWrap`
  * @see {@link PdfListProps}
  */
 export interface PdfListProps {
@@ -37,7 +37,6 @@ export interface PdfListProps {
    */
   gap?: 'xs' | 'sm' | 'md';
   style?: Style;
-  _level?: number;
   /**
    * @default false
    */

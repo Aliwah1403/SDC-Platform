@@ -223,9 +223,9 @@ export function TableCell({
   }
 
   const content =
-    typeof children === 'string' ? (
+    typeof children === 'string' || typeof children === 'number' ? (
       <PDFText style={[textStyle, align ? { textAlign: align } : {}, { margin: 0, padding: 0 }]}>
-        {children}
+        {String(children)}
       </PDFText>
     ) : (
       children

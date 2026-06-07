@@ -53,7 +53,7 @@ export function DataTable<T extends Record<string, unknown>>({
               {columns.map((col) => {
                 const value = row[col.key];
                 const rendered = col.render ? col.render(value, row) : null;
-                const text = rendered === null ? formatValue(value) : null;
+                const text = rendered == null ? formatValue(value) : null;
                 return (
                   <TableCell
                     key={col.key}
@@ -62,7 +62,7 @@ export function DataTable<T extends Record<string, unknown>>({
                     style={isCompact ? compact.cell : undefined}
                   >
                     {isCompact ? (
-                      rendered !== null ? (
+                      rendered != null ? (
                         rendered
                       ) : (
                         <PDFText
@@ -74,7 +74,7 @@ export function DataTable<T extends Record<string, unknown>>({
                           {text}
                         </PDFText>
                       )
-                    ) : rendered !== null ? (
+                    ) : rendered != null ? (
                       rendered
                     ) : (
                       text
@@ -92,29 +92,29 @@ export function DataTable<T extends Record<string, unknown>>({
             {columns.map((col) => {
               const value = col.key in footer ? footer[col.key] : '';
               const rendered = col.renderFooter ? col.renderFooter(value) : null;
-              const text = rendered === null ? formatValue(value) : null;
+              const text = rendered == null ? formatValue(value) : null;
               return (
                 <TableCell
                   key={col.key}
-                  footer={!!value}
+                  footer={value != null}
                   align={col.align ?? 'left'}
                   width={col.width}
                   style={isCompact ? compact.cell : undefined}
                 >
                   {isCompact ? (
-                    rendered !== null ? (
+                    rendered != null ? (
                       rendered
                     ) : (
                       <PDFText
                         style={[
-                          value ? compact.footerText : compact.text,
+                          value != null ? compact.footerText : compact.text,
                           col.align ? ({ textAlign: col.align } as Style) : {},
                         ]}
                       >
                         {text}
                       </PDFText>
                     )
-                  ) : rendered !== null ? (
+                  ) : rendered != null ? (
                     rendered
                   ) : (
                     text

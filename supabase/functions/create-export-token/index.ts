@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       startDate = date_range_start;
     } else {
       const d = new Date();
-      d.setDate(d.getDate() - period_days);
+      d.setDate(d.getDate() - (period_days - 1));
       startDate = d.toISOString().split("T")[0];
     }
 
@@ -124,6 +124,29 @@ Deno.serve(async (req) => {
         .single(),
     ]);
 
+    // Abort on unexpected query errors; allow PGRST116 (no rows) for single() selects
+    const NO_ROWS = "PGRST116";
+    for (const [name, result] of [
+      ["healthLogs", healthLogsResult],
+      ["dailySummaries", dailySummariesResult],
+      ["medications", medicationsResult],
+      ["medLogs", medLogsResult],
+    ] as [string, { error: { message: string; code?: string } | null }][]) {
+      if (result.error) {
+        console.error(`${name} query failed:`, result.error);
+        return new Response(JSON.stringify({ error: `Data fetch failed: ${name}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+    for (const [name, result] of [
+      ["profile", profileResult],
+      ["streak", streakResult],
+    ] as [string, { error: { message: string; code?: string } | null }][]) {
+      if (result.error && result.error.code !== NO_ROWS) {
+        console.error(`${name} query failed:`, result.error);
+        return new Response(JSON.stringify({ error: `Data fetch failed: ${name}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+      }
+    }
+
     const profile = profileResult.data ?? {};
     const healthLogs = healthLogsResult.data ?? [];
     const dailySummaries = dailySummariesResult.data ?? [];
@@ -136,9 +159,15 @@ Deno.serve(async (req) => {
     for (const med of medications) {
       if (!med.is_active) continue;
       const takenCount = medLogs.filter((l) => l.medication_id === med.id).length;
-      // Estimate scheduled days based on frequency vs date range days
+      // Clamp the window to when the medication actually started
+      const effectiveStart =
+        med.start_date && med.start_date > startDate ? med.start_date : startDate;
+      if (med.start_date && med.start_date > endDate) {
+        adherenceMap[med.id] = { taken: takenCount, scheduled: 0 };
+        continue;
+      }
       const rangeDays = Math.ceil(
-        (new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000,
+        (new Date(endDate).getTime() - new Date(effectiveStart).getTime()) / 86400000,
       ) + 1;
       let scheduledDays = rangeDays;
       if (med.frequency === "Twice daily") scheduledDays = rangeDays * 2;

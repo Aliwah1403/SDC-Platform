@@ -46,9 +46,8 @@ export interface PageHeaderProps {
   noWrap?: boolean;
 }
 
-const THEME_COLOR_KEYS = ['foreground','muted','mutedForeground','primary','primaryForeground','accent','destructive','success','warning','info'] as const;
 function resolveColor(value: string, colors: Record<string, string>): string {
-  return THEME_COLOR_KEYS.includes(value as (typeof THEME_COLOR_KEYS)[number]) ? colors[value] : value;
+  return value in colors ? colors[value] : value;
 }
 function createPageHeaderStyles(t: PdfxTheme) {
   const { spacing, borderRadius, fontWeights } = t.primitives;

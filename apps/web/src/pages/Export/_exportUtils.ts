@@ -38,7 +38,7 @@ export function ageFromDob(dob?: string | null): number | null {
   let age = t.getFullYear() - b.getFullYear();
   const m = t.getMonth() - b.getMonth();
   if (m < 0 || (m === 0 && t.getDate() < b.getDate())) age--;
-  return age;
+  return age < 0 ? null : age;
 }
 
 export function initialsOf(name: string): string {

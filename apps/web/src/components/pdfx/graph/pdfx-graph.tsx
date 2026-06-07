@@ -292,7 +292,7 @@ function renderLineAreaChart(
 
       {xLabels.map((label, i) => (
         <SvgText
-          key={`xlabel-${label}`}
+          key={`xlabel-${i}-${label}`}
           x={xFor(i)}
           y={chartY + chartH + 10}
           fill={textColor}
@@ -468,7 +468,7 @@ export function PdfGraph({
 }: GraphProps) {
   const theme = usePdfxTheme();
   const styles = useSafeMemo(() => createGraphStyles(theme), [theme]);
-  const palette = colors ?? getDefaultPalette(theme);
+  const palette = (Array.isArray(colors) && colors.length > 0) ? colors : getDefaultPalette(theme);
   const series = normalizeData(data);
 
   const width = useSafeMemo(() => {

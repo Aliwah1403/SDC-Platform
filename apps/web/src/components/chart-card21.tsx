@@ -36,7 +36,7 @@ const ChartCard21 = ({
   data = defaultData,
   className,
 }: ChartCard21Props) => {
-  const maxValue = Math.max(...data.map((d) => d.value));
+  const maxValue = Math.max(0, ...data.map((d) => d.value));
   const colors = [
     "var(--chart-1)",
     "var(--chart-2)",
@@ -54,7 +54,7 @@ const ChartCard21 = ({
       <CardContent>
         <div className="space-y-3">
           {data.map((step, index) => {
-            const widthPercent = (step.value / maxValue) * 100;
+            const widthPercent = maxValue > 0 ? (step.value / maxValue) * 100 : 0;
             const conversionRate =
               index > 0
                 ? ((step.value / data[index - 1].value) * 100).toFixed(1)

@@ -159,7 +159,13 @@ export function KeyValue({
         }
 
         const rowStyles: Style[] = [styles.rowVertical];
-        if (divided && !isLast) rowStyles.push(styles.divider);
+        if (divided && !isLast) {
+          const dividerStyle: Style = {};
+          if (dividerColor) dividerStyle.borderBottomColor = resolveColor(dividerColor, theme.colors);
+          if (dividerThickness) dividerStyle.borderBottomWidth = dividerThickness;
+          if (dividerMargin) dividerStyle.marginBottom = dividerMargin;
+          rowStyles.push({ ...styles.divider, ...dividerStyle });
+        }
         return (
           <View key={item.key} style={rowStyles}>
             <PDFText style={keyStyles}>{item.key}</PDFText>

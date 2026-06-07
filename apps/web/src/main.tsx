@@ -4,12 +4,18 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import posthog from "posthog-js";
 import { PostHogProvider, PostHogErrorBoundary } from "@posthog/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PageLayout from "./layouts/PageLayout";
 import Homepage from "./pages/Homepage/Homepage";
 import NotFoundPage from "./pages/NotFoundPage";
+
+const ReactQueryDevtools = import.meta.env.DEV
+  ? React.lazy(() =>
+      import("@tanstack/react-query-devtools").then((m) => ({
+        default: m.ReactQueryDevtools,
+      }))
+    )
+  : () => null;
 
 import "./index.css";
 
@@ -111,7 +117,11 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <TooltipProvider>
             <RouterProvider router={router} />
           </TooltipProvider>
-          <ReactQueryDevtools initialIsOpen={false} />
+          {import.meta.env.DEV && (
+            <React.Suspense fallback={null}>
+              <ReactQueryDevtools initialIsOpen={false} />
+            </React.Suspense>
+          )}
         </QueryClientProvider>
       </PostHogErrorBoundary>
     </PostHogProvider>

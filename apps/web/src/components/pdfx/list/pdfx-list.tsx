@@ -219,8 +219,8 @@ export function PdfList({
   gap = 'sm',
   style,
   noWrap = false,
-  _level = 0,
 }: PdfListProps) {
+  const _level = 0;
   const theme = usePdfxTheme();
   const styles = useSafeMemo(() => createListStyles(theme), [theme]);
 

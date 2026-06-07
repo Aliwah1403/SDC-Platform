@@ -145,7 +145,6 @@ export function ExportPainChart({ logs, startISO, endISO }: PainChartProps) {
           dataKey="pain"
           variant="gradient"
           strokeVariant="solid"
-          connectNulls
         >
           <ActiveDot variant="colored-border" />
         </Area>

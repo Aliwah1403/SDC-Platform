@@ -346,7 +346,12 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
   const allDates: string[] = [];
   const start = new Date(dateRange.start);
   const end = new Date(dateRange.end);
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+  // Cap heatmap to 365 days so the grid stays within a single page for long/all-time ranges
+  const cappedStart = new Date(end);
+  cappedStart.setUTCFullYear(cappedStart.getUTCFullYear() - 1);
+  cappedStart.setUTCDate(cappedStart.getUTCDate() + 1);
+  const heatmapStart = start > cappedStart ? start : cappedStart;
+  for (let d = new Date(heatmapStart); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
     allDates.push(d.toISOString().split("T")[0]);
   }
 
@@ -502,7 +507,7 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
 
             {medications.map((med, medIndex) => {
               const adherencePct = med.adherence && med.adherence.scheduled > 0
-                ? Math.round((med.adherence.taken / med.adherence.scheduled) * 100)
+                ? Math.min(100, Math.max(0, Math.round((med.adherence.taken / med.adherence.scheduled) * 100)))
                 : null;
               return (
                 <View

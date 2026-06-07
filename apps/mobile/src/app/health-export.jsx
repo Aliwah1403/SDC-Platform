@@ -41,7 +41,6 @@ const DATE_PRESETS = [
   { label: "30 days", days: 30 },
   { label: "3 months", days: 90 },
   { label: "6 months", days: 180 },
-  { label: "All time", days: null },
 ];
 
 const EXPIRY_PRESETS = [
@@ -187,14 +186,9 @@ export default function HealthExportScreen() {
     setCreating(true);
     try {
       const today = new Date().toISOString().split("T")[0];
-      let startDate;
-      if (selectedDays.days === null) {
-        startDate = "2020-01-01";
-      } else {
-        const d = new Date();
-        d.setUTCDate(d.getUTCDate() - selectedDays.days);
-        startDate = d.toISOString().split("T")[0];
-      }
+      const d = new Date();
+      d.setUTCDate(d.getUTCDate() - selectedDays.days);
+      const startDate = d.toISOString().split("T")[0];
 
       const { data, error } = await supabase.functions.invoke(
         "create-export-token",
