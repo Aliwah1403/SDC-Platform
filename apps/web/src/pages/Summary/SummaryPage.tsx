@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { Activity, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { HealthSummaryData } from "@/components/pdfx/HealthSummaryDocument";
 import SummaryView from "./_SummaryView";
+import LinkGateScreen from "../_LinkGateScreen";
 
 type TokenRow = {
   mode: string;
@@ -41,21 +41,9 @@ export default function SummaryPage() {
     })();
   }, [token]);
 
-  if (state === "loading") return <GateScreen icon={<Activity className="size-8 text-[#A9334D]" />} message="Loading health summary…" />;
-  if (state === "expired") return <GateScreen icon={<Lock className="size-8 text-[#A9334D]" />} message="This summary link has expired." sub="Request a new summary from the Hemo app." />;
-  if (state === "error" || !data) return <GateScreen icon={<Lock className="size-8 text-[#A9334D]" />} message="This link is invalid or no longer available." />;
+  if (state === "loading") return <LinkGateScreen variant="loading" />;
+  if (state === "expired") return <LinkGateScreen variant="expired" />;
+  if (state === "error" || !data) return <LinkGateScreen variant="unavailable" />;
 
   return <SummaryView data={data} />;
-}
-
-function GateScreen({ icon, message, sub }: { icon: React.ReactNode; message: string; sub?: string }) {
-  return (
-    <div className="min-h-screen bg-[#F8F4F0] flex flex-col items-center justify-center px-6">
-      <div className="bg-white border border-[#F0E4E1] rounded-2xl p-10 max-w-sm w-full text-center shadow-sm">
-        <div className="flex justify-center mb-4">{icon}</div>
-        <p className="text-base font-semibold text-[#1A1A1A]">{message}</p>
-        {sub && <p className="text-sm text-[#6B6B6B] mt-2">{sub}</p>}
-      </div>
-    </div>
-  );
 }

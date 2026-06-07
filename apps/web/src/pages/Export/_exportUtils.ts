@@ -26,7 +26,7 @@ export function formatRange(startISO: string, endISO: string): string {
 }
 
 export function formatGeneratedAt(iso: string): string {
-  const d = new Date(iso + "T00:00:00");
+  const d = new Date(iso);
   return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 

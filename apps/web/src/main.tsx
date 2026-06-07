@@ -3,10 +3,13 @@ import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import posthog from "posthog-js";
 import { PostHogProvider, PostHogErrorBoundary } from "@posthog/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import PageLayout from "./layouts/PageLayout";
 import Homepage from "./pages/Homepage/Homepage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 import "./index.css";
 
@@ -95,15 +98,21 @@ const router = createBrowserRouter([
       },
     ],
   },
+  { path: "*", element: <NotFoundPage /> },
 ]);
+
+const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <PostHogProvider client={posthog}>
       <PostHogErrorBoundary>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-        </TooltipProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <RouterProvider router={router} />
+          </TooltipProvider>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </QueryClientProvider>
       </PostHogErrorBoundary>
     </PostHogProvider>
   </React.StrictMode>,

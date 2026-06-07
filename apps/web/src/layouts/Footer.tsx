@@ -1,7 +1,19 @@
 import type { ComponentProps, ElementType, ReactNode } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import {
+  IconBrandFacebook,
+  IconBrandInstagram,
+  IconBrandYoutube,
+  IconBrandLinkedin,
+  IconBrandReddit,
+  IconBrandTiktok,
+} from "@tabler/icons-react";
 
-type FooterLink = { title: string; href: string; icon?: ElementType<{ className?: string }> };
+type FooterLink = {
+  title: string;
+  href: string;
+  icon?: ElementType<{ className?: string }>;
+};
 
 const footerLinks: { label: string; links: FooterLink[] }[] = [
   {
@@ -31,15 +43,31 @@ const footerLinks: { label: string; links: FooterLink[] }[] = [
   //     { title: "Help", href: "/help" },
   //   ],
   // },
-  // {
-  //   label: "Social Links",
-  //   links: [
-  //     { title: "Facebook", href: "#", icon: IconBrandFacebook },
-  //     { title: "Instagram", href: "#", icon: IconBrandInstagram },
-  //     { title: "Youtube", href: "#", icon: IconBrandYoutube },
-  //     { title: "LinkedIn", href: "#", icon: IconBrandLinkedin },
-  //   ],
-  // },
+  {
+    label: "Social Links",
+    links: [
+      {
+        title: "Instagram",
+        href: "https://www.instagram.com/hemo_scd",
+        icon: IconBrandInstagram,
+      },
+      {
+        title: "Facebook",
+        href: "https://www.facebook.com/share/14iFB26nd8n/?mibextid=wwXIfr",
+        icon: IconBrandFacebook,
+      },
+      {
+        title: "Reddit",
+        href: "https://www.reddit.com/u/Hemo_scd/s/NzxLV3Eafi",
+        icon: IconBrandReddit,
+      },
+      {
+        title: "TikTok",
+        href: "https://www.tiktok.com/@hemo_scd?_r=1&_t=ZS-970VFv4yGQ9",
+        icon: IconBrandTiktok,
+      },
+    ],
+  },
 ];
 
 const Footer = () => {
@@ -58,7 +86,7 @@ const Footer = () => {
         </AnimatedContainer>
 
         {/* restore md:grid-cols-4 when Resources + Social Links sections are uncommented */}
-        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-2 xl:col-span-2 xl:mt-0">
+        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-3 xl:col-span-2 xl:mt-0">
           {footerLinks.map((section, index) => (
             <AnimatedContainer key={section.label} delay={0.1 + index * 0.1}>
               <div className="mb-10 md:mb-0">
@@ -68,6 +96,8 @@ const Footer = () => {
                     <li key={link.title}>
                       <a
                         href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="hover:text-[#A9334D] inline-flex items-center transition-all duration-300"
                       >
                         {link.icon && <link.icon className="me-1 size-4" />}

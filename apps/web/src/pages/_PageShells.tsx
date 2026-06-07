@@ -10,9 +10,10 @@ interface PageNavProps {
   document: ReactElement<DocumentProps>;
   fileName: string;
   meta: ReactNode;
+  onDownload?: () => void;
 }
 
-export function PageNav({ document, fileName, meta }: PageNavProps) {
+export function PageNav({ document, fileName, meta, onDownload }: PageNavProps) {
   return (
     <div className="sticky top-0 z-30 border-b border-[#F0E4E1] bg-[#F8F4F0]/85 backdrop-blur supports-backdrop-filter:bg-[#F8F4F0]/65">
       <div className="mx-auto flex max-w-240 items-center gap-4 px-6 py-3 max-sm:px-4">
@@ -26,7 +27,7 @@ export function PageNav({ document, fileName, meta }: PageNavProps) {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <PDFDownloadLink document={document} fileName={fileName}>
+          <PDFDownloadLink document={document} fileName={fileName} onClick={onDownload}>
             {({ loading }) => (
               <Button
                 size="lg"

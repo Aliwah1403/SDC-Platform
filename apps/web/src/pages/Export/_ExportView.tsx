@@ -666,9 +666,11 @@ function PrivacyBanner({ data }: { data: FullExportData }) {
 
 export default function ExportView({
   data,
+  onPdfDownload,
 }: {
   data: FullExportData;
   testMode?: boolean;
+  onPdfDownload?: () => void;
 }) {
   const firstName =
     data.profile.nickname || data.profile.full_name?.split(" ")[0] || "Patient";
@@ -679,6 +681,7 @@ export default function ExportView({
       <PageNav
         document={<FullExportDocument data={data} />}
         fileName={filename}
+        onDownload={onPdfDownload}
         meta={
           <>
             <span>

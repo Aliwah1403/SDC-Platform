@@ -612,20 +612,7 @@ export default function ProfileScreen() {
   const appLockLabel = appLockEnabled
     ? `On · ${appLockTimeout === 0 ? "Immediately" : appLockTimeout === 1 ? "1 min" : appLockTimeout === 60 ? "1 hour" : `${appLockTimeout} min`}`
     : "Off";
-  const handleExportData = () => {
-    Alert.alert(
-      "Export Health Data",
-      "Your health data will be prepared as a comprehensive PDF report.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Export",
-          onPress: () =>
-            Alert.alert("Success", "Health data export initiated!"),
-        },
-      ],
-    );
-  };
+  const handleExportData = () => router.push("/health-export");
   const handleShareSummary = async () => {
     try {
       const summary =

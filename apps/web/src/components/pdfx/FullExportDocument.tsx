@@ -414,16 +414,11 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
 
           {/* Period Snapshot */}
           <SectionHeader title="Period Snapshot" />
-          <View style={styles.statsRow}>
+          <View style={[styles.statsRow, { marginBottom: 0 }]}>
             <StatCard label="Days Logged" value={String(stats.totalDaysLogged)} />
             <StatCard label="Avg Pain" value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"} />
             <StatCard label="Avg Hydration" value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"} />
             <StatCard label="Avg Mood" value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"} />
-          </View>
-          <View style={[styles.statsRow, { marginBottom: 0 }]}>
-            <StatCard label="Avg Sleep" value={stats.avgSleep != null ? `${stats.avgSleep}h` : "—"} />
-            <StatCard label="Avg Steps" value={stats.avgSteps != null ? String(Math.round(stats.avgSteps)) : "—"} />
-            <StatCard label="Avg Heart Rate" value={stats.avgHeartRate != null ? `${stats.avgHeartRate} bpm` : "—"} />
             <StatCard label="Best Streak" value={String(streak.longest)} />
           </View>
 
@@ -600,7 +595,7 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
             ))}
 
             <View style={{ marginTop: 8 }}>
-              <Text style={{ fontSize: 8, color: MUTED, fontFamily: "Helvetica" }}>✦ Repaired entry</Text>
+              <Text style={{ fontSize: 8, color: MUTED, fontFamily: "Helvetica" }}>* Repaired entry</Text>
             </View>
 
             <DocFooter generatedAt={data.generatedAt} label="Health Export" />
