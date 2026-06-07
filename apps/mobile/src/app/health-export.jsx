@@ -28,6 +28,7 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/utils/auth/supabase";
+import { useAuthStore } from "@/utils/auth/store";
 import { usePostHog } from "posthog-react-native";
 
 const BURGUNDY = "#A9334D";
@@ -129,6 +130,8 @@ export default function HealthExportScreen() {
   const t = useTheme();
   const sheetRef = useRef(null);
   const posthog = usePostHog();
+  const { auth } = useAuthStore();
+  const userId = auth?.user?.id;
 
   const [view, setView] = useState("list"); // "list" | "create"
   const [exports, setExports] = useState([]);
@@ -154,16 +157,19 @@ export default function HealthExportScreen() {
           "token, label, date_range_start, date_range_end, expires_at, is_active, first_viewed_at, created_at",
         )
         .eq("mode", "full_export")
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
       if (error) {
         console.error("loadExports error:", error.message);
       } else {
         setExports(data ?? []);
       }
+    } catch (err) {
+      console.error("loadExports unexpected error:", err);
     } finally {
       setLoadingList(false);
     }
-  }, []);
+  }, [userId]);
 
   // Re-fetch every time we land on the list view
   useEffect(() => {
@@ -186,7 +192,7 @@ export default function HealthExportScreen() {
         startDate = "2020-01-01";
       } else {
         const d = new Date();
-        d.setDate(d.getDate() - selectedDays.days);
+        d.setUTCDate(d.getUTCDate() - selectedDays.days);
         startDate = d.toISOString().split("T")[0];
       }
 
@@ -215,6 +221,9 @@ export default function HealthExportScreen() {
         expires_in_days: selectedExpiry.value,
         has_label: !!labelInput.trim(),
       });
+    } catch (err) {
+      console.error("handleCreate unexpected error:", err);
+      Alert.alert("Error", "Failed to create export link. Please try again.");
     } finally {
       setCreating(false);
     }
@@ -258,7 +267,8 @@ export default function HealthExportScreen() {
             const { error } = await supabase
               .from("export_tokens")
               .update({ is_active: false })
-              .eq("token", selectedExport.token);
+              .eq("token", selectedExport.token)
+              .eq("user_id", userId);
             if (!error) {
               setExports((prev) =>
                 prev.map((e) =>

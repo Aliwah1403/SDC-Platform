@@ -9,6 +9,26 @@ const corsHeaders = {
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+async function isDisposableEmail(email: string): Promise<boolean> {
+  const apiKey = Deno.env.get("ABSTRACT_API_KEY");
+  if (!apiKey) return false; // fail open if key not configured
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 4_000);
+
+  try {
+    const url = `https://emailreputation.abstractapi.com/v1/?api_key=${apiKey}&email=${encodeURIComponent(email)}`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data?.email_quality?.is_disposable === true;
+  } catch {
+    return false; // fail open on timeout or network error
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,6 +58,17 @@ Deno.serve(async (req: Request) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+
+  const disposable = await isDisposableEmail(email);
+  if (disposable) {
+    return new Response(
+      JSON.stringify({ error: "Please use a permanent email address." }),
+      {
+        status: 422,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   const source =

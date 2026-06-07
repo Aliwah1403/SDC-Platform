@@ -113,7 +113,7 @@ export default function StreakModal() {
     return parseFloat((sum / last7.length).toFixed(1));
   }, [healthData]);
   const totalEntries = healthData.length;
-  const totalDaysLogged = totalEntries;
+  const totalDaysLogged = new Set(healthData.map((d) => d.date?.split("T")[0]).filter(Boolean)).size;
   const avgSteps = 8200;
 
   const stats = [
