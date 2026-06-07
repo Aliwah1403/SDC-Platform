@@ -56,7 +56,7 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const { email } = payload.record;
+  const { email, source, created_at } = payload.record;
   if (!email) {
     console.error("[waitlist-welcome] Missing email in record");
     return new Response(JSON.stringify({ error: "Missing email" }), {
@@ -65,44 +65,56 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  const signedUpAt = created_at
+    ? new Date(created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC"
+    : new Date().toISOString();
 
-  let res: Response;
-  try {
-    res = await fetch(RESEND_API_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
+  const sendEmail = async (payload: object, label: string): Promise<void> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    try {
+      const res = await fetch(RESEND_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) {
+        const body = await res.text();
+        console.error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+      } else {
+        console.log(`[waitlist-welcome] ${label} sent`);
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      const message = controller.signal.aborted ? "timed out" : "failed";
+      console.error(`[waitlist-welcome] ${label} ${message}`, err);
+    }
+  };
+
+  await Promise.all([
+    sendEmail(
+      { to: [email], template: { id: "waitlist-email" } },
+      `Welcome email to ${maskEmail(email)}`,
+    ),
+    sendEmail(
+      {
+        to: ["hemocell00@gmail.com"],
+        template: { id: "admin-waitlist-notification" },
+        variables: {
+          SIGNUP_EMAIL: email,
+          SOURCE: source || "landing-page",
+          SIGNED_UP_AT: signedUpAt,
+        },
       },
-      body: JSON.stringify({
-        to: [email],
-        template: { id: "waitlist-email" },
-      }),
-      signal: controller.signal,
-    });
-  } catch (err) {
-    clearTimeout(timeoutId);
-    const message = controller.signal.aborted ? "Resend request timed out" : "Resend request failed";
-    console.error(`[waitlist-welcome] ${message}`, err);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 502,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-  clearTimeout(timeoutId);
+      "Admin waitlist notification",
+    ),
+  ]);
 
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[waitlist-welcome] Resend error: status=${res.status} body=${body.slice(0, 300)}`);
-    return new Response(JSON.stringify({ error: "Failed to send email" }), {
-      status: 502,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  console.log(`[waitlist-welcome] Sent welcome email to ${maskEmail(email)}`);
   return new Response(JSON.stringify({ ok: true }), {
     headers: { "Content-Type": "application/json" },
   });
