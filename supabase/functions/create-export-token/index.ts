@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { mode, date_range_start, date_range_end, period_days, expires_in_days, label } = body;
+    const { mode, date_range_start, date_range_end, period_days, expires_in_days, label, patient_note } = body;
     const ttlDays = (typeof expires_in_days === "number" && expires_in_days >= 1 && expires_in_days <= 90)
       ? expires_in_days
       : 7;
@@ -213,6 +213,9 @@ Deno.serve(async (req) => {
     const dataSnapshot = {
       generatedAt: new Date().toISOString(),
       dateRange: { start: startDate, end: endDate },
+      ...(mode === "health_summary" && patient_note && typeof patient_note === "string" && patient_note.trim()
+        ? { patientNote: patient_note.trim().slice(0, 300) }
+        : {}),
       profile,
       streak: {
         current: streak.current_streak ?? 0,

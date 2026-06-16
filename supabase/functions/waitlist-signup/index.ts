@@ -1,6 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
+const RESEND_API_URL = "https://api.resend.com/emails";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "content-type",
@@ -73,6 +75,11 @@ const DISPOSABLE_DOMAINS = new Set([
   "zomg.info","zxcv.com","zxcvbnm.com","zzz.com",
 ]);
 
+function maskEmail(email: string): string {
+  const [local, domain] = email.split("@");
+  return `${local[0]}***@${domain}`;
+}
+
 function isKnownDisposableDomain(email: string): boolean {
   const domain = email.split("@")[1];
   return domain ? DISPOSABLE_DOMAINS.has(domain) : false;
@@ -80,7 +87,7 @@ function isKnownDisposableDomain(email: string): boolean {
 
 async function isDisposableEmail(email: string): Promise<boolean> {
   const apiKey = Deno.env.get("ABSTRACT_API_KEY");
-  if (!apiKey) return false; // fail open if key not configured
+  if (!apiKey) return false;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 4_000);
@@ -92,9 +99,36 @@ async function isDisposableEmail(email: string): Promise<boolean> {
     const data = await res.json();
     return data?.email_quality?.is_disposable === true;
   } catch {
-    return false; // fail open on timeout or network error
+    return false;
   } finally {
     clearTimeout(timeoutId);
+  }
+}
+
+async function sendEmail(resendApiKey: string, payload: object, label: string): Promise<void> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
+  try {
+    const res = await fetch(RESEND_API_URL, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[waitlist-signup] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+      return;
+    }
+    console.log(`[waitlist-signup] ${label} sent`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const message = controller.signal.aborted ? "timed out" : "failed";
+    console.error(`[waitlist-signup] ${label} ${message}`, err);
   }
 }
 
@@ -157,13 +191,14 @@ Deno.serve(async (req: Request) => {
 
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const { error } = await supabase
+  const { data: inserted, error } = await supabase
     .from("waitlist_signups")
-    .insert({ email, source });
+    .insert({ email, source })
+    .select("created_at")
+    .single();
 
   if (error) {
     if (error.code === "23505") {
-      // Duplicate email — return success to prevent email enumeration
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -177,6 +212,49 @@ Deno.serve(async (req: Request) => {
       },
     );
   }
+
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendApiKey) {
+    console.error("[waitlist-signup] RESEND_API_KEY not configured — skipping emails");
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const signedUpAt = inserted?.created_at
+    ? new Date(inserted.created_at).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC"
+    : new Date().toISOString();
+
+  const sends: Promise<void>[] = [
+    sendEmail(
+      resendApiKey,
+      { to: [email], template: { id: "waitlist-email" } },
+      `Welcome email to ${maskEmail(email)}`,
+    ),
+  ];
+
+  const adminEmail = Deno.env.get("ADMIN_NOTIFICATION_EMAIL")?.trim();
+  if (adminEmail) {
+    sends.push(
+      sendEmail(
+        resendApiKey,
+        {
+          to: [adminEmail],
+          template: {
+            id: "admin-waitlist-notification",
+            variables: {
+              SIGNUP_EMAIL: email,
+              SOURCE: source,
+              SIGNED_UP_AT: signedUpAt,
+            },
+          },
+        },
+        "Admin waitlist notification",
+      ),
+    );
+  }
+
+  await Promise.all(sends);
 
   return new Response(JSON.stringify({ ok: true }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },

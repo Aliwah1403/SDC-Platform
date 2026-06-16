@@ -76,6 +76,7 @@ export interface HealthSummaryData {
   topSymptoms: TopItem[];
   topTriggers: TopItem[];
   medications: Medication[];
+  patientNote?: string;
   aiInsights?: AiInsight[];
 }
 
@@ -315,7 +316,6 @@ function DocFooter({ generatedAt }: { generatedAt: string }) {
 export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
   const {
     profile,
-    streak,
     stats,
     topSymptoms,
     topTriggers,
@@ -455,37 +455,27 @@ export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
             />
             <StatCard
               label="Avg Hydration"
-              value={
-                stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"
-              }
+              value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"}
             />
             <StatCard
               label="Avg Mood"
-              value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"}
+              value={stats.avgMood != null ? `${stats.avgMood}/10` : "—"}
             />
-            <StatCard
-              label="Avg Sleep"
-              value={stats.avgSleep != null ? `${stats.avgSleep}h` : "—"}
-            />
-            <StatCard
-              label="Avg Steps"
-              value={
-                stats.avgSteps != null
-                  ? String(Math.round(stats.avgSteps))
-                  : "—"
-              }
-            />
-            <StatCard
-              label="Avg Heart Rate"
-              value={
-                stats.avgHeartRate != null ? `${stats.avgHeartRate} bpm` : "—"
-              }
-            />
-            <StatCard
-              label="Current Streak"
-              value={String(streak.current)}
-              sub={`Best: ${streak.longest}`}
-            />
+            {(() => {
+              const activeMeds = medications.filter((m) => m.is_active && m.adherence);
+              if (activeMeds.length === 0) return null;
+              const taken = activeMeds.reduce((s, m) => s + (m.adherence?.taken ?? 0), 0);
+              const scheduled = activeMeds.reduce((s, m) => s + (m.adherence?.scheduled ?? 0), 0);
+              if (scheduled === 0) return null;
+              const pct = Math.round((taken / scheduled) * 100);
+              return (
+                <StatCard
+                  label="Med Adherence"
+                  value={`${pct}%`}
+                  sub={`${activeMeds.length} active med${activeMeds.length !== 1 ? "s" : ""}`}
+                />
+              );
+            })()}
           </View>
 
           {/* AI Insights */}

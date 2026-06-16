@@ -85,15 +85,14 @@ Deno.serve(async (req: Request) => {
       clearTimeout(timeoutId);
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+        console.error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+        return;
       }
       console.log(`[waitlist-welcome] ${label} sent`);
     } catch (err) {
       clearTimeout(timeoutId);
-      if (controller.signal.aborted) {
-        throw new Error(`[waitlist-welcome] ${label} timed out`);
-      }
-      throw err;
+      const message = controller.signal.aborted ? "timed out" : "failed";
+      console.error(`[waitlist-welcome] ${label} ${message}`, err);
     }
   };
 
