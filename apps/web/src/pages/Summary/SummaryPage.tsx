@@ -8,8 +8,8 @@ import LinkGateScreen from "../_LinkGateScreen";
 type TokenRow = {
   mode: string;
   expires_at: string;
-  view_count: number;
-  max_views: number | null;
+  is_active: boolean;
+  first_viewed_at: string | null;
   period_days: number | null;
   data_snapshot: HealthSummaryData;
 };
@@ -24,15 +24,16 @@ export default function SummaryPage() {
     (async () => {
       const { data: row, error } = await supabase
         .from("export_tokens")
-        .select("mode, expires_at, view_count, max_views, period_days, data_snapshot")
+        .select("mode, expires_at, is_active, first_viewed_at, period_days, data_snapshot")
         .eq("token", token)
         .single<TokenRow>();
 
       if (error || !row || row.mode !== "health_summary") { setState("error"); return; }
-      if (new Date(row.expires_at) < new Date()) { setState("expired"); return; }
-      if (row.max_views != null && row.view_count >= row.max_views) { setState("expired"); return; }
+      if (!row.is_active || new Date(row.expires_at) < new Date()) { setState("expired"); return; }
 
-      supabase.from("export_tokens").update({ view_count: row.view_count + 1 }).eq("token", token).then(() => {});
+      if (!row.first_viewed_at) {
+        supabase.from("export_tokens").update({ first_viewed_at: new Date().toISOString() }).eq("token", token).then(() => {});
+      }
 
       const snapshot = row.data_snapshot;
       if (row.period_days) snapshot.periodDays = row.period_days;

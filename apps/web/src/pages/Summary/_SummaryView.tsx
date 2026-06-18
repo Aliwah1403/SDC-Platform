@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, Lock, Pill } from "lucide-react";
+import { Calendar as CalendarIcon, Lock, MessageSquareQuote, Pill } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -253,7 +253,7 @@ function Section({
 // ── At a glance ───────────────────────────────────────────────────────────────
 
 function AtGlance({ data }: { data: HealthSummaryData }) {
-  const { stats, streak, periodDays, medications } = data;
+  const { stats, periodDays, medications } = data;
 
   const activeMeds = medications.filter((m) => m.is_active && m.adherence);
   let adherence: number | null = null;
@@ -266,7 +266,7 @@ function AtGlance({ data }: { data: HealthSummaryData }) {
     if (scheduled > 0) adherence = Math.round((taken / scheduled) * 100);
   }
 
-  const items = [
+  const items: { label: string; value: string; unit?: string; foot: string; footCls?: string }[] = [
     {
       label: "Days logged",
       value: String(stats.totalDaysLogged),
@@ -279,37 +279,32 @@ function AtGlance({ data }: { data: HealthSummaryData }) {
       foot: "out of 10",
     },
     {
+      label: "Avg mood",
+      value: (stats.avgMood ?? 0).toFixed(1),
+      unit: "/10",
+      foot: "out of 10",
+    },
+    {
       label: "Hydration",
       value: (stats.avgHydration ?? 0).toFixed(1),
       unit: "/10",
-      foot: "below goal of 8",
-      footCls: "text-[#A9334D]",
+      foot: "goal: 8/10",
     },
-    {
-      label: "Sleep",
-      value: String(stats.avgSleep ?? "—"),
-      unit: stats.avgSleep != null ? "hrs" : undefined,
-      foot: "consistent",
-      footCls: "text-[#1F8A5B]",
-    },
-    adherence != null
-      ? {
+    ...(adherence != null
+      ? [{
           label: "Med adherence",
           value: String(adherence),
           unit: "%",
           foot: `across ${activeMeds.length} active meds`,
-        }
-      : {
-          label: "Streak",
-          value: String(streak.current),
-          unit: "days",
-          foot: `longest: ${streak.longest}`,
-        },
+        }]
+      : []),
   ];
+
+  const colCount = items.length as 4 | 5;
 
   return (
     <Section eyebrow="At a glance" title="The numbers behind it">
-      <div className="grid grid-cols-5 overflow-hidden rounded-[20px] border border-[#F0E4E1] max-[880px]:grid-cols-2 max-[480px]:grid-cols-1">
+      <div className={cn("grid overflow-hidden rounded-[20px] border border-[#F0E4E1] max-[880px]:grid-cols-2 max-[480px]:grid-cols-1", colCount === 5 ? "grid-cols-5" : "grid-cols-4")}>
         {items.map((s) => (
           <div
             key={s.label}
@@ -609,6 +604,21 @@ export function ProfileSection({
   );
 }
 
+// ── Patient note ──────────────────────────────────────────────────────────────
+
+function PatientNoteSection({ note }: { note: string }) {
+  return (
+    <Section eyebrow="From the patient" title="A note to their doctor">
+      <div className="flex gap-4 rounded-[20px] border border-[#F0E4E1] bg-white px-8 py-7 max-sm:gap-3 max-sm:px-5 max-sm:py-5">
+        <MessageSquareQuote className="mt-0.5 size-5 shrink-0 text-[#A9334D]" />
+        <p className="m-0 text-[16px] leading-[1.7] tracking-[-0.2px] text-[#1A1414] italic">
+          "{note}"
+        </p>
+      </div>
+    </Section>
+  );
+}
+
 // ── Privacy banner ────────────────────────────────────────────────────────────
 
 function PrivacyBanner({ data }: { data: HealthSummaryData }) {
@@ -676,6 +686,7 @@ export default function SummaryView({
         <AtGlance data={data} />
         <PatternsSection data={data} />
         <MedicationsSection data={data} />
+        {data.patientNote && <PatientNoteSection note={data.patientNote} />}
         {/* <ProfileSection data={data} anonymization={anonymization} /> */}
         <PrivacyBanner data={data} />
       </main>
