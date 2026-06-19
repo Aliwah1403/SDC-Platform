@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
 
     const { data: row, error: fetchError } = await supabase
       .from("export_tokens")
-      .select("user_id, mode, expires_at, period_days, data_snapshot")
+      .select("user_id, mode, expires_at, period_days, data_snapshot, is_active")
       .eq("token", token)
       .single();
 
@@ -161,6 +161,12 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ data: null, error: "Token has expired" }),
         { status: 410, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+      );
+    }
+    if (!row.is_active) {
+      return new Response(
+        JSON.stringify({ data: null, error: "Token has been revoked" }),
+        { status: 403, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
     }
 

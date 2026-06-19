@@ -7,8 +7,8 @@ import { cn } from "@/lib/utils";
 // ── PageNav ───────────────────────────────────────────────────────────────────
 
 interface PageNavProps {
-  document: ReactElement<DocumentProps>;
-  fileName: string;
+  document?: ReactElement<DocumentProps>;
+  fileName?: string;
   meta: ReactNode;
   onDownload?: () => void;
 }
@@ -26,20 +26,22 @@ export function PageNav({ document, fileName, meta, onDownload }: PageNavProps) 
           {meta}
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <PDFDownloadLink document={document} fileName={fileName} onClick={onDownload}>
-            {({ loading }) => (
-              <Button
-                size="lg"
-                variant="ghost"
-                className="gap-1.5 text-[13px] font-semibold text-[#1A1414]/65 hover:bg-[#1A1414]/[0.07] hover:text-[#1A1414]"
-              >
-                <Download className="size-3.5" />
-                {loading ? "Preparing…" : "PDF"}
-              </Button>
-            )}
-          </PDFDownloadLink>
-        </div>
+        {document && fileName && (
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <PDFDownloadLink document={document} fileName={fileName} onClick={onDownload}>
+              {({ loading }) => (
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="gap-1.5 text-[13px] font-semibold text-[#1A1414]/65 hover:bg-[#1A1414]/[0.07] hover:text-[#1A1414]"
+                >
+                  <Download className="size-3.5" />
+                  {loading ? "Preparing…" : "PDF"}
+                </Button>
+              )}
+            </PDFDownloadLink>
+          </div>
+        )}
       </div>
     </div>
   );

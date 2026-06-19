@@ -66,6 +66,32 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Enforce 5-active-summary quota server-side for health_summary mode
+    if (mode === "health_summary") {
+      const now = new Date().toISOString();
+      const { count, error: countError } = await supabase
+        .from("export_tokens")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("mode", "health_summary")
+        .eq("is_active", true)
+        .gt("expires_at", now);
+
+      if (countError) {
+        console.error("quota check failed:", countError.message);
+        return new Response(
+          JSON.stringify({ data: null, error: "Internal server error" }),
+          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+        );
+      }
+      if ((count ?? 0) >= 5) {
+        return new Response(
+          JSON.stringify({ data: null, error: "Active summary limit reached. Revoke one to create a new one." }),
+          { status: 429, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
     // Determine date range
     const endDate: string = date_range_end ?? new Date().toISOString().split("T")[0];
     let startDate: string;

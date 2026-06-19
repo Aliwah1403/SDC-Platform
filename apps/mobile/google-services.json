@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463269354585",
+    "project_id": "hemo-scd",
+    "storage_bucket": "hemo-scd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463269354585:android:9b627f3c335f320d022548",
+        "android_client_info": {
+          "package_name": "com.hemoscd.hemo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCs5wdAGf4q7MhSUvyyCIw_5BN3l2nK480"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

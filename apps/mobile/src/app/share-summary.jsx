@@ -109,6 +109,7 @@ export default function ShareSummaryScreen() {
   const activeCount = summaries.filter((s) => s.is_active && !isExpired(s.expires_at)).length;
 
   const loadSummaries = useCallback(async () => {
+    if (!userId) return;
     setLoadingList(true);
     try {
       const { data, error } = await supabase
@@ -178,7 +179,7 @@ export default function ShareSummaryScreen() {
       });
       if (aiError) {
         console.warn("AI enrichment failed (non-fatal):", aiError.message);
-        posthog?.capture("summary_ai_failed", { token });
+        posthog?.capture("summary_ai_failed");
       } else {
         posthog?.capture("summary_ai_generated", {
           period_days: selectedPeriod.days,

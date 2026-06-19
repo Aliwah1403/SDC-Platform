@@ -120,8 +120,7 @@ async function sendEmail(resendApiKey: string, payload: object, label: string): 
     });
     clearTimeout(timeoutId);
     if (!res.ok) {
-      const body = await res.text();
-      console.error(`[waitlist-signup] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+      console.error(`[waitlist-signup] ${label} Resend error: status=${res.status}`);
       return;
     }
     console.log(`[waitlist-signup] ${label} sent`);
@@ -240,13 +239,11 @@ Deno.serve(async (req: Request) => {
         resendApiKey,
         {
           to: [adminEmail],
-          template: {
-            id: "admin-waitlist-notification",
-            variables: {
-              SIGNUP_EMAIL: email,
-              SOURCE: source,
-              SIGNED_UP_AT: signedUpAt,
-            },
+          template: { id: "admin-waitlist-notification" },
+          variables: {
+            SIGNUP_EMAIL: email,
+            SOURCE: source,
+            SIGNED_UP_AT: signedUpAt,
           },
         },
         "Admin waitlist notification",

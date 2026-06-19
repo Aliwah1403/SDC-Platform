@@ -38,6 +38,18 @@ const router = createBrowserRouter([
     }),
   },
   {
+    path: "/ed-card-test",
+    lazy: async () => ({
+      Component: (await import("./pages/EmergencyCard/EmergencyCardTestPage")).default,
+    }),
+  },
+  {
+    path: "/ed-card/:token",
+    lazy: async () => ({
+      Component: (await import("./pages/EmergencyCard/EdCardPage")).default,
+    }),
+  },
+  {
     path: "/export/:token",
     lazy: async () => ({
       Component: (await import("./pages/Export/ExportPage")).default,
