@@ -84,8 +84,7 @@ Deno.serve(async (req: Request) => {
       });
       clearTimeout(timeoutId);
       if (!res.ok) {
-        const body = await res.text();
-        console.error(`[waitlist-welcome] ${label} Resend error: status=${res.status} body=${body.slice(0, 300)}`);
+        console.error(`[waitlist-welcome] ${label} Resend error: status=${res.status}`);
         return;
       }
       console.log(`[waitlist-welcome] ${label} sent`);
