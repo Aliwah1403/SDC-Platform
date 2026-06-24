@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -54,8 +55,8 @@ import { getGradientColors } from "@/utils/homeHelpers";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
-import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
-import { fetchWorkoutsForDate } from "@/services/healthKitService";
+import { useHealthService } from "@/hooks/useHealthService";
+import { fetchWorkoutsForDate } from "@/services/healthService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
 import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
@@ -1348,8 +1349,9 @@ export default function TrackScreen() {
   const t = useTheme();
   const { data: healthData = [] } = useHealthDataQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
-  const { healthKitData, healthKitConnected } = useAppStore();
-  const { alertState } = useHealthKitAlerts();
+  const { healthKitData, healthConnectData } = useAppStore();
+  const { alertState, isConnected: healthConnected } = useHealthService();
+  const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workouts, setWorkouts] = useState([]);
@@ -1369,22 +1371,21 @@ export default function TrackScreen() {
   const entry = useMemo(() => {
     const base =
       healthData.find((d) => d.date === dateToStr(selectedDate)) ?? null;
-    const hkDay = healthKitData[dateToStr(selectedDate)];
-    if (!hkDay) return base;
-    // HealthKit values silently override manual fields; new fields (spO2, temperature, respiratoryRate) are additive
+    const platformDay = platformHealthData[dateToStr(selectedDate)];
+    if (!platformDay) return base;
     return base
-      ? { ...base, ...hkDay }
-      : { date: dateToStr(selectedDate), ...hkDay };
-  }, [healthData, healthKitData, selectedDate]);
+      ? { ...base, ...platformDay }
+      : { date: dateToStr(selectedDate), ...platformDay };
+  }, [healthData, platformHealthData, selectedDate]);
 
   const hasLoggedData = !!(
     entry &&
     (entry.painLevel || entry.mood || entry.hydration)
   );
 
-  // Fetch real workouts from HealthKit whenever the selected date or connection changes
+  // Fetch real workouts from health platform whenever the selected date or connection changes
   useEffect(() => {
-    if (!healthKitConnected) {
+    if (!healthConnected) {
       setWorkouts([]);
       return;
     }
@@ -1392,7 +1393,7 @@ export default function TrackScreen() {
     fetchWorkoutsForDate(selectedDate)
       .then(setWorkouts)
       .finally(() => setWorkoutsLoading(false));
-  }, [selectedDate, healthKitConnected]);
+  }, [selectedDate, healthConnected]);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -1500,11 +1501,11 @@ export default function TrackScreen() {
         <MetricsGrid
           entry={entry}
           healthData={healthData}
-          hkConnected={healthKitConnected}
+          hkConnected={healthConnected}
         />
         <ActivitySection
           workouts={workouts}
-          hkConnected={healthKitConnected}
+          hkConnected={healthConnected}
           loading={workoutsLoading}
         />
       </ScrollView>

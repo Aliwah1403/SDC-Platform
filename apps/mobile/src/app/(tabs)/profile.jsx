@@ -95,6 +95,7 @@ import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";
+import HealthConnectModal from "@/components/HealthConnectModal";
 import {
   scheduleCheckInReminders,
   cancelCheckInReminders,
@@ -207,6 +208,7 @@ function SettingRow({
   icon: Icon,
   iconColor = "#A9334D",
   iconImage,
+  iconComponent,
   label,
   value,
   rightElement,
@@ -233,7 +235,7 @@ function SettingRow({
           marginRight: 12,
         }}
       >
-        {iconImage ? (
+        {iconComponent ? iconComponent : iconImage ? (
           <Image source={iconImage} style={{ width: 28, height: 28 }} resizeMode="contain" />
         ) : (
           <Icon size={18} color={iconColor} />
@@ -408,6 +410,7 @@ export default function ProfileScreen() {
     appLockEnabled,
     appLockTimeout,
     healthKitConnected: appleHealthConnected,
+    healthConnectConnected,
   } = useAppStore();
   const { theme, setTheme } = useAppearanceStore();
   const t = useTheme();
@@ -425,6 +428,7 @@ export default function ProfileScreen() {
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
+  const [healthConnectModalVisible, setHealthConnectModalVisible] = useState(false);
   const [linkingProvider, setLinkingProvider] = useState(null);
 
   const identities = auth?.user?.identities ?? [];
@@ -1004,17 +1008,28 @@ export default function ProfileScreen() {
         iconColor: "#A9334D",
         onPress: handleShareSummary,
       },
-      {
-        key: "apple-health",
-        label: "Connect Apple Health",
-        section: "Data & Reports",
-        icon: Heart,
-        iconColor: "#EF4444",
-        onPress: () =>
-          appleHealthConnected
-            ? router.push("/apple-health-settings")
-            : setAppleHealthModalVisible(true),
-      },
+      Platform.OS === "ios"
+        ? {
+            key: "apple-health",
+            label: "Apple Health",
+            section: "Data & Reports",
+            icon: Heart,
+            iconColor: "#EF4444",
+            onPress: () =>
+              appleHealthConnected
+                ? router.push("/apple-health-settings")
+                : setAppleHealthModalVisible(true),
+          }
+        : {
+            key: "health-connect",
+            label: "Health Connect",
+            section: "Data & Reports",
+            iconImage: require("../../../assets/images/health_connect_logo.png"),
+            onPress: () =>
+              healthConnectConnected
+                ? router.push("/health-connect-settings")
+                : setHealthConnectModalVisible(true),
+          },
 
       {
         key: "appearance",
@@ -1094,6 +1109,7 @@ export default function ProfileScreen() {
       profile,
       auth,
       appleHealthConnected,
+      healthConnectConnected,
       openFullNameSheet,
       openNicknameSheet,
       openPhotoSheet,
@@ -1215,7 +1231,11 @@ export default function ProfileScreen() {
                   marginRight: 12,
                 }}
               >
-                <item.icon size={18} color={item.iconColor} />
+                {item.iconComponent
+                  ? item.iconComponent
+                  : item.iconImage
+                  ? <Image source={item.iconImage} style={{ width: 22, height: 22 }} resizeMode="contain" />
+                  : <item.icon size={18} color={item.iconColor} />}
               </View>
 
               <View style={{ flex: 1 }}>
@@ -1556,17 +1576,31 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={handleShareSummary}
             />
-            <SettingRow
-              iconImage={require("../../../assets/images/icon-apple-health.png")}
-              label="Apple Health"
-              value={appleHealthConnected ? "Connected" : "Not connected"}
-              rightElement="chevron"
-              onPress={() =>
-                appleHealthConnected
-                  ? router.push("/apple-health-settings")
-                  : setAppleHealthModalVisible(true)
-              }
-            />
+            {Platform.OS === "ios" ? (
+              <SettingRow
+                iconImage={require("../../../assets/images/icon-apple-health.png")}
+                label="Apple Health"
+                value={appleHealthConnected ? "Connected" : "Not connected"}
+                rightElement="chevron"
+                onPress={() =>
+                  appleHealthConnected
+                    ? router.push("/apple-health-settings")
+                    : setAppleHealthModalVisible(true)
+                }
+              />
+            ) : (
+              <SettingRow
+                iconImage={require("../../../assets/images/health_connect_logo.png")}
+                label="Health Connect"
+                value={healthConnectConnected ? "Connected" : "Not connected"}
+                rightElement="chevron"
+                onPress={() =>
+                  healthConnectConnected
+                    ? router.push("/health-connect-settings")
+                    : setHealthConnectModalVisible(true)
+                }
+              />
+            )}
           </SectionCard>
 
           <SectionCard title="Preferences">
@@ -3165,6 +3199,11 @@ export default function ProfileScreen() {
         visible={appleHealthModalVisible}
         onClose={() => setAppleHealthModalVisible(false)}
         onContinue={() => setAppleHealthModalVisible(false)}
+      />
+      <HealthConnectModal
+        visible={healthConnectModalVisible}
+        onClose={() => setHealthConnectModalVisible(false)}
+        onContinue={() => setHealthConnectModalVisible(false)}
       />
 
       {shouldPreloadFeedback ? (

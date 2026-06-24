@@ -18,6 +18,11 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
+import {
+  setupBackgroundDelivery as setupHCBackgroundDelivery,
+  checkExistingHKAuthorization as checkExistingHCAuthorization,
+  fetchHealthKitRange as fetchHealthConnectRange,
+} from "@/services/healthConnectService";
 import { fetchProfile, updateProfile } from "@/services/supabaseQueries";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
 import '@/utils/backgroundNotificationRefresh';
@@ -63,7 +68,11 @@ export default function RootLayout() {
   const theme = useTheme();
   const { initiate, isReady } = useAuth();
   const router = useRouter();
-  const { healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout } = useAppStore();
+  const {
+    healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay,
+    healthConnectConnected, healthConnectPreferences, setHealthConnectConnected, setHealthConnectRange, mergeHealthConnectDay,
+    setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout,
+  } = useAppStore();
   const userId = useAuthStore((s) => s.auth?.user?.id);
   const [splashExiting, setSplashExiting] = useState(false);
   const [splashGone, setSplashGone] = useState(false);
@@ -157,7 +166,7 @@ export default function RootLayout() {
           }
         }
 
-        if (wasBackgrounded && healthKitConnected) {
+        if (wasBackgrounded && healthKitConnected && Platform.OS === "ios") {
           const minutesSinceFetch = (Date.now() - lastHKFetchAt.current) / 1000 / 60;
           if (minutesSinceFetch >= 15) {
             fetchHealthKitRange(30, healthKitPreferences)
@@ -170,10 +179,23 @@ export default function RootLayout() {
               });
           }
         }
+        if (wasBackgrounded && healthConnectConnected && Platform.OS === "android") {
+          const minutesSinceFetch = (Date.now() - lastHKFetchAt.current) / 1000 / 60;
+          if (minutesSinceFetch >= 15) {
+            fetchHealthConnectRange(30, healthConnectPreferences)
+              .then((rangeData) => {
+                setHealthConnectRange(rangeData);
+                lastHKFetchAt.current = Date.now();
+              })
+              .catch((err) => {
+                console.error("[HC] Failed to refresh range after background:", err);
+              });
+          }
+        }
       }
     });
     return () => sub.remove();
-  }, [appLockEnabled, appLockTimeout, healthKitConnected, healthKitPreferences]);
+  }, [appLockEnabled, appLockTimeout, healthKitConnected, healthKitPreferences, healthConnectConnected, healthConnectPreferences]);
 
   const authenticateToUnlock = async () => {
     if (isAuthenticating.current) return;
@@ -196,6 +218,7 @@ export default function RootLayout() {
   // This fixes the "shows not connected after reload" bug — the Zustand store is
   // in-memory only, so we ask iOS directly rather than storing a boolean ourselves.
   useEffect(() => {
+    if (Platform.OS !== "ios") return;
     checkExistingHKAuthorization().then(async (wasConnected) => {
       if (!wasConnected) return;
       setHealthKitConnected(true);
@@ -203,6 +226,22 @@ export default function RootLayout() {
       setHealthKitRange(rangeData);
       lastHKFetchAt.current = Date.now();
       setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics), healthKitPreferences);
+    });
+  }, []);
+
+  // Android: restore Health Connect connected state and set up foreground polling.
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    checkExistingHCAuthorization().then(async (wasConnected) => {
+      if (!wasConnected) return;
+      setHealthConnectConnected(true);
+      const rangeData = await fetchHealthConnectRange(30, healthConnectPreferences);
+      setHealthConnectRange(rangeData);
+      lastHKFetchAt.current = Date.now();
+      setupHCBackgroundDelivery(
+        (date, metrics) => mergeHealthConnectDay(date, metrics),
+        healthConnectPreferences
+      );
     });
   }, []);
 
@@ -318,6 +357,10 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="apple-health-settings"
+            options={{ presentation: "card" }}
+          />
+          <Stack.Screen
+            name="health-connect-settings"
             options={{ presentation: "card" }}
           />
           <Stack.Screen

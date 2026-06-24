@@ -313,6 +313,55 @@ export const useAppStore = create(
       ),
     })),
 
+  // ── Android Health Connect ───────────────────────────────────────────────────
+  // Same structure as HealthKit fields — same data shape, same date-keyed map.
+  healthConnectConnected: false,
+  healthConnectData: {},
+  healthConnectPreferences: {
+    readSteps: true,
+    readHeartRate: true,
+    readSpO2: true,
+    readTemperature: true,
+    readRespiratoryRate: true,
+    readSleep: true,
+    writeHydration: true,
+    writeHeight: true,
+    writeWeight: true,
+  },
+  healthConnectManualBaselines: {
+    spO2: null,
+    heartRate: null,
+  },
+
+  setHealthConnectConnected: (val) => set({ healthConnectConnected: val }),
+
+  setHealthConnectPreference: (key, value) =>
+    set((state) => ({
+      healthConnectPreferences: { ...state.healthConnectPreferences, [key]: value },
+    })),
+
+  mergeHealthConnectDay: (date, metrics) =>
+    set((state) => ({
+      healthConnectData: {
+        ...state.healthConnectData,
+        [date]: { ...(state.healthConnectData[date] ?? {}), ...metrics },
+      },
+    })),
+
+  setHealthConnectRange: (rangeMap) =>
+    set((state) => {
+      const merged = { ...state.healthConnectData };
+      for (const [date, metrics] of Object.entries(rangeMap)) {
+        merged[date] = { ...(merged[date] ?? {}), ...metrics };
+      }
+      return { healthConnectData: merged };
+    }),
+
+  setHealthConnectManualBaseline: (metric, value) =>
+    set((state) => ({
+      healthConnectManualBaselines: { ...state.healthConnectManualBaselines, [metric]: value },
+    })),
+
   // ── App Lock ────────────────────────────────────────────────────────────────
   appLockEnabled: false,
   appLockTimeout: 1, // minutes: 0=immediately, 1, 5, 15, 60

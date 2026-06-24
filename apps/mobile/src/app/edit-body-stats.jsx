@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Switch,
   Alert,
+  Platform,
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,7 +21,7 @@ import {
   useUpdateProfileMutation,
 } from "@/hooks/queries/useProfileQuery";
 import { useAppStore } from "@/store/appStore";
-import { writeBodyStats, isHKAvailable } from "@/services/healthKitService";
+import { writeBodyStats, isHKAvailable } from "@/services/healthService";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -89,20 +90,27 @@ export default function EditBodyStats() {
     healthKitConnected,
     healthKitPreferences,
     setHealthKitPreference,
+    healthConnectConnected,
+    healthConnectPreferences,
+    setHealthConnectPreference,
   } = useAppStore();
 
-  const hkAvailable = isHKAvailable() && healthKitConnected;
+  const isHealthConnected = Platform.OS === "ios" ? healthKitConnected : healthConnectConnected;
+  const healthPreferences = Platform.OS === "ios" ? healthKitPreferences : healthConnectPreferences;
+  const setHealthPreference = Platform.OS === "ios" ? setHealthKitPreference : setHealthConnectPreference;
+  const hkAvailable = isHKAvailable() && isHealthConnected;
 
   const handleHealthToggle = (prefKey) => (val) => {
     if (val && !hkAvailable) {
+      const platformName = Platform.OS === "ios" ? "Apple Health" : "Health Connect";
       Alert.alert(
-        "Apple Health not connected",
-        "Connect Apple Health in your profile settings first.",
+        `${platformName} not connected`,
+        `Connect ${platformName} in your profile settings first.`,
         [{ text: "OK" }]
       );
       return;
     }
-    setHealthKitPreference(prefKey, val);
+    setHealthPreference(prefKey, val);
   };
 
   useEffect(() => {
@@ -161,9 +169,9 @@ export default function EditBodyStats() {
         onSuccess: () => {
           if (hkAvailable) {
             writeBodyStats({
-              heightCm: healthKitPreferences.writeHeight ? heightInCm : null,
-              weightKg: healthKitPreferences.writeWeight ? weightInKg : null,
-              prefs: healthKitPreferences,
+              heightCm: healthPreferences.writeHeight ? heightInCm : null,
+              weightKg: healthPreferences.writeWeight ? weightInKg : null,
+              prefs: healthPreferences,
             });
           }
           router.back();
@@ -303,7 +311,7 @@ export default function EditBodyStats() {
                 />
                 <Text style={styles.appleHealthText}>Write height to Health</Text>
                 <Switch
-                  value={healthKitPreferences.writeHeight ?? true}
+                  value={healthPreferences.writeHeight ?? true}
                   onValueChange={handleHealthToggle("writeHeight")}
                   trackColor={{ false: t.border, true: "#A9334D" }}
                   thumbColor="#ffffff"
@@ -370,7 +378,7 @@ export default function EditBodyStats() {
                 />
                 <Text style={styles.appleHealthText}>Write weight to Health</Text>
                 <Switch
-                  value={healthKitPreferences.writeWeight ?? true}
+                  value={healthPreferences.writeWeight ?? true}
                   onValueChange={handleHealthToggle("writeWeight")}
                   trackColor={{ false: t.border, true: "#A9334D" }}
                   thumbColor="#ffffff"

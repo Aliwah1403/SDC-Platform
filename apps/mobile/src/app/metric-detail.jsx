@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -678,7 +679,8 @@ export default function MetricDetailScreen() {
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
 
-  const { healthKitData, computedAlertState, onboardingData } = useAppStore();
+  const { healthKitData, healthConnectData, computedAlertState, onboardingData } = useAppStore();
+  const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
   const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
@@ -691,20 +693,19 @@ export default function MetricDetailScreen() {
 
   const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
 
-  // Merge HealthKit data into healthData before computing chart data.
-  // Also includes HealthKit-only dates (e.g. spO2/temperature days with no manual log).
+  // Merge platform health data into healthData before computing chart data.
   const mergedHealthData = useMemo(() => {
-    if (!healthKitData || Object.keys(healthKitData).length === 0) return healthData;
+    if (!platformHealthData || Object.keys(platformHealthData).length === 0) return healthData;
     const base = healthData.map((entry) => {
-      const hkDay = healthKitData[entry.date];
-      return hkDay ? { ...entry, ...hkDay } : entry;
+      const platformDay = platformHealthData[entry.date];
+      return platformDay ? { ...entry, ...platformDay } : entry;
     });
     const coveredDates = new Set(healthData.map((e) => e.date));
-    const hkOnlyEntries = Object.entries(healthKitData)
+    const platformOnlyEntries = Object.entries(platformHealthData)
       .filter(([date]) => !coveredDates.has(date))
-      .map(([date, hkDay]) => ({ date, ...hkDay }));
-    return [...base, ...hkOnlyEntries];
-  }, [healthData, healthKitData]);
+      .map(([date, day]) => ({ date, ...day }));
+    return [...base, ...platformOnlyEntries];
+  }, [healthData, platformHealthData]);
 
   const data = useMemo(
     () => getLastNDays(mergedHealthData, meta.dataField, range),

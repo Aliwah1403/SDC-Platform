@@ -19,7 +19,7 @@ import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
 import { useAppStore } from "@/store/appStore";
-import { writeDailyLog } from "@/services/healthKitService";
+import { writeDailyLog } from "@/services/healthService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { ChevronLeft, X, Check } from "lucide-react-native";
@@ -542,7 +542,13 @@ export default function LogSymptomsScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const t = useTheme();
-  const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected, healthKitPreferences } = useAppStore();
+  const {
+    currentSymptomLog, updateSymptomLog, resetSymptomLog,
+    healthKitConnected, healthKitPreferences,
+    healthConnectConnected, healthConnectPreferences,
+  } = useAppStore();
+  const isHealthConnected = Platform.OS === "ios" ? healthKitConnected : healthConnectConnected;
+  const healthPreferences = Platform.OS === "ios" ? healthKitPreferences : healthConnectPreferences;
   const submitLogMutation = useSubmitLogMutation();
   const openedAtRef = useRef(Date.now());
 
@@ -665,10 +671,10 @@ export default function LogSymptomsScreen() {
           });
         }
         resetSymptomLog();
-        // Mirror to Apple Health on the first log of the day only — re-logs would
-        // append duplicate DietaryWater and symptom samples to HealthKit.
-        if (healthKitConnected && !hasLoggedToday) {
-          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthKitPreferences });
+        // Mirror to health platform on the first log of the day only — re-logs would
+        // append duplicate water samples. Android skips symptoms/mood (HC has no symptom types).
+        if (isHealthConnected && !hasLoggedToday) {
+          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
         }
         router.back();
       },
