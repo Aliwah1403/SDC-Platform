@@ -48,7 +48,7 @@ function SegmentedControl({ options, selected, onSelect }) {
 
 export default function Step3() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [unit, setUnit] = useState('Metric');
   const [editing, setEditing] = useState(false);
   const [cmValue, setCmValue] = useState(170);
@@ -68,12 +68,13 @@ export default function Step3() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 3 }); router.push('/(onboarding)/step-4'); };
+  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 3 }); setOnboardingStep(3); router.push('/(onboarding)/step-4'); };
 
   const handleContinue = () => {
     const heightInCm =
       unit === 'Metric' ? cmValue : Math.round(totalInches * 2.54);
     setOnboardingField('height', heightInCm);
+    setOnboardingStep(3);
     router.push('/(onboarding)/step-4');
   };
 

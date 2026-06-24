@@ -61,7 +61,13 @@ CLAUDE.md
 CODE_REVIEW.md
 FEATURES.md
 SUPABASE.md
+SETUP_CHECKLIST.md
 .mcp.json
+
+# Service-account / admin credentials — never commit
+*-firebase-adminsdk-*.json
+**/service-account.json
+service-account*.json
 
 # TypeScript
 *.tsbuildinfo

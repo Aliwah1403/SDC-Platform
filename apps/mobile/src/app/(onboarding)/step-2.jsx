@@ -51,7 +51,7 @@ function calcAge(day, month, year) {
 }
 
 export default function Step2() {
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
 
   const [day, setDay] = useState(1);
@@ -83,6 +83,7 @@ export default function Step2() {
   const handleNext = () => {
     const dob = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setOnboardingField("dob", dob);
+    setOnboardingStep(2);
     router.push("/(onboarding)/step-3");
   };
 

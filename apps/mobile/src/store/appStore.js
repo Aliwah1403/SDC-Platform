@@ -1,6 +1,18 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { MMKV } from "react-native-mmkv";
 
-export const useAppStore = create((set) => ({
+const mmkv = new MMKV({ id: "hemo-store" });
+
+const mmkvStorage = {
+  getItem: (name) => mmkv.getString(name) ?? null,
+  setItem: (name, value) => mmkv.set(name, value),
+  removeItem: (name) => mmkv.delete(name),
+};
+
+export const useAppStore = create(
+  persist(
+    (set) => ({
   // ── Onboarding form state (ephemeral; written to Supabase on complete) ────────
   onboardingData: {
     nickname: null,
@@ -21,13 +33,18 @@ export const useAppStore = create((set) => ({
     timezoneAuto: true,
   },
 
+  onboardingCurrentStep: 0,
+
   setOnboardingField: (field, value) =>
     set((state) => ({
       onboardingData: { ...state.onboardingData, [field]: value },
     })),
 
+  setOnboardingStep: (step) => set({ onboardingCurrentStep: step }),
+
   resetOnboarding: () =>
     set({
+      onboardingCurrentStep: 0,
       onboardingData: {
         nickname: null,
         dob: null,
@@ -316,4 +333,14 @@ export const useAppStore = create((set) => ({
     set((state) => ({
       healthKitManualBaselines: { ...state.healthKitManualBaselines, [metric]: value },
     })),
-}));
+    }),
+    {
+      name: "hemo-onboarding",
+      storage: createJSONStorage(() => mmkvStorage),
+      partialize: (state) => ({
+        onboardingData: state.onboardingData,
+        onboardingCurrentStep: state.onboardingCurrentStep,
+      }),
+    }
+  )
+);

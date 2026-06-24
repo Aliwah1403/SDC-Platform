@@ -51,7 +51,7 @@ const SCD_TYPES = [
 
 export default function Step5() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [scdType, setScdType] = useState(null);
 
   const selected = SCD_TYPES.find((t) => t.key === scdType) ?? null;
@@ -60,6 +60,7 @@ export default function Step5() {
   const handleNext = () => {
     posthog?.capture('condition_selected', { condition_name: scdType });
     setOnboardingField('scdType', scdType);
+    setOnboardingStep(5);
     router.push('/(onboarding)/step-6');
   };
 

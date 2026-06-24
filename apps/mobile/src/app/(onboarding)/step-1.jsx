@@ -12,7 +12,7 @@ const CHAR_DELAY = 42;
 const INPUT_APPEAR_DELAY = 550;
 
 export default function Step1() {
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
   const inputRef = useRef(null);
 
@@ -45,6 +45,7 @@ export default function Step1() {
   const handleNext = () => {
     const name = nickname.trim();
     if (name) setOnboardingField('nickname', name);
+    setOnboardingStep(1);
     router.push('/(onboarding)/meet');
   };
 

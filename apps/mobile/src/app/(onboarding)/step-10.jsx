@@ -32,7 +32,7 @@ function FaceIdGraphic() {
 
 export default function Step10() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [status, setStatus] = useState('idle');
   const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
 
@@ -50,10 +50,12 @@ export default function Step10() {
     }
   };
 
+  const goNext = () => { setOnboardingStep(10); router.push('/(onboarding)/step-11'); };
+
   const handleSkip = () => {
     posthog?.capture('onboarding_step_skipped', { step: 10 });
     setOnboardingField('biometricsEnabled', false);
-    router.push('/(onboarding)/step-11');
+    goNext();
   };
 
   return (
@@ -66,7 +68,7 @@ export default function Step10() {
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
-      onCta={status === 'success' ? () => router.push('/(onboarding)/step-11') : handleEnable}
+      onCta={status === 'success' ? goNext : handleEnable}
       ctaLabel={status === 'success' ? 'Continue' : `Enable ${biometricType}`}
     >
       <View style={styles.graphicContainer}>
