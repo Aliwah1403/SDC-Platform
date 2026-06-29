@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "@/hooks/useTheme";
-import { View, Text, TouchableOpacity, Alert, Dimensions, PanResponder } from "react-native";
+import { View, Text, TouchableOpacity, Alert, Dimensions, PanResponder, Image } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,7 +31,6 @@ import { BarChart } from "react-native-gifted-charts";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation, useDeleteMedicationLogByIdMutation } from "@/hooks/queries/useMedicationsQuery";
 import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
-import MedicationBottle from "@/components/MedicationBottle";
 
 const C = {
   accent: "#A9334D",
@@ -45,6 +44,67 @@ const CATEGORY_COLORS = {
 };
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
+
+// ── Bottle hero ──────────────────────────────────────────────────────────────
+// Static illustrated bottle (transparent PNG, square). The drug name + dosage are
+// rendered as a live text overlay onto the blank label panel, so they stay crisp
+// and update per medication. LABEL is the panel's box as fractions of the image.
+const BOTTLE_IMG = require("../../assets/med-types/Medicine_Bottle.png");
+const LABEL = { left: 0.344, top: 0.41, width: 0.324, height: 0.36 };
+
+function BottleHero({ name, dosage, size = 230 }) {
+  return (
+    <View style={{ width: size, height: size }}>
+      <Image
+        source={BOTTLE_IMG}
+        style={{ width: size, height: size }}
+        resizeMode="contain"
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * LABEL.left,
+          top: size * LABEL.top,
+          width: size * LABEL.width,
+          height: size * LABEL.height,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 4,
+        }}
+      >
+        <Text
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.6}
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 16,
+            lineHeight: 18,
+            color: "#1A1A1A",
+            textAlign: "center",
+          }}
+        >
+          {name}
+        </Text>
+        {dosage ? (
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 11,
+              color: "#6B6B6B",
+              textAlign: "center",
+              marginTop: 3,
+            }}
+          >
+            {dosage}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
 
 const WEEKDAYS = [
   { label: "Mon", value: 2 },
@@ -719,60 +779,24 @@ export default function MedicationDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Bottle illustration */}
-          <View style={{ alignItems: "center", marginBottom: 12 }}>
-            <MedicationBottle
-              type={med.type ?? "tablet"}
-              color={color}
-              drugName={med.name}
-              size={180}
-            />
+          {/* Bottle illustration — drug name + dosage rendered onto the label */}
+          <View style={{ alignItems: "center", marginBottom: 8 }}>
+            <BottleHero name={med.name} dosage={med.dosage} size={230} />
           </View>
 
-          {/* Name */}
-          <Text
-            numberOfLines={2}
-            style={{
-              fontFamily: fonts.bold,
-              fontSize: 26,
-              color: t.text,
-              textAlign: "center",
-              marginBottom: 10,
-            }}
-          >
-            {med.name}
-          </Text>
-
-          {/* Dosage + category */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            {med.dosage ? (
-              <View
-                style={{
-                  backgroundColor: `${color}20`,
-                  borderRadius: 10,
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                }}
-              >
-                <Text
-                  style={{ fontFamily: fonts.semibold, fontSize: 13, color }}
-                >
-                  {med.dosage}
-                </Text>
-              </View>
-            ) : null}
-            {med.category ? (
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 13,
-                  color: t.textSecondary,
-                }}
-              >
-                {med.category}
-              </Text>
-            ) : null}
-          </View>
+          {/* Category */}
+          {med.category ? (
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 13,
+                color: t.textSecondary,
+                textAlign: "center",
+              }}
+            >
+              {med.category}
+            </Text>
+          ) : null}
         </View>
 
         {/* Gradient fade into page bg */}
