@@ -31,6 +31,7 @@ import { BarChart } from "react-native-gifted-charts";
 import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicationMutation, useUpdateMedicationMutation, useDrugInfoQuery, useMedicationHistoryQuery, useAddMedicationLogMutation, useDeleteLatestMedicationLogMutation, useDeleteMedicationLogByIdMutation } from "@/hooks/queries/useMedicationsQuery";
 import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
+import { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 
 const C = {
   accent: "#A9334D",
@@ -51,6 +52,9 @@ const SCREEN_WIDTH = Dimensions.get("window").width;
 // and update per medication. LABEL is the panel's box as fractions of the image.
 const BOTTLE_IMG = require("../../assets/med-types/Medicine_Bottle.png");
 const LABEL = { left: 0.344, top: 0.41, width: 0.324, height: 0.36 };
+
+// Flip to true to use the illustrated bottle hero; false = clean text-only hero
+const SHOW_BOTTLE = false;
 
 function BottleHero({ name, dosage, size = 230 }) {
   return (
@@ -779,24 +783,183 @@ export default function MedicationDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Bottle illustration — drug name + dosage rendered onto the label */}
-          <View style={{ alignItems: "center", marginBottom: 8 }}>
-            <BottleHero name={med.name} dosage={med.dosage} size={230} />
-          </View>
+          {SHOW_BOTTLE ? (
+            <>
+              {/* Bottle illustration — drug name + dosage rendered onto the label */}
+              <View style={{ alignItems: "center", marginBottom: 8 }}>
+                <BottleHero name={med.name} dosage={med.dosage} size={230} />
+              </View>
 
-          {/* Category */}
-          {med.category ? (
-            <Text
-              style={{
-                fontFamily: fonts.medium,
-                fontSize: 13,
-                color: t.textSecondary,
-                textAlign: "center",
-              }}
-            >
-              {med.category}
-            </Text>
-          ) : null}
+              {/* Category */}
+              {med.category ? (
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 13,
+                    color: t.textSecondary,
+                    textAlign: "center",
+                  }}
+                >
+                  {med.category}
+                </Text>
+              ) : null}
+            </>
+          ) : (
+            <>
+              {/* Text hero (no bottle) — type photo + name + meta + status */}
+              <View
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: 24,
+                  marginTop: 20,
+                  marginBottom: 14,
+                  backgroundColor: t.isDark ? t.surfaceElevated : "#fff",
+                  borderWidth: 1,
+                  borderColor: t.border,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                }}
+              >
+                <Image
+                  source={MED_TYPE_IMAGES[med.type] ?? MED_TYPE_IMAGES.tablet}
+                  style={{ width: "82%", height: "82%" }}
+                  resizeMode="contain"
+                />
+              </View>
+
+              {/* Name */}
+              <Text
+                numberOfLines={2}
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 26,
+                  color: t.text,
+                  textAlign: "center",
+                  marginBottom: 12,
+                }}
+              >
+                {med.name}
+              </Text>
+
+              {/* Meta chips: dosage · form · frequency */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 14,
+                }}
+              >
+                {med.dosage ? (
+                  <View
+                    style={{
+                      backgroundColor: `${color}1A`,
+                      borderRadius: 999,
+                      paddingHorizontal: 12,
+                      paddingVertical: 5,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontFamily: fonts.semibold,
+                        fontSize: 12.5,
+                        color,
+                      }}
+                    >
+                      {med.dosage}
+                    </Text>
+                  </View>
+                ) : null}
+                {[
+                  med.type
+                    ? med.type.charAt(0).toUpperCase() + med.type.slice(1)
+                    : null,
+                  med.frequency,
+                ]
+                  .filter(Boolean)
+                  .map((chip) => (
+                    <View
+                      key={chip}
+                      style={{
+                        backgroundColor: t.surface,
+                        borderWidth: 1,
+                        borderColor: t.border,
+                        borderRadius: 999,
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontFamily: fonts.medium,
+                          fontSize: 12.5,
+                          color: t.textSecondary,
+                        }}
+                      >
+                        {chip}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
+
+              {/* Live status pill */}
+              {(() => {
+                const taken = med.logs?.length ?? 0;
+                const dosesToday = times.length;
+                let label;
+                let dotColor;
+                if (isAsNeeded(med.frequency)) {
+                  label = "Take as needed";
+                  dotColor = t.textSecondary;
+                } else if (dosesToday > 0 && taken >= dosesToday) {
+                  label = "All doses taken today";
+                  dotColor = C.success;
+                } else {
+                  const nd = nextDoseLabel(med);
+                  label = nd ? `Next: ${nd}` : null;
+                  dotColor = color;
+                }
+                if (!label) return null;
+                return (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 7,
+                      backgroundColor: t.surface,
+                      borderWidth: 1,
+                      borderColor: t.border,
+                      borderRadius: 999,
+                      paddingHorizontal: 14,
+                      paddingVertical: 7,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 4,
+                        backgroundColor: dotColor,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        fontFamily: fonts.medium,
+                        fontSize: 12.5,
+                        color: t.text,
+                      }}
+                    >
+                      {label}
+                    </Text>
+                  </View>
+                );
+              })()}
+            </>
+          )}
         </View>
 
         {/* Gradient fade into page bg */}
@@ -1115,6 +1278,12 @@ export default function MedicationDetailScreen() {
                     }[adherencePeriod] ?? { barWidth: 24, spacing: 13 };
                     return (
                       <BarChart
+                        // gifted-charts caches animated bar heights in internal
+                        // state on mount and won't reconcile when `data` changes.
+                        // Remount when the values change so bars reflect new logs.
+                        key={`${adherencePeriod}-${offset}-${chartData
+                          .map((d) => d.value)
+                          .join("-")}`}
                         data={chartData}
                         width={CHART_WIDTH}
                         height={200}
