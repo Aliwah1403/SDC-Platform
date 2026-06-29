@@ -110,11 +110,10 @@ const STEP_LABELS = [
 
 const MED_TYPES = [
   { key: "tablet",       label: "Tablet",       image: MED_TYPE_IMAGES.tablet },
-  { key: "capsule",      label: "Capsule",      image: null },
-  { key: "softgel",      label: "Softgel",      image: null },
+  { key: "capsule",      label: "Capsule",      image: MED_TYPE_IMAGES.capsule },
   { key: "liquid",       label: "Liquid",       image: MED_TYPE_IMAGES.liquid },
   { key: "ointment",     label: "Ointment",     image: MED_TYPE_IMAGES.ointment },
-  { key: "inhaler",      label: "Inhaler",      image: null },
+  { key: "inhaler",      label: "Inhaler",      image: MED_TYPE_IMAGES.inhaler },
   { key: "injection",    label: "Injection",    image: MED_TYPE_IMAGES.injection },
   { key: "chewable",     label: "Chewable",     image: MED_TYPE_IMAGES.chewable },
   { key: "drops",        label: "Drops",        image: MED_TYPE_IMAGES.drops },
@@ -126,7 +125,44 @@ const MED_TYPES = [
   { key: "patch",        label: "Patch",        image: MED_TYPE_IMAGES.patch },
   { key: "powder",       label: "Powder",       image: MED_TYPE_IMAGES.powder },
   { key: "spray",        label: "Spray",        image: MED_TYPE_IMAGES.spray },
+  { key: "suppository",  label: "Suppository",  image: MED_TYPE_IMAGES.suppository },
 ];
+
+// ─── Med-type badge ──────────────────────────────────────────────────────────
+// Shows the med-type photo when we have one; otherwise a neutral SVG icon.
+// Never tints with the category colour, so it can't read as the old "green tab".
+function MedTypeBadge({ type, box, radius, icon, t }) {
+  const image = MED_TYPE_IMAGES[type];
+  return (
+    <View
+      style={{
+        width: box,
+        height: box,
+        borderRadius: radius,
+        backgroundColor: image
+          ? t.isDark
+            ? t.surfaceElevated
+            : "#fff"
+          : t.surfaceElevated,
+        borderWidth: image ? 1 : 0,
+        borderColor: t.border,
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      {image ? (
+        <Image
+          source={image}
+          style={{ width: "86%", height: "86%" }}
+          resizeMode="contain"
+        />
+      ) : (
+        <MedicationIcon type={type} color={t.textSecondary} size={icon} />
+      )}
+    </View>
+  );
+}
 
 // ─── Animated checkbox (adapted from animated-checkbox) ──────────────────────
 const CHECKBOX_BOX_PATH =
@@ -555,8 +591,12 @@ export default function AddMedicationScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { medicationId, prefillName, prefillCategory, prefillDosage } =
+  const { medicationId, prefillName, prefillCategory, prefillDosage, prefillType } =
     useLocalSearchParams();
+  // Only accept a prefilled type we actually recognise
+  const validPrefillType = MED_TYPES.some((m) => m.key === prefillType)
+    ? prefillType
+    : null;
   const { data: medications = [] } = useMedicationsQuery();
   const addMed = useAddMedicationMutation();
   const updateMed = useUpdateMedicationMutation();
@@ -581,7 +621,10 @@ export default function AddMedicationScreen() {
   })();
 
   // ── Navigation state
-  const [step, setStep] = useState(isEditing ? 3 : prefillName ? 3 : 0);
+  // From a scan: jump to Dosage if we resolved a type, else ask for it (step 2)
+  const [step, setStep] = useState(
+    isEditing ? 3 : prefillName ? (validPrefillType ? 3 : 2) : 0,
+  );
 
   // ── Step 1: Drug
   const [name, setName] = useState(existing?.name ?? prefillName ?? "");
@@ -589,7 +632,9 @@ export default function AddMedicationScreen() {
     existing?.category ?? prefillCategory ?? "Supportive",
   );
   const [rxcui, setRxcui] = useState(existing?.rxcui ?? null);
-  const [medType, setMedType] = useState(existing?.type ?? "tablet");
+  const [medType, setMedType] = useState(
+    existing?.type ?? validPrefillType ?? "tablet",
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customNameInput, setCustomNameInput] = useState("");
@@ -775,8 +820,6 @@ export default function AddMedicationScreen() {
       },
     ]);
   };
-
-  const catColor = CATEGORY_COLORS[category] ?? C.accent;
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -1643,18 +1686,13 @@ export default function AddMedicationScreen() {
                     marginBottom: 28,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 14,
-                      backgroundColor: `${catColor}15`,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <MedicationIcon type={medType} color={catColor} size={36} />
-                  </View>
+                  <MedTypeBadge
+                    type={medType}
+                    box={52}
+                    radius={14}
+                    icon={36}
+                    t={t}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
@@ -2071,18 +2109,13 @@ export default function AddMedicationScreen() {
                     gap: 16,
                   }}
                 >
-                  <View
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 16,
-                      backgroundColor: `${catColor}15`,
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <MedicationIcon type={medType} color={catColor} size={38} />
-                  </View>
+                  <MedTypeBadge
+                    type={medType}
+                    box={56}
+                    radius={16}
+                    icon={38}
+                    t={t}
+                  />
                   <View style={{ flex: 1 }}>
                     <Text
                       style={{
