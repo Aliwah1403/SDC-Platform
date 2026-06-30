@@ -109,6 +109,18 @@ export const useAppStore = create(
   activeTab: "dashboard",
   setActiveTab: (tab) => set({ activeTab: tab }),
 
+  // ── Health recaps ───────────────────────────────────────────────────────────
+  // Stores recap keys the user has opened or cleared (e.g. "month-2026-05",
+  // "week-2026-06-22"), so each recap card stays surfaced through its period
+  // until acted on, then reappears next period when its key changes.
+  dismissedRecaps: [],
+  dismissRecap: (key) =>
+    set((state) => ({
+      dismissedRecaps: state.dismissedRecaps.includes(key)
+        ? state.dismissedRecaps
+        : [...state.dismissedRecaps, key],
+    })),
+
   // ── Community — device-local only (hide is not synced to server) ───────────
   hiddenPostIds: [],
   hidePost: (postId) =>
@@ -389,6 +401,7 @@ export const useAppStore = create(
       partialize: (state) => ({
         onboardingData: state.onboardingData,
         onboardingCurrentStep: state.onboardingCurrentStep,
+        dismissedRecaps: state.dismissedRecaps,
       }),
     }
   )

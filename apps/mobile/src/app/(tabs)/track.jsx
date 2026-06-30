@@ -20,7 +20,6 @@ import {
   Plus,
   Bell,
   User,
-  Pill,
   Zap,
   Droplets,
   Smile,
@@ -31,7 +30,6 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-  Check,
   Footprints,
   Wind,
   Timer,
@@ -39,16 +37,12 @@ import {
   Thermometer,
   Waves,
   AlertTriangle,
+  TrendingUp,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
-import {
-  useMedicationsQuery,
-  useToggleMedicationTakenMutation,
-  useAddMedicationLogMutation,
-  useDeleteLatestMedicationLogMutation,
-} from "@/hooks/queries/useMedicationsQuery";
-import { MedicationsSkeleton } from "@/components/Track/MedicationsSkeleton";
+import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { MedicationCard } from "@/components/HomeScreen/MedicationCard";
 import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getGradientColors } from "@/utils/homeHelpers";
@@ -59,7 +53,6 @@ import { useHealthService } from "@/hooks/useHealthService";
 import { fetchWorkoutsForDate } from "@/services/healthService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
-import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -397,46 +390,51 @@ function LogTodayCard() {
   );
 }
 
-// ─── Medications ──────────────────────────────────────────────────────────────
+// ─── Insights Entry Card ──────────────────────────────────────────────────────
 
-function MedicationItem({ medication, taken, onToggle }) {
+function InsightsEntryCard() {
+  const router = useRouter();
   const t = useTheme();
   return (
-    <View
+    <TouchableOpacity
+      onPress={() => router.push("/health-insights")}
+      activeOpacity={0.85}
       style={{
+        marginHorizontal: 16,
+        marginTop: 8,
+        marginBottom: 32,
+        backgroundColor: t.surface,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: t.border,
+        padding: 16,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: t.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 10,
-        borderLeftWidth: 3,
-        borderLeftColor: taken ? WINE : t.border,
+        gap: 14,
       }}
     >
       <View
         style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: taken ? "#FBE8EC" : t.surfaceElevated,
+          width: 44,
+          height: 44,
+          borderRadius: 12,
+          backgroundColor: "#F8E9E7",
           alignItems: "center",
           justifyContent: "center",
-          marginRight: 12,
         }}
       >
-        <Pill color={taken ? WINE : "#9CA3AF"} size={18} strokeWidth={2} />
+        <TrendingUp size={22} color="#A9334D" strokeWidth={2} />
       </View>
       <View style={{ flex: 1 }}>
         <Text
           style={{
-            fontFamily: fonts.semibold,
-            fontSize: 15,
+            fontFamily: fonts.bold,
+            fontSize: 16,
             color: t.text,
-            marginBottom: 1,
+            marginBottom: 2,
           }}
         >
-          {medication.name}
+          Health Insights
         </Text>
         <Text
           style={{
@@ -445,105 +443,11 @@ function MedicationItem({ medication, taken, onToggle }) {
             color: t.textSecondary,
           }}
         >
-          {medication.dosage} · {medication.time}
+          Trends in your pain, hydration &amp; mood
         </Text>
       </View>
-      <TouchableOpacity
-        onPress={onToggle}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          borderWidth: 2,
-          borderColor: taken ? WINE : "#D1D5DB",
-          backgroundColor: taken ? WINE : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {taken && <Check color="#fff" size={13} strokeWidth={2.5} />}
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function MedicationsSection({ selectedDate }) {
-  const { data: medications = [], isLoading } = useMedicationsQuery();
-  const toggleTaken = useToggleMedicationTakenMutation();
-  const addLog = useAddMedicationLogMutation();
-  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
-  const posthog = usePostHog();
-  const t = useTheme();
-  if (isLoading) return <MedicationsSkeleton />;
-  const active = medications.filter((m) => m.isActive);
-  const dateLabel = selectedDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  return (
-    <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 14,
-        }}
-      >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>
-          Medications due
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 13,
-            color: t.textSecondary,
-          }}
-        >
-          {dateLabel}
-        </Text>
-      </View>
-      {active.map((med) => (
-        <MedicationItem
-          key={med.id}
-          medication={med}
-          taken={!!med.taken}
-          onToggle={() => {
-            const _now = new Date();
-            let _delayMinutes = null;
-            if (med.time) {
-              const [_hStr, _mStr] = med.time.split(':');
-              const _h = parseInt(_hStr, 10);
-              const _m = parseInt(_mStr, 10);
-              if (!isNaN(_h) && !isNaN(_m) && _h >= 0 && _h <= 23 && _m >= 0 && _m <= 59) {
-                const _scheduled = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), _h, _m);
-                _delayMinutes = Math.round((_now.getTime() - _scheduled.getTime()) / 60000);
-              }
-            }
-            posthog?.capture("dose_logged", {
-              medication_name: med.name,
-              dose_time: med.time ?? null,
-              delay_minutes: _delayMinutes,
-              new_state: !med.taken,
-            });
-            const isMultiDose = Array.isArray(med.times) && med.times.length > 1;
-            if (isMultiDose) {
-              if (!med.taken) {
-                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
-                addLog.mutate(med.id);
-              } else {
-                deleteLatestLog.mutate(med.id);
-              }
-            } else {
-              if (!med.taken) {
-                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
-              }
-              toggleTaken.mutate(med.id);
-            }
-          }}
-        />
-      ))}
-    </View>
+      <ChevronRight size={18} color={t.textSecondary} strokeWidth={2} />
+    </TouchableOpacity>
   );
 }
 
@@ -1348,6 +1252,7 @@ export default function TrackScreen() {
   const posthog = usePostHog();
   const t = useTheme();
   const { data: healthData = [] } = useHealthDataQuery();
+  const { data: medications = [] } = useMedicationsQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
   const { healthKitData, healthConnectData } = useAppStore();
   const { alertState, isConnected: healthConnected } = useHealthService();
@@ -1487,7 +1392,7 @@ export default function TrackScreen() {
       {/* Scrollable content */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 0 }}
         showsVerticalScrollIndicator={false}
       >
         {isToday(selectedDate) && !hasLoggedData && <LogTodayCard />}
@@ -1497,7 +1402,9 @@ export default function TrackScreen() {
             onLogSymptoms={() => router.push("/log-symptoms")}
           />
         )}
-        <MedicationsSection selectedDate={selectedDate} />
+        <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
+          <MedicationCard medications={medications} />
+        </View>
         <MetricsGrid
           entry={entry}
           healthData={healthData}
@@ -1508,6 +1415,7 @@ export default function TrackScreen() {
           hkConnected={healthConnected}
           loading={workoutsLoading}
         />
+        <InsightsEntryCard />
       </ScrollView>
     </View>
   );

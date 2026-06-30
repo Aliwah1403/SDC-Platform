@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import {
   Home,
-  Activity,
+  TrendingUp,
   Users,
   HeartHandshake,
 } from "lucide-react-native";
@@ -40,8 +40,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="track"
         options={{
-          title: "Activity",
-          tabBarIcon: ({ color }) => <Activity color={color} size={20} />,
+          title: "Track",
+          tabBarIcon: ({ color }) => <TrendingUp color={color} size={20} />,
         }}
       />
       {/* Learn tab hidden — direction TBD */}

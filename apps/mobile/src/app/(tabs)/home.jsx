@@ -27,7 +27,7 @@ import { QuickActions } from "@/components/HomeScreen/QuickActions";
 import { PainStatusTile } from "@/components/HomeScreen/PainStatusTile";
 import { MetricGrid } from "@/components/HomeScreen/MetricGrid";
 import { ContextualCards } from "@/components/HomeScreen/ContextualCards";
-import { MonthlySummaryCard } from "@/components/HomeScreen/MonthlySummaryCard";
+import { HealthRecaps } from "@/components/HomeScreen/HealthRecaps";
 import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
@@ -358,12 +358,11 @@ export default function HomeScreen() {
 
         <MetricGrid selectedDateData={selectedDateData} />
 
-        <MonthlySummaryCard healthData={healthData} />
+        <HealthRecaps healthData={healthData} />
 
         <ContextualCards
           appointments={appointments}
-          medications={medications}
-          isLoading={medsLoading || apptLoading}
+          isLoading={apptLoading}
         />
       </Animated.ScrollView>
 
