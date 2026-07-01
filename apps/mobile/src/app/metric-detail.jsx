@@ -312,226 +312,114 @@ function getInsights(metric, currentValue, statusLabel, trendDelta, lowerIsBette
 
   switch (metric) {
     case "pain": {
-      if (statusLabel === "Low") return {
-        headline: trendingWorse
-          ? "Pain has been low but is starting to rise — act early"
-          : "Your pain is well-controlled — keep up what's working",
-        subtitle: trendingWorse
-          ? "Small preventive actions now can stop a larger flare developing"
-          : "Maintaining your current habits is your best defence against a crisis",
-        sectionTitle: "Ways to stay ahead of pain",
-        tips: [
-          { heading: "Keep hydration high", bullets: [{ label: "Stay consistent:", text: "Even on good days, 8+ glasses daily keeps red blood cells from sickling" }] },
-          { heading: "Rest proactively", bullets: [{ label: "Don't wait:", text: "Maintaining regular rest prevents the fatigue that commonly triggers crises" }] },
-          { heading: "Monitor stress", bullets: [{ label: "Stress is a trigger:", text: "Emotional stress is a documented pain trigger — check in with your mood regularly" }] },
-        ],
+      if (statusLabel === "Low") return trendingWorse ? {
+        headline: "Pain has been low but is starting to rise — act early",
+        paragraph: "Small preventive actions now can stop a larger flare developing. Top up hydration, rest before fatigue builds, and note anything unusual with your stress or mood.",
+      } : {
+        headline: "Your pain is well-controlled — keep up what's working",
+        paragraph: "Maintaining your current habits is your best defence against a crisis. Keep hydration high, rest before fatigue builds, and check in on your stress levels regularly.",
       };
       if (statusLabel === "Moderate") return {
         headline: "Moderate pain detected — targeted action can prevent escalation",
-        subtitle: "Now is the time to support your body before the pain increases further",
-        sectionTitle: "Ways to manage moderate pain",
-        tips: [
-          { heading: "Prioritise hydration", bullets: [{ label: "Drink now:", text: "If you haven't hit your goal today, start now — dehydration directly amplifies pain" }] },
-          { heading: "Heat therapy", bullets: [{ label: "Warm compress:", text: "Applying warmth to painful areas improves local blood flow and reduces sickling" }] },
-          { heading: "Rest immediately", bullets: [{ label: "Stop activity:", text: "Continuing physical exertion during moderate pain significantly increases your crisis risk" }] },
-        ],
+        paragraph: "Now is the time to support your body before the pain increases further. Prioritise hydration if you haven't hit your goal today, apply warmth to painful areas, and stop any activity to rest.",
       };
       return {
         headline: "Your pain level is elevated — focus on relief and recovery",
-        subtitle: "High pain requires immediate attention, rest, and care team contact if persistent",
-        sectionTitle: "Ways to manage high pain",
-        tips: [
-          { heading: "Contact your care team", bullets: [{ label: "Don't wait:", text: "Persistent high pain should be reviewed by your healthcare provider promptly" }] },
-          { heading: "Hydration is critical", bullets: [{ label: "Drink now:", text: "Dehydration is likely contributing to elevated pain — address it immediately" }] },
-          { heading: "Complete rest", bullets: [{ label: "No exertion:", text: "All physical activity should stop during a high-pain episode to allow your body to recover" }] },
-        ],
+        paragraph: "High pain requires immediate attention, rest, and care team contact if it persists. Stop all physical activity, address hydration right away, and don't wait to reach out if it doesn't ease.",
       };
     }
 
     case "hydration": {
-      if (statusLabel === "On track") return {
-        headline: trendingWorse
-          ? "Your hydration has been good but is declining — stay consistent"
-          : "Great hydration! You're protecting yourself against pain crises",
-        subtitle: trendingWorse
-          ? "A drop in hydration can quickly raise your crisis risk — don't let it slip"
-          : "Consistent hydration is one of the most powerful SCD management tools",
-        sectionTitle: trendingWorse ? "Ways to reverse the decline" : "Ways to maintain great hydration",
-        tips: [
-          { heading: "Keep the routine", bullets: [{ label: "Don't skip:", text: "Consistency matters — even one low-hydration day can elevate your sickling risk" }] },
-          { heading: "Increase in heat", bullets: [{ label: "Add 2+ glasses:", text: "On warm days or when physically active, increase intake beyond your daily goal" }] },
-          { heading: "Morning check", bullets: [{ label: "Urine colour:", text: "Dark urine first thing in the morning means start the day with two full glasses immediately" }] },
-        ],
+      if (statusLabel === "On track") return trendingWorse ? {
+        headline: "Your hydration has been good but is declining — stay consistent",
+        paragraph: "A drop in hydration can quickly raise your crisis risk, so don't let it slip. Get back to your usual routine today, and add a glass or two if it's warm or you've been active.",
+      } : {
+        headline: "Great hydration! You're protecting yourself against pain crises",
+        paragraph: "Consistent hydration is one of the most powerful SCD management tools you have. Keep the routine going, add extra glasses on hot or active days, and check your urine colour each morning as a quick gauge.",
       };
       if (statusLabel === "Fair") return {
         headline: "Your hydration is below target — small improvements make a real difference",
-        subtitle: "Fair hydration still carries elevated crisis risk — close the gap today",
-        sectionTitle: "Ways to improve your hydration",
-        tips: [
-          { heading: "Add one more glass", bullets: [{ label: "Start small:", text: "Just one extra glass per day creates a meaningful improvement in blood viscosity" }] },
-          { heading: "Set reminders", bullets: [{ label: "Phone alerts:", text: "Hourly reminders to sip water build the habit with very little effort" }] },
-          { heading: "Keep water visible", bullets: [{ label: "Always in sight:", text: "A bottle you can see is the single most effective way to increase daily intake" }] },
-        ],
+        paragraph: "Fair hydration still carries elevated crisis risk, so closing the gap today matters. Add just one more glass, set hourly reminders, and keep a bottle somewhere you'll actually see it.",
       };
       return {
         headline: "Low hydration is a major pain crisis risk — prioritise drinking today",
-        subtitle: "Dehydration causes red blood cells to sickle more easily — act now",
-        sectionTitle: "Ways to urgently boost hydration",
-        tips: [
-          { heading: "Start immediately", bullets: [{ label: "Drink right now:", text: "Have a full glass now, then set a reminder every 30 minutes until you hit your goal" }] },
-          { heading: "Avoid dehydrating drinks", bullets: [{ label: "Limit caffeine:", text: "Caffeine and alcohol increase fluid loss and significantly worsen dehydration" }] },
-          { heading: "Electrolyte support", bullets: [{ label: "Consider electrolytes:", text: "If severely dehydrated, electrolyte drinks help your body absorb fluid more effectively" }] },
-        ],
+        paragraph: "Dehydration causes red blood cells to sickle more easily, so act now. Have a full glass immediately, set a reminder every 30 minutes, and consider electrolytes if you're severely behind.",
       };
     }
 
     case "mood": {
-      if (statusLabel === "Great" || statusLabel === "Good") return {
-        headline: trendingWorse
-          ? "Your mood has been positive but shows a downward trend — stay proactive"
-          : "Your mood is strong — these habits are supporting your wellbeing",
-        subtitle: "Positive mood is closely linked to better pain management and physical health",
-        sectionTitle: trendingWorse ? "Ways to protect your mood" : "Ways to sustain good mood",
-        tips: [
-          { heading: "Maintain your routines", bullets: [{ label: "Consistency matters:", text: "The habits keeping your mood up — sleep, hydration, connection — deserve to stay consistent" }] },
-          { heading: "Daily reflection", bullets: [{ label: "Gratitude practice:", text: "Noting three positive things each day reinforces emotional resilience" }] },
-          { heading: "Protect your energy", bullets: [{ label: "Set boundaries:", text: "Saying no to draining commitments preserves emotional resources for recovery" }] },
-        ],
+      if (statusLabel === "Great" || statusLabel === "Good") return trendingWorse ? {
+        headline: "Your mood has been positive but shows a downward trend — stay proactive",
+        paragraph: "Positive mood is closely linked to better pain management, so it's worth protecting. Keep the habits that have been working, and set boundaries around anything that's been draining your energy.",
+      } : {
+        headline: "Your mood is strong — these habits are supporting your wellbeing",
+        paragraph: "Positive mood is closely linked to better pain management and physical health. Keep your sleep, hydration, and connection habits consistent, and take a moment each day to note what's going well.",
       };
       if (statusLabel === "Okay") return {
         headline: "Your mood is moderate — small, consistent actions can shift it upward",
-        subtitle: "Managing mood with SCD takes care — you're not alone in this",
-        sectionTitle: "Ways to lift your mood",
-        tips: [
-          { heading: "Get outside", bullets: [{ label: "Sunlight & fresh air:", text: "Even a short walk outside boosts serotonin and reduces stress hormones" }] },
-          { heading: "Connect with others", bullets: [{ label: "Reach out today:", text: "A brief conversation with a trusted friend or family member can meaningfully improve mood" }] },
-          { heading: "Gentle movement", bullets: [{ label: "Light activity:", text: "Low-intensity movement releases endorphins without risking a pain episode" }] },
-        ],
+        paragraph: "Managing mood with SCD takes care, and you're not alone in this. A short walk outside, a conversation with someone you trust, or some gentle movement can all help lift things.",
       };
       return {
         headline: "Low mood is common with SCD — recognising it is the first step",
-        subtitle: "Chronic pain and fatigue significantly affect emotional wellbeing",
-        sectionTitle: "Ways to support your mental health",
-        tips: [
-          { heading: "Talk to someone", bullets: [{ label: "Don't carry it alone:", text: "Sharing how you feel with a trusted person or your care team can provide real relief" }] },
-          { heading: "Professional support", bullets: [{ label: "Therapy works:", text: "CBT has strong evidence for improving mood in people managing chronic conditions" }] },
-          { heading: "Focus on small wins", bullets: [{ label: "One step at a time:", text: "Completing one small positive action today is more helpful than trying to fix everything at once" }] },
-        ],
+        paragraph: "Chronic pain and fatigue can significantly affect emotional wellbeing. Talk to someone you trust or your care team, and focus on one small positive step today rather than everything at once.",
       };
     }
 
     case "steps": {
-      if (statusLabel === "Active") return {
-        headline: trendingWorse
-          ? "You've been very active but activity is declining — check in with your body"
-          : "You're hitting great activity levels — here's how to keep it sustainable",
-        subtitle: "Consistent movement improves circulation and overall wellbeing with SCD",
-        sectionTitle: "Ways to stay active sustainably",
-        tips: [
-          { heading: "Pace throughout the day", bullets: [{ label: "Spread steps out:", text: "Distributing activity through the day prevents the fatigue spikes that can trigger crises" }] },
-          { heading: "Cool down properly", bullets: [{ label: "Post-activity stretch:", text: "Stretching after activity reduces lactic acid build-up and muscle tension" }] },
-          { heading: "Hydrate around activity", bullets: [{ label: "Before and after:", text: "Drink a glass before and after any physical activity to offset fluid loss" }] },
-        ],
+      if (statusLabel === "Active") return trendingWorse ? {
+        headline: "You've been very active but activity is declining — check in with your body",
+        paragraph: "Consistent movement improves circulation and overall wellbeing, so a dip is worth noticing. Listen to what your body's telling you, and ease back in gently rather than pushing through fatigue.",
+      } : {
+        headline: "You're hitting great activity levels — here's how to keep it sustainable",
+        paragraph: "Consistent movement improves circulation and overall wellbeing with SCD. Spread activity across the day rather than bursts, stretch afterwards, and hydrate before and after to offset fluid loss.",
       };
       if (statusLabel === "Moderate") return {
         headline: "You're moderately active — gradual increases can safely boost circulation",
-        subtitle: "Building up slowly is the right approach to increasing activity with SCD",
-        sectionTitle: "Ways to increase activity safely",
-        tips: [
-          { heading: "Add short walks", bullets: [{ label: "10 minutes more:", text: "Adding just one extra 10-minute walk per day builds the habit without overexertion" }] },
-          { heading: "Everyday choices", bullets: [{ label: "Take the stairs:", text: "Small environment-based activity adds up and keeps your body moving throughout the day" }] },
-          { heading: "Morning movement", bullets: [{ label: "Start the day moving:", text: "A short morning walk sets a positive baseline and tends to increase overall activity" }] },
-        ],
+        paragraph: "Building up slowly is the right approach to increasing activity with SCD. Add a short 10-minute walk, take the stairs when you can, and try starting your day with a little movement.",
       };
       return {
         headline: "Low activity may be affecting your circulation — gentle movement helps",
-        subtitle: "Even light walking daily significantly supports blood flow with SCD",
-        sectionTitle: "Ways to gently increase your activity",
-        tips: [
-          { heading: "Start very small", bullets: [{ label: "5-minute walks:", text: "Begin with just 5 minutes and gradually extend as you feel comfortable" }] },
-          { heading: "Home movement counts", bullets: [{ label: "No gym needed:", text: "Standing, stretching, or slow walking around your home all support circulation" }] },
-          { heading: "Pain comes first", bullets: [{ label: "Rest if pain is high:", text: "Only increase activity on comfortable days — rest is the right call during a pain episode" }] },
-        ],
+        paragraph: "Even light walking daily significantly supports blood flow with SCD. Start with just 5 minutes, let stretching or standing at home count too, and rest first if pain is high.",
       };
     }
 
     case "sleep": {
-      if (statusLabel === "Great") return {
-        headline: trendingWorse
-          ? "Your sleep has been great but is starting to dip — protect this habit"
-          : "Excellent sleep! Consistent rest is your body's most powerful recovery tool",
-        subtitle: "Great sleep significantly reduces pain sensitivity and crisis risk",
-        sectionTitle: "Ways to protect great sleep",
-        tips: [
-          { heading: "Protect your schedule", bullets: [{ label: "Same time every day:", text: "Even on weekends, a consistent sleep schedule preserves the quality you've built" }] },
-          { heading: "Wind-down ritual", bullets: [{ label: "30-minute buffer:", text: "A consistent pre-sleep routine signals your brain to prepare for deep, restorative sleep" }] },
-          { heading: "Pre-sleep hydration", bullets: [{ label: "One glass before bed:", text: "Prevents overnight dehydration and painful nighttime cramps" }] },
-        ],
+      if (statusLabel === "Great") return trendingWorse ? {
+        headline: "Your sleep has been great but is starting to dip — protect this habit",
+        paragraph: "Great sleep significantly reduces pain sensitivity and crisis risk, so it's worth protecting. Keep your bedtime consistent, even on weekends, and stick with the wind-down routine that's been working.",
+      } : {
+        headline: "Excellent sleep! Consistent rest is your body's most powerful recovery tool",
+        paragraph: "Great sleep significantly reduces pain sensitivity and crisis risk. Protect your schedule, keep a wind-down routine before bed, and have a glass of water beforehand to avoid overnight dehydration.",
       };
       if (statusLabel === "Good") return {
         headline: "Good sleep — you're close to optimal, here's how to maximise quality",
-        subtitle: "Small improvements in sleep quality can have outsized benefits for SCD",
-        sectionTitle: "Ways to optimise your sleep",
-        tips: [
-          { heading: "Lock in bedtime", bullets: [{ label: "Within 30 minutes:", text: "Consistent bedtime within 30 minutes each night improves depth of sleep over time" }] },
-          { heading: "Limit screens", bullets: [{ label: "Blue light impact:", text: "Screens within 30 minutes of sleep reduce melatonin and delay sleep onset" }] },
-          { heading: "Cool your room", bullets: [{ label: "Lower temperature:", text: "Sleeping slightly cooler (around 18°C) promotes deeper, more restorative sleep" }] },
-        ],
+        paragraph: "Small improvements in sleep quality can have outsized benefits for SCD. Lock in a consistent bedtime, limit screens beforehand, and keep your room a little cooler for deeper rest.",
       };
       if (statusLabel === "Fair") return {
         headline: "Your sleep is below recommended — this can amplify pain sensitivity",
-        subtitle: "Even one extra hour of sleep can meaningfully improve your pain tolerance",
-        sectionTitle: "Ways to increase sleep duration",
-        tips: [
-          { heading: "Shift bedtime earlier", bullets: [{ label: "Gradual change:", text: "Move your bedtime 15 minutes earlier each night until you reach the 7–9 hour range" }] },
-          { heading: "Reduce disruptors", bullets: [{ label: "Limit caffeine:", text: "Avoid caffeine after 2pm — it can delay sleep onset by several hours" }] },
-          { heading: "Address nighttime pain", bullets: [{ label: "Talk to your doctor:", text: "If pain is what's keeping you awake, your care team has options that can help" }] },
-        ],
+        paragraph: "Even one extra hour of sleep can meaningfully improve your pain tolerance. Shift your bedtime 15 minutes earlier each night, cut caffeine after 2pm, and mention any nighttime pain to your care team.",
       };
       return {
         headline: "Insufficient sleep is increasing your pain sensitivity and crisis risk",
-        subtitle: "Prioritising sleep tonight is one of the most impactful things you can do",
-        sectionTitle: "Ways to get more sleep urgently",
-        tips: [
-          { heading: "Make sleep the priority", bullets: [{ label: "Cancel non-essentials:", text: "When sleep is critically low, reducing commitments to rest is medically justified" }] },
-          { heading: "Speak to your doctor", bullets: [{ label: "Sleep disorders:", text: "Persistent poor sleep may indicate an underlying issue your care team can help address" }] },
-          { heading: "Nap strategically", bullets: [{ label: "Short naps:", text: "A 20-minute nap before 3pm can partially offset a poor night without disrupting nighttime sleep" }] },
-        ],
+        paragraph: "Prioritising sleep tonight is one of the most impactful things you can do. It's okay to cancel non-essentials to rest, a short nap before 3pm can help, and persistent poor sleep is worth flagging to your doctor.",
       };
     }
 
     case "heartrate": {
-      if (statusLabel === "Normal") return {
-        headline: trendingWorse
-          ? "Heart rate is normal but trending upward — keep monitoring"
-          : "Your heart rate is in a healthy range — keep supporting it",
-        subtitle: "Maintaining this range supports good oxygen delivery throughout your body",
-        sectionTitle: "Ways to support heart health",
-        tips: [
-          { heading: "Stay active safely", bullets: [{ label: "Low-impact exercise:", text: "Regular gentle movement maintains cardiovascular fitness without strain" }] },
-          { heading: "Manage stress", bullets: [{ label: "Breathing techniques:", text: "Daily slow breathing exercises help regulate your heart rate over time" }] },
-          { heading: "Stay hydrated", bullets: [{ label: "Heart & hydration:", text: "Dehydration forces your heart to work harder — keeping fluids up lowers resting rate" }] },
-        ],
+      if (statusLabel === "Normal") return trendingWorse ? {
+        headline: "Heart rate is normal but trending upward — keep monitoring",
+        paragraph: "Maintaining this range supports good oxygen delivery throughout your body, so a rising trend is worth watching. Keep hydration and rest consistent, and mention it at your next check-in if it continues.",
+      } : {
+        headline: "Your heart rate is in a healthy range — keep supporting it",
+        paragraph: "Maintaining this range supports good oxygen delivery throughout your body. Stay active with low-impact movement, keep hydration up, and use slow breathing to help manage stress.",
       };
       if (statusLabel === "Elevated") return {
         headline: "Your heart rate is elevated — this warrants rest and attention",
-        subtitle: "An elevated heart rate alongside SCD may signal increased stress or a developing episode",
-        sectionTitle: "Ways to address elevated heart rate",
-        tips: [
-          { heading: "Rest immediately", bullets: [{ label: "Stop activity:", text: "Any physical exertion should stop when heart rate is elevated — allow your body to recover" }] },
-          { heading: "Assess other symptoms", bullets: [{ label: "Pain + high HR:", text: "If elevated heart rate accompanies pain, contact your care team — this may signal a crisis" }] },
-          { heading: "Deep breathing", bullets: [{ label: "Activate rest mode:", text: "Breathe in for 4 seconds, out for 6 — this activates the vagus nerve and lowers heart rate" }] },
-        ],
+        paragraph: "An elevated heart rate alongside SCD may signal increased stress or a developing episode. Stop any activity and rest, use slow breathing to help bring it down, and contact your care team if pain accompanies it.",
       };
       return {
         headline: "Your heart rate is lower than typical — worth monitoring alongside other symptoms",
-        subtitle: "While a lower rate can be normal, track it in context with how you feel",
-        sectionTitle: "Ways to monitor heart health",
-        tips: [
-          { heading: "Watch for symptoms", bullets: [{ label: "Dizziness or fatigue:", text: "If a low heart rate accompanies fatigue or dizziness, mention it to your care team" }] },
-          { heading: "Maintain light activity", bullets: [{ label: "Gentle movement:", text: "Daily activity supports cardiovascular health and keeps heart rate in a healthy range" }] },
-          { heading: "Log consistently", bullets: [{ label: "Build a picture:", text: "Consistent logging gives your care team the context to assess whether readings are normal for you" }] },
-        ],
+        paragraph: "While a lower rate can be normal, it's worth tracking in context with how you feel. Mention any dizziness or fatigue to your care team, and keep light daily activity going to support heart health.",
       };
     }
 
@@ -542,64 +430,36 @@ function getInsights(metric, currentValue, statusLabel, trendDelta, lowerIsBette
 
 // ─── Insights Card ───────────────────────────────────────────────────────────
 
-function InsightsCard({ insights, color }) {
+function InsightsCard({ insights }) {
   const t = useTheme();
   if (!insights) return null;
+
+  // The edge function now returns { headline, paragraph } directly, but
+  // AsyncStorage caches AI insights for 24h — this falls back to synthesising
+  // a paragraph from the old { subtitle, tips } shape for anything cached
+  // before the schema changed.
+  const paragraph = insights.paragraph
+    ?? [insights.subtitle, insights.tips?.[0]?.bullets?.[0]?.text]
+      .filter(Boolean)
+      .join(" ");
+
   return (
-    <View style={{
-      backgroundColor: t.surface,
-      borderRadius: 20,
-      padding: 20,
-      marginBottom: 14,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 6,
-      elevation: 2,
-    }}>
+    <View>
       {/* Header row */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-          <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
-            Insights
-          </Text>
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
+        <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
+          Insights
+        </Text>
       </View>
 
       {/* Headline */}
-      <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, lineHeight: 25, marginBottom: 6 }}>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, lineHeight: 26, marginBottom: 10 }}>
         {insights.headline}
       </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 20, marginBottom: 18 }}>
-        {insights.subtitle}
+      <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 22 }}>
+        {paragraph}
       </Text>
-
-      {/* Divider */}
-      <View style={{ height: 1, backgroundColor: t.divider, marginBottom: 18 }} />
-
-      {/* Section title */}
-      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color, marginBottom: 16 }}>
-        {insights.sectionTitle}
-      </Text>
-
-      {/* Tips */}
-      {insights.tips.map((tip, ti) => (
-        <View key={ti} style={{ marginBottom: ti < insights.tips.length - 1 ? 20 : 0 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 10 }}>
-            {tip.heading}
-          </Text>
-          {tip.bullets.map((b, bi) => (
-            <View key={bi} style={{ flexDirection: "row", marginBottom: bi < tip.bullets.length - 1 ? 8 : 0 }}>
-              <View style={{ width: 3, borderRadius: 2, backgroundColor: color, opacity: 0.5, marginRight: 12, marginTop: 2 }} />
-              <Text style={{ flex: 1, fontFamily: fonts.regular, fontSize: 14, color: t.text, lineHeight: 21 }}>
-                <Text style={{ fontFamily: fonts.semibold }}>{b.label}</Text>
-                {" "}{b.text}
-              </Text>
-            </View>
-          ))}
-        </View>
-      ))}
     </View>
   );
 }
@@ -619,7 +479,7 @@ export default function MetricDetailScreen() {
   const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
-  const [range, setRange] = useState(30);
+  const [range, setRange] = useState(14);
 
   useEffect(() => {
     posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
@@ -741,7 +601,7 @@ export default function MetricDetailScreen() {
         >
           {/* Range toggle */}
           <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 28 }}>
-            {[7, 30].map((r) => (
+            {[7, 14].map((r) => (
               <TouchableOpacity
                 key={r}
                 onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
@@ -770,7 +630,7 @@ export default function MetricDetailScreen() {
             max={meta.rangeMax}
             color={meta.color}
             config={{
-              tickCount: 44,
+              totalNotches: 44,
               getTickColor: (ratio) => {
                 const projectedValue = meta.rangeMin + ratio * (meta.rangeMax - meta.rangeMin);
                 return getStatus(metric, projectedValue)?.color ?? meta.color;
@@ -805,54 +665,26 @@ export default function MetricDetailScreen() {
           </ArcGaugeChart>
         </MotiView>
 
-        {/* ── About Section ──────────────────────────────── */}
+        {/* ── Insights Section ─────────────────────────────── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 80, type: "timing", duration: 280 }}
-          style={{
-            backgroundColor: t.surface,
-            borderRadius: 20,
-            padding: 20,
-            marginBottom: 14,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 6,
-            elevation: 2,
-          }}
+          style={{ marginBottom: 28 }}
         >
-          {/* Section label */}
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
-            <AlignLeft size={13} color={t.textSecondary} strokeWidth={2} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
-              About
-            </Text>
-          </View>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, lineHeight: 26, marginBottom: 10 }}>
-            {meta.aboutTitle}
-          </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 22 }}>
-            {meta.about}
-          </Text>
+          <InsightsCard
+            insights={aiInsight ?? getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
+          />
         </MotiView>
+
+        <View style={{ height: 1, backgroundColor: t.divider, marginBottom: 28 }} />
 
         {/* ── Trend Section ──────────────────────────────── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 160, type: "timing", duration: 280 }}
-          style={{
-            backgroundColor: t.surface,
-            borderRadius: 20,
-            padding: 20,
-            marginBottom: 14,
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 6,
-            elevation: 2,
-          }}
+          style={{ marginBottom: 28 }}
         >
           {/* Section label row */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
@@ -909,16 +741,26 @@ export default function MetricDetailScreen() {
           )}
         </MotiView>
 
-        {/* ── Insights Section ─────────────────────────────── */}
+        <View style={{ height: 1, backgroundColor: t.divider, marginBottom: 28 }} />
+
+        {/* ── About Section ──────────────────────────────── */}
         <MotiView
           from={{ opacity: 0, translateY: 10 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ delay: 240, type: "timing", duration: 280 }}
         >
-          <InsightsCard
-            insights={aiInsight ?? getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
-            color={meta.color}
-          />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
+            <AlignLeft size={13} color={t.textSecondary} strokeWidth={2} />
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
+              About
+            </Text>
+          </View>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, lineHeight: 26, marginBottom: 10 }}>
+            {meta.aboutTitle}
+          </Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 22 }}>
+            {meta.about}
+          </Text>
         </MotiView>
       </ScrollView>
     </View>

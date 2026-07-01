@@ -259,6 +259,26 @@ function SleepStageLegend({ segments }) {
   );
 }
 
+function SleepTrendLegend({ avgValue }) {
+  if (avgValue == null) return null;
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: "#6366F120", borderWidth: 1, borderColor: "#6366F1" }} />
+        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+          Optimal range · 7-9h
+        </Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <View style={{ width: 12, height: 0, borderTopWidth: 1.5, borderColor: "#1A1A1A", borderStyle: "dashed" }} />
+        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+          Avg. {formatSleepHours(avgValue)}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 function buildBarConfig({ metric, data, range, goal }) {
   const step = labelStep(range);
   const chartData = data.map((d, i) => ({
@@ -311,9 +331,14 @@ function buildBarConfig({ metric, data, range, goal }) {
         },
       };
     }
-    case "sleep":
+    case "sleep": {
+      const logged = data.filter((d) => d.value > 0);
+      const avgValue = logged.length
+        ? logged.reduce((s, d) => s + d.value, 0) / logged.length
+        : null;
       return {
         chartData,
+        avgValue,
         config: {
           ...base,
           getBarColor: (v) => (v >= 8 ? "#6366F1" : v >= 7 ? "#818CF8" : v >= 6 ? "#F59E0B" : "#EF4444"),
@@ -321,6 +346,7 @@ function buildBarConfig({ metric, data, range, goal }) {
           goalBandColor: "#6366F1",
           yMin: 0,
           yMax: 12,
+          ...(avgValue != null ? { referenceValue: avgValue, referenceColor: "#1A1A1A" } : {}),
           renderTooltip: (item) => (
             <>
               <TooltipText>{formatSleepHours(item.value)}</TooltipText>
@@ -329,6 +355,7 @@ function buildBarConfig({ metric, data, range, goal }) {
           ),
         },
       };
+    }
     default:
       return { chartData, config: base };
   }
@@ -404,26 +431,30 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
 
   let content = null;
 
-  if (metric === "pain" && range === 30) {
+  if (metric === "pain" && range === 14) {
     const { chartData, config } = buildHeatmapConfig({ data, getStatus });
     content = <HeatmapChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "mood") {
     const { chartData, config } = buildBubbleConfig({ data, range, getStatus });
     content = <BubbleChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "sleep") {
-    const { chartData, config } = buildBarConfig({ metric, data, range, goal, color, getStatus });
+    const { chartData, config, avgValue } = buildBarConfig({ metric, data, range, goal, color, getStatus });
     content = (
       <>
         {sleepSegments?.length > 0 && (
-          <View style={{ marginBottom: 20 }}>
+          <View style={{ marginBottom: 24 }}>
             <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
               Last night
             </Text>
-            <SleepHypnogramChart segments={sleepSegments} config={{ height: 140 }} />
+            <SleepHypnogramChart segments={sleepSegments} config={{ height: 260 }} />
             <SleepStageLegend segments={sleepSegments} />
           </View>
         )}
+        <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+          {range}-day trend
+        </Text>
         <BarChart data={chartData} config={{ ...config, width }} />
+        <SleepTrendLegend avgValue={avgValue} />
       </>
     );
   } else if (metric === "hydration" || metric === "steps") {

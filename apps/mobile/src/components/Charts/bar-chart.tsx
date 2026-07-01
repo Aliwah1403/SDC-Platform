@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { LayoutChangeEvent, View, ViewStyle, Text as RNText } from "react-native";
 import Animated, {
+  type SharedValue,
   useAnimatedProps,
   useSharedValue,
   withTiming,
@@ -45,6 +46,40 @@ type Props = {
   config?: ChartConfig;
   style?: ViewStyle;
 };
+
+function AnimatedBar({
+  x,
+  width,
+  barHeight,
+  baselineY,
+  animationProgress,
+  fill,
+  onPress,
+}: {
+  x: number;
+  width: number;
+  barHeight: number;
+  baselineY: number;
+  animationProgress: SharedValue<number>;
+  fill?: string;
+  onPress: () => void;
+}) {
+  const animatedProps = useAnimatedProps(() => ({
+    height: animationProgress.value * barHeight,
+    y: baselineY - animationProgress.value * barHeight,
+  }));
+
+  return (
+    <AnimatedRect
+      x={x}
+      width={width}
+      fill={fill}
+      rx={4}
+      animatedProps={animatedProps}
+      onPress={onPress}
+    />
+  );
+}
 
 export const BarChart = ({ data, config = {}, style }: Props) => {
   const [containerWidth, setContainerWidth] = useState(300);
@@ -135,22 +170,17 @@ export const BarChart = ({ data, config = {}, style }: Props) => {
         {data.map((item, index) => {
           const barHeight = ((item.value - effectiveMin) / effectiveRange) * chartHeight;
           const x = padding + index * (barWidth + barSpacing) + barSpacing / 2;
-          const y = baselineY - barHeight;
           const color = getBarColor ? getBarColor(item.value, index) : item.color;
-
-          const barAnimatedProps = useAnimatedProps(() => ({
-            height: animationProgress.value * barHeight,
-            y: baselineY - animationProgress.value * barHeight,
-          }));
 
           return (
             <G key={`bar-${index}`}>
-              <AnimatedRect
+              <AnimatedBar
                 x={x}
                 width={barWidth}
+                barHeight={barHeight}
+                baselineY={baselineY}
+                animationProgress={animationProgress}
                 fill={color}
-                rx={4}
-                animatedProps={barAnimatedProps}
                 onPress={() => setActiveIndex(activeIndex === index ? null : index)}
               />
 
