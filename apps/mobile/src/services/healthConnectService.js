@@ -37,6 +37,9 @@ const WRITE_PERMISSIONS = [
 // Sleep stage values considered "asleep" (excludes AWAKE=1, AWAKE_IN_BED=5)
 const ASLEEP_STAGES = new Set([2, 3, 4, 6]); // LIGHT, DEEP, REM, SLEEPING
 
+// Maps Health Connect sleep stage values to the 4 hypnogram buckets used by MetricChart
+const SLEEP_STAGE_BUCKET = { 1: "awake", 5: "awake", 2: "core", 6: "core", 3: "deep", 4: "rem" };
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function dateStr(date) {
@@ -258,6 +261,8 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
       };
       const { records } = await readRecords("SleepSession", { timeRangeFilter: sleepFilter });
       const sleepByDate = {};
+      const stagesByDate = {};
+      const segmentsByDate = {};
       for (const r of records) {
         // Attribute to wake-up date (endTime), matching the HealthKit convention
         const key = dateStr(r.endTime);
@@ -268,6 +273,14 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
               const hours = (new Date(stage.endTime) - new Date(stage.startTime)) / 3600000;
               sessionHours += hours;
             }
+            const bucket = SLEEP_STAGE_BUCKET[stage.stage];
+            if (bucket) {
+              const hours = (new Date(stage.endTime) - new Date(stage.startTime)) / 3600000;
+              stagesByDate[key] = stagesByDate[key] ?? { awake: 0, core: 0, deep: 0, rem: 0 };
+              stagesByDate[key][bucket] += hours;
+              segmentsByDate[key] = segmentsByDate[key] ?? [];
+              segmentsByDate[key].push({ start: stage.startTime, end: stage.endTime, stage: bucket });
+            }
           }
         } else {
           // No stage breakdown — use full session duration
@@ -277,6 +290,19 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
       }
       for (const [key, hours] of Object.entries(sleepByDate)) {
         merge(key, { sleepHours: Math.round(hours * 10) / 10 });
+      }
+      for (const [key, stages] of Object.entries(stagesByDate)) {
+        merge(key, {
+          sleepStages: {
+            awake: Math.round(stages.awake * 10) / 10,
+            core: Math.round(stages.core * 10) / 10,
+            deep: Math.round(stages.deep * 10) / 10,
+            rem: Math.round(stages.rem * 10) / 10,
+          },
+        });
+      }
+      for (const [key, segments] of Object.entries(segmentsByDate)) {
+        merge(key, { sleepSegments: segments.sort((a, b) => new Date(a.start) - new Date(b.start)) });
       }
     } catch {}
   }

@@ -6,12 +6,12 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Dimensions,
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { LineChart, BarChart } from "react-native-gifted-charts";
+import { MetricChart } from "@/components/Charts/MetricChart";
+import { ArcGaugeChart } from "@/components/Charts/arc-gauge-chart";
 import { MotiView } from "moti";
 import {
   ChevronLeft,
@@ -36,22 +36,6 @@ import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
 import { useTheme } from "@/hooks/useTheme";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-// base: scrollview pad 20*2 + card pad 20*2 - marginLeft offset 8 = 72; add labelWidth per metric
-const CHART_WIDTH = SCREEN_WIDTH - 96;
-
-const METRIC_Y_AXIS = {
-  pain:        { sections: 5, labelWidth: 24, labels: ["0","2","4","6","8","10"] },
-  hydration:   { sections: 4, labelWidth: 24, labels: null },
-  mood:        { sections: 5, labelWidth: 20, labels: null },
-  steps:       { sections: 3, labelWidth: 32, labels: ["0","5k","10k","15k"] },
-  sleep:       { sections: 4, labelWidth: 24, labels: null },
-  heartrate:   { sections: 4, labelWidth: 32, labels: ["0","30","60","90","120"] },
-  spo2:        { sections: 4, labelWidth: 24, labels: null },
-  temperature: { sections: 3, labelWidth: 24, labels: ["0","14","28","42°"] },
-  resprate:    { sections: 3, labelWidth: 24, labels: ["0","10","20","30"] },
-};
-
 function dateToStr(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -67,7 +51,6 @@ const METRIC_META = {
     max: 10,
     rangeMin: 0,
     rangeMax: 10,
-    chartType: "line",
     dataField: "painLevel",
     hasGoal: false,
     lowerIsBetter: true,
@@ -81,7 +64,6 @@ const METRIC_META = {
     max: 16,
     rangeMin: 0,
     rangeMax: 16,
-    chartType: "bar",
     dataField: "hydration",
     hasGoal: true,
     lowerIsBetter: false,
@@ -96,7 +78,6 @@ const METRIC_META = {
     max: 5,
     rangeMin: 1,
     rangeMax: 5,
-    chartType: "line",
     dataField: "mood",
     hasGoal: false,
     lowerIsBetter: false,
@@ -110,7 +91,6 @@ const METRIC_META = {
     max: 15000,
     rangeMin: 0,
     rangeMax: 15000,
-    chartType: "bar",
     dataField: "steps",
     hasGoal: true,
     lowerIsBetter: false,
@@ -125,7 +105,6 @@ const METRIC_META = {
     max: 12,
     rangeMin: 0,
     rangeMax: 12,
-    chartType: "bar",
     dataField: "sleepHours",
     hasGoal: true,
     lowerIsBetter: false,
@@ -140,7 +119,6 @@ const METRIC_META = {
     max: 120,
     rangeMin: 40,
     rangeMax: 130,
-    chartType: "line",
     dataField: "heartRate",
     hasGoal: false,
     lowerIsBetter: false,
@@ -155,7 +133,6 @@ const METRIC_META = {
     max: 100,
     rangeMin: 88,
     rangeMax: 100,
-    chartType: "line",
     dataField: "spO2",
     hasGoal: false,
     lowerIsBetter: false,
@@ -170,7 +147,6 @@ const METRIC_META = {
     max: 42,
     rangeMin: 35,
     rangeMax: 42,
-    chartType: "line",
     dataField: "temperature",
     hasGoal: false,
     lowerIsBetter: false,
@@ -185,7 +161,6 @@ const METRIC_META = {
     max: 30,
     rangeMin: 8,
     rangeMax: 30,
-    chartType: "line",
     dataField: "respiratoryRate",
     hasGoal: false,
     lowerIsBetter: false,
@@ -323,45 +298,6 @@ function ScdAlertBanner({ metric, value, status, compositeAlert }) {
           {compositeNote}
         </Text>
       )}
-    </View>
-  );
-}
-
-// ─── Dot Range Indicator ─────────────────────────────────────────────────────
-
-function DotRange({ value, rangeMin, rangeMax, color }) {
-  const t = useTheme();
-  const DOTS = 36;
-  if (!value) return null;
-  const clamped = Math.min(Math.max(value, rangeMin), rangeMax);
-  const position = (clamped - rangeMin) / (rangeMax - rangeMin);
-  const activeIndex = Math.round(position * (DOTS - 1));
-
-  return (
-    <View style={{ marginTop: 20 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-        {Array.from({ length: DOTS }).map((_, i) => {
-          const isFilled = i <= activeIndex;
-          const isCurrent = i === activeIndex;
-          const progress = isFilled ? i / Math.max(activeIndex, 1) : 0;
-          return (
-            <View
-              key={i}
-              style={{
-                width: isCurrent ? 10 : 7,
-                height: isCurrent ? 10 : 7,
-                borderRadius: 999,
-                backgroundColor: isFilled ? color : t.surfaceElevated,
-                opacity: isFilled ? (0.3 + progress * 0.7) : 1,
-              }}
-            />
-          );
-        })}
-      </View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>{rangeMin}</Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary }}>{rangeMax}</Text>
-      </View>
     </View>
   );
 }
@@ -683,8 +619,6 @@ export default function MetricDetailScreen() {
   const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
-  const yAxis = METRIC_Y_AXIS[metric] ?? { sections: 4, labelWidth: 24, labels: null };
-  const chartWidth = SCREEN_WIDTH - (72 + yAxis.labelWidth);
   const [range, setRange] = useState(30);
 
   useEffect(() => {
@@ -712,6 +646,14 @@ export default function MetricDetailScreen() {
     [mergedHealthData, meta.dataField, range]
   );
 
+  const latestSleepSegments = useMemo(() => {
+    if (metric !== "sleep") return null;
+    const withSegments = mergedHealthData
+      .filter((d) => Array.isArray(d.sleepSegments) && d.sleepSegments.length > 0)
+      .sort((a, b) => (a.date < b.date ? 1 : -1));
+    return withSegments[0]?.sleepSegments ?? null;
+  }, [mergedHealthData, metric]);
+
   const latestEntry = [...data].reverse().find((d) => d.value > 0);
   const currentValue = latestEntry?.value ?? null;
 
@@ -733,19 +675,6 @@ export default function MetricDetailScreen() {
 
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-
-  const giftedData = data.map((d, i) => {
-    const value = Number.isFinite(d.value) ? d.value : 0;
-    return {
-      value,
-      label: i % Math.ceil(range / 6) === 0 ? d.date.getDate().toString() : "",
-      tooltipLabel: d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      labelTextStyle: { color: t.textSecondary, fontSize: 9 },
-      ...(meta.chartType === "bar" && {
-        frontColor: goal && value >= goal ? meta.color : meta.color + "88",
-      }),
-    };
-  });
 
   const IconComp = meta.icon;
 
@@ -808,17 +737,17 @@ export default function MetricDetailScreen() {
           from={{ opacity: 0, translateY: 10 }}
           animate={{ opacity: 1, translateY: 0 }}
           transition={{ type: "timing", duration: 280 }}
-          style={{ marginBottom: 24 }}
+          style={{ marginBottom: 28 }}
         >
           {/* Range toggle */}
-          <View style={{ flexDirection: "row", gap: 6, marginBottom: 20 }}>
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 28 }}>
             {[7, 30].map((r) => (
               <TouchableOpacity
                 key={r}
                 onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
                 style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 6,
+                  paddingHorizontal: 16,
+                  paddingVertical: 7,
                   borderRadius: 20,
                   backgroundColor: range === r ? t.text : t.surfaceElevated,
                 }}
@@ -834,42 +763,46 @@ export default function MetricDetailScreen() {
             ))}
           </View>
 
-          {/* Big value */}
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 64, color: t.text, lineHeight: 70 }}>
-              {currentDisplay}
-            </Text>
-            {currentValue != null && meta.unit && (
-              <Text style={{ fontFamily: fonts.medium, fontSize: 22, color: t.textSecondary, marginBottom: 6 }}>
-                {meta.unit}
-              </Text>
-            )}
-          </View>
-
-          {/* Status badge */}
-          {status && (
-            <View style={{
-              alignSelf: "flex-start",
-              borderRadius: 20,
-              borderWidth: 1.5,
-              borderColor: status.color,
-              paddingHorizontal: 14,
-              paddingVertical: 5,
-              marginTop: 8,
-            }}>
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: status.color }}>
-                {status.label}
-              </Text>
-            </View>
-          )}
-
-          {/* Dot range */}
-          <DotRange
-            value={currentValue}
-            rangeMin={meta.rangeMin}
-            rangeMax={meta.rangeMax}
+          {/* Arc gauge with hero value */}
+          <ArcGaugeChart
+            value={currentValue ?? meta.rangeMin}
+            min={meta.rangeMin}
+            max={meta.rangeMax}
             color={meta.color}
-          />
+            config={{
+              tickCount: 44,
+              getTickColor: (ratio) => {
+                const projectedValue = meta.rangeMin + ratio * (meta.rangeMax - meta.rangeMin);
+                return getStatus(metric, projectedValue)?.color ?? meta.color;
+              },
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+              <Text style={{ fontFamily: fonts.bold, fontSize: 56, color: t.text, lineHeight: 62 }}>
+                {currentDisplay}
+              </Text>
+              {currentValue != null && meta.unit && (
+                <Text style={{ fontFamily: fonts.medium, fontSize: 19, color: t.textSecondary, marginBottom: 5 }}>
+                  {meta.unit}
+                </Text>
+              )}
+            </View>
+
+            {status && (
+              <View style={{
+                borderRadius: 20,
+                borderWidth: 1.5,
+                borderColor: status.color,
+                paddingHorizontal: 14,
+                paddingVertical: 5,
+                marginTop: 12,
+              }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: status.color }}>
+                  {status.label}
+                </Text>
+              </View>
+            )}
+          </ArcGaugeChart>
         </MotiView>
 
         {/* ── About Section ──────────────────────────────── */}
@@ -954,123 +887,17 @@ export default function MetricDetailScreen() {
             </View>
           )}
 
-          {/* Chart — line metrics always use LineChart; bar metrics use LineChart at 30d */}
-          <View style={{ marginLeft: -8 }}>
-            {meta.chartType === "line" || range === 30 ? (
-              <LineChart
-                data={giftedData}
-                width={chartWidth}
-                height={180}
-                color={meta.color}
-                thickness={range === 30 ? 1.5 : 2}
-                curved
-                areaChart
-                startFillColor={meta.color}
-                endFillColor={meta.color}
-                startOpacity={0.15}
-                endOpacity={0}
-                hideDataPoints={range === 30}
-                dataPointsColor={meta.color}
-                dataPointsRadius={3}
-                noOfSections={yAxis.sections}
-                maxValue={meta.max}
-                yAxisColor="transparent"
-                xAxisColor={t.border}
-                rulesColor={t.divider}
-                rulesType="solid"
-                initialSpacing={8}
-                spacing={Math.max(4, Math.floor(chartWidth / (range + 2)))}
-                yAxisTextStyle={{ color: t.textSecondary, fontSize: 11 }}
-                backgroundColor="transparent"
-                yAxisLabelWidth={yAxis.labelWidth}
-                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
-                {...(meta.hasGoal && goal ? {
-                  showReferenceLine1: true,
-                  referenceLine1Position: goal,
-                  referenceLine1Config: { color: meta.color, dashWidth: 4, dashGap: 4, thickness: 1.5, opacity: 0.6 },
-                } : {})}
-                pointerConfig={{
-                  pointerStripHeight: 180,
-                  pointerStripColor: meta.color + "28",
-                  pointerStripWidth: 1.5,
-                  pointerColor: meta.color,
-                  radius: 5,
-                  pointerLabelWidth: 90,
-                  pointerLabelHeight: 46,
-                  activatePointersInstantlyOnTouch: true,
-                  autoAdjustPointerLabelPosition: true,
-                  pointerLabelComponent: (items) => {
-                    const item = items[0];
-                    if (!item) return null;
-                    const dv = metric === "sleep"
-                      ? `${item.value}h`
-                      : metric === "steps" && item.value >= 1000
-                        ? `${(item.value / 1000).toFixed(1)}k`
-                        : String(item.value);
-                    return (
-                      <View style={{
-                        backgroundColor: "#1F2937", borderRadius: 10,
-                        paddingHorizontal: 10, paddingVertical: 7,
-                        alignItems: "center",
-                        shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 4, elevation: 4,
-                      }}>
-                        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#fff" }}>
-                          {dv}{meta.unit ? ` ${meta.unit}` : ""}
-                        </Text>
-                        <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
-                          {item.tooltipLabel}
-                        </Text>
-                      </View>
-                    );
-                  },
-                }}
-              />
-            ) : (
-              <BarChart
-                data={giftedData}
-                width={chartWidth}
-                height={180}
-                noOfSections={yAxis.sections}
-                maxValue={meta.max}
-                yAxisColor="transparent"
-                xAxisColor={t.border}
-                rulesColor={t.divider}
-                initialSpacing={8}
-                barWidth={Math.max(6, Math.floor(chartWidth / (range * 1.6)))}
-                spacing={Math.max(3, Math.floor(chartWidth / (range * 3)))}
-                yAxisTextStyle={{ color: t.textSecondary, fontSize: 11 }}
-                backgroundColor="transparent"
-                yAxisLabelWidth={yAxis.labelWidth}
-                {...(yAxis.labels ? { yAxisLabelTexts: yAxis.labels } : {})}
-                roundedTop
-                showReferenceLine1={!!goal}
-                referenceLine1Position={goal ?? 0}
-                referenceLine1Config={{ color: meta.color, dashWidth: 4, dashGap: 4, thickness: 1.5, opacity: 0.6 }}
-                focusBarOnPress
-                focusedBarConfig={{ color: meta.color, borderRadius: 6, borderTopLeftRadius: 6, borderTopRightRadius: 6 }}
-                renderTooltip={(item) => {
-                  if (!item?.value) return null;
-                  const dv = metric === "steps" && item.value >= 1000
-                    ? `${(item.value / 1000).toFixed(1)}k`
-                    : String(item.value);
-                  return (
-                    <View style={{
-                      backgroundColor: "#1F2937", borderRadius: 8,
-                      paddingHorizontal: 8, paddingVertical: 5,
-                      marginBottom: 4, alignItems: "center",
-                    }}>
-                      <Text style={{ fontFamily: fonts.bold, fontSize: 13, color: "#fff" }}>
-                        {dv}{meta.unit ? ` ${meta.unit}` : ""}
-                      </Text>
-                      <Text style={{ fontFamily: fonts.regular, fontSize: 10, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>
-                        {item.tooltipLabel}
-                      </Text>
-                    </View>
-                  );
-                }}
-              />
-            )}
-          </View>
+          {/* Chart */}
+          <MetricChart
+            metric={metric}
+            data={data}
+            range={range}
+            goal={goal}
+            color={meta.color}
+            unit={meta.unit}
+            getStatus={(value) => getStatus(metric, value)}
+            sleepSegments={latestSleepSegments}
+          />
 
           {goal && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10 }}>
