@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions, Pressable } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { X } from "lucide-react-native";
@@ -65,8 +65,10 @@ export function RecapCard({
   badgeBg,
   badgeColor,
   onDismiss,
+  onPress,
 }) {
   return (
+    <Pressable onPress={onPress} style={{ width: CARD_WIDTH }}>
     <LinearGradient
       colors={gradient}
       start={{ x: 0, y: 0 }}
@@ -146,5 +148,6 @@ export function RecapCard({
         </View>
       </BlurView>
     </LinearGradient>
+    </Pressable>
   );
 }

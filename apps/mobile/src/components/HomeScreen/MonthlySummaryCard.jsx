@@ -1,6 +1,8 @@
+import { useRouter } from "expo-router";
 import { RecapCard } from "./recapShared";
 
 export function MonthlySummaryCard({ stats, dayCount, monthName, onDismiss }) {
+  const router = useRouter();
   return (
     <RecapCard
       kicker="MONTHLY RECAP"
@@ -11,6 +13,7 @@ export function MonthlySummaryCard({ stats, dayCount, monthName, onDismiss }) {
       badgeBg="rgba(255,255,255,0.92)"
       badgeColor="#A9334D"
       onDismiss={onDismiss}
+      onPress={() => router.push("/health-insights")}
     />
   );
 }

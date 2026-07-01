@@ -1,6 +1,8 @@
+import { useRouter } from "expo-router";
 import { RecapCard } from "./recapShared";
 
 export function WeeklySummaryCard({ stats, weekRange, onDismiss }) {
+  const router = useRouter();
   return (
     <RecapCard
       kicker="WEEKLY RECAP"
@@ -11,6 +13,7 @@ export function WeeklySummaryCard({ stats, weekRange, onDismiss }) {
       badgeBg="#F0531C"
       badgeColor="#FFFFFF"
       onDismiss={onDismiss}
+      onPress={() => router.push("/health-insights")}
     />
   );
 }
