@@ -43,6 +43,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { MedicationCard } from "@/components/HomeScreen/MedicationCard";
+import { Card } from "@/components/Card";
 import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getGradientColors } from "@/utils/homeHelpers";
@@ -335,11 +336,11 @@ function LogTodayCard() {
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 300 }}
       style={{
-        backgroundColor: t.isDark ? t.surface : "#F8E9E7",
-        borderRadius: 16,
-        padding: 16,
         marginHorizontal: 16,
         marginTop: 16,
+        paddingLeft: 12,
+        borderLeftWidth: 3,
+        borderLeftColor: WINE,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -350,7 +351,7 @@ function LogTodayCard() {
           style={{
             fontFamily: fonts.bold,
             fontSize: 16,
-            color: t.isDark ? t.text : "#781D11",
+            color: t.text,
             marginBottom: 2,
           }}
         >
@@ -398,40 +399,24 @@ function InsightsEntryCard() {
   return (
     <TouchableOpacity
       onPress={() => router.push("/health-insights")}
-      activeOpacity={0.85}
+      activeOpacity={0.7}
       style={{
         marginHorizontal: 16,
         marginTop: 8,
         marginBottom: 32,
-        backgroundColor: t.surface,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: t.border,
-        padding: 16,
+        paddingVertical: 10,
         flexDirection: "row",
         alignItems: "center",
-        gap: 14,
+        gap: 12,
       }}
     >
-      <View
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          backgroundColor: "#F8E9E7",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <TrendingUp size={22} color="#A9334D" strokeWidth={2} />
-      </View>
+      <TrendingUp size={20} color="#A9334D" strokeWidth={2} />
       <View style={{ flex: 1 }}>
         <Text
           style={{
-            fontFamily: fonts.bold,
-            fontSize: 16,
+            fontFamily: fonts.semibold,
+            fontSize: 15,
             color: t.text,
-            marginBottom: 2,
           }}
         >
           Health Insights
@@ -685,7 +670,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ delay: animIndex * 60, type: "timing", duration: 280 }}
     >
-      <TouchableOpacity
+      <Card
         onPress={() => {
           posthog?.capture("metric_card_tapped", {
             metric: metricKey,
@@ -695,15 +680,8 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
         }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
-          backgroundColor: t.surface,
-          borderRadius: 20,
           padding: 18,
           marginBottom: 12,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 2,
         }}
       >
         {/* Top row: icon + label + AH badge */}
@@ -807,7 +785,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
             />
           )}
         </View>
-      </TouchableOpacity>
+      </Card>
     </MotiView>
   );
 }
@@ -977,18 +955,7 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
         </Text>
       </View>
 
-      <View
-        style={{
-          backgroundColor: t.surface,
-          borderRadius: 20,
-          overflow: "hidden",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 2,
-        }}
-      >
+      <Card style={{ overflow: "hidden" }}>
         {loading ? (
           <ActivitySkeleton />
         ) : workouts.length === 0 ? (
@@ -1022,7 +989,7 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
             />
           ))
         )}
-      </View>
+      </Card>
     </View>
   );
 }
@@ -1059,21 +1026,9 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
       from={{ opacity: 0, translateY: -8 }}
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 320 }}
-      style={{
-        marginHorizontal: 16,
-        marginTop: 16,
-        marginBottom: 4,
-        backgroundColor: t.surface,
-        borderRadius: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.07,
-        shadowRadius: 8,
-        elevation: 2,
-        flexDirection: "row",
-        overflow: "hidden",
-      }}
+      style={{ marginHorizontal: 16, marginTop: 16, marginBottom: 4 }}
     >
+      <Card variant="subtle" style={{ borderRadius: 16, flexDirection: "row", overflow: "hidden" }}>
       {/* Left accent bar */}
       <View style={{ width: 4, backgroundColor: accent }} />
 
@@ -1194,6 +1149,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
           </TouchableOpacity>
         )}
       </View>
+      </Card>
     </MotiView>
   );
 }

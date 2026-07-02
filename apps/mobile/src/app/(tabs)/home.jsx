@@ -26,7 +26,8 @@ import { TodayContextCard } from "@/components/HomeScreen/TodayContextCard";
 import { QuickActions } from "@/components/HomeScreen/QuickActions";
 import { PainStatusTile } from "@/components/HomeScreen/PainStatusTile";
 import { MetricGrid } from "@/components/HomeScreen/MetricGrid";
-import { ContextualCards } from "@/components/HomeScreen/ContextualCards";
+import { AppointmentSection } from "@/components/HomeScreen/AppointmentSection";
+import { ContextualCardsSkeleton } from "@/components/HomeScreen/ContextualCardsSkeleton";
 import { HealthRecaps } from "@/components/HomeScreen/HealthRecaps";
 import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
@@ -360,10 +361,13 @@ export default function HomeScreen() {
 
         <HealthRecaps healthData={healthData} />
 
-        <ContextualCards
-          appointments={appointments}
-          isLoading={apptLoading}
-        />
+        {apptLoading ? (
+          <ContextualCardsSkeleton />
+        ) : appointments.length > 0 ? (
+          <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+            <AppointmentSection appointments={appointments} />
+          </View>
+        ) : null}
       </Animated.ScrollView>
 
       <View

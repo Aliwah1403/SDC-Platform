@@ -423,6 +423,64 @@ function getInsights(metric, currentValue, statusLabel, trendDelta, lowerIsBette
       };
     }
 
+    case "resprate": {
+      if (statusLabel === "Normal") return trendingWorse ? {
+        headline: "Breathing rate is normal but trending upward — worth watching",
+        paragraph: "A rising trend is worth keeping an eye on, especially alongside SCD. Note any chest discomfort or shortness of breath, and mention it at your next check-in if it continues.",
+      } : {
+        headline: "Your breathing rate is in a healthy range",
+        paragraph: "A steady respiratory rate is a good sign for your lung and chest health. Keep up with your usual activity and hydration, and flag any chest pain or breathlessness right away.",
+      };
+      if (statusLabel === "Elevated") return {
+        headline: "Your breathing rate is elevated — pay attention to how you feel",
+        paragraph: "This can be an early sign worth watching for SCD. Rest, note any chest pain, fever, or coughing, and contact your care team if these appear together.",
+      };
+      if (statusLabel === "Critical") return {
+        headline: "Your breathing rate has shifted significantly — this needs attention",
+        paragraph: "A rate this high combined with SCD can be an early warning sign of Acute Chest Syndrome. If you have chest pain, fever, or difficulty breathing, seek care now.",
+      };
+      return {
+        headline: "Your breathing rate is lower than typical",
+        paragraph: "This is worth tracking alongside how you feel. Mention any dizziness, fatigue, or shallow breathing to your care team.",
+      };
+    }
+
+    case "spo2": {
+      if (statusLabel === "Normal") return trendingWorse ? {
+        headline: "Blood oxygen is normal but trending downward — worth watching",
+        paragraph: "A gradual dip is worth keeping an eye on, especially alongside SCD. Note any breathlessness or chest discomfort, and mention it at your next check-in if it continues.",
+      } : {
+        headline: "Your blood oxygen is in a healthy range",
+        paragraph: "Steady oxygen saturation is a good sign for your lung and circulatory health. Keep up with hydration and your usual activity, and flag any breathlessness or chest pain right away.",
+      };
+      if (statusLabel === "Warning") return {
+        headline: "Your blood oxygen is lower than usual — worth watching closely",
+        paragraph: "This is worth monitoring alongside how you feel. Rest, note any chest pain, fever, or shortness of breath, and check in with your care team if it doesn't recover.",
+      };
+      return {
+        headline: "Your blood oxygen has dropped outside a safe range",
+        paragraph: "This is a red flag for Acute Chest Syndrome in SCD. If you have chest pain, fever, or difficulty breathing, contact your care team or seek emergency care now.",
+      };
+    }
+
+    case "temperature": {
+      if (statusLabel === "Normal") return trendingWorse ? {
+        headline: "Temperature is normal but trending upward — keep an eye on it",
+        paragraph: "A rising trend is worth watching closely given SCD's infection risk. Note any chills, fatigue, or pain, and recheck your temperature again soon.",
+      } : {
+        headline: "Your temperature is in a healthy range",
+        paragraph: "A stable temperature is a good sign — keep up your usual hydration and rest, and recheck if you start to feel unwell.",
+      };
+      if (statusLabel === "Fever ⚠") return {
+        headline: "Your temperature indicates a fever — this needs prompt attention",
+        paragraph: "Fever is a medical emergency for SCD due to functional asplenia — sepsis can develop rapidly. Contact your care team or seek medical evaluation now, don't manage this at home alone.",
+      };
+      return {
+        headline: "Your temperature is lower than typical",
+        paragraph: "This is worth tracking alongside how you feel. Mention any chills, fatigue, or dizziness to your care team.",
+      };
+    }
+
     default:
       return null;
   }

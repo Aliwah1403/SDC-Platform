@@ -16,11 +16,14 @@ import {
   Users,
   Star,
   Zap,
+  Target,
+  ChevronRight,
 } from "lucide-react-native";
 import { useAuthStore } from "../../utils/auth/store";
 import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
 import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/Card";
 
 const { width } = Dimensions.get("window");
 
@@ -108,21 +111,7 @@ export default function RewardsScreen() {
     };
 
     return (
-      <View
-        style={{
-          backgroundColor: t.surface,
-          borderRadius: 12,
-          padding: 16,
-          marginBottom: 12,
-          borderWidth: 1,
-          borderColor: t.border,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 3,
-          elevation: 2,
-        }}
-      >
+      <Card variant="subtle" style={{ borderRadius: 12, padding: 16, marginBottom: 12 }}>
         <View
           style={{
             flexDirection: "row",
@@ -260,7 +249,7 @@ export default function RewardsScreen() {
           target={challenge.target}
           color={isCompleted ? "#059669" : getTypeColor(challenge.type)}
         />
-      </View>
+      </Card>
     );
   };
 
@@ -271,20 +260,13 @@ export default function RewardsScreen() {
     return (
       <View
         style={{
-          backgroundColor: isUnlocked ? t.surface : (t.isDark ? t.surfaceElevated : "#F9FAFB"),
+          backgroundColor: isUnlocked ? t.background : (t.isDark ? t.surfaceElevated : "#F9FAFB"),
           borderRadius: 12,
           padding: size === "large" ? 20 : 16,
           marginRight: 12,
           width: cardWidth,
           alignItems: "center",
-          borderWidth: 1,
-          borderColor: t.border,
           opacity: isUnlocked ? 1 : 0.6,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: isUnlocked ? 0.05 : 0.02,
-          shadowRadius: 3,
-          elevation: isUnlocked ? 2 : 1,
         }}
       >
         <Image
@@ -355,22 +337,19 @@ export default function RewardsScreen() {
     streak,
     points,
     isCurrentUser = false,
+    isLast = false,
   }) => (
     <View
       style={{
-        backgroundColor: t.isDark ? t.surface : (isCurrentUser ? "#FEF3F2" : "#FFFFFF"),
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: isCurrentUser ? "#DC2626" : t.border,
+        backgroundColor: isCurrentUser ? (t.isDark ? t.surfaceElevated : "#FEF3F2") : "transparent",
+        paddingHorizontal: isCurrentUser ? 12 : 0,
+        borderRadius: isCurrentUser ? 12 : 0,
+        paddingVertical: 12,
+        marginBottom: isCurrentUser ? 4 : 0,
+        borderBottomWidth: isLast || isCurrentUser ? 0 : 1,
+        borderBottomColor: t.divider,
         flexDirection: "row",
         alignItems: "center",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
       }}
     >
       <View
@@ -647,47 +626,35 @@ export default function RewardsScreen() {
             {/* Completed Challenges Teaser */}
             <View
               style={{
-                backgroundColor: "#F0FDF4",
-                borderRadius: 12,
-                padding: 16,
-                marginTop: 8,
-                borderWidth: 1,
-                borderColor: "#BBF7D0",
+                marginTop: 12,
+                paddingTop: 12,
+                borderTopWidth: 1,
+                borderTopColor: t.divider,
                 flexDirection: "row",
                 alignItems: "center",
               }}
             >
-              <View
-                style={{
-                  backgroundColor: "#059669",
-                  borderRadius: 20,
-                  padding: 8,
-                  marginRight: 12,
-                }}
-              >
-                <Trophy size={20} color="#ffffff" />
-              </View>
-
+              <Trophy size={18} color="#059669" style={{ marginRight: 10 }} />
               <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: "600",
-                    color: "#059669",
-                    marginBottom: 2,
+                    color: t.text,
                   }}
                 >
                   5 Challenges Completed
                 </Text>
                 <Text
                   style={{
-                    fontSize: 13,
-                    color: "#16A34A",
+                    fontSize: 12,
+                    color: t.textSecondary,
                   }}
                 >
                   You've earned 175 total points!
                 </Text>
               </View>
+              <ChevronRight size={16} color={t.textSecondary} />
             </View>
           </View>
         )}
@@ -823,20 +790,12 @@ export default function RewardsScreen() {
                 streak={item.streak}
                 points={item.points}
                 isCurrentUser={item.isCurrentUser}
+                isLast={index === leaderboardData.length - 1}
               />
             ))}
 
             {/* Community Stats */}
-            <View
-              style={{
-                backgroundColor: t.surface,
-                borderRadius: 12,
-                padding: 16,
-                marginTop: 16,
-                borderWidth: 1,
-                borderColor: t.border,
-              }}
-            >
+            <Card variant="subtle" style={{ borderRadius: 12, padding: 16, marginTop: 16 }}>
               <Text
                 style={{
                   fontSize: 16,
@@ -914,7 +873,7 @@ export default function RewardsScreen() {
                   </Text>
                 </View>
               </View>
-            </View>
+            </Card>
           </View>
         )}
       </ScrollView>
