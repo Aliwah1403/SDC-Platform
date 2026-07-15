@@ -12,9 +12,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MetricChart } from "@/components/Charts/MetricChart";
 import { ArcGaugeChart } from "@/components/Charts/arc-gauge-chart";
-import { MotiView } from "moti";
+import { DatePicker } from "@/components/HomeHeader/DatePicker";
+import { useDateNavigation } from "@/hooks/useDateNavigation";
+import { MotiView, AnimatePresence } from "moti";
 import {
   ChevronLeft,
+  ChevronDown,
   Settings,
   AlignLeft,
   TrendingUp,
@@ -538,6 +541,9 @@ export default function MetricDetailScreen() {
 
   const meta = METRIC_META[metric] ?? METRIC_META.pain;
   const [range, setRange] = useState(14);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const { isToday, isFuture, isSelected } = useDateNavigation();
 
   useEffect(() => {
     posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
@@ -572,8 +578,27 @@ export default function MetricDetailScreen() {
     return withSegments[0]?.sleepSegments ?? null;
   }, [mergedHealthData, metric]);
 
-  const latestEntry = [...data].reverse().find((d) => d.value > 0);
-  const currentValue = latestEntry?.value ?? null;
+  // Look up a single day's value for this metric (null when unlogged / not
+  // finite / zero — mirrors the existing "value > 0" convention).
+  const valueForDate = (date) => {
+    const raw = mergedHealthData.find((d) => d.date === dateToStr(date))?.[meta.dataField];
+    return (raw != null && Number.isFinite(raw) && raw > 0) ? raw : null;
+  };
+
+  // Two tracks: the AI insight stays anchored to *today* (its cache is
+  // per-metric/today), while the gauge + deterministic insight follow the
+  // day the user has scrubbed to via the header week-strip.
+  const todayValue = valueForDate(new Date());
+  const todayStatus = todayValue != null ? getStatus(metric, todayValue) : null;
+
+  const selectedValue = useMemo(
+    () => valueForDate(selectedDate),
+    [mergedHealthData, meta.dataField, selectedDate]
+  );
+  const selectedStatus = selectedValue != null ? getStatus(metric, selectedValue) : null;
+
+  const currentValue = selectedValue;
+  const status = selectedStatus;
 
   const currentDisplay = currentValue != null
     ? (metric === "sleep"
@@ -583,13 +608,21 @@ export default function MetricDetailScreen() {
           : String(currentValue))
     : "—";
 
-  const status = currentValue != null ? getStatus(metric, currentValue) : null;
   const trendDelta = useMemo(() => calcTrendDelta(data), [data]);
 
   const { insight: aiInsight } = useMetricInsights(
-    metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter,
+    metric, todayValue, todayStatus?.label, trendDelta, meta.lowerIsBetter,
     { range, unit: meta.unit, goal, scdType: onboardingData?.scdType },
   );
+
+  const localInsights = getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter);
+  const insightsToShow = isToday(selectedDate) ? (aiInsight ?? localInsights) : localInsights;
+
+  const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   const startDate = data[0]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   const endDate = data[data.length - 1]?.date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -618,14 +651,26 @@ export default function MetricDetailScreen() {
           <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
 
-        <View style={{ flex: 1, alignItems: "center" }}>
+        <TouchableOpacity
+          onPress={() => setPickerOpen((o) => !o)}
+          activeOpacity={0.7}
+          style={{ flex: 1, alignItems: "center" }}
+        >
           <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
             {meta.label}
           </Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
-            Last {range} days
-          </Text>
-        </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 1 }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
+              {selectedDateLabel}
+            </Text>
+            <ChevronDown
+              size={13}
+              color={t.textSecondary}
+              strokeWidth={2}
+              style={{ transform: [{ rotate: pickerOpen ? "180deg" : "0deg" }] }}
+            />
+          </View>
+        </TouchableOpacity>
 
         {meta.hasGoal ? (
           <TouchableOpacity
@@ -643,6 +688,29 @@ export default function MetricDetailScreen() {
         )}
       </View>
 
+      {/* Collapsible week-date strip (revealed by tapping the title) */}
+      <AnimatePresence>
+        {pickerOpen && (
+          <MotiView
+            from={{ opacity: 0, translateY: -8 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            exit={{ opacity: 0, translateY: -8 }}
+            transition={{ type: "timing", duration: 200 }}
+            style={{ paddingBottom: 8 }}
+          >
+            <DatePicker
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              isToday={isToday}
+              isFuture={isFuture}
+              isSelected={isSelected}
+              labelColor={t.textSecondary}
+              numberColor={t.text}
+            />
+          </MotiView>
+        )}
+      </AnimatePresence>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 48 }}
@@ -657,30 +725,6 @@ export default function MetricDetailScreen() {
           transition={{ type: "timing", duration: 280 }}
           style={{ marginBottom: 28 }}
         >
-          {/* Range toggle */}
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 28 }}>
-            {[7, 14].map((r) => (
-              <TouchableOpacity
-                key={r}
-                onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
-                style={{
-                  paddingHorizontal: 16,
-                  paddingVertical: 7,
-                  borderRadius: 20,
-                  backgroundColor: range === r ? t.text : t.surfaceElevated,
-                }}
-              >
-                <Text style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 12,
-                  color: range === r ? t.surface : t.textSecondary,
-                }}>
-                  {r}d
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
           {/* Arc gauge with hero value */}
           <ArcGaugeChart
             value={currentValue ?? meta.rangeMin}
@@ -730,9 +774,21 @@ export default function MetricDetailScreen() {
           transition={{ delay: 80, type: "timing", duration: 280 }}
           style={{ marginBottom: 28 }}
         >
-          <InsightsCard
-            insights={aiInsight ?? getInsights(metric, currentValue, status?.label, trendDelta, meta.lowerIsBetter)}
-          />
+          {insightsToShow ? (
+            <InsightsCard insights={insightsToShow} />
+          ) : (
+            <View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 14 }}>
+                <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
+                  Insights
+                </Text>
+              </View>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 22 }}>
+                No {meta.label.toLowerCase()} logged on this day.
+              </Text>
+            </View>
+          )}
         </MotiView>
 
         <View style={{ height: 1, backgroundColor: t.divider, marginBottom: 28 }} />
@@ -745,17 +801,41 @@ export default function MetricDetailScreen() {
           style={{ marginBottom: 28 }}
         >
           {/* Section label row */}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
               <TrendingUp size={13} color={t.textSecondary} strokeWidth={2} />
               <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.textSecondary, letterSpacing: 1, textTransform: "uppercase" }}>
                 Trend
               </Text>
             </View>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
-              {startDate} – {endDate}
-            </Text>
+            {/* Range toggle */}
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              {[7, 14].map((r) => (
+                <TouchableOpacity
+                  key={r}
+                  onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 6,
+                    borderRadius: 20,
+                    backgroundColor: range === r ? t.text : t.surfaceElevated,
+                  }}
+                >
+                  <Text style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: 12,
+                    color: range === r ? t.surface : t.textSecondary,
+                  }}>
+                    {r}d
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
+
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginBottom: 14 }}>
+            {startDate} – {endDate}
+          </Text>
 
           {/* Trend delta */}
           {trendDelta !== null && (

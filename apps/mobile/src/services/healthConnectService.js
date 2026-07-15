@@ -8,6 +8,8 @@ import {
   readRecords,
   insertRecords,
   openHealthConnectSettings,
+  getSdkStatus,
+  SdkAvailabilityStatus,
 } from "react-native-health-connect";
 import { supabase } from "@/utils/auth/supabase";
 import { checkAlerts } from "./healthKitService";
@@ -75,10 +77,39 @@ export function isHKAvailable() {
   return Platform.OS === "android";
 }
 
+// Health Connect availability on this device. Unlike HealthKit (which is built
+// into every iPhone), Health Connect is a separate app on Android 13 and below,
+// and can be present-but-outdated on any version. Returns:
+//   "available"        — SDK present and usable
+//   "update_required"  — provider app installed but too old, must be updated
+//   "not_installed"    — provider app missing, must be installed from the Play Store
+//   "unsupported"      — not Android (iOS uses HealthKit)
+export async function getHealthConnectStatus() {
+  if (Platform.OS !== "android") return "unsupported";
+  try {
+    const status = await getSdkStatus();
+    if (status === SdkAvailabilityStatus.SDK_AVAILABLE) return "available";
+    if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
+      return "update_required";
+    return "not_installed";
+  } catch {
+    return "not_installed";
+  }
+}
+
+// Re-export so callers can open Health Connect settings (e.g. to let the user
+// grant a permission they previously denied — HC never re-prompts).
+export { openHealthConnectSettings };
+
 let _initialized = false;
 
 async function ensureInitialized() {
   if (_initialized) return true;
+  // Bail out early with a clean signal if the provider isn't available, so we
+  // never hit HealthConnectClient.getOrCreate() (which throws) on a device
+  // without a usable Health Connect install.
+  const status = await getHealthConnectStatus();
+  if (status !== "available") return false;
   try {
     const result = await initialize();
     _initialized = result;

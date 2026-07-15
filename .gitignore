@@ -77,3 +77,16 @@ service-account*.json
 
 # React Router / Vite
 .react-router/
+
+# Local planning notes
+POLISH-PLAN.md
+CLINICAL-REVIEW-hydration.md
+design-refs/
+MARKETING-PLAN.md
+SEO-PLAN.md
+PRICING-PLAN.md
+BETA-DISTRIBUTION.md
+ANDROID-BUILD-SDK-UPGRADE.md
+WAITLIST-EMAIL-1.md
+AI-STRATEGY.md
+WIDGETS-PLAN.md

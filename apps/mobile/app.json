@@ -60,6 +60,9 @@
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android": {
+            "minSdkVersion": 26
           }
         }
       ],
@@ -91,8 +94,9 @@
           "backgroundDeliveryEnabled": true
         }
       ],
+      "react-native-health-connect",
       [
-        "react-native-health-connect",
+        "./plugins/withHealthConnect",
         {
           "permissions": [
             "android.permission.health.READ_STEPS",
