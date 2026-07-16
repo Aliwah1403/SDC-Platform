@@ -6,8 +6,6 @@ import { HeatmapChart } from "./heatmap-chart";
 import { BubbleChart } from "./bubble-chart";
 import { SleepHypnogramChart } from "./sleep-hypnogram-chart";
 import { fonts } from "@/utils/fonts";
-import { glassesFromMl } from "@/utils/hydrationUnits";
-import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 function shortDate(date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -282,7 +280,7 @@ function SleepTrendLegend({ avgValue }) {
   );
 }
 
-function buildBarConfig({ metric, data, range, goal }) {
+function buildBarConfig({ metric, data, range, goal, unit }) {
   const step = labelStep(range);
   const chartData = data.map((d, i) => ({
     label: i % step === 0 ? d.date.getDate().toString() : "",
@@ -295,21 +293,25 @@ function buildBarConfig({ metric, data, range, goal }) {
 
   switch (metric) {
     case "hydration": {
-      // hydration is stored canonically in ml; this chart's scale stays glasses (unchanged UI).
-      const target = Math.max(1, Math.round(glassesFromMl(goal ?? DEFAULT_SUGGESTED_ML)));
-      const glassesChartData = chartData.map((d) => ({ ...d, value: Math.round(glassesFromMl(d.value)) }));
+      // The caller (metric-detail.jsx) already converts data/goal into the
+      // user's chosen display unit before passing them in — this chart just
+      // renders them and uses `unit` purely as the tooltip label, so it works
+      // the same whether that unit is glasses, ml, L, or fl oz.
+      const values = chartData.map((d) => d.value);
+      const target = goal ?? Math.max(...values, 1);
+      const dataMax = Math.max(...values, target, 0.1);
       return {
-        chartData: glassesChartData,
+        chartData,
         config: {
           ...base,
           getBarColor: (v) => (v >= target ? "#A9334D" : "#D09F9A80"),
           referenceValue: target,
           referenceColor: "#A9334D",
           yMin: 0,
-          yMax: Math.max(16, target + 2),
+          yMax: dataMax * 1.15,
           renderTooltip: (item) => (
             <>
-              <TooltipText>{item.value} glasses</TooltipText>
+              <TooltipText>{item.value} {unit ?? "glasses"}</TooltipText>
               <TooltipSubtext>{item.value >= target ? "At goal · " : "Below goal · "}{item.tooltipLabel}</TooltipSubtext>
             </>
           ),
@@ -443,7 +445,7 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
     const { chartData, config } = buildBubbleConfig({ data, range, getStatus });
     content = <BubbleChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "sleep") {
-    const { chartData, config, avgValue } = buildBarConfig({ metric, data, range, goal, color, getStatus });
+    const { chartData, config, avgValue } = buildBarConfig({ metric, data, range, goal, color, unit, getStatus });
     content = (
       <>
         {sleepSegments?.length > 0 && (
@@ -463,7 +465,7 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
       </>
     );
   } else if (metric === "hydration" || metric === "steps") {
-    const { chartData, config } = buildBarConfig({ metric, data, range, goal, color, getStatus });
+    const { chartData, config } = buildBarConfig({ metric, data, range, goal, color, unit, getStatus });
     content = <BarChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "heartrate") {
     const { chartData, config, zonePercentages } = buildHeartRateWaveformConfig({ data, range, getStatus });

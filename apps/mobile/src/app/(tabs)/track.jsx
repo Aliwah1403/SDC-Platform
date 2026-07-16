@@ -55,7 +55,8 @@ import { fetchWorkoutsForDate } from "@/services/healthService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { glassesFromMl } from "@/utils/hydrationUnits";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL, HYDRATION_SCALE_MAX } from "@/utils/hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -573,7 +574,7 @@ function getLast7(healthData, dataField) {
   return result;
 }
 
-function getStatus(metricKey, value, goalGlasses) {
+function getStatus(metricKey, value, hydrationGoal) {
   if (!value) return null;
   switch (metricKey) {
     case "pain":
@@ -581,7 +582,7 @@ function getStatus(metricKey, value, goalGlasses) {
       if (value <= 5) return { label: "Moderate", color: "#F59E0B" };
       return { label: "High", color: "#DC2626" };
     case "hydration": {
-      const goal = goalGlasses ?? 8;
+      const goal = hydrationGoal ?? 8;
       if (value >= goal) return { label: "On track", color: "#059669" };
       if (value >= goal * 0.625) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
@@ -652,22 +653,26 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
   const posthog = usePostHog();
   const t = useTheme();
   const { data: metricGoals } = useMetricGoalsQuery();
+  const { displayUnit } = useHydrationStore();
   const config = METRIC_CONFIG_MAP[metricKey];
   const rawValueRaw = config.getValue(entry);
-  // Hydration is stored canonically in ml; this card's scale stays glasses (unchanged UI).
+  // Hydration is stored canonically in ml; this card renders it in the user's
+  // chosen display unit (glasses/ml/L/fl oz) instead of a hardcoded scale.
   const rawValue =
     metricKey === "hydration" && rawValueRaw != null
-      ? Math.round(glassesFromMl(rawValueRaw))
+      ? hydrationValueInUnit(rawValueRaw, displayUnit)
       : rawValueRaw;
   const hasValue = rawValue !== null && rawValue !== undefined;
-  const hydrationGoalGlasses =
+  const hydrationGoalInUnit =
     metricKey === "hydration"
-      ? Math.max(1, Math.round(glassesFromMl(metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML)))
+      ? Math.max(0.1, hydrationValueInUnit(metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML, displayUnit))
       : null;
   const hydrationSparkData =
     metricKey === "hydration" && sparkData
-      ? sparkData.map((v) => glassesFromMl(v))
+      ? sparkData.map((v) => hydrationValueInUnit(v, displayUnit))
       : sparkData;
+  const hydrationUnitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
+  const hydrationSparkMax = HYDRATION_SCALE_MAX[displayUnit] ?? HYDRATION_SCALE_MAX.glasses;
 
   let displayValue = "—";
   let moodDisplay = null;
@@ -681,7 +686,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
     }
   }
 
-  const status = hasValue ? getStatus(metricKey, rawValue, hydrationGoalGlasses) : null;
+  const status = hasValue ? getStatus(metricKey, rawValue, hydrationGoalInUnit) : null;
 
   return (
     <MotiView
@@ -767,7 +772,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
                     marginBottom: 3,
                   }}
                 >
-                  {config.unit}
+                  {metricKey === "hydration" ? hydrationUnitLabel : config.unit}
                 </Text>
               )}
             </View>
@@ -800,7 +805,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
             <MiniSparkline
               data={hydrationSparkData}
               color={config.color}
-              maxValue={config.maxValue}
+              maxValue={metricKey === "hydration" ? hydrationSparkMax : config.maxValue}
             />
           )}
         </View>

@@ -35,6 +35,7 @@ import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
+import { useHydrationStore } from "@/store/hydrationStore";
 import { useTheme } from "@/hooks/useTheme";
 import { toLocalDateStr } from "@/utils/dateUtils";
 
@@ -244,6 +245,7 @@ export default function HomeScreen() {
   const alertState = useAppStore((s) => s.computedAlertState);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
+  const { displayUnit: hydrationDisplayUnit } = useHydrationStore();
 
   const message = getDynamicMessage({
     hasLoggedData,
@@ -255,6 +257,7 @@ export default function HomeScreen() {
     alertState,
     weather,
     hydrationGoalMl,
+    hydrationDisplayUnit,
   });
   const t = useTheme();
   const gradientColors = getGradientColors(hasLoggedData, t.isDark);

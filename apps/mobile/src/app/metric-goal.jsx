@@ -20,6 +20,7 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { hydrationNumberAndUnit } from "@/utils/hydrationUnits";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { colors } from "@/utils/colors";
@@ -46,19 +47,8 @@ const UNIT_OPTIONS = [
 ];
 
 function bigValueParts(ml, unit) {
-  switch (unit) {
-    case "ml":
-      return { number: `${Math.round(ml)}`, label: "ml per day" };
-    case "L":
-      return { number: (ml / 1000).toFixed(1), label: "L per day" };
-    case "floz":
-      return { number: `${Math.round(ml / ML_PER_FLOZ)}`, label: "fl oz per day" };
-    case "glasses":
-    default: {
-      const g = Math.round((ml / GLASS_ML) * 10) / 10;
-      return { number: Number.isInteger(g) ? g.toString() : g.toFixed(1), label: `glass${g === 1 ? "" : "es"} per day` };
-    }
-  }
+  const { number, unitLabel } = hydrationNumberAndUnit(ml, unit);
+  return { number, label: `${unitLabel} per day` };
 }
 
 function translationLine(ml) {

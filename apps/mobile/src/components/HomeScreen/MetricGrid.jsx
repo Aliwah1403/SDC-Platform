@@ -1,16 +1,20 @@
 import { useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions, Alert } from "react-native";
 import Svg, { Circle, Rect, Path, G, Defs, ClipPath } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { LayoutGrid } from "lucide-react-native";
+import { LayoutGrid, Plus } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/Card";
+import { PressableScale } from "@/components/PressableScale";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { glassesFromMl } from "@/utils/hydrationUnits";
-import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { useAddHydrationMutation } from "@/hooks/queries/useHealthDataQuery";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { formatHydrationPair } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML, GLASS_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -28,7 +32,7 @@ const METRIC_META = [
 
 // ─── Hydration: vertical fill tank ───────────────────────────────────────────
 
-function HydrationTank({ hydration, goal = DEFAULT_SUGGESTED_ML }) {
+function HydrationTank({ hydration, goal = DEFAULT_SUGGESTED_ML, unit = "glasses" }) {
   const W = 44;
   const H = 80;
   const R = 10;
@@ -83,8 +87,12 @@ function HydrationTank({ hydration, goal = DEFAULT_SUGGESTED_ML }) {
           />
         ))}
       </Svg>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#781D11" }}>
-        {hydration > 0 ? `${Math.round(glassesFromMl(hydration))} / ${Math.round(glassesFromMl(goal))}` : "—"}
+      <Text
+        style={{ fontFamily: fonts.bold, fontSize: 13, color: "#781D11" }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {hydration > 0 ? formatHydrationPair(hydration, goal, unit) : "—"}
       </Text>
     </View>
   );
@@ -341,6 +349,43 @@ function SleepMoon({ hours }) {
 
 // ─── Individual tile ──────────────────────────────────────────────────────────
 
+function QuickAddHydrationButton() {
+  const addHydrationMutation = useAddHydrationMutation();
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addHydrationMutation.mutate(GLASS_ML, {
+      onError: () => {
+        Alert.alert(
+          "Couldn't log that glass",
+          "Something went wrong — please try again.",
+        );
+      },
+    });
+  };
+
+  return (
+    <PressableScale
+      onPress={handlePress}
+      disabled={addHydrationMutation.isPending}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={{
+        position: "absolute",
+        bottom: 14,
+        right: 14,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: "#3B82F6",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Plus size={16} color="#fff" strokeWidth={2.5} />
+    </PressableScale>
+  );
+}
+
 function MetricTile({
   title,
   statusLabel,
@@ -348,45 +393,53 @@ function MetricTile({
   visual,
   metric,
   hasData,
+  quickAdd,
 }) {
   const router = useRouter();
   const t = useTheme();
 
   return (
-    <Card
-      onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric } }) : undefined}
-      style={{
-        width: TILE_WIDTH,
-        height: TILE_HEIGHT,
-        padding: 14,
-        justifyContent: "space-between",
-      }}
-    >
-      <View
+    <View style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}>
+      <Card
+        onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric } }) : undefined}
         style={{
-          flexDirection: "row",
+          width: TILE_WIDTH,
+          height: TILE_HEIGHT,
+          padding: 14,
           justifyContent: "space-between",
-          alignItems: "center",
         }}
       >
-        <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          {title}
+          <Text
+            style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}
+          >
+            {title}
+          </Text>
+          {hasData && <Text style={{ fontSize: 16, color: "#D09F9A" }}>›</Text>}
+        </View>
+
+        <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+          {visual}
+        </View>
+
+        <Text
+          style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}
+        >
+          {statusLabel}
         </Text>
-        {hasData && <Text style={{ fontSize: 16, color: "#D09F9A" }}>›</Text>}
-      </View>
+      </Card>
 
-      <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-        {visual}
-      </View>
-
-      <Text
-        style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}
-      >
-        {statusLabel}
-      </Text>
-    </Card>
+      {/* Rendered as a sibling of the Card's TouchableOpacity, not a descendant —
+          nesting inside it made the button unresponsive (the card's touch responder
+          was winning the gesture). */}
+      {quickAdd}
+    </View>
   );
 }
 
@@ -406,6 +459,7 @@ export function MetricGrid({ selectedDateData }) {
   const [visibleMetrics, setVisibleMetrics] = useState(DEFAULT_VISIBLE);
   const { data: metricGoals } = useMetricGoalsQuery();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const { displayUnit } = useHydrationStore();
 
   useFocusEffect(
     useCallback(() => {
@@ -450,7 +504,8 @@ export function MetricGrid({ selectedDateData }) {
         }
         metric="hydration"
         hasData={hydration > 0}
-        visual={<HydrationTank hydration={hydration} goal={hydrationGoalMl} />}
+        visual={<HydrationTank hydration={hydration} goal={hydrationGoalMl} unit={displayUnit} />}
+        quickAdd={<QuickAddHydrationButton />}
       />
     ),
     mood: (

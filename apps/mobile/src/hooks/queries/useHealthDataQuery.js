@@ -4,6 +4,7 @@ import {
   fetchDailySummaries,
   fetchHealthLogs,
   submitHealthLog,
+  addHydrationQuickly,
 } from '@/services/supabaseQueries';
 
 function useUserId() {
@@ -44,6 +45,45 @@ export function useSubmitLogMutation() {
       queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });
       queryClient.invalidateQueries({ queryKey: ['healthLogs', userId] });
       queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+    },
+  });
+}
+
+/**
+ * Home-tile "+250 ml" quick-add — optimistically bumps today's cached hydration
+ * total (the `useHealthDataQuery()` cache entry the home screen reads from) so
+ * the tile updates instantly, then reconciles with the server on settle.
+ */
+export function useAddHydrationMutation() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  const queryKey = ['dailySummaries', userId, null];
+
+  return useMutation({
+    mutationFn: (addedMl) => addHydrationQuickly(userId, addedMl),
+    onMutate: async (addedMl) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      queryClient.setQueryData(queryKey, (old = []) => {
+        const idx = old.findIndex((d) => d.date === todayStr);
+        if (idx === -1) {
+          return [{ date: todayStr, hydration: addedMl, painLevel: 0, mood: 0 }, ...old];
+        }
+        return old.map((d, i) =>
+          i === idx ? { ...d, hydration: (d.hydration ?? 0) + addedMl } : d
+        );
+      });
+
+      return { previous };
+    },
+    onError: (err, _addedMl, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      console.error('[useAddHydrationMutation] quick-add failed:', err?.message ?? err);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });
     },
   });
 }

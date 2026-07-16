@@ -1,5 +1,5 @@
 import { toLocalDateStr } from "./dateUtils";
-import { glassesFromMl } from "./hydrationUnits";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "./hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "./hydrationGoal";
 
 const SCD_TIPS = [
@@ -22,6 +22,7 @@ export function getDynamicMessage({
   alertState = null,
   weather = null,
   hydrationGoalMl = DEFAULT_SUGGESTED_ML,
+  hydrationDisplayUnit = "glasses",
 }) {
   const today = new Date();
   const todayStr = toLocalDateStr(today);
@@ -34,11 +35,13 @@ export function getDynamicMessage({
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   const pain = selectedDateData?.painLevel ?? 0;
-  // hydration is tracked canonically in ml; this copy speaks in glasses (unchanged UI).
-  const hydration = Math.round(glassesFromMl(selectedDateData?.hydration ?? 0));
-  const goalGlasses = Math.max(1, Math.round(glassesFromMl(hydrationGoalMl)));
-  const lowHydrationThreshold = Math.round(goalGlasses * 0.625);
-  const nearGoalThreshold = Math.round(goalGlasses * 0.75);
+  // hydration is tracked canonically in ml; this copy speaks in the user's
+  // chosen display unit (glasses/ml/L/fl oz) instead of a hardcoded one.
+  const hydration = hydrationValueInUnit(selectedDateData?.hydration ?? 0, hydrationDisplayUnit);
+  const hydrationGoalInUnit = Math.max(0.1, hydrationValueInUnit(hydrationGoalMl, hydrationDisplayUnit));
+  const hydrationUnitLabel = HYDRATION_UNIT_LABEL[hydrationDisplayUnit] ?? "glasses";
+  const lowHydrationThreshold = hydrationGoalInUnit * 0.625;
+  const nearGoalThreshold = hydrationGoalInUnit * 0.75;
   const mood = selectedDateData?.mood ?? 0;
 
   const last3 = healthData
@@ -85,7 +88,7 @@ export function getDynamicMessage({
               : `High pain day — ${pain}/10.`,
       body:
         [
-          hydration > 0 ? `Hydration: ${hydration} of ${goalGlasses} glasses.` : null,
+          hydration > 0 ? `Hydration: ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel}.` : null,
           moodLabel ? `Mood: ${moodLabel}.` : null,
         ]
           .filter(Boolean)
@@ -144,7 +147,7 @@ export function getDynamicMessage({
         return {
           label: "TODAY'S FORECAST",
           headline: "Hot and humid — hydrate early.",
-          body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least ${goalGlasses} glasses today.`,
+          body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least ${hydrationGoalInUnit} ${hydrationUnitLabel} today.`,
         };
       }
     }
@@ -183,7 +186,7 @@ export function getDynamicMessage({
     return {
       label: "WATCH OUT",
       headline: "High pain with low hydration.",
-      body: `Pain at ${pain}/10 with only ${hydration} of ${goalGlasses} glasses logged. This combination raises your crisis risk. Rest, hydrate, and contact your care team if pain worsens.`,
+      body: `Pain at ${pain}/10 with only ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel} logged. This combination raises your crisis risk. Rest, hydrate, and contact your care team if pain worsens.`,
       basis: weatherBasis
         ? `Based on today's log · ${weatherBasis}`
         : "Based on today's log",
@@ -195,7 +198,7 @@ export function getDynamicMessage({
     return {
       label: "TODAY'S FORECAST",
       headline: "Hydration needs attention.",
-      body: `You've logged ${hydration} of your ${goalGlasses} daily glasses. Dehydration is one of the most common triggers for a sickle cell crisis — keep a bottle close.`,
+      body: `You've logged ${hydration} of your ${hydrationGoalInUnit} daily ${hydrationUnitLabel}. Dehydration is one of the most common triggers for a sickle cell crisis — keep a bottle close.`,
       basis: weatherBasis
         ? `Based on today's log · ${weatherBasis}`
         : "Based on today's log",
@@ -242,7 +245,7 @@ export function getDynamicMessage({
     return {
       label: "TODAY'S FORECAST",
       headline: "A moderate day — pace yourself.",
-      body: `Pain at ${pain}/10. Light activity is manageable, but avoid anything strenuous. Keep fluids up${hydration < nearGoalThreshold ? ` — you're at ${hydration} of ${goalGlasses} glasses` : ""}.`,
+      body: `Pain at ${pain}/10. Light activity is manageable, but avoid anything strenuous. Keep fluids up${hydration < nearGoalThreshold ? ` — you're at ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel}` : ""}.`,
       basis: "Based on today's log",
     };
   }

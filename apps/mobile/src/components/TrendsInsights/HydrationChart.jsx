@@ -3,48 +3,53 @@ import { BarChart } from "react-native-gifted-charts";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { glassesFromMl } from "@/utils/hydrationUnits";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "@/utils/hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
 const CHART_WIDTH = GRAPH_WIDTH - 40;
 
-function getHydrationInsight(avg, daysAtGoal, total, goalGlasses) {
-  const a = parseFloat(avg);
-  if (a >= goalGlasses) {
-    return `Outstanding hydration this month! Consistently hitting your ${goalGlasses}-glass goal is one of the most effective ways to prevent SCD pain crises and keep your blood cells flowing well.`;
+function getHydrationInsight(avg, daysAtGoal, total, goal, unitLabel) {
+  const goalPhrase = `${goal} ${unitLabel}`;
+  if (avg >= goal) {
+    return `Outstanding hydration this month! Consistently hitting your ${goalPhrase} goal is one of the most effective ways to prevent SCD pain crises and keep your blood cells flowing well.`;
   }
-  if (a >= goalGlasses * 0.75) {
+  if (avg >= goal * 0.75) {
     if (daysAtGoal >= total / 2)
       return `You're meeting your hydration goal on more than half your logged days — solid progress. Try keeping a water bottle nearby so it's always within reach, especially in the mornings.`;
     return `You're close to your daily goal but not quite consistent yet. Spreading water intake evenly across the day tends to work better than trying to catch up in the evening.`;
   }
-  return `Your hydration has been below the ${goalGlasses}-glass target most days. In SCD, low hydration significantly increases the risk of pain crises. Consider setting a reminder every couple of hours as a prompt to drink.`;
+  return `Your hydration has been below the ${goalPhrase} target most days. In SCD, low hydration significantly increases the risk of pain crises. Consider setting a reminder every couple of hours as a prompt to drink.`;
 }
 
 export function HydrationChart({ hydrationData, avgHydration }) {
   const t = useTheme();
   const { data: metricGoals } = useMetricGoalsQuery();
+  const { displayUnit } = useHydrationStore();
   const goalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
-  const goalGlasses = Math.max(1, Math.round(glassesFromMl(goalMl)));
+  const unitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
 
-  // hydrationData/avgHydration arrive as canonical ml; this chart's scale stays
-  // glasses-based (unchanged UI) until Step 5 replaces this component.
-  const glassesData = hydrationData.map((d) => ({ ...d, value: glassesFromMl(d.value) }));
-  const avgHydrationGlasses = glassesFromMl(avgHydration);
+  // hydrationData/avgHydration arrive as canonical ml; render everything in
+  // the user's chosen display unit instead of a hardcoded glasses scale.
+  const goalInUnit = Math.max(0.1, hydrationValueInUnit(goalMl, displayUnit));
+  const unitData = hydrationData.map((d) => ({ ...d, value: hydrationValueInUnit(d.value, displayUnit) }));
+  const avgInUnit = hydrationValueInUnit(avgHydration, displayUnit);
+  const formatUnitNumber = (v) => (displayUnit === "L" ? v.toFixed(1) : String(Math.round(v)));
 
-  const giftedData = glassesData.map((d, i) => ({
+  const giftedData = unitData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
     labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    frontColor: d.value >= goalGlasses ? "#A9334D" : "#D09F9A",
+    frontColor: d.value >= goalInUnit ? "#A9334D" : "#D09F9A",
   }));
 
   const barWidth = Math.max(3, Math.floor(CHART_WIDTH / 35));
   const spacing = Math.max(1, Math.floor(CHART_WIDTH / 50));
-  const daysAtGoal = glassesData.filter((d) => d.value >= goalGlasses).length;
-  const insightText = getHydrationInsight(avgHydrationGlasses, daysAtGoal, glassesData.length, goalGlasses);
+  const daysAtGoal = unitData.filter((d) => d.value >= goalInUnit).length;
+  const chartMax = Math.max(...unitData.map((d) => d.value), goalInUnit, 0.1) * 1.15;
+  const insightText = getHydrationInsight(avgInUnit, daysAtGoal, unitData.length, goalInUnit, unitLabel);
 
   return (
     <View
@@ -86,7 +91,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
         </View>
       </View>
       <Text style={{ fontSize: 13, color: t.textSecondary, marginBottom: 20 }}>
-        Monitor your daily water intake (glasses)
+        Monitor your daily water intake ({unitLabel})
       </Text>
 
       {/* Goal line label */}
@@ -106,7 +111,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             borderRadius: 1,
           }}
         />
-        <Text style={{ fontSize: 11, color: t.textSecondary }}>Goal: {goalGlasses} glasses</Text>
+        <Text style={{ fontSize: 11, color: t.textSecondary }}>Goal: {formatUnitNumber(goalInUnit)} {unitLabel}</Text>
       </View>
 
       {/* Chart */}
@@ -119,7 +124,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           roundedTop
           spacing={spacing}
           noOfSections={4}
-          maxValue={Math.max(10, goalGlasses + 2)}
+          maxValue={chartMax}
           yAxisColor="transparent"
           xAxisColor={t.border}
           rulesColor={t.divider}
@@ -135,7 +140,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             dashGap: 4,
             thickness: 1,
           }}
-          referenceLine1Position={goalGlasses}
+          referenceLine1Position={goalInUnit}
           showReferenceLine1
         />
       </View>
@@ -156,7 +161,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             Daily Avg
           </Text>
           <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: t.text }}>
-            {avgHydrationGlasses.toFixed(1)}
+            {formatUnitNumber(avgInUnit)}
           </Text>
         </View>
         <View>
@@ -164,7 +169,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             Goal
           </Text>
           <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#A9334D" }}>
-            {goalGlasses}
+            {formatUnitNumber(goalInUnit)}
           </Text>
         </View>
         <View>

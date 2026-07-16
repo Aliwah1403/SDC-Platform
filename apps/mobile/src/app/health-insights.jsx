@@ -13,7 +13,8 @@ import { CrisisFreePeriods } from "@/components/TrendsInsights/CrisisFreePeriods
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { glassesFromMl } from "@/utils/hydrationUnits";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "@/utils/hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -65,8 +66,9 @@ function dailyWellbeing(entry, goalMl) {
 
 // ─── insight definitions ──────────────────────────────────────────────────────
 
-function buildInsights(healthData, firstName, goalMl) {
-  const goalGlasses = Math.max(1, Math.round(glassesFromMl(goalMl)));
+function buildInsights(healthData, firstName, goalMl, displayUnit) {
+  const goalInUnit = Math.max(0.1, hydrationValueInUnit(goalMl, displayUnit));
+  const unitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
   const thisWeek = sliceWeek(healthData, 0, 6);
   const lastWeek = sliceWeek(healthData, 7, 13);
   const hasHistory = lastWeek.length > 0;
@@ -131,19 +133,19 @@ function buildInsights(healthData, firstName, goalMl) {
       id: "hydration-goal",
       title: hydGoalPositive ? "Hydration Momentum" : "Hydration Reminder",
       color: "#2563EB",
-      metricLabel: `GOAL DAYS (${goalGlasses}+ GLASSES)`,
+      metricLabel: `GOAL DAYS (${goalInUnit}+ ${unitLabel.toUpperCase()})`,
       thisValue: String(hydGoalThis),
       lastValue: hasHistory ? String(hydGoalLast) : "—",
       pctChange: hydGoalPct,
       isPositive: hydGoalPositive,
       hasHistory,
       description: !hasHistory
-        ? `${firstName}, you hit your ${goalGlasses}-glass hydration goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} this week. Staying hydrated is one of the most effective ways to reduce SCD complications.`
+        ? `${firstName}, you hit your ${goalInUnit}-${unitLabel} hydration goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} this week. Staying hydrated is one of the most effective ways to reduce SCD complications.`
         : hydGoalPositive
         ? `${firstName}, you hit your hydration goal on ${hydGoalThis} days this week, up from ${hydGoalLast} last week. Excellent — hydration directly impacts how your body manages SCD.`
-        : `${firstName}, your hydration dropped this week — you hit the ${goalGlasses}-glass goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} vs ${hydGoalLast} last week. Remember to drink water throughout the day, especially in the morning.`,
-      bars: weekBars(healthData, (d) => glassesFromMl(d.hydration || 0)),
-      maxValue: Math.max(10, goalGlasses + 2),
+        : `${firstName}, your hydration dropped this week — you hit the ${goalInUnit}-${unitLabel} goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} vs ${hydGoalLast} last week. Remember to drink water throughout the day, especially in the morning.`,
+      bars: weekBars(healthData, (d) => hydrationValueInUnit(d.hydration || 0, displayUnit)),
+      maxValue: Math.max(goalInUnit * 1.2, goalInUnit + 2),
     },
     {
       id: "wellbeing-score",
@@ -346,10 +348,11 @@ export default function HealthInsightsScreen() {
   const { auth } = useAuthStore();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
+  const { displayUnit } = useHydrationStore();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
 
-  const insights = buildInsights(healthData, firstName, hydrationGoalMl);
+  const insights = buildInsights(healthData, firstName, hydrationGoalMl, displayUnit);
   const { painLevelData, hydrationData, moodData, chartData, crisisPeriods, avgPainLevel, avgHydration } =
     useChartData(healthData);
 

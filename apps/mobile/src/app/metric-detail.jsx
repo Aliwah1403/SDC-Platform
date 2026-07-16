@@ -35,6 +35,8 @@ import {
 } from "lucide-react-native";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL, HYDRATION_SCALE_MAX } from "@/utils/hydrationUnits";
 import { fonts } from "@/utils/fonts";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { useAppStore } from "@/store/appStore";
@@ -541,8 +543,22 @@ export default function MetricDetailScreen() {
 
   const { healthKitData, healthConnectData, computedAlertState, onboardingData } = useAppStore();
   const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
+  const { displayUnit } = useHydrationStore();
+  const isHydration = metric === "hydration";
 
-  const meta = METRIC_META[metric] ?? METRIC_META.pain;
+  // Hydration is stored canonically in ml; this screen renders it in the
+  // user's chosen display unit (glasses/ml/L/fl oz) rather than a fixed one,
+  // so unit/range are overridden here and every raw ml value below is
+  // converted at the point it's read — everything downstream (gauge, chart,
+  // trend, AI insight) then stays internally consistent in that one unit.
+  const meta = useMemo(() => {
+    const base = METRIC_META[metric] ?? METRIC_META.pain;
+    if (metric !== "hydration") return base;
+    const unit = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
+    const rangeMax = HYDRATION_SCALE_MAX[displayUnit] ?? HYDRATION_SCALE_MAX.glasses;
+    return { ...base, unit, rangeMax, max: rangeMax };
+  }, [metric, displayUnit]);
+
   const [range, setRange] = useState(14);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -552,7 +568,11 @@ export default function MetricDetailScreen() {
     posthog?.capture('metric_detail_viewed', { metric: metric ?? 'pain' });
   }, []);
 
-  const goal = meta.hasGoal ? (metricGoals?.[metric] ?? null) : null;
+  const goal = meta.hasGoal
+    ? (isHydration
+        ? (metricGoals?.hydration != null ? hydrationValueInUnit(metricGoals.hydration, displayUnit) : null)
+        : (metricGoals?.[metric] ?? null))
+    : null;
 
   // Merge platform health data into healthData before computing chart data.
   const mergedHealthData = useMemo(() => {
@@ -568,10 +588,11 @@ export default function MetricDetailScreen() {
     return [...base, ...platformOnlyEntries];
   }, [healthData, platformHealthData]);
 
-  const data = useMemo(
-    () => getLastNDays(mergedHealthData, meta.dataField, range),
-    [mergedHealthData, meta.dataField, range]
-  );
+  const data = useMemo(() => {
+    const raw = getLastNDays(mergedHealthData, meta.dataField, range);
+    if (!isHydration) return raw;
+    return raw.map((d) => ({ ...d, value: hydrationValueInUnit(d.value, displayUnit) }));
+  }, [mergedHealthData, meta.dataField, range, isHydration, displayUnit]);
 
   const latestSleepSegments = useMemo(() => {
     if (metric !== "sleep") return null;
@@ -585,7 +606,8 @@ export default function MetricDetailScreen() {
   // finite / zero — mirrors the existing "value > 0" convention).
   const valueForDate = (date) => {
     const raw = mergedHealthData.find((d) => d.date === dateToStr(date))?.[meta.dataField];
-    return (raw != null && Number.isFinite(raw) && raw > 0) ? raw : null;
+    if (raw == null || !Number.isFinite(raw) || raw <= 0) return null;
+    return isHydration ? hydrationValueInUnit(raw, displayUnit) : raw;
   };
 
   // Two tracks: the AI insight stays anchored to *today* (its cache is
@@ -596,7 +618,7 @@ export default function MetricDetailScreen() {
 
   const selectedValue = useMemo(
     () => valueForDate(selectedDate),
-    [mergedHealthData, meta.dataField, selectedDate]
+    [mergedHealthData, meta.dataField, selectedDate, isHydration, displayUnit]
   );
   const selectedStatus = selectedValue != null ? getStatus(metric, selectedValue, goal) : null;
 

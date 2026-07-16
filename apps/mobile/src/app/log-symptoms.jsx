@@ -17,15 +17,18 @@ import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
-import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
+import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
 import { useSharedValue, withSpring } from "react-native-reanimated";
 import { useAppStore } from "@/store/appStore";
 import { writeDailyLog } from "@/services/healthService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { mlFromGlasses, glassesFromMl } from "@/utils/hydrationUnits";
-import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useWeatherData } from "@/hooks/useWeatherData";
+import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl } from "@/utils/hydrationGoal";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackground";
@@ -36,50 +39,57 @@ import { fonts } from "@/utils/fonts";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
-const BOTTLE_PATH =
-  "M 36 0 L 64 0 Q 68 0 68 4 L 68 14 Q 68 18 64 18 L 60 18 L 60 30 " +
-  "C 60 42 84 46 84 52 L 84 186 Q 84 198 72 198 L 28 198 Q 16 198 16 186 " +
-  "L 16 52 C 16 46 40 42 40 30 L 40 18 L 36 18 Q 32 18 32 14 L 32 4 " +
-  "Q 32 0 36 0 Z";
-const BOTTLE_BODY_TOP = 52;
-const BOTTLE_BODY_H = 146; // 198 - 52
+const VESSEL_W = 130;
+const VESSEL_H = 200;
+const VESSEL_R = 20;
 
-function WaterBottle({ value, fillColor }) {
-  const fillHeightAnim = useRef(
-    new Animated.Value(BOTTLE_BODY_H * Math.min(value / 10, 1))
-  ).current;
+// Single hydration identity color everywhere — no amber/green threshold swap.
+function HydrationVessel({ valueMl, goalMl }) {
+  const progress = Math.min(valueMl / Math.max(goalMl, 1), 1);
+  const fillHeightAnim = useRef(new Animated.Value(VESSEL_H * progress)).current;
 
   useEffect(() => {
     Animated.spring(fillHeightAnim, {
-      toValue: BOTTLE_BODY_H * Math.min(value / 10, 1),
+      toValue: VESSEL_H * progress,
       useNativeDriver: false,
       damping: 20,
       stiffness: 100,
     }).start();
-  }, [value]);
+  }, [progress]);
 
   const fillY = fillHeightAnim.interpolate({
-    inputRange: [0, BOTTLE_BODY_H],
-    outputRange: [BOTTLE_BODY_TOP + BOTTLE_BODY_H, BOTTLE_BODY_TOP],
+    inputRange: [0, VESSEL_H],
+    outputRange: [VESSEL_H, 0],
   });
 
   return (
-    <Svg width={110} height={220} viewBox="0 0 100 210">
+    <Svg width={VESSEL_W} height={VESSEL_H}>
       <Defs>
-        <ClipPath id="bottleClip">
-          <Path d={BOTTLE_PATH} />
+        <ClipPath id="vesselClip">
+          <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} />
         </ClipPath>
       </Defs>
+      <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} fill="rgba(59,130,246,0.08)" />
       <AnimatedSvgRect
         x={0}
         y={fillY}
-        width={100}
+        width={VESSEL_W}
         height={fillHeightAnim}
-        fill={fillColor}
-        opacity={0.75}
-        clipPath="url(#bottleClip)"
+        fill="#3B82F6"
+        opacity={0.85}
+        clipPath="url(#vesselClip)"
       />
-      <Path d={BOTTLE_PATH} fill="none" stroke={fillColor} strokeWidth={3.5} />
+      <Rect
+        x={1.25}
+        y={1.25}
+        width={VESSEL_W - 2.5}
+        height={VESSEL_H - 2.5}
+        rx={VESSEL_R - 1}
+        ry={VESSEL_R - 1}
+        fill="none"
+        stroke="#3B82F6"
+        strokeWidth={2.5}
+      />
     </Svg>
   );
 }
@@ -445,82 +455,95 @@ function SymptomsStep({ selected, onToggle }) {
 }
 
 // Step 5 — Hydration
-const HYDRATION_PRESETS = [4, 8, 12];
+const DRINK_SIZES = [
+  { label: "Glass", ml: GLASS_ML },
+  { label: "Bottle", ml: 500 },
+  { label: "Large", ml: 1000 },
+];
+const HYDRATION_MAX_ML = 5000;
 
-function HydrationStep({ value, onChange, goalGlasses }) {
+function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit }) {
   const t = useTheme();
-  const midThreshold = Math.round(goalGlasses * 0.625);
-  const fillColor = value >= goalGlasses ? "#10B981" : value >= midThreshold ? "#3B82F6" : "#F59E0B";
+  const { number, unitLabel } = hydrationNumberAndUnit(value, displayUnit);
+  const goalParts = hydrationNumberAndUnit(goalMl, displayUnit);
+  const goalReached = value >= goalMl;
+  const remainingText = formatHydrationRemaining(goalMl - value, displayUnit);
+
+  const addDrink = (ml) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onChange(Math.min(HYDRATION_MAX_ML, value + ml));
+  };
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
         <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your hydration?</Text>
-        <Text style={styles.stepSubtitle}>How many glasses of water today?</Text>
+        <Text style={styles.stepSubtitle}>Log today's water intake</Text>
       </View>
 
-      {/* Water bottle visual */}
+      {/* Vessel visual */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-        <WaterBottle value={value} fillColor={fillColor} />
-        <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 52, color: fillColor, marginTop: 8 }}>
-          {value}
+        <HydrationVessel valueMl={value} goalMl={goalMl} />
+        <Text style={{ marginTop: 14 }}>
+          <Text style={{ fontFamily: fonts.extrabold, fontSize: 32, color: "#3B82F6" }}>{number} {unitLabel}</Text>
+          <Text style={{ fontFamily: fonts.medium, fontSize: 18, color: t.textSecondary }}> of {goalParts.number} {goalParts.unitLabel}</Text>
         </Text>
-        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 16, color: t.textSecondary, marginTop: 2 }}>
-          glasses
-        </Text>
+        {heatBumpMl > 0 && tempC != null && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textTertiary, marginTop: 6 }}>
+            +{formatHydration(heatBumpMl, displayUnit)} suggested today — it's {Math.round(tempC)}°
+          </Text>
+        )}
       </View>
 
-      {/* Quick presets */}
+      {/* Drink-size quick add */}
       <View style={{ alignItems: "center", marginBottom: 16 }}>
-        <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>QUICK SELECT</Text>
+        <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>ADD A DRINK</Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
-          {HYDRATION_PRESETS.map((preset) => {
-            const active = value === preset;
-            return (
-              <TouchableOpacity
-                key={preset}
-                onPress={() => onChange(preset)}
-                style={{
-                  paddingHorizontal: 22,
-                  paddingVertical: 10,
-                  borderRadius: 24,
-                  borderWidth: 2,
-                  borderColor: active ? fillColor : "#E8D5D2",
-                  backgroundColor: active ? fillColor : "transparent",
-                }}
-              >
-                <Text style={{
-                  fontFamily: "Geist_600SemiBold",
-                  fontSize: 15,
-                  color: active ? "#fff" : fillColor,
-                }}>
-                  {preset}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+          {DRINK_SIZES.map((d) => (
+            <TouchableOpacity
+              key={d.label}
+              onPress={() => addDrink(d.ml)}
+              style={{
+                paddingHorizontal: 18,
+                paddingVertical: 10,
+                borderRadius: 24,
+                borderWidth: 2,
+                borderColor: "#3B82F6",
+              }}
+            >
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#3B82F6" }}>
+                {d.label} +{formatHydration(d.ml, displayUnit)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
-      {/* +/- controls */}
+      {/* +/- fine adjust (250 ml steps) */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 32 }}>
         <TouchableOpacity
-          onPress={() => onChange(Math.max(0, value - 1))}
-          style={[styles.hydBtn, { borderColor: fillColor }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onChange(Math.max(0, value - GLASS_ML));
+          }}
+          style={[styles.hydBtn, { borderColor: "#3B82F6" }]}
         >
-          <Text style={{ fontFamily: "Geist_700Bold", fontSize: 28, color: fillColor }}>−</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: "#3B82F6" }}>−</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => onChange(Math.min(20, value + 1))}
-          style={[styles.hydBtn, { borderColor: fillColor, backgroundColor: fillColor }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onChange(Math.min(HYDRATION_MAX_ML, value + GLASS_ML));
+          }}
+          style={[styles.hydBtn, { borderColor: "#3B82F6", backgroundColor: "#3B82F6" }]}
         >
-          <Text style={{ fontFamily: "Geist_700Bold", fontSize: 28, color: "#fff" }}>+</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: "#fff" }}>+</Text>
         </TouchableOpacity>
       </View>
 
       <View style={{ width: "100%", paddingHorizontal: 24, marginTop: 8 }}>
-        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: fillColor }]}>
-          {value >= goalGlasses ? "Great hydration!" : value >= midThreshold ? "Getting there" : "Drink more water"}
+        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: "#3B82F6" }]}>
+          {goalReached ? "Goal reached" : remainingText}
         </Text>
       </View>
     </View>
@@ -566,7 +589,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading, hydrationGoalGlasses }) {
+function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -577,7 +600,7 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationGoalGlasses }) {
     { label: "What contributed", value: log.triggers.length ? log.triggers.join(", ") : "—", color: "#8B5CF6" },
     { label: "Body Locations", value: log.bodyLocations.length ? log.bodyLocations.join(", ") : "None", color: "#A9334D" },
     { label: "Symptoms", value: log.symptoms.length ? log.symptoms.join(", ") : "None reported", color: "#781D11" },
-    { label: "Hydration", value: `${log.hydration} glasses`, color: log.hydration >= hydrationGoalGlasses ? "#10B981" : "#3B82F6" },
+    { label: "Hydration", value: formatHydration(log.hydration, hydrationDisplayUnit), color: "#3B82F6" },
     { label: "Notes", value: log.notes || "—", color: "#9CA3AF" },
   ];
 
@@ -640,7 +663,12 @@ export default function LogSymptomsScreen() {
 
   const { data: metricGoals } = useMetricGoalsQuery();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
-  const hydrationGoalGlasses = Math.max(1, Math.round(glassesFromMl(hydrationGoalMl)));
+  const { displayUnit: hydrationDisplayUnit } = useHydrationStore();
+
+  const { data: profile } = useProfileQuery();
+  const { weather } = useWeatherData(profile?.locationEnabled ?? false);
+  const tempC = weather?.temp ?? null;
+  const heatBumpMl = getHeatBumpMl(tempC);
 
   const [step, setStep] = useState(0);
 
@@ -737,18 +765,17 @@ export default function LogSymptomsScreen() {
       triggers: moodContributors,
       bodyLocations,
       symptoms,
-      hydration, // glasses — ephemeral local/store representation, Phase 1 keeps this UI unchanged
+      hydration, // canonical ml
       notes,
     };
     updateSymptomLog(logData);
 
-    const hydrationMl = mlFromGlasses(hydration);
-    submitLogMutation.mutate({ ...logData, hydration: hydrationMl }, {
+    submitLogMutation.mutate(logData, {
       onSuccess: () => {
         const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
         posthog?.capture('symptom_log_submitted', {
           pain_level: painLevel,
-          hydration_level: hydration,
+          hydration_level: Math.round(glassesFromMl(hydration)),
           mood: MOOD_VALUES[moodValue - 1],
           contributor_count: moodContributors.length,
           symptoms_selected: symptoms,
@@ -763,10 +790,10 @@ export default function LogSymptomsScreen() {
           crisis_step: null,
         });
         posthog?.capture('hydration_logged', {
-          amount_glasses: hydration,
-          amount_ml: hydrationMl,
+          amount_glasses: Math.round(glassesFromMl(hydration)),
+          amount_ml: hydration,
           goal_ml: hydrationGoalMl,
-          goal_met: hydrationMl >= hydrationGoalMl,
+          goal_met: hydration >= hydrationGoalMl,
         });
         if (!hasLoggedToday) {
           posthog?.capture('streak_saved', {
@@ -778,7 +805,7 @@ export default function LogSymptomsScreen() {
         // Mirror to health platform on the first log of the day only — re-logs would
         // append duplicate water samples. Android skips symptoms/mood (HC has no symptom types).
         if (isHealthConnected && !hasLoggedToday) {
-          writeDailyLog({ hydrationMl, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
+          writeDailyLog({ hydrationMl: hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
         }
         router.back();
       },
@@ -904,7 +931,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 5 && (
-          <HydrationStep value={hydration} onChange={setHydration} goalGlasses={hydrationGoalGlasses} />
+          <HydrationStep value={hydration} onChange={setHydration} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} displayUnit={hydrationDisplayUnit} />
         )}
         {step === 6 && (
           <NotesStep
@@ -917,7 +944,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationGoalGlasses={hydrationGoalGlasses} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} />
         )}
       </View>
 

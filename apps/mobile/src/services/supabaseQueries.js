@@ -283,6 +283,62 @@ export async function submitHealthLog(userId, logData) {
   return { newStreak: streakRow.current_streak ?? 0, isNewDay: false, earnedRepair: false };
 }
 
+/**
+ * Home-tile "+250 ml" quick-add. Inserts a lightweight health_logs row (carrying
+ * forward today's existing pain_level/mood so the MAX-based daily_summaries
+ * aggregation in submitHealthLog isn't corrupted by defaults) and bumps
+ * daily_summaries.hydration. Does not touch the streak — only the full
+ * check-in flow (submitHealthLog) counts as "logged today" for streak purposes.
+ */
+export async function addHydrationQuickly(userId, addedMl) {
+  const todayStr = today();
+
+  const { data: summary, error: summaryFetchError } = await supabase
+    .from('daily_summaries')
+    .select('hydration, pain_level, mood')
+    .eq('user_id', userId)
+    .eq('date', todayStr)
+    .maybeSingle();
+  if (summaryFetchError) throw summaryFetchError;
+
+  const newHydration = (summary?.hydration ?? 0) + addedMl;
+  const painLevel = summary?.pain_level ?? 0;
+  const mood = summary?.mood ?? 1;
+
+  const { error: logError } = await supabase
+    .from('health_logs')
+    .insert({
+      user_id: userId,
+      date: todayStr,
+      pain_level: painLevel,
+      body_locations: [],
+      symptoms: [],
+      mood,
+      hydration: newHydration,
+      notes: null,
+      triggers: [],
+      activities: [],
+    });
+  if (logError) throw logError;
+
+  const { error: summaryError } = await supabase
+    .from('daily_summaries')
+    .upsert(
+      {
+        user_id: userId,
+        date: todayStr,
+        pain_level: painLevel,
+        hydration: newHydration,
+        mood,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,date' }
+    );
+  if (summaryError) throw summaryError;
+
+  return { hydration: newHydration };
+}
+
 // ============================================================
 // MEDICATIONS
 // ============================================================
