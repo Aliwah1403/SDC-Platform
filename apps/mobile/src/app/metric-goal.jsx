@@ -1,22 +1,73 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { usePostHog } from "posthog-react-native";
 import {
   View,
   Text,
   TouchableOpacity,
+  Pressable,
+  ScrollView,
   Dimensions,
 } from "react-native";
 import Slider from "@react-native-community/slider";
+import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
+import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { X, Minus, Plus, Droplets, Moon, Activity, TriangleAlert } from "lucide-react-native";
+import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCheck } from "lucide-react-native";
 import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useWeatherData } from "@/hooks/useWeatherData";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { colors } from "@/utils/colors";
+import { enterTiming, STAGGER_MS } from "@/utils/motion";
+import { PressableScale } from "@/components/PressableScale";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const SLIDER_WIDTH = SCREEN_WIDTH - 48;
+
+const ML_PER_FLOZ = 29.5735;
+
+// ⚠️ COPY PENDING CLINICAL REVIEW — see CLINICAL-REVIEW-hydration.md
+const HYDRATION_BENEFITS = [
+  { icon: Droplets, text: "Helps reduce red-cell sickling and lower crisis risk" },
+  { icon: HeartPulse, text: "Supports healthy blood flow and circulation" },
+  { icon: ShieldCheck, text: "One of the most effective daily habits for SCD management" },
+];
+
+const UNIT_OPTIONS = [
+  { key: "glasses", label: "Glasses" },
+  { key: "ml", label: "mL" },
+  { key: "L", label: "L" },
+  { key: "floz", label: "fl oz" },
+];
+
+function bigValueParts(ml, unit) {
+  switch (unit) {
+    case "ml":
+      return { number: `${Math.round(ml)}`, label: "ml per day" };
+    case "L":
+      return { number: (ml / 1000).toFixed(1), label: "L per day" };
+    case "floz":
+      return { number: `${Math.round(ml / ML_PER_FLOZ)}`, label: "fl oz per day" };
+    case "glasses":
+    default: {
+      const g = Math.round((ml / GLASS_ML) * 10) / 10;
+      return { number: Number.isInteger(g) ? g.toString() : g.toFixed(1), label: `glass${g === 1 ? "" : "es"} per day` };
+    }
+  }
+}
+
+function translationLine(ml) {
+  const liters = (ml / 1000).toFixed(1);
+  const glasses = Math.round((ml / GLASS_ML) * 10) / 10;
+  const glassesLabel = Number.isInteger(glasses) ? glasses.toString() : glasses.toFixed(1);
+  const floz = Math.round(ml / ML_PER_FLOZ);
+  return `${liters} L · ≈ ${glassesLabel} glass${glasses === 1 ? "" : "es"} · ${floz} fl oz`;
+}
 
 function bucketGoalValue(metric, value) {
   if (metric === 'hydration') {
@@ -49,11 +100,6 @@ const GOAL_META = {
     min: 1000,
     max: 5000,
     step: 250,
-    recommended: { min: 2000, max: 2500 },
-    recommendedLabel: "RECOMMENDED: 2000 – 2500 ML PER DAY",
-    setter: "stepper",
-    presets: [1000, 1500, 2000, 2500, 3000],
-    tip: "Staying hydrated is one of the most effective ways to prevent sickle cell pain crises. Aim for at least 2000 ml daily — more during activity or hot weather.",
     icon: Droplets,
     color: "#3B82F6",
   },
@@ -130,70 +176,329 @@ function RangeBar({ min, max, recMin, recMax, color }) {
   );
 }
 
-// ─── Stepper for hydration ────────────────────────────────────────────────────
+// ─── Hydration goal sheet (Phase 2 rebuild) ───────────────────────────────────
 
-function HydrationSetter({ value, onChange, meta }) {
+function GlassIcon({ fraction, size, color, borderColor, uid }) {
+  const W = size;
+  const H = Math.round(size * 1.35);
+  const clipId = `glassClip-${uid}`;
+  const f = Math.max(0, Math.min(1, fraction));
+  const fillH = f * (H - 4);
+  return (
+    <Svg width={W} height={H}>
+      <Defs>
+        <ClipPath id={clipId}>
+          <Rect x={2} y={2} width={W - 4} height={H - 4} rx={3} ry={3} />
+        </ClipPath>
+      </Defs>
+      <Rect x={1} y={1} width={W - 2} height={H - 2} rx={4} ry={4} fill="transparent" stroke={borderColor} strokeWidth={1.3} />
+      {f > 0 && (
+        <Rect x={2} y={H - 2 - fillH} width={W - 4} height={fillH} fill={color} clipPath={`url(#${clipId})`} />
+      )}
+    </Svg>
+  );
+}
+
+function GlassRow({ goalMl, color, t }) {
+  const totalGlasses = goalMl / GLASS_ML;
+  const count = Math.min(20, Math.max(1, Math.ceil(totalGlasses)));
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5, justifyContent: "center", paddingHorizontal: 12 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <GlassIcon
+          key={i}
+          uid={i}
+          fraction={Math.max(0, Math.min(1, totalGlasses - i))}
+          size={13}
+          color={color}
+          borderColor={t.border}
+        />
+      ))}
+    </View>
+  );
+}
+
+function SuggestedNotch({ min, max, suggestedMl, t }) {
+  const frac = Math.max(0, Math.min(1, (suggestedMl - min) / (max - min)));
+  const leftPx = frac * SLIDER_WIDTH;
+  return (
+    <View style={{ width: SLIDER_WIDTH, height: 22 }}>
+      <View style={{ position: "absolute", left: Math.max(0, leftPx - 1), top: 0, width: 2, height: 8, backgroundColor: colors.burgundy, borderRadius: 1 }} />
+      <Text
+        style={{
+          position: "absolute",
+          left: Math.min(Math.max(leftPx - 34, 0), SLIDER_WIDTH - 68),
+          top: 9,
+          width: 68,
+          textAlign: "center",
+          fontFamily: fonts.semibold,
+          fontSize: 9,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+          color: t.textTertiary,
+        }}
+      >
+        Suggested
+      </Text>
+    </View>
+  );
+}
+
+function SuggestionPill({ value, suggestedMl, t }) {
+  const diff = value - suggestedMl;
+  let label, positive;
+  if (diff < -250) {
+    label = "Below your suggested amount";
+    positive = false;
+  } else if (diff > 250) {
+    label = "Comfortably above your suggestion";
+    positive = true;
+  } else {
+    label = "Right on your suggested mark";
+    positive = true;
+  }
+
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        alignSelf: "center",
+        backgroundColor: positive ? colors.burgundyTint : t.surfaceElevated,
+        borderWidth: 1,
+        borderColor: positive ? colors.burgundyBorder : t.border,
+        borderRadius: 20,
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+      }}
+    >
+      {positive && <Check size={13} color={colors.darkBurgundy} strokeWidth={2.5} />}
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 12,
+          color: positive ? colors.darkBurgundy : t.textSecondary,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function DisplayUnitRow({ displayUnit, onChange, t }) {
+  return (
+    <View>
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 11,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          color: t.textTertiary,
+          marginBottom: 10,
+        }}
+      >
+        Display Unit
+      </Text>
+      <View style={{ flexDirection: "row", backgroundColor: t.surfaceElevated, borderRadius: 12, padding: 3 }}>
+        {UNIT_OPTIONS.map((opt) => {
+          const active = displayUnit === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              onPress={() => {
+                if (!active) {
+                  Haptics.selectionAsync();
+                  onChange(opt.key);
+                }
+              }}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 9,
+                alignItems: "center",
+                backgroundColor: active ? "#3B82F6" : "transparent",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 13,
+                  color: active ? "#fff" : t.textSecondary,
+                }}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function SectionDivider({ t }) {
+  return <View style={{ height: 1, backgroundColor: t.divider, marginVertical: 24 }} />;
+}
+
+function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
   const t = useTheme();
-  const hapticAndChange = (v) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onChange(v);
+  const { data: profile } = useProfileQuery();
+  const locationEnabled = profile?.locationEnabled ?? false;
+  const { weather } = useWeatherData(locationEnabled);
+  const { displayUnit, setDisplayUnit } = useHydrationStore();
+
+  const suggestion = useMemo(
+    () => getHydrationSuggestion({ weightKg: profile?.weight ?? null, tempC: weather?.temp ?? null, baseGoalMl: value }),
+    [profile?.weight, weather?.temp, value],
+  );
+
+  const { number, label } = bigValueParts(value, displayUnit);
+
+  const snapToSuggestion = () => {
+    if (value === suggestion.suggestedMl) return;
+    Haptics.selectionAsync();
+    onSliderChange(suggestion.suggestedMl);
   };
 
   return (
-    <View style={{ width: "100%", alignItems: "center" }}>
-      {/* Preset pills */}
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 28 }}>
-        {meta.presets.map((p) => (
-          <TouchableOpacity
-            key={p}
-            onPress={() => hapticAndChange(p)}
+    <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: insets.bottom + 32 }} showsVerticalScrollIndicator={false}>
+      {/* Hero: title */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={enterTiming} style={{ alignItems: "center", marginTop: 24, marginBottom: 20 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 24, color: t.text, textAlign: "center", marginBottom: 6 }}>
+          {meta.goalLabel}
+        </Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", lineHeight: 20 }}>
+          {meta.subtitle}
+        </Text>
+      </MotiView>
+
+      {/* Big value + translation */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS }} style={{ alignItems: "center", marginBottom: 18 }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 60, color: t.text, lineHeight: 66 }}>{number}</Text>
+        <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2, marginBottom: 8 }}>{label}</Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textTertiary }}>{translationLine(value)}</Text>
+      </MotiView>
+
+      {/* Glass row */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 2 }} style={{ marginBottom: 18 }}>
+        <GlassRow goalMl={value} color="#3B82F6" t={t} />
+      </MotiView>
+
+      {/* Suggestion pill */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 3 }} style={{ marginBottom: 24 }}>
+        <SuggestionPill value={value} suggestedMl={suggestion.suggestedMl} t={t} />
+      </MotiView>
+
+      {/* Slider + suggested notch + suggested-for-you row */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 4 }} style={{ alignItems: "center" }}>
+        <Slider
+          style={{ width: SLIDER_WIDTH, height: 40 }}
+          minimumValue={meta.min}
+          maximumValue={meta.max}
+          step={meta.step}
+          value={value}
+          onValueChange={onSliderChange}
+          minimumTrackTintColor="#3B82F6"
+          maximumTrackTintColor={t.border}
+          thumbTintColor="#3B82F6"
+        />
+        <SuggestedNotch min={meta.min} max={meta.max} suggestedMl={suggestion.suggestedMl} t={t} />
+
+        <PressableScale onPress={snapToSuggestion} style={{ width: "100%", marginTop: 8 }}>
+          <View
             style={{
-              paddingHorizontal: 16,
-              paddingVertical: 10,
-              borderRadius: 20,
-              backgroundColor: value === p ? meta.color : t.surfaceElevated,
-              borderWidth: 1.5,
-              borderColor: value === p ? meta.color : "transparent",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              backgroundColor: t.surfaceElevated,
+              borderRadius: 14,
+              padding: 14,
             }}
           >
-            <Text style={{
-              fontFamily: fonts.semibold,
-              fontSize: 14,
-              color: value === p ? "#fff" : t.textSecondary,
-            }}>
-              {p}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <View
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                borderWidth: 1.5,
+                borderColor: value === suggestion.suggestedMl ? "#3B82F6" : t.border,
+                backgroundColor: value === suggestion.suggestedMl ? "#3B82F6" : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {value === suggestion.suggestedMl && <Check size={13} color="#fff" strokeWidth={3} />}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.text, marginBottom: 2 }}>
+                Suggested for you
+              </Text>
+              <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, lineHeight: 16 }}>
+                {suggestion.explanation}
+              </Text>
+            </View>
+          </View>
+        </PressableScale>
+      </MotiView>
 
-      {/* +/- fine control */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 28 }}>
-        <TouchableOpacity
-          onPress={() => hapticAndChange(Math.max(meta.min, value - 1))}
+      <SectionDivider t={t} />
+
+      {/* Why it matters with SCD */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 5 }}>
+        <Text
           style={{
-            width: 48, height: 48, borderRadius: 24,
-            borderWidth: 2, borderColor: t.border,
-            alignItems: "center", justifyContent: "center",
+            fontFamily: fonts.semibold,
+            fontSize: 11,
+            letterSpacing: 0.8,
+            textTransform: "uppercase",
+            color: t.textTertiary,
+            marginBottom: 14,
           }}
         >
-          <Minus size={20} color={t.textSecondary} strokeWidth={2.5} />
-        </TouchableOpacity>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
-          Fine adjust
+          Why It Matters With SCD
         </Text>
-        <TouchableOpacity
-          onPress={() => hapticAndChange(Math.min(meta.max, value + 1))}
-          style={{
-            width: 48, height: 48, borderRadius: 24,
-            backgroundColor: meta.color,
-            alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <Plus size={20} color="#fff" strokeWidth={2.5} />
-        </TouchableOpacity>
-      </View>
-    </View>
+        {HYDRATION_BENEFITS.map((b, i) => {
+          const Icon = b.icon;
+          return (
+            <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, marginBottom: i === HYDRATION_BENEFITS.length - 1 ? 0 : 14 }}>
+              <View
+                style={{
+                  width: 32, height: 32, borderRadius: 16,
+                  backgroundColor: colors.burgundyTint,
+                  alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <Icon size={16} color={colors.burgundy} strokeWidth={1.8} />
+              </View>
+              <Text style={{ flex: 1, fontFamily: fonts.regular, fontSize: 14, color: t.text, lineHeight: 20, paddingTop: 6 }}>
+                {b.text}
+              </Text>
+            </View>
+          );
+        })}
+      </MotiView>
+
+      <SectionDivider t={t} />
+
+      {/* Display unit */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 6 }}>
+        <DisplayUnitRow displayUnit={displayUnit} onChange={setDisplayUnit} t={t} />
+      </MotiView>
+
+      {/* Footnote */}
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 19, textAlign: "center", marginTop: 24, marginBottom: 20 }}>
+        Your needs rise with body size and hot weather — all drinks count. Your base goal
+        stays fixed; the app suggests extras on hot days instead of moving it.
+      </Text>
+
+      {/* Save */}
+      <PressableScale onPress={onSave} style={{ backgroundColor: "#3B82F6", borderRadius: 16, paddingVertical: 17, alignItems: "center" }}>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#fff" }}>Done</Text>
+      </PressableScale>
+    </ScrollView>
   );
 }
 
@@ -209,7 +514,7 @@ export default function MetricGoalScreen() {
   const setGoalMutation = useSetGoalMutation();
 
   const meta = GOAL_META[metric];
-  const defaultValue = meta?.recommended?.min ?? meta?.min ?? 8;
+  const defaultValue = metric === "hydration" ? DEFAULT_SUGGESTED_ML : (meta?.recommended?.min ?? meta?.min ?? 8);
   const [value, setValue] = useState(defaultValue);
   const initialized = useRef(false);
   const lastHapticValue = useRef(null);
@@ -248,18 +553,6 @@ export default function MetricGoalScreen() {
     );
   };
 
-  const isBelowRecommended = value < meta.recommended.min;
-
-  // Format display value
-  let displayValue;
-  if (metric === "steps") {
-    displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
-  } else if (metric === "sleep") {
-    displayValue = Number.isInteger(value) ? `${value}h` : `${Math.floor(value)}h ${Math.round((value % 1) * 60)}m`;
-  } else {
-    displayValue = String(value);
-  }
-
   const IconComp = meta.icon;
 
   return (
@@ -283,173 +576,162 @@ export default function MetricGoalScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: insets.bottom + 16 }}>
-        {/* Icon section */}
-        <View style={{ alignItems: "center", marginTop: 24, marginBottom: 16 }}>
-          <MetricIcon icon={IconComp} color={meta.color} />
-        </View>
+      {metric === "hydration" ? (
+        <HydrationGoalBody value={value} onSliderChange={handleSliderChange} meta={meta} onSave={handleSave} insets={insets} />
+      ) : (
+        <GenericGoalBody
+          value={value}
+          meta={meta}
+          metric={metric}
+          onSliderChange={handleSliderChange}
+          onSave={handleSave}
+          insets={insets}
+          t={t}
+        />
+      )}
+    </View>
+  );
+}
 
-        {/* Header */}
+function GenericGoalBody({ value, meta, metric, onSliderChange, onSave, insets, t }) {
+  const isBelowRecommended = value < meta.recommended.min;
+
+  let displayValue;
+  if (metric === "steps") {
+    displayValue = value >= 1000 ? `${(value / 1000).toFixed(1)}k` : String(value);
+  } else if (metric === "sleep") {
+    displayValue = Number.isInteger(value) ? `${value}h` : `${Math.floor(value)}h ${Math.round((value % 1) * 60)}m`;
+  } else {
+    displayValue = String(value);
+  }
+
+  const IconComp = meta.icon;
+
+  return (
+    <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: insets.bottom + 16 }}>
+      {/* Icon section */}
+      <View style={{ alignItems: "center", marginTop: 24, marginBottom: 16 }}>
+        <MetricIcon icon={IconComp} color={meta.color} />
+      </View>
+
+      {/* Header */}
+      <Text style={{
+        fontFamily: fonts.bold,
+        fontSize: 26,
+        color: t.text,
+        textAlign: "center",
+        marginBottom: 8,
+      }}>
+        {meta.goalLabel}
+      </Text>
+      <Text style={{
+        fontFamily: fonts.regular,
+        fontSize: 14,
+        color: t.textSecondary,
+        textAlign: "center",
+        lineHeight: 20,
+        marginBottom: 32,
+      }}>
+        {meta.subtitle}
+      </Text>
+
+      {/* Large value display */}
+      <View style={{ alignItems: "center", marginBottom: 28 }}>
         <Text style={{
           fontFamily: fonts.bold,
-          fontSize: 26,
+          fontSize: 64,
           color: t.text,
-          textAlign: "center",
-          marginBottom: 8,
+          lineHeight: 70,
         }}>
-          {meta.goalLabel}
+          {displayValue}
         </Text>
-        <Text style={{
-          fontFamily: fonts.regular,
-          fontSize: 14,
-          color: t.textSecondary,
-          textAlign: "center",
-          lineHeight: 20,
-          marginBottom: 32,
-        }}>
-          {meta.subtitle}
-        </Text>
-
-        {/* Large value display */}
-        <View style={{ alignItems: "center", marginBottom: 28 }}>
-          <Text style={{
-            fontFamily: fonts.bold,
-            fontSize: 64,
-            color: t.text,
-            lineHeight: 70,
-          }}>
-            {displayValue}
+        {metric === "steps" && (
+          <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
+            steps per day
           </Text>
-          {metric === "steps" && (
-            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
-              steps per day
-            </Text>
-          )}
-          {metric === "hydration" && (
-            <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
-              ml per day
-            </Text>
-          )}
-        </View>
+        )}
+      </View>
 
-        {/* Goal setter */}
-        {meta.setter === "slider" ? (
-          <View style={{ alignItems: "center", marginBottom: 8 }}>
-            <Slider
-              style={{ width: SLIDER_WIDTH, height: 40 }}
-              minimumValue={meta.min}
-              maximumValue={meta.max}
-              step={meta.step}
-              value={value}
-              onValueChange={handleSliderChange}
-              minimumTrackTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
-              maximumTrackTintColor={t.border}
-              thumbTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
-            />
-            <RangeBar
-              min={meta.min}
-              max={meta.max}
-              recMin={meta.recommended.min}
-              recMax={meta.recommended.max}
-              color={meta.color}
-            />
-            <Text style={{
-              fontFamily: fonts.semibold,
-              fontSize: 10,
-              color: t.textSecondary,
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              textAlign: "center",
-              marginTop: 10,
-            }}>
-              {meta.recommendedLabel}
+      {/* Goal setter */}
+      <View style={{ alignItems: "center", marginBottom: 8 }}>
+        <Slider
+          style={{ width: SLIDER_WIDTH, height: 40 }}
+          minimumValue={meta.min}
+          maximumValue={meta.max}
+          step={meta.step}
+          value={value}
+          onValueChange={onSliderChange}
+          minimumTrackTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
+          maximumTrackTintColor={t.border}
+          thumbTintColor={isBelowRecommended ? "#F59E0B" : meta.color}
+        />
+        <RangeBar
+          min={meta.min}
+          max={meta.max}
+          recMin={meta.recommended.min}
+          recMax={meta.recommended.max}
+          color={meta.color}
+        />
+        <Text style={{
+          fontFamily: fonts.semibold,
+          fontSize: 10,
+          color: t.textSecondary,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          textAlign: "center",
+          marginTop: 10,
+        }}>
+          {meta.recommendedLabel}
+        </Text>
+        {isBelowRecommended && (
+          <View style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
+            borderWidth: 1,
+            borderColor: t.isDark ? "rgba(245,158,11,0.3)" : "#FDE68A",
+            borderRadius: 10,
+            paddingHorizontal: 12,
+            paddingVertical: 8,
+            marginTop: 12,
+            width: "100%",
+          }}>
+            <TriangleAlert size={14} color="#D97706" strokeWidth={2} />
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E", flex: 1, lineHeight: 17 }}>
+              This is below the recommended {meta.recommended.min}{meta.unit} minimum. You can still save this goal.
             </Text>
-            {isBelowRecommended && (
-              <View style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
-                borderWidth: 1,
-                borderColor: t.isDark ? "rgba(245,158,11,0.3)" : "#FDE68A",
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                marginTop: 12,
-                width: "100%",
-              }}>
-                <TriangleAlert size={14} color="#D97706" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E", flex: 1, lineHeight: 17 }}>
-                  This is below the recommended {meta.recommended.min}{meta.unit} minimum. You can still save this goal.
-                </Text>
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={{ alignItems: "center", marginBottom: 8 }}>
-            <HydrationSetter value={value} onChange={setValue} meta={meta} />
-            <Text style={{
-              fontFamily: fonts.semibold,
-              fontSize: 10,
-              color: "#9CA3AF",
-              letterSpacing: 0.8,
-              textTransform: "uppercase",
-              textAlign: "center",
-              marginTop: 16,
-            }}>
-              {meta.recommendedLabel}
-            </Text>
-            {isBelowRecommended && (
-              <View style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: t.isDark ? "rgba(245,158,11,0.12)" : "#FFFBEB",
-                borderWidth: 1,
-                borderColor: t.isDark ? "rgba(245,158,11,0.3)" : "#FDE68A",
-                borderRadius: 10,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                marginTop: 12,
-                width: "100%",
-              }}>
-                <TriangleAlert size={14} color="#D97706" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: "#92400E", flex: 1, lineHeight: 17 }}>
-                  This is below the recommended {meta.recommended.min} {meta.unit} minimum. You can still save this goal.
-                </Text>
-              </View>
-            )}
           </View>
         )}
+      </View>
 
-        {/* Tip paragraph */}
-        <View style={{ flex: 1, justifyContent: "flex-end", paddingTop: 16 }}>
-          <Text style={{
-            fontFamily: fonts.regular,
-            fontSize: 13,
-            color: t.textSecondary,
-            lineHeight: 20,
-            textAlign: "center",
-            marginBottom: 20,
-          }}>
-            {meta.tip}
+      {/* Tip paragraph */}
+      <View style={{ flex: 1, justifyContent: "flex-end", paddingTop: 16 }}>
+        <Text style={{
+          fontFamily: fonts.regular,
+          fontSize: 13,
+          color: t.textSecondary,
+          lineHeight: 20,
+          textAlign: "center",
+          marginBottom: 20,
+        }}>
+          {meta.tip}
+        </Text>
+
+        {/* Save button */}
+        <TouchableOpacity
+          onPress={onSave}
+          style={{
+            backgroundColor: meta.color,
+            borderRadius: 16,
+            paddingVertical: 17,
+            alignItems: "center",
+          }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#fff" }}>
+            Done
           </Text>
-
-          {/* Save button */}
-          <TouchableOpacity
-            onPress={handleSave}
-            style={{
-              backgroundColor: meta.color,
-              borderRadius: 16,
-              paddingVertical: 17,
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#fff" }}>
-              Done
-            </Text>
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
