@@ -6,6 +6,8 @@ import { HeatmapChart } from "./heatmap-chart";
 import { BubbleChart } from "./bubble-chart";
 import { SleepHypnogramChart } from "./sleep-hypnogram-chart";
 import { fonts } from "@/utils/fonts";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 function shortDate(date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -293,16 +295,18 @@ function buildBarConfig({ metric, data, range, goal }) {
 
   switch (metric) {
     case "hydration": {
-      const target = goal ?? 8;
+      // hydration is stored canonically in ml; this chart's scale stays glasses (unchanged UI).
+      const target = Math.max(1, Math.round(glassesFromMl(goal ?? DEFAULT_SUGGESTED_ML)));
+      const glassesChartData = chartData.map((d) => ({ ...d, value: Math.round(glassesFromMl(d.value)) }));
       return {
-        chartData,
+        chartData: glassesChartData,
         config: {
           ...base,
           getBarColor: (v) => (v >= target ? "#A9334D" : "#D09F9A80"),
           referenceValue: target,
           referenceColor: "#A9334D",
           yMin: 0,
-          yMax: 16,
+          yMax: Math.max(16, target + 2),
           renderTooltip: (item) => (
             <>
               <TooltipText>{item.value} glasses</TooltipText>

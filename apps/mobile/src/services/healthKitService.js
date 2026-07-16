@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { mlFromGlasses } from "@/utils/hydrationUnits";
 import * as Notifications from "expo-notifications";
 import {
   requestAuthorization,
@@ -312,7 +313,7 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
 
 // Write a completed symptom log entry back to Apple Health.
 // Called after a successful Supabase save so HealthKit always mirrors real data.
-export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLevel = 0, prefs = {} }) {
+export async function writeDailyLog({ hydrationMl = 0, symptoms = [], mood, painLevel = 0, prefs = {} }) {
   if (!isHKAvailable()) return;
 
   const p = { writeHydration: true, writeSymptoms: true, writeMood: true, ...prefs };
@@ -320,9 +321,9 @@ export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLe
   const now = new Date();
   const start = new Date(now.getTime() - 60000); // 1 min duration
 
-  if (p.writeHydration && hydration > 0) {
+  if (p.writeHydration && hydrationMl > 0) {
     try {
-      await saveQuantitySample(QT.WATER, "mL", hydration * 237, start, now);
+      await saveQuantitySample(QT.WATER, "mL", hydrationMl, start, now);
     } catch {}
   }
 
@@ -545,7 +546,7 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
     hrAboveBaseline &&
     stepsBaseline != null && steps != null && steps < stepsBaseline * 0.4 &&
     (sleepHours == null || sleepHours < 6 || hasSymptom("Fatigue")) &&
-    (hasSymptom("Fatigue") || (todayMetrics.hydration != null && todayMetrics.hydration < 5));
+    (hasSymptom("Fatigue") || (todayMetrics.hydration != null && todayMetrics.hydration < mlFromGlasses(5)));
 
   // ── Level resolution ────────────────────────────────────────────────────────
 

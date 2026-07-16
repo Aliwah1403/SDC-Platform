@@ -8,6 +8,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/Card";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -25,7 +28,7 @@ const METRIC_META = [
 
 // ─── Hydration: vertical fill tank ───────────────────────────────────────────
 
-function HydrationTank({ hydration, goal = 8 }) {
+function HydrationTank({ hydration, goal = DEFAULT_SUGGESTED_ML }) {
   const W = 44;
   const H = 80;
   const R = 10;
@@ -81,7 +84,7 @@ function HydrationTank({ hydration, goal = 8 }) {
         ))}
       </Svg>
       <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#781D11" }}>
-        {hydration > 0 ? `${hydration} / ${goal}` : "—"}
+        {hydration > 0 ? `${Math.round(glassesFromMl(hydration))} / ${Math.round(glassesFromMl(goal))}` : "—"}
       </Text>
     </View>
   );
@@ -401,6 +404,8 @@ export function MetricGrid({ selectedDateData }) {
   const router = useRouter();
   const t = useTheme();
   const [visibleMetrics, setVisibleMetrics] = useState(DEFAULT_VISIBLE);
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
   useFocusEffect(
     useCallback(() => {
@@ -416,7 +421,7 @@ export function MetricGrid({ selectedDateData }) {
   const sleep = selectedDateData?.sleepHours ?? 0;
 
   const hydrationStatus =
-    hydration === 0 ? "No data" : hydration >= 8 ? "At goal" : "Below goal";
+    hydration === 0 ? "No data" : hydration >= hydrationGoalMl ? "At goal" : "Below goal";
   const stepsStatus =
     steps === 0
       ? "No data"
@@ -441,11 +446,11 @@ export function MetricGrid({ selectedDateData }) {
         title="Hydration"
         statusLabel={hydrationStatus}
         statusColor={
-          hydration > 0 ? (hydration >= 8 ? "#A9334D" : "#D09F9A") : "#D1D5DB"
+          hydration > 0 ? (hydration >= hydrationGoalMl ? "#A9334D" : "#D09F9A") : "#D1D5DB"
         }
         metric="hydration"
         hasData={hydration > 0}
-        visual={<HydrationTank hydration={hydration} />}
+        visual={<HydrationTank hydration={hydration} goal={hydrationGoalMl} />}
       />
     ),
     mood: (

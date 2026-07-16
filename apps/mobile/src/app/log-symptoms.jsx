@@ -23,6 +23,9 @@ import { useAppStore } from "@/store/appStore";
 import { writeDailyLog } from "@/services/healthService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { mlFromGlasses, glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackground";
@@ -444,9 +447,10 @@ function SymptomsStep({ selected, onToggle }) {
 // Step 5 — Hydration
 const HYDRATION_PRESETS = [4, 8, 12];
 
-function HydrationStep({ value, onChange }) {
+function HydrationStep({ value, onChange, goalGlasses }) {
   const t = useTheme();
-  const fillColor = value >= 8 ? "#10B981" : value >= 5 ? "#3B82F6" : "#F59E0B";
+  const midThreshold = Math.round(goalGlasses * 0.625);
+  const fillColor = value >= goalGlasses ? "#10B981" : value >= midThreshold ? "#3B82F6" : "#F59E0B";
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
@@ -516,7 +520,7 @@ function HydrationStep({ value, onChange }) {
 
       <View style={{ width: "100%", paddingHorizontal: 24, marginTop: 8 }}>
         <Text style={[styles.sliderEndLabel, { textAlign: "center", color: fillColor }]}>
-          {value >= 8 ? "Great hydration!" : value >= 5 ? "Getting there" : "Drink more water"}
+          {value >= goalGlasses ? "Great hydration!" : value >= midThreshold ? "Getting there" : "Drink more water"}
         </Text>
       </View>
     </View>
@@ -562,7 +566,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading }) {
+function SummaryStep({ log, onSubmit, isLoading, hydrationGoalGlasses }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -573,7 +577,7 @@ function SummaryStep({ log, onSubmit, isLoading }) {
     { label: "What contributed", value: log.triggers.length ? log.triggers.join(", ") : "—", color: "#8B5CF6" },
     { label: "Body Locations", value: log.bodyLocations.length ? log.bodyLocations.join(", ") : "None", color: "#A9334D" },
     { label: "Symptoms", value: log.symptoms.length ? log.symptoms.join(", ") : "None reported", color: "#781D11" },
-    { label: "Hydration", value: `${log.hydration} glasses`, color: log.hydration >= 8 ? "#10B981" : "#3B82F6" },
+    { label: "Hydration", value: `${log.hydration} glasses`, color: log.hydration >= hydrationGoalGlasses ? "#10B981" : "#3B82F6" },
     { label: "Notes", value: log.notes || "—", color: "#9CA3AF" },
   ];
 
@@ -633,6 +637,10 @@ export default function LogSymptomsScreen() {
   const todayStr = new Date().toISOString().split("T")[0];
   const { data: todayLogs = [] } = useHealthLogsQuery(todayStr);
   const hasLoggedToday = todayLogs.length > 0;
+
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const hydrationGoalGlasses = Math.max(1, Math.round(glassesFromMl(hydrationGoalMl)));
 
   const [step, setStep] = useState(0);
 
@@ -729,11 +737,13 @@ export default function LogSymptomsScreen() {
       triggers: moodContributors,
       bodyLocations,
       symptoms,
-      hydration,
+      hydration, // glasses — ephemeral local/store representation, Phase 1 keeps this UI unchanged
       notes,
     };
     updateSymptomLog(logData);
-    submitLogMutation.mutate(logData, {
+
+    const hydrationMl = mlFromGlasses(hydration);
+    submitLogMutation.mutate({ ...logData, hydration: hydrationMl }, {
       onSuccess: () => {
         const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
         posthog?.capture('symptom_log_submitted', {
@@ -754,7 +764,9 @@ export default function LogSymptomsScreen() {
         });
         posthog?.capture('hydration_logged', {
           amount_glasses: hydration,
-          goal_met: hydration >= 8,
+          amount_ml: hydrationMl,
+          goal_ml: hydrationGoalMl,
+          goal_met: hydrationMl >= hydrationGoalMl,
         });
         if (!hasLoggedToday) {
           posthog?.capture('streak_saved', {
@@ -766,7 +778,7 @@ export default function LogSymptomsScreen() {
         // Mirror to health platform on the first log of the day only — re-logs would
         // append duplicate water samples. Android skips symptoms/mood (HC has no symptom types).
         if (isHealthConnected && !hasLoggedToday) {
-          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
+          writeDailyLog({ hydrationMl, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
         }
         router.back();
       },
@@ -892,7 +904,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 5 && (
-          <HydrationStep value={hydration} onChange={setHydration} />
+          <HydrationStep value={hydration} onChange={setHydration} goalGlasses={hydrationGoalGlasses} />
         )}
         {step === 6 && (
           <NotesStep
@@ -905,7 +917,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationGoalGlasses={hydrationGoalGlasses} />
         )}
       </View>
 

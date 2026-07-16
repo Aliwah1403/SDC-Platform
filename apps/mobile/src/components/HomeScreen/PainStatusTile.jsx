@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { HomeLineChart } from "@/components/Charts/line-chart";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 function getPainStatus(painLevel) {
   if (painLevel === 0)
@@ -13,19 +15,21 @@ function getPainStatus(painLevel) {
   return { label: "Severe", color: "#F8E9E7" };
 }
 
-function computeScore(data) {
+function computeScore(data, goalMl) {
   if (!data) return null;
   const pain = (10 - (data.painLevel || 0)) * 0.4;
   const mood = ((data.mood || 0) / 5) * 10 * 0.3;
-  const hydration = Math.min((data.hydration || 0) / 8, 1) * 10 * 0.3;
+  const hydration = Math.min((data.hydration || 0) / goalMl, 1) * 10 * 0.3;
   return Math.round((pain + mood + hydration) * 10) / 10;
 }
 
 export function PainStatusTile({ selectedDateData, healthData }) {
   const router = useRouter();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const painLevel = selectedDateData?.painLevel ?? 0;
   const status = getPainStatus(painLevel);
-  const score = computeScore(selectedDateData);
+  const score = computeScore(selectedDateData, hydrationGoalMl);
 
   const chartData = useMemo(() => {
     const today = new Date();

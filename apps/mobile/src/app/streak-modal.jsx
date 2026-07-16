@@ -22,6 +22,9 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
@@ -69,6 +72,8 @@ export default function StreakModal() {
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: streak } = useStreakQuery();
   const { data: medications = [] } = useMedicationsQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
   const currentUser = {
     name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You",
@@ -112,7 +117,7 @@ export default function StreakModal() {
     if (!healthData.length) return 0;
     const last7 = healthData.slice(-7);
     const sum = last7.reduce((acc, d) => acc + (d.hydration ?? 0), 0);
-    return parseFloat((sum / last7.length).toFixed(1));
+    return parseFloat(glassesFromMl(sum / last7.length).toFixed(1));
   }, [healthData]);
   const totalEntries = healthData.length;
   const totalDaysLogged = new Set(
@@ -136,7 +141,7 @@ export default function StreakModal() {
     (sum, day) => sum + (day.symptoms?.length || 0),
     0,
   );
-  const hydrationDays = healthData.filter((day) => day.hydration >= 8).length;
+  const hydrationDays = healthData.filter((day) => day.hydration >= hydrationGoalMl).length;
   const careTasksCompleted = 0;
   const learningModulesCompleted = 0;
 

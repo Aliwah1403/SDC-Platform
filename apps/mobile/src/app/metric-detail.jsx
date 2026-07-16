@@ -36,6 +36,7 @@ import {
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { fonts } from "@/utils/fonts";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { useAppStore } from "@/store/appStore";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -64,15 +65,15 @@ const METRIC_META = {
     label: "Hydration",
     icon: Droplets,
     color: "#3B82F6",
-    max: 16,
+    max: 5000,
     rangeMin: 0,
-    rangeMax: 16,
+    rangeMax: 5000,
     dataField: "hydration",
     hasGoal: true,
     lowerIsBetter: false,
     aboutTitle: "The key to preventing a pain crisis",
-    about: "Staying well hydrated is one of the most important things you can do to manage SCD. Dehydration is a major trigger for pain crises — it causes red blood cells to sickle more easily. Aim for at least 8 glasses of water per day, and increase this when it's hot or when you're physically active.",
-    unit: "glasses",
+    about: "Staying well hydrated is one of the most important things you can do to manage SCD. Dehydration is a major trigger for pain crises — it causes red blood cells to sickle more easily. Aim for at least 2000 ml of water per day, and increase this when it's hot or when you're physically active.",
+    unit: "ml",
   },
   mood: {
     label: "Mood",
@@ -195,17 +196,19 @@ function calcTrendDelta(data) {
   return secondAvg - firstAvg;
 }
 
-function getStatus(metricKey, value) {
+function getStatus(metricKey, value, goal) {
   if (!value) return null;
   switch (metricKey) {
     case "pain":
       if (value <= 2) return { label: "Low", color: "#059669" };
       if (value <= 5) return { label: "Moderate", color: "#F59E0B" };
       return { label: "High", color: "#DC2626" };
-    case "hydration":
-      if (value >= 8) return { label: "On track", color: "#059669" };
-      if (value >= 5) return { label: "Fair", color: "#F59E0B" };
+    case "hydration": {
+      const goalMl = goal ?? DEFAULT_SUGGESTED_ML;
+      if (value >= goalMl) return { label: "On track", color: "#059669" };
+      if (value >= goalMl * 0.625) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
+    }
     case "mood":
       if (value >= 4) return { label: "Great", color: "#059669" };
       if (value >= 3) return { label: "Good", color: "#059669" };
@@ -589,13 +592,13 @@ export default function MetricDetailScreen() {
   // per-metric/today), while the gauge + deterministic insight follow the
   // day the user has scrubbed to via the header week-strip.
   const todayValue = valueForDate(new Date());
-  const todayStatus = todayValue != null ? getStatus(metric, todayValue) : null;
+  const todayStatus = todayValue != null ? getStatus(metric, todayValue, goal) : null;
 
   const selectedValue = useMemo(
     () => valueForDate(selectedDate),
     [mergedHealthData, meta.dataField, selectedDate]
   );
-  const selectedStatus = selectedValue != null ? getStatus(metric, selectedValue) : null;
+  const selectedStatus = selectedValue != null ? getStatus(metric, selectedValue, goal) : null;
 
   const currentValue = selectedValue;
   const status = selectedStatus;
@@ -735,7 +738,7 @@ export default function MetricDetailScreen() {
               totalNotches: 44,
               getTickColor: (ratio) => {
                 const projectedValue = meta.rangeMin + ratio * (meta.rangeMax - meta.rangeMin);
-                return getStatus(metric, projectedValue)?.color ?? meta.color;
+                return getStatus(metric, projectedValue, goal)?.color ?? meta.color;
               },
             }}
           >
@@ -865,7 +868,7 @@ export default function MetricDetailScreen() {
             goal={goal}
             color={meta.color}
             unit={meta.unit}
-            getStatus={(value) => getStatus(metric, value)}
+            getStatus={(value) => getStatus(metric, value, goal)}
             sleepSegments={latestSleepSegments}
           />
 

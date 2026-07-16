@@ -342,14 +342,14 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
 }
 
 // Write hydration to Health Connect. Symptoms are NOT written (HC has no symptom types).
-export async function writeDailyLog({ hydration = 0, prefs = {} }) {
+export async function writeDailyLog({ hydrationMl = 0, prefs = {} }) {
   if (Platform.OS !== "android") return;
   const ok = await ensureInitialized();
   if (!ok) return;
 
   const p = { writeHydration: true, ...prefs };
 
-  if (p.writeHydration && hydration > 0) {
+  if (p.writeHydration && hydrationMl > 0) {
     try {
       const now = new Date().toISOString();
       const start = new Date(Date.now() - 60000).toISOString();
@@ -357,7 +357,7 @@ export async function writeDailyLog({ hydration = 0, prefs = {} }) {
         recordType: "Hydration",
         startTime: start,
         endTime: now,
-        volume: { inLiters: hydration * 0.237 }, // glasses → liters (237 mL each)
+        volume: { inLiters: hydrationMl / 1000 },
       }]);
     } catch {}
   }

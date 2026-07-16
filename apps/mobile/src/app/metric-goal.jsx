@@ -20,9 +20,10 @@ const SLIDER_WIDTH = SCREEN_WIDTH - 48;
 
 function bucketGoalValue(metric, value) {
   if (metric === 'hydration') {
-    if (value <= 4) return '1-4';
-    if (value <= 7) return '5-7';
-    if (value <= 10) return '8-10';
+    // value is canonical ml; bucket labels stay glasses-equivalent for analytics continuity.
+    if (value <= 1000) return '1-4';
+    if (value <= 1750) return '5-7';
+    if (value <= 2500) return '8-10';
     return '11-16';
   }
   if (metric === 'sleep') {
@@ -44,15 +45,15 @@ const GOAL_META = {
   hydration: {
     goalLabel: "Hydration Goal",
     subtitle: "Set your daily water intake target",
-    unit: "glasses",
-    min: 1,
-    max: 16,
-    step: 1,
-    recommended: { min: 8, max: 10 },
-    recommendedLabel: "RECOMMENDED: 8 – 10 GLASSES PER DAY",
+    unit: "ml",
+    min: 1000,
+    max: 5000,
+    step: 250,
+    recommended: { min: 2000, max: 2500 },
+    recommendedLabel: "RECOMMENDED: 2000 – 2500 ML PER DAY",
     setter: "stepper",
-    presets: [4, 6, 8, 10, 12],
-    tip: "Staying hydrated is one of the most effective ways to prevent sickle cell pain crises. Aim for at least 8 glasses daily — more during activity or hot weather.",
+    presets: [1000, 1500, 2000, 2500, 3000],
+    tip: "Staying hydrated is one of the most effective ways to prevent sickle cell pain crises. Aim for at least 2000 ml daily — more during activity or hot weather.",
     icon: Droplets,
     color: "#3B82F6",
   },
@@ -326,7 +327,7 @@ export default function MetricGoalScreen() {
           )}
           {metric === "hydration" && (
             <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginTop: 2 }}>
-              glasses per day
+              ml per day
             </Text>
           )}
         </View>

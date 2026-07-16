@@ -12,6 +12,9 @@ import { MoodChart } from "@/components/TrendsInsights/MoodChart";
 import { CrisisFreePeriods } from "@/components/TrendsInsights/CrisisFreePeriods";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_PADDING = 20;
@@ -53,16 +56,17 @@ function weekBars(healthData, valueFn) {
   return bars;
 }
 
-function dailyWellbeing(entry) {
+function dailyWellbeing(entry, goalMl) {
   const pain = (10 - (entry.painLevel || 0)) / 10;
   const mood = (entry.mood || 0) / 5;
-  const hydration = Math.min((entry.hydration || 0) / 8, 1);
+  const hydration = Math.min((entry.hydration || 0) / goalMl, 1);
   return parseFloat(((pain * 0.4 + mood * 0.3 + hydration * 0.3) * 10).toFixed(1));
 }
 
 // ─── insight definitions ──────────────────────────────────────────────────────
 
-function buildInsights(healthData, firstName) {
+function buildInsights(healthData, firstName, goalMl) {
+  const goalGlasses = Math.max(1, Math.round(glassesFromMl(goalMl)));
   const thisWeek = sliceWeek(healthData, 0, 6);
   const lastWeek = sliceWeek(healthData, 7, 13);
   const hasHistory = lastWeek.length > 0;
@@ -76,9 +80,9 @@ function buildInsights(healthData, firstName) {
       : null;
   const painFreePositive = painFreePct !== null && painFreePct >= 0;
 
-  // 2. Hydration Goal Days ─ days hitting ≥ 8 glasses
-  const hydGoalThis = thisWeek.filter((d) => (d.hydration || 0) >= 8).length;
-  const hydGoalLast = lastWeek.filter((d) => (d.hydration || 0) >= 8).length;
+  // 2. Hydration Goal Days ─ days hitting the user's base goal
+  const hydGoalThis = thisWeek.filter((d) => (d.hydration || 0) >= goalMl).length;
+  const hydGoalLast = lastWeek.filter((d) => (d.hydration || 0) >= goalMl).length;
   const hydGoalPct =
     hasHistory && hydGoalLast > 0
       ? parseFloat((((hydGoalThis - hydGoalLast) / hydGoalLast) * 100).toFixed(1))
@@ -89,13 +93,13 @@ function buildInsights(healthData, firstName) {
   const wellThis =
     thisWeek.length > 0
       ? parseFloat(
-          (thisWeek.reduce((s, d) => s + dailyWellbeing(d), 0) / thisWeek.length).toFixed(1),
+          (thisWeek.reduce((s, d) => s + dailyWellbeing(d, goalMl), 0) / thisWeek.length).toFixed(1),
         )
       : null;
   const wellLast =
     lastWeek.length > 0
       ? parseFloat(
-          (lastWeek.reduce((s, d) => s + dailyWellbeing(d), 0) / lastWeek.length).toFixed(1),
+          (lastWeek.reduce((s, d) => s + dailyWellbeing(d, goalMl), 0) / lastWeek.length).toFixed(1),
         )
       : null;
   const wellPct =
@@ -127,19 +131,19 @@ function buildInsights(healthData, firstName) {
       id: "hydration-goal",
       title: hydGoalPositive ? "Hydration Momentum" : "Hydration Reminder",
       color: "#2563EB",
-      metricLabel: "GOAL DAYS (8+ GLASSES)",
+      metricLabel: `GOAL DAYS (${goalGlasses}+ GLASSES)`,
       thisValue: String(hydGoalThis),
       lastValue: hasHistory ? String(hydGoalLast) : "—",
       pctChange: hydGoalPct,
       isPositive: hydGoalPositive,
       hasHistory,
       description: !hasHistory
-        ? `${firstName}, you hit your 8-glass hydration goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} this week. Staying hydrated is one of the most effective ways to reduce SCD complications.`
+        ? `${firstName}, you hit your ${goalGlasses}-glass hydration goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} this week. Staying hydrated is one of the most effective ways to reduce SCD complications.`
         : hydGoalPositive
         ? `${firstName}, you hit your hydration goal on ${hydGoalThis} days this week, up from ${hydGoalLast} last week. Excellent — hydration directly impacts how your body manages SCD.`
-        : `${firstName}, your hydration dropped this week — you hit the 8-glass goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} vs ${hydGoalLast} last week. Remember to drink water throughout the day, especially in the morning.`,
-      bars: weekBars(healthData, (d) => d.hydration || 0),
-      maxValue: 10,
+        : `${firstName}, your hydration dropped this week — you hit the ${goalGlasses}-glass goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} vs ${hydGoalLast} last week. Remember to drink water throughout the day, especially in the morning.`,
+      bars: weekBars(healthData, (d) => glassesFromMl(d.hydration || 0)),
+      maxValue: Math.max(10, goalGlasses + 2),
     },
     {
       id: "wellbeing-score",
@@ -156,7 +160,7 @@ function buildInsights(healthData, firstName) {
         : wellPositive
         ? `${firstName}, your overall wellbeing score improved to ${wellThis}/10 this week (up from ${wellLast} last week). Pain management, mood, and hydration are all factored in — you're moving in the right direction.`
         : `${firstName}, your wellbeing score dipped to ${wellThis}/10 this week (from ${wellLast} last week). Small daily habits — logging consistently, drinking water, and managing stress — add up over time.`,
-      bars: weekBars(healthData, dailyWellbeing),
+      bars: weekBars(healthData, (d) => dailyWellbeing(d, goalMl)),
       maxValue: 10,
     },
   ];
@@ -341,9 +345,11 @@ export default function HealthInsightsScreen() {
   const t = useTheme();
   const { auth } = useAuthStore();
   const { data: healthData = [] } = useHealthDataQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
 
-  const insights = buildInsights(healthData, firstName);
+  const insights = buildInsights(healthData, firstName, hydrationGoalMl);
   const { painLevelData, hydrationData, moodData, chartData, crisisPeriods, avgPainLevel, avgHydration } =
     useChartData(healthData);
 

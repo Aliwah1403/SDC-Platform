@@ -198,7 +198,7 @@ export async function submitHealthLog(userId, logData) {
       body_locations: logData.bodyLocations ?? [],
       symptoms: logData.symptoms ?? [],
       mood: moodValue,
-      hydration: logData.hydration ?? 0,
+      hydration: logData.hydration ?? 0, // canonical ml — see src/utils/hydrationGoal.js
       notes: logData.notes || null,
       triggers: logData.triggers ?? [],
       activities: logData.activities ?? [],

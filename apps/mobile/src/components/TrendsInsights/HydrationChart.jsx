@@ -2,37 +2,49 @@ import { View, Text, Dimensions } from "react-native";
 import { BarChart } from "react-native-gifted-charts";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const GRAPH_WIDTH = SCREEN_WIDTH - 32;
 const CHART_WIDTH = GRAPH_WIDTH - 40;
 
-function getHydrationInsight(avg, daysAtGoal, total) {
+function getHydrationInsight(avg, daysAtGoal, total, goalGlasses) {
   const a = parseFloat(avg);
-  if (a >= 8) {
-    return `Outstanding hydration this month! Consistently hitting your 8-glass goal is one of the most effective ways to prevent SCD pain crises and keep your blood cells flowing well.`;
+  if (a >= goalGlasses) {
+    return `Outstanding hydration this month! Consistently hitting your ${goalGlasses}-glass goal is one of the most effective ways to prevent SCD pain crises and keep your blood cells flowing well.`;
   }
-  if (a >= 6) {
+  if (a >= goalGlasses * 0.75) {
     if (daysAtGoal >= total / 2)
       return `You're meeting your hydration goal on more than half your logged days — solid progress. Try keeping a water bottle nearby so it's always within reach, especially in the mornings.`;
     return `You're close to your daily goal but not quite consistent yet. Spreading water intake evenly across the day tends to work better than trying to catch up in the evening.`;
   }
-  return `Your hydration has been below the 8-glass target most days. In SCD, low hydration significantly increases the risk of pain crises. Consider setting a reminder every couple of hours as a prompt to drink.`;
+  return `Your hydration has been below the ${goalGlasses}-glass target most days. In SCD, low hydration significantly increases the risk of pain crises. Consider setting a reminder every couple of hours as a prompt to drink.`;
 }
 
 export function HydrationChart({ hydrationData, avgHydration }) {
   const t = useTheme();
-  const giftedData = hydrationData.map((d, i) => ({
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const goalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const goalGlasses = Math.max(1, Math.round(glassesFromMl(goalMl)));
+
+  // hydrationData/avgHydration arrive as canonical ml; this chart's scale stays
+  // glasses-based (unchanged UI) until Step 5 replaces this component.
+  const glassesData = hydrationData.map((d) => ({ ...d, value: glassesFromMl(d.value) }));
+  const avgHydrationGlasses = glassesFromMl(avgHydration);
+
+  const giftedData = glassesData.map((d, i) => ({
     value: d.value,
     label: i % 7 === 0 ? new Date(d.date).getDate().toString() : "",
     labelTextStyle: { color: "#9CA3AF", fontSize: 9 },
-    frontColor: d.value >= 8 ? "#A9334D" : "#D09F9A",
+    frontColor: d.value >= goalGlasses ? "#A9334D" : "#D09F9A",
   }));
 
   const barWidth = Math.max(3, Math.floor(CHART_WIDTH / 35));
   const spacing = Math.max(1, Math.floor(CHART_WIDTH / 50));
-  const daysAtGoal = hydrationData.filter((d) => d.value >= 8).length;
-  const insightText = getHydrationInsight(avgHydration, daysAtGoal, hydrationData.length);
+  const daysAtGoal = glassesData.filter((d) => d.value >= goalGlasses).length;
+  const insightText = getHydrationInsight(avgHydrationGlasses, daysAtGoal, glassesData.length, goalGlasses);
 
   return (
     <View
@@ -94,7 +106,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             borderRadius: 1,
           }}
         />
-        <Text style={{ fontSize: 11, color: t.textSecondary }}>Goal: 8 glasses</Text>
+        <Text style={{ fontSize: 11, color: t.textSecondary }}>Goal: {goalGlasses} glasses</Text>
       </View>
 
       {/* Chart */}
@@ -107,7 +119,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           roundedTop
           spacing={spacing}
           noOfSections={4}
-          maxValue={10}
+          maxValue={Math.max(10, goalGlasses + 2)}
           yAxisColor="transparent"
           xAxisColor={t.border}
           rulesColor={t.divider}
@@ -123,7 +135,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             dashGap: 4,
             thickness: 1,
           }}
-          referenceLine1Position={8}
+          referenceLine1Position={goalGlasses}
           showReferenceLine1
         />
       </View>
@@ -144,7 +156,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             Daily Avg
           </Text>
           <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: t.text }}>
-            {avgHydration}
+            {avgHydrationGlasses.toFixed(1)}
           </Text>
         </View>
         <View>
@@ -152,7 +164,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             Goal
           </Text>
           <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#A9334D" }}>
-            8
+            {goalGlasses}
           </Text>
         </View>
         <View>

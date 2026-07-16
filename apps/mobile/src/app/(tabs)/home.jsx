@@ -20,6 +20,8 @@ import {
 } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { TodayContextCard } from "@/components/HomeScreen/TodayContextCard";
@@ -170,6 +172,8 @@ export default function HomeScreen() {
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
     b != null && typeof b === "object" ? b.id : b,
   );
@@ -185,8 +189,8 @@ export default function HomeScreen() {
     [healthData],
   );
   const hydrationDays = useMemo(
-    () => healthData.filter((d) => d.hydration >= 8).length,
-    [healthData],
+    () => healthData.filter((d) => d.hydration >= hydrationGoalMl).length,
+    [healthData, hydrationGoalMl],
   );
 
   const hasLoggedToday = (() => {
@@ -250,6 +254,7 @@ export default function HomeScreen() {
     healthData,
     alertState,
     weather,
+    hydrationGoalMl,
   });
   const t = useTheme();
   const gradientColors = getGradientColors(hasLoggedData, t.isDark);
