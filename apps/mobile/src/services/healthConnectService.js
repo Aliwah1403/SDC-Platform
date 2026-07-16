@@ -8,6 +8,8 @@ import {
   readRecords,
   insertRecords,
   openHealthConnectSettings,
+  getSdkStatus,
+  SdkAvailabilityStatus,
 } from "react-native-health-connect";
 import { supabase } from "@/utils/auth/supabase";
 import { checkAlerts } from "./healthKitService";
@@ -36,6 +38,9 @@ const WRITE_PERMISSIONS = [
 
 // Sleep stage values considered "asleep" (excludes AWAKE=1, AWAKE_IN_BED=5)
 const ASLEEP_STAGES = new Set([2, 3, 4, 6]); // LIGHT, DEEP, REM, SLEEPING
+
+// Maps Health Connect sleep stage values to the 4 hypnogram buckets used by MetricChart
+const SLEEP_STAGE_BUCKET = { 1: "awake", 5: "awake", 2: "core", 6: "core", 3: "deep", 4: "rem" };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -72,10 +77,39 @@ export function isHKAvailable() {
   return Platform.OS === "android";
 }
 
+// Health Connect availability on this device. Unlike HealthKit (which is built
+// into every iPhone), Health Connect is a separate app on Android 13 and below,
+// and can be present-but-outdated on any version. Returns:
+//   "available"        — SDK present and usable
+//   "update_required"  — provider app installed but too old, must be updated
+//   "not_installed"    — provider app missing, must be installed from the Play Store
+//   "unsupported"      — not Android (iOS uses HealthKit)
+export async function getHealthConnectStatus() {
+  if (Platform.OS !== "android") return "unsupported";
+  try {
+    const status = await getSdkStatus();
+    if (status === SdkAvailabilityStatus.SDK_AVAILABLE) return "available";
+    if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
+      return "update_required";
+    return "not_installed";
+  } catch {
+    return "not_installed";
+  }
+}
+
+// Re-export so callers can open Health Connect settings (e.g. to let the user
+// grant a permission they previously denied — HC never re-prompts).
+export { openHealthConnectSettings };
+
 let _initialized = false;
 
 async function ensureInitialized() {
   if (_initialized) return true;
+  // Bail out early with a clean signal if the provider isn't available, so we
+  // never hit HealthConnectClient.getOrCreate() (which throws) on a device
+  // without a usable Health Connect install.
+  const status = await getHealthConnectStatus();
+  if (status !== "available") return false;
   try {
     const result = await initialize();
     _initialized = result;
@@ -258,6 +292,8 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
       };
       const { records } = await readRecords("SleepSession", { timeRangeFilter: sleepFilter });
       const sleepByDate = {};
+      const stagesByDate = {};
+      const segmentsByDate = {};
       for (const r of records) {
         // Attribute to wake-up date (endTime), matching the HealthKit convention
         const key = dateStr(r.endTime);
@@ -268,6 +304,14 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
               const hours = (new Date(stage.endTime) - new Date(stage.startTime)) / 3600000;
               sessionHours += hours;
             }
+            const bucket = SLEEP_STAGE_BUCKET[stage.stage];
+            if (bucket) {
+              const hours = (new Date(stage.endTime) - new Date(stage.startTime)) / 3600000;
+              stagesByDate[key] = stagesByDate[key] ?? { awake: 0, core: 0, deep: 0, rem: 0 };
+              stagesByDate[key][bucket] += hours;
+              segmentsByDate[key] = segmentsByDate[key] ?? [];
+              segmentsByDate[key].push({ start: stage.startTime, end: stage.endTime, stage: bucket });
+            }
           }
         } else {
           // No stage breakdown — use full session duration
@@ -277,6 +321,19 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
       }
       for (const [key, hours] of Object.entries(sleepByDate)) {
         merge(key, { sleepHours: Math.round(hours * 10) / 10 });
+      }
+      for (const [key, stages] of Object.entries(stagesByDate)) {
+        merge(key, {
+          sleepStages: {
+            awake: Math.round(stages.awake * 10) / 10,
+            core: Math.round(stages.core * 10) / 10,
+            deep: Math.round(stages.deep * 10) / 10,
+            rem: Math.round(stages.rem * 10) / 10,
+          },
+        });
+      }
+      for (const [key, segments] of Object.entries(segmentsByDate)) {
+        merge(key, { sleepSegments: segments.sort((a, b) => new Date(a.start) - new Date(b.start)) });
       }
     } catch {}
   }

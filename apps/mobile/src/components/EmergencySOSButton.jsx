@@ -12,6 +12,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
+import { getCountryName } from "@/utils/countryNames";
 import { useAppStore } from "../store/appStore";
 import { usePostHog } from "posthog-react-native";
 
@@ -28,6 +30,7 @@ export default function EmergencySOSButton() {
 
   const { data: emergencyContacts = [] } = useEmergencyContactsQuery();
   const { setEmergencyMode } = useAppStore();
+  const { number: resolvedNumber, countryCode: resolvedCountryCode } = useEmergencyNumber();
 
   const primaryContact =
     emergencyContacts.find((contact) => contact.isPrimary) ||
@@ -131,7 +134,7 @@ export default function EmergencySOSButton() {
       contacts_count: emergencyContacts.length,
     });
     try {
-      const phoneNumber = primaryContact?.phone || "911";
+      const phoneNumber = primaryContact?.phone || resolvedNumber;
       const telUrl = `tel:${phoneNumber.replace(/[^0-9+]/g, "")}`;
 
       const canOpen = await Linking.canOpenURL(telUrl);
@@ -242,7 +245,11 @@ export default function EmergencySOSButton() {
                 Primary Contact:{" "}
                 {primaryContact ? primaryContact.name : "Emergency Services"}
                 {"\n"}
-                {primaryContact ? primaryContact.phone : "911"}
+                {primaryContact
+                  ? primaryContact.phone
+                  : resolvedCountryCode
+                    ? `${resolvedNumber} (${getCountryName(resolvedCountryCode)})`
+                    : resolvedNumber}
               </Text>
 
               <View

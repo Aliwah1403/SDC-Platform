@@ -52,12 +52,10 @@ export function QuickActions({ medications = [] }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 6,
-          backgroundColor: t.surface,
+          backgroundColor: t.divider,
           borderRadius: 10,
           paddingHorizontal: 13,
           paddingVertical: 7,
-          borderWidth: 1.5,
-          borderColor: t.border,
         }}
         activeOpacity={0.8}
       >
@@ -83,12 +81,10 @@ export function QuickActions({ medications = [] }) {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 6,
-            backgroundColor: t.surface,
+            backgroundColor: t.divider,
             borderRadius: 10,
             paddingHorizontal: 13,
             paddingVertical: 7,
-            borderWidth: 1.5,
-            borderColor: t.border,
           }}
           activeOpacity={0.8}
         >

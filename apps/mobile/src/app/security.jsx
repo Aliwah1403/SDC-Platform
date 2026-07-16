@@ -41,6 +41,7 @@ import {
 } from "@/utils/auth/supabase";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { SectionCard } from "@/components/SectionCard";
 
 // ─── brand icons ─────────────────────────────────────────────────────────────
 
@@ -90,53 +91,6 @@ function isEmailUser(user) {
 }
 
 // ─── primitive components ─────────────────────────────────────────────────────
-
-function Divider() {
-  const t = useTheme();
-  return (
-    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 54 }} />
-  );
-}
-
-function SectionCard({ title, children }) {
-  const t = useTheme();
-  const kids = React.Children.toArray(children).filter(Boolean);
-  return (
-    <View style={{ marginBottom: 24 }}>
-      {title ? (
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 11,
-            color: t.textSecondary,
-            letterSpacing: 0.8,
-            textTransform: "uppercase",
-            marginBottom: 6,
-            marginLeft: 4,
-          }}
-        >
-          {title}
-        </Text>
-      ) : null}
-      <View
-        style={{
-          backgroundColor: t.surface,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: t.border,
-          overflow: "hidden",
-        }}
-      >
-        {kids.map((child, i) => (
-          <React.Fragment key={i}>
-            {child}
-            {i < kids.length - 1 && <Divider />}
-          </React.Fragment>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 function Row({
   icon: Icon,

@@ -394,6 +394,13 @@ export const useAppStore = create(
     set((state) => ({
       healthKitManualBaselines: { ...state.healthKitManualBaselines, [metric]: value },
     })),
+
+  // ── Emergency number override ───────────────────────────────────────────────
+  // ISO alpha-2 country code the user manually picked in Crisis Plan "change".
+  // Physical location (SIM/GPS) in useEmergencyNumber still takes priority over
+  // this — it only wins over the device-region auto-detection.
+  emergencyNumberOverrideIso: null,
+  setEmergencyNumberOverrideIso: (iso) => set({ emergencyNumberOverrideIso: iso }),
     }),
     {
       name: "hemo-onboarding",
@@ -402,6 +409,7 @@ export const useAppStore = create(
         onboardingData: state.onboardingData,
         onboardingCurrentStep: state.onboardingCurrentStep,
         dismissedRecaps: state.dismissedRecaps,
+        emergencyNumberOverrideIso: state.emergencyNumberOverrideIso,
       }),
     }
   )

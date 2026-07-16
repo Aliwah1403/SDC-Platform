@@ -824,7 +824,7 @@ export const mockEmergencyContacts = [
     id: "3",
     name: "Emergency Services",
     relationship: "Emergency",
-    phone: "911",
+    phone: "+1 (555) 000-0000",
     isPrimary: false,
   },
 ];

@@ -1,0 +1,788 @@
+{
+  "AD": {
+    "ambulance": "112"
+  },
+  "AE": {
+    "ambulance": "998",
+    "notes": "999 (police) also connects to emergency dispatch."
+  },
+  "AF": {
+    "ambulance": "102"
+  },
+  "AG": {
+    "ambulance": "911"
+  },
+  "AI": {
+    "ambulance": "911"
+  },
+  "AL": {
+    "ambulance": "127",
+    "notes": "112 also works nationwide."
+  },
+  "AM": {
+    "ambulance": "103",
+    "notes": "112 unified emergency line also available."
+  },
+  "AO": {
+    "ambulance": "112"
+  },
+  "AQ": {
+    "ambulance": "112",
+    "notes": "No permanent population; research stations use station-specific protocols."
+  },
+  "AR": {
+    "ambulance": "107",
+    "notes": "SAME ambulance line; general emergency 911."
+  },
+  "AS": {
+    "ambulance": "911"
+  },
+  "AT": {
+    "ambulance": "144",
+    "notes": "112 also works nationwide."
+  },
+  "AU": {
+    "ambulance": "000",
+    "notes": "112 also works from mobiles."
+  },
+  "AW": {
+    "ambulance": "911"
+  },
+  "AX": {
+    "ambulance": "112"
+  },
+  "AZ": {
+    "ambulance": "103"
+  },
+  "BA": {
+    "ambulance": "124",
+    "notes": "112 also works nationwide."
+  },
+  "BB": {
+    "ambulance": "511"
+  },
+  "BD": {
+    "ambulance": "999"
+  },
+  "BE": {
+    "ambulance": "112"
+  },
+  "BF": {
+    "ambulance": "112"
+  },
+  "BG": {
+    "ambulance": "112"
+  },
+  "BH": {
+    "ambulance": "999"
+  },
+  "BI": {
+    "ambulance": "112"
+  },
+  "BJ": {
+    "ambulance": "112"
+  },
+  "BL": {
+    "ambulance": "112"
+  },
+  "BM": {
+    "ambulance": "911"
+  },
+  "BN": {
+    "ambulance": "991"
+  },
+  "BO": {
+    "ambulance": "911"
+  },
+  "BQ": {
+    "ambulance": "112"
+  },
+  "BR": {
+    "ambulance": "192",
+    "notes": "SAMU national ambulance line."
+  },
+  "BS": {
+    "ambulance": "919"
+  },
+  "BT": {
+    "ambulance": "112"
+  },
+  "BV": {
+    "ambulance": "112",
+    "notes": "Uninhabited territory; fallback general emergency number."
+  },
+  "BW": {
+    "ambulance": "997"
+  },
+  "BY": {
+    "ambulance": "103"
+  },
+  "BZ": {
+    "ambulance": "911"
+  },
+  "CA": {
+    "ambulance": "911"
+  },
+  "CD": {
+    "ambulance": "112"
+  },
+  "CF": {
+    "ambulance": "112"
+  },
+  "CG": {
+    "ambulance": "112"
+  },
+  "CH": {
+    "ambulance": "144",
+    "notes": "112 also works nationwide."
+  },
+  "CI": {
+    "ambulance": "185"
+  },
+  "CK": {
+    "ambulance": "998"
+  },
+  "CL": {
+    "ambulance": "131",
+    "notes": "SAMU ambulance line."
+  },
+  "CM": {
+    "ambulance": "119"
+  },
+  "CN": {
+    "ambulance": "120"
+  },
+  "CO": {
+    "ambulance": "123",
+    "notes": "Unified national emergency number (police/fire/ambulance)."
+  },
+  "CR": {
+    "ambulance": "911"
+  },
+  "CU": {
+    "ambulance": "104",
+    "notes": "General emergency also 106 (police)/105 (fire); 104 is ambulance."
+  },
+  "CV": {
+    "ambulance": "132"
+  },
+  "CW": {
+    "ambulance": "912"
+  },
+  "CY": {
+    "ambulance": "112"
+  },
+  "CZ": {
+    "ambulance": "155",
+    "notes": "112 also works nationwide."
+  },
+  "DE": {
+    "ambulance": "112"
+  },
+  "DJ": {
+    "ambulance": "351351"
+  },
+  "DK": {
+    "ambulance": "112"
+  },
+  "DM": {
+    "ambulance": "911"
+  },
+  "DO": {
+    "ambulance": "911"
+  },
+  "DZ": {
+    "ambulance": "14"
+  },
+  "EC": {
+    "ambulance": "911"
+  },
+  "EE": {
+    "ambulance": "112"
+  },
+  "EG": {
+    "ambulance": "123"
+  },
+  "EH": {
+    "ambulance": "15"
+  },
+  "ER": {
+    "ambulance": "112"
+  },
+  "ES": {
+    "ambulance": "112"
+  },
+  "ET": {
+    "ambulance": "907"
+  },
+  "EU": {
+    "ambulance": "112",
+    "notes": "Not an ISO country; included defensively."
+  },
+  "FI": {
+    "ambulance": "112"
+  },
+  "FJ": {
+    "ambulance": "911"
+  },
+  "FK": {
+    "ambulance": "999"
+  },
+  "FM": {
+    "ambulance": "911"
+  },
+  "FO": {
+    "ambulance": "112"
+  },
+  "FR": {
+    "ambulance": "15",
+    "notes": "SAMU ambulance line; 112 works EU-wide."
+  },
+  "GA": {
+    "ambulance": "1730"
+  },
+  "GB": {
+    "ambulance": "999",
+    "notes": "112 also works nationwide."
+  },
+  "GD": {
+    "ambulance": "434"
+  },
+  "GE": {
+    "ambulance": "112"
+  },
+  "GF": {
+    "ambulance": "112"
+  },
+  "GG": {
+    "ambulance": "999"
+  },
+  "GH": {
+    "ambulance": "193",
+    "notes": "Verified anchor per plan; National Ambulance Service."
+  },
+  "GL": {
+    "ambulance": "112"
+  },
+  "GM": {
+    "ambulance": "112",
+    "notes": "16 also used for ambulance in some sources."
+  },
+  "GN": {
+    "ambulance": "115"
+  },
+  "GP": {
+    "ambulance": "112"
+  },
+  "GQ": {
+    "ambulance": "112"
+  },
+  "GR": {
+    "ambulance": "166",
+    "notes": "EKAB ambulance line; 112 also works."
+  },
+  "GS": {
+    "ambulance": "112",
+    "notes": "No permanent population; fallback general emergency number."
+  },
+  "GT": {
+    "ambulance": "911"
+  },
+  "GU": {
+    "ambulance": "911"
+  },
+  "GW": {
+    "ambulance": "112"
+  },
+  "GY": {
+    "ambulance": "913"
+  },
+  "HK": {
+    "ambulance": "999"
+  },
+  "HM": {
+    "ambulance": "112",
+    "notes": "Uninhabited territory; fallback general emergency number."
+  },
+  "HN": {
+    "ambulance": "911"
+  },
+  "HR": {
+    "ambulance": "194",
+    "notes": "112 also works nationwide."
+  },
+  "HT": {
+    "ambulance": "116",
+    "notes": "Limited/unreliable service; general emergency 114."
+  },
+  "HU": {
+    "ambulance": "104",
+    "notes": "112 also works nationwide."
+  },
+  "ID": {
+    "ambulance": "118",
+    "notes": "112 unified emergency line also available."
+  },
+  "IE": {
+    "ambulance": "999",
+    "notes": "112 also works nationwide."
+  },
+  "IL": {
+    "ambulance": "101"
+  },
+  "IM": {
+    "ambulance": "999"
+  },
+  "IN": {
+    "ambulance": "112",
+    "notes": "Unified national emergency number; 108 legacy ambulance line still used in many states."
+  },
+  "IO": {
+    "ambulance": "999"
+  },
+  "IQ": {
+    "ambulance": "122"
+  },
+  "IR": {
+    "ambulance": "115"
+  },
+  "IS": {
+    "ambulance": "112"
+  },
+  "IT": {
+    "ambulance": "112",
+    "notes": "Historic dedicated ambulance line 118 still routes to 112 in most regions."
+  },
+  "JE": {
+    "ambulance": "999"
+  },
+  "JM": {
+    "ambulance": "110"
+  },
+  "JO": {
+    "ambulance": "911"
+  },
+  "JP": {
+    "ambulance": "119"
+  },
+  "KE": {
+    "ambulance": "999",
+    "notes": "Verified anchor per plan; 112 also works nationwide."
+  },
+  "KG": {
+    "ambulance": "103"
+  },
+  "KH": {
+    "ambulance": "119"
+  },
+  "KI": {
+    "ambulance": "994"
+  },
+  "KM": {
+    "ambulance": "112"
+  },
+  "KN": {
+    "ambulance": "911"
+  },
+  "KP": {
+    "ambulance": "119"
+  },
+  "KR": {
+    "ambulance": "119"
+  },
+  "KW": {
+    "ambulance": "112"
+  },
+  "KY": {
+    "ambulance": "911"
+  },
+  "KZ": {
+    "ambulance": "103"
+  },
+  "LA": {
+    "ambulance": "1195"
+  },
+  "LB": {
+    "ambulance": "140"
+  },
+  "LC": {
+    "ambulance": "911"
+  },
+  "LI": {
+    "ambulance": "144"
+  },
+  "LK": {
+    "ambulance": "1990",
+    "notes": "Suwa Seriya ambulance line; 119 general emergency."
+  },
+  "LR": {
+    "ambulance": "911"
+  },
+  "LS": {
+    "ambulance": "121"
+  },
+  "LT": {
+    "ambulance": "112"
+  },
+  "LU": {
+    "ambulance": "112"
+  },
+  "LV": {
+    "ambulance": "112"
+  },
+  "LY": {
+    "ambulance": "193"
+  },
+  "MA": {
+    "ambulance": "15"
+  },
+  "MC": {
+    "ambulance": "112"
+  },
+  "MD": {
+    "ambulance": "903",
+    "notes": "112 unified emergency line also available."
+  },
+  "ME": {
+    "ambulance": "124",
+    "notes": "112 also works nationwide."
+  },
+  "MF": {
+    "ambulance": "112"
+  },
+  "MG": {
+    "ambulance": "124"
+  },
+  "MH": {
+    "ambulance": "911"
+  },
+  "MK": {
+    "ambulance": "112"
+  },
+  "ML": {
+    "ambulance": "15"
+  },
+  "MM": {
+    "ambulance": "192"
+  },
+  "MN": {
+    "ambulance": "103"
+  },
+  "MO": {
+    "ambulance": "999"
+  },
+  "MP": {
+    "ambulance": "911"
+  },
+  "MQ": {
+    "ambulance": "112"
+  },
+  "MR": {
+    "ambulance": "112"
+  },
+  "MS": {
+    "ambulance": "911"
+  },
+  "MT": {
+    "ambulance": "112"
+  },
+  "MU": {
+    "ambulance": "114"
+  },
+  "MV": {
+    "ambulance": "102"
+  },
+  "MW": {
+    "ambulance": "998"
+  },
+  "MX": {
+    "ambulance": "911"
+  },
+  "MY": {
+    "ambulance": "999"
+  },
+  "MZ": {
+    "ambulance": "117"
+  },
+  "NA": {
+    "ambulance": "211111",
+    "notes": "112 also works from mobiles."
+  },
+  "NC": {
+    "ambulance": "15"
+  },
+  "NE": {
+    "ambulance": "15"
+  },
+  "NF": {
+    "ambulance": "000"
+  },
+  "NG": {
+    "ambulance": "112",
+    "notes": "Verified anchor per plan; 767 also used by NEMA in some states."
+  },
+  "NI": {
+    "ambulance": "911"
+  },
+  "NL": {
+    "ambulance": "112"
+  },
+  "NO": {
+    "ambulance": "113",
+    "notes": "112 (police)/110 (fire) also route to emergency services."
+  },
+  "NP": {
+    "ambulance": "102"
+  },
+  "NR": {
+    "ambulance": "110"
+  },
+  "NU": {
+    "ambulance": "999"
+  },
+  "NZ": {
+    "ambulance": "111"
+  },
+  "OM": {
+    "ambulance": "9999"
+  },
+  "PA": {
+    "ambulance": "911"
+  },
+  "PE": {
+    "ambulance": "106",
+    "notes": "SAMU ambulance line; general emergency 105."
+  },
+  "PF": {
+    "ambulance": "15"
+  },
+  "PG": {
+    "ambulance": "111"
+  },
+  "PH": {
+    "ambulance": "911"
+  },
+  "PK": {
+    "ambulance": "1122"
+  },
+  "PL": {
+    "ambulance": "999",
+    "notes": "112 also works nationwide."
+  },
+  "PM": {
+    "ambulance": "112"
+  },
+  "PR": {
+    "ambulance": "911"
+  },
+  "PS": {
+    "ambulance": "101"
+  },
+  "PT": {
+    "ambulance": "112"
+  },
+  "PW": {
+    "ambulance": "911"
+  },
+  "PY": {
+    "ambulance": "141",
+    "notes": "SEME ambulance line; general emergency 911 in some regions."
+  },
+  "QA": {
+    "ambulance": "999"
+  },
+  "RE": {
+    "ambulance": "15"
+  },
+  "RO": {
+    "ambulance": "112"
+  },
+  "RS": {
+    "ambulance": "194",
+    "notes": "112 also works nationwide."
+  },
+  "RU": {
+    "ambulance": "103",
+    "notes": "112 unified emergency line also available."
+  },
+  "RW": {
+    "ambulance": "912"
+  },
+  "SA": {
+    "ambulance": "997"
+  },
+  "SB": {
+    "ambulance": "911"
+  },
+  "SC": {
+    "ambulance": "151"
+  },
+  "SD": {
+    "ambulance": "999"
+  },
+  "SE": {
+    "ambulance": "112"
+  },
+  "SG": {
+    "ambulance": "995"
+  },
+  "SH": {
+    "ambulance": "911"
+  },
+  "SI": {
+    "ambulance": "112"
+  },
+  "SK": {
+    "ambulance": "155",
+    "notes": "112 also works nationwide."
+  },
+  "SL": {
+    "ambulance": "999"
+  },
+  "SM": {
+    "ambulance": "112"
+  },
+  "SN": {
+    "ambulance": "1515",
+    "notes": "SAMU ambulance line; 17 general police emergency."
+  },
+  "SO": {
+    "ambulance": "999"
+  },
+  "SR": {
+    "ambulance": "113"
+  },
+  "SS": {
+    "ambulance": "777"
+  },
+  "ST": {
+    "ambulance": "112"
+  },
+  "SV": {
+    "ambulance": "911"
+  },
+  "SX": {
+    "ambulance": "919"
+  },
+  "SY": {
+    "ambulance": "110"
+  },
+  "SZ": {
+    "ambulance": "977"
+  },
+  "TC": {
+    "ambulance": "911"
+  },
+  "TD": {
+    "ambulance": "112"
+  },
+  "TF": {
+    "ambulance": "112"
+  },
+  "TG": {
+    "ambulance": "112"
+  },
+  "TH": {
+    "ambulance": "1669"
+  },
+  "TJ": {
+    "ambulance": "03"
+  },
+  "TK": {
+    "ambulance": "999"
+  },
+  "TL": {
+    "ambulance": "112"
+  },
+  "TM": {
+    "ambulance": "03"
+  },
+  "TN": {
+    "ambulance": "190"
+  },
+  "TO": {
+    "ambulance": "911"
+  },
+  "TR": {
+    "ambulance": "112"
+  },
+  "TT": {
+    "ambulance": "811"
+  },
+  "TV": {
+    "ambulance": "911"
+  },
+  "TW": {
+    "ambulance": "119"
+  },
+  "TZ": {
+    "ambulance": "112"
+  },
+  "UA": {
+    "ambulance": "103",
+    "notes": "112 unified line also being rolled out."
+  },
+  "UG": {
+    "ambulance": "999",
+    "notes": "112 also works nationwide."
+  },
+  "UM": {
+    "ambulance": "911",
+    "notes": "US minor outlying islands; fallback US emergency number."
+  },
+  "US": {
+    "ambulance": "911"
+  },
+  "UY": {
+    "ambulance": "911"
+  },
+  "UZ": {
+    "ambulance": "103"
+  },
+  "VA": {
+    "ambulance": "112"
+  },
+  "VC": {
+    "ambulance": "911"
+  },
+  "VE": {
+    "ambulance": "911"
+  },
+  "VG": {
+    "ambulance": "999"
+  },
+  "VI": {
+    "ambulance": "911"
+  },
+  "VN": {
+    "ambulance": "115"
+  },
+  "VU": {
+    "ambulance": "112"
+  },
+  "WF": {
+    "ambulance": "112"
+  },
+  "WS": {
+    "ambulance": "996"
+  },
+  "XK": {
+    "ambulance": "112"
+  },
+  "YE": {
+    "ambulance": "191"
+  },
+  "YT": {
+    "ambulance": "15"
+  },
+  "ZA": {
+    "ambulance": "10177",
+    "notes": "112 also works nationwide from mobiles."
+  },
+  "ZM": {
+    "ambulance": "992"
+  },
+  "ZW": {
+    "ambulance": "994"
+  }
+}

@@ -7,6 +7,7 @@ import { LayoutGrid } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/Card";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -349,23 +350,12 @@ function MetricTile({
   const t = useTheme();
 
   return (
-    <TouchableOpacity
-      activeOpacity={hasData ? 0.8 : 1}
-      onPress={() =>
-        hasData &&
-        router.push({ pathname: "/metric-detail", params: { metric } })
-      }
+    <Card
+      onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric } }) : undefined}
       style={{
         width: TILE_WIDTH,
         height: TILE_HEIGHT,
-        backgroundColor: t.surface,
-        borderRadius: 20,
         padding: 14,
-        shadowColor: t.isDark ? t.background : t.text,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: t.isDark ? 0.02 : 0.06,
-        shadowRadius: 10,
-        elevation: t.isDark ? 0 : 3,
         justifyContent: "space-between",
       }}
     >
@@ -393,7 +383,7 @@ function MetricTile({
       >
         {statusLabel}
       </Text>
-    </TouchableOpacity>
+    </Card>
   );
 }
 

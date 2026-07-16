@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Image,
+  Alert,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -24,6 +25,7 @@ import {
   requestHKAuthorization,
   fetchHealthKitRange,
   setupBackgroundDelivery,
+  getHealthConnectStatus,
 } from "@/services/healthConnectService";
 import { useAppStore } from "@/store/appStore";
 
@@ -62,6 +64,28 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
   const handleConnect = async () => {
     setConnecting(true);
     try {
+      // Health Connect is a separate app on Android ≤13 and can be outdated on
+      // any version. Check first so we can send the user to the Play Store
+      // instead of failing silently (or crashing) inside a permission request.
+      const status = await getHealthConnectStatus();
+      if (status !== "available") {
+        setConnecting(false);
+        Alert.alert(
+          status === "update_required" ? "Update Health Connect" : "Install Health Connect",
+          status === "update_required"
+            ? "Your version of Health Connect is out of date. Please update it to sync your health data with Hemo."
+            : "Health Connect isn't set up on this device yet. Install it from the Play Store to sync your health data with Hemo.",
+          [
+            { text: "Not now", style: "cancel" },
+            {
+              text: status === "update_required" ? "Update" : "Install",
+              onPress: () => Linking.openURL(HC_PLAY_STORE_URL).catch(() => {}),
+            },
+          ]
+        );
+        return;
+      }
+
       const granted = await requestHKAuthorization();
       if (granted) {
         setHealthConnectConnected(true);
