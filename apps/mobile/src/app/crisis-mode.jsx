@@ -30,6 +30,7 @@ import {
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import {
   scheduleCrisisCheckIns,
   cancelCrisisNotifications,
@@ -75,9 +76,9 @@ const ESCALATION_STEPS = {
     painRange: "Pain 8–10+",
     color: "#DC2626",
     description:
-      "This is a medical emergency. Call 999 / 911 now. Your care team is being alerted.",
+      "This is a medical emergency. Call {NUMBER} now. Your care team is being alerted.",
     actions: [
-      "Call 999 / 911 immediately — do not wait",
+      "Call {NUMBER} immediately — do not wait",
       "Stay still, stay warm, and breathe steadily",
       "Your care team has been alerted via SMS",
       "Tell emergency services you have sickle cell disease",
@@ -154,6 +155,7 @@ export default function CrisisModeScreen() {
   const { data: contacts = [] } = useEmergencyContactsQuery();
   const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
   const preferredHospital = savedFacilities[0] ?? null;
+  const { number: emergencyNumber } = useEmergencyNumber();
 
   const alertedRef = useRef(false);
   const elapsed = useElapsedTimer(crisisMode.startedAt);
@@ -375,7 +377,9 @@ export default function CrisisModeScreen() {
             <Text style={[styles.stepLabel, { color: stepData.color }]}>{stepData.label}</Text>
             <Text style={styles.stepPainRange}>{stepData.painRange}</Text>
           </View>
-          <Text style={styles.stepDescription}>{stepData.description}</Text>
+          <Text style={styles.stepDescription}>
+            {stepData.description.replace("{NUMBER}", emergencyNumber)}
+          </Text>
         </MotiView>
 
         {/* Step 3 auto-alert banner */}
@@ -401,7 +405,7 @@ export default function CrisisModeScreen() {
               <View style={[styles.actionNumber, { backgroundColor: stepData.color }]}>
                 <Text style={styles.actionNumberText}>{i + 1}</Text>
               </View>
-              <Text style={styles.actionText}>{action}</Text>
+              <Text style={styles.actionText}>{action.replace("{NUMBER}", emergencyNumber)}</Text>
             </View>
           ))}
         </View>

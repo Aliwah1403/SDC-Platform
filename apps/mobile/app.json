@@ -12,7 +12,9 @@
       "icon": "./assets/app-icon.icon",
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["processing"],
+        "UIBackgroundModes": [
+          "processing"
+        ],
         "BGTaskSchedulerPermittedIdentifiers": [
           "com.expo.modules.backgroundtask.processing"
         ],
@@ -121,7 +123,8 @@
           "organization": "hemo-scd",
           "project": "hemo-scd"
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "web": {
       "bundler": "metro",

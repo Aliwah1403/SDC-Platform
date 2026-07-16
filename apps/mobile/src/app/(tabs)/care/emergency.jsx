@@ -17,11 +17,13 @@ import {
   Users,
 } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 
 export default function EmergencyScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { number: emergencyNumber } = useEmergencyNumber();
 
   const EmergencyCard = ({
     title,
@@ -202,7 +204,7 @@ export default function EmergencyScreen() {
                   lineHeight: 20,
                 }}
               >
-                If you're experiencing a medical emergency, call 911
+                If you're experiencing a medical emergency, call {emergencyNumber}
                 immediately. These contacts are for quick access to emergency
                 services.
               </Text>
@@ -224,7 +226,7 @@ export default function EmergencyScreen() {
         <EmergencyCard
           title="Emergency Services"
           subtitle="Police, Fire, Medical Emergency"
-          phone="911"
+          phone={emergencyNumber}
           icon={Phone}
           color="#DC2626"
           bgColor="#FEE2E2"

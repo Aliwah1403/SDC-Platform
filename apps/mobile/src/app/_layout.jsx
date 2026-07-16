@@ -17,6 +17,7 @@ import { AppState, Platform, Pressable, StyleSheet, Text, View } from "react-nat
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
+import { fetchAndCacheEmergencyNumbers } from "@/services/emergencyNumbersService";
 import { setupBackgroundDelivery, checkExistingHKAuthorization, fetchHealthKitRange } from "@/services/healthKitService";
 import {
   setupBackgroundDelivery as setupHCBackgroundDelivery,
@@ -243,6 +244,13 @@ export default function RootLayout() {
         healthConnectPreferences
       );
     });
+  }, []);
+
+  // Fetch + cache the global emergency-numbers reference table once at startup.
+  // Used by useEmergencyNumber to resolve the correct ambulance number for the
+  // user's country instead of hardcoding US 911. Safe to call unauthenticated.
+  useEffect(() => {
+    fetchAndCacheEmergencyNumbers();
   }, []);
 
   // Register Expo push token with Novu whenever the user is authenticated
