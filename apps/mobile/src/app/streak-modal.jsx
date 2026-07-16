@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import LottieView from "lottie-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   Sparkles,
@@ -27,6 +27,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { useTheme } from "@/hooks/useTheme";
+import { PressableScale } from "@/components/PressableScale";
 
 const HEMO = {
   dark: "#781D11",
@@ -62,6 +63,7 @@ export default function StreakModal() {
   const posthog = usePostHog();
   const router = useRouter();
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
   const { data: healthData = [] } = useHealthDataQuery();
@@ -576,34 +578,9 @@ export default function StreakModal() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
-      {/* Close button */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "flex-end",
-          paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: 4,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: t.surfaceElevated,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <X size={20} color={t.text} />
-        </TouchableOpacity>
-      </View>
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={["bottom", "left", "right"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* ── GRADIENT HERO ── */}
+        {/* ── GRADIENT HERO — extends to the very top; close button floats on top of it ── */}
         <LinearGradient
           colors={
             t.isDark
@@ -611,12 +588,29 @@ export default function StreakModal() {
               : ["#FFF9F8", "#F8E9E7", "#ECDAD4"]
           }
           style={{
-            paddingTop: 8,
+            paddingTop: insets.top + 12,
             paddingBottom: 56,
             paddingHorizontal: 24,
             alignItems: "center",
           }}
         >
+          <PressableScale
+            onPress={() => router.back()}
+            style={{
+              position: "absolute",
+              top: insets.top + 12,
+              right: 20,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(26,26,26,0.06)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <X size={20} color={t.text} />
+          </PressableScale>
+
           {/* Animated fire */}
           <LottieView
             source={require("../../assets/animations/streak-animation.json")}
