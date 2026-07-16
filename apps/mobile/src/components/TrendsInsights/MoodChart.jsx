@@ -54,7 +54,7 @@ export function MoodChart({ moodData, chartData }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
+        <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: t.text }}>
           Mood Patterns
         </Text>
         <View
@@ -65,7 +65,7 @@ export function MoodChart({ moodData, chartData }) {
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#781D11" }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.semibold, color: "#781D11" }}>
             Last 30 days
           </Text>
         </View>
@@ -118,7 +118,7 @@ export function MoodChart({ moodData, chartData }) {
             <Smile size={13} color="#A9334D" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: t.textSecondary }}>Excellent</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#A9334D" }}>
+          <Text style={{ fontSize: 16, fontFamily: fonts.bold, color: "#A9334D" }}>
             {chartData.filter((d) => d.mood === 5).length}d
           </Text>
         </View>
@@ -127,7 +127,7 @@ export function MoodChart({ moodData, chartData }) {
             <Meh size={13} color="#D09F9A" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: t.textSecondary }}>Fair</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#D09F9A" }}>
+          <Text style={{ fontSize: 16, fontFamily: fonts.bold, color: "#D09F9A" }}>
             {chartData.filter((d) => d.mood === 3).length}d
           </Text>
         </View>
@@ -136,7 +136,7 @@ export function MoodChart({ moodData, chartData }) {
             <Frown size={13} color="#781D11" strokeWidth={2} />
             <Text style={{ fontSize: 11, color: t.textSecondary }}>Poor</Text>
           </View>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#781D11" }}>
+          <Text style={{ fontSize: 16, fontFamily: fonts.bold, color: "#781D11" }}>
             {chartData.filter((d) => d.mood <= 2 && d.mood > 0).length}d
           </Text>
         </View>

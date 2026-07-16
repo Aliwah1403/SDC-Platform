@@ -18,6 +18,7 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
+import { fonts } from "@/utils/fonts";
 
 export default function EmergencyScreen() {
   const t = useTheme();
@@ -70,7 +71,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: "700",
+              fontFamily: fonts.bold,
               color: t.text,
               marginBottom: 4,
             }}
@@ -103,7 +104,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 20,
-              fontWeight: "700",
+              fontFamily: fonts.bold,
               color: color,
               marginLeft: 8,
             }}
@@ -155,7 +156,7 @@ export default function EmergencyScreen() {
             <Text
               style={{
                 fontSize: 28,
-                fontWeight: "700",
+                fontFamily: fonts.bold,
                 color: t.text,
               }}
             >
@@ -190,7 +191,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "700",
+                  fontFamily: fonts.bold,
                   color: "#DC2626",
                   marginBottom: 8,
                 }}
@@ -215,7 +216,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginBottom: 16,
           }}
@@ -253,7 +254,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginTop: 24,
             marginBottom: 16,
@@ -295,7 +296,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 16,
-              fontWeight: "600",
+              fontFamily: fonts.semibold,
               color: t.textSecondary,
             }}
           >
@@ -306,7 +307,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginTop: 24,
             marginBottom: 16,
@@ -354,7 +355,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 18,
-                  fontWeight: "700",
+                  fontFamily: fonts.bold,
                   color: t.text,
                   marginBottom: 4,
                 }}
@@ -395,7 +396,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: "#2563EB",
                 }}
               >
@@ -416,7 +417,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: "#FFFFFF",
                 }}
               >

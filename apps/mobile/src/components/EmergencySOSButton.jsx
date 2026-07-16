@@ -14,6 +14,7 @@ import { Phone, X, AlertTriangle } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import { getCountryName } from "@/utils/countryNames";
+import { fonts } from "@/utils/fonts";
 import { useAppStore } from "../store/appStore";
 import { usePostHog } from "posthog-react-native";
 
@@ -208,7 +209,7 @@ export default function EmergencySOSButton() {
           <Text
             style={{
               fontSize: 24,
-              fontWeight: "bold",
+              fontFamily: fonts.bold,
               color: "#A9334D", // Orange text
               marginBottom: 8,
               textAlign: "center",
@@ -272,7 +273,7 @@ export default function EmergencySOSButton() {
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "600",
+                      fontFamily: fonts.semibold,
                       color: "#F8E9E7", // Cream text
                     }}
                   >
@@ -298,7 +299,7 @@ export default function EmergencySOSButton() {
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "bold",
+                      fontFamily: fonts.bold,
                       color: "#F8E9E7", // Cream text
                     }}
                   >
@@ -312,7 +313,7 @@ export default function EmergencySOSButton() {
               <Text
                 style={{
                   fontSize: 72,
-                  fontWeight: "bold",
+                  fontFamily: fonts.bold,
                   color: "#A9334D", // Orange text
                   marginBottom: 12,
                 }}
@@ -345,7 +346,7 @@ export default function EmergencySOSButton() {
                 <Text
                   style={{
                     fontSize: 16,
-                    fontWeight: "bold",
+                    fontFamily: fonts.bold,
                     color: "#F8E9E7", // Cream text
                   }}
                 >
@@ -400,7 +401,7 @@ export default function EmergencySOSButton() {
           <Text
             style={{
               fontSize: 8,
-              fontWeight: "bold",
+              fontFamily: fonts.bold,
               color: "#A9334D", // Orange text
             }}
           >

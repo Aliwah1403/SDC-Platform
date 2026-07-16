@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
+import { fonts } from "@/utils/fonts";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -191,7 +192,7 @@ export const BubbleChart = ({ data, config = {}, style }: Props) => {
           {renderTooltip ? (
             renderTooltip(activePoint, activeIndex!)
           ) : (
-            <RNText style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>
+            <RNText style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>
               {activePoint.tooltipLabel || activePoint.label} · {activePoint.y}
             </RNText>
           )}

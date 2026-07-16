@@ -4,6 +4,7 @@ import { PainLevelChart } from "./PainLevelChart";
 import { HydrationChart } from "./HydrationChart";
 import { MoodChart } from "./MoodChart";
 import { CrisisFreePeriods } from "./CrisisFreePeriods";
+import { fonts } from "@/utils/fonts";
 
 const { width } = Dimensions.get("window");
 
@@ -23,7 +24,7 @@ export function TrendsInsights({
       <Text
         style={{
           fontSize: 20,
-          fontWeight: "700",
+          fontFamily: fonts.bold,
           color: "#781D11",
           marginBottom: 16,
         }}

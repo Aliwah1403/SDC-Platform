@@ -10,6 +10,7 @@ import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import { X, Gift, Wrench, CheckCircle2, AlertTriangle, Sparkles } from "lucide-react-native";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { fonts } from "@/utils/fonts";
 
 const { height } = Dimensions.get("window");
 
@@ -64,7 +65,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
           <Text
             style={{
               fontSize: 22,
-              fontWeight: "700",
+              fontFamily: fonts.bold,
               color: "#1a1a1a",
             }}
           >
@@ -123,7 +124,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
           <Text
             style={{
               fontSize: 32,
-              fontWeight: "800",
+              fontFamily: fonts.extrabold,
               color: "#1a1a1a",
               textAlign: "center",
               marginBottom: 8,
@@ -184,7 +185,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 <Text
                   style={{
                     fontSize: 36,
-                    fontWeight: "800",
+                    fontFamily: fonts.extrabold,
                     color: "#1a1a1a",
                   }}
                 >
@@ -195,7 +196,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 style={{
                   fontSize: 13,
                   color: "#999",
-                  fontWeight: "500",
+                  fontFamily: fonts.medium,
                 }}
               >
                 available
@@ -227,7 +228,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 <Text
                   style={{
                     fontSize: 36,
-                    fontWeight: "800",
+                    fontFamily: fonts.extrabold,
                     color: "#1a1a1a",
                   }}
                 >
@@ -238,7 +239,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 style={{
                   fontSize: 13,
                   color: "#999",
-                  fontWeight: "500",
+                  fontFamily: fonts.medium,
                 }}
               >
                 total used
@@ -270,7 +271,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 <Text
                   style={{
                     fontSize: 36,
-                    fontWeight: "800",
+                    fontFamily: fonts.extrabold,
                     color: "#1a1a1a",
                   }}
                 >
@@ -281,7 +282,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
                 style={{
                   fontSize: 13,
                   color: "#999",
-                  fontWeight: "500",
+                  fontFamily: fonts.medium,
                 }}
               >
                 total earned
@@ -314,7 +315,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
               <Text
                 style={{
                   fontSize: 18,
-                  fontWeight: "700",
+                  fontFamily: fonts.bold,
                   color: "#1a1a1a",
                 }}
               >
@@ -323,7 +324,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: "#999",
                 }}
               >
@@ -378,7 +379,7 @@ const StreakRepairsBottomSheet = forwardRef(({ onClose }, ref) => {
             <Text
               style={{
                 fontSize: 20,
-                fontWeight: "700",
+                fontFamily: fonts.bold,
                 color: "#1a1a1a",
                 marginBottom: 20,
               }}

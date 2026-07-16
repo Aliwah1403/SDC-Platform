@@ -30,6 +30,7 @@ import { removeFromDeviceCalendar, cancelReminders } from "@/utils/appointmentUt
 import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
+import { fonts } from "@/utils/fonts";
 
 const TYPE_COLORS = {
   "routine":     { bg: "#F8F4F0", text: "#374151" },
@@ -78,13 +79,13 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
       {/* Top row: title + ⋯ */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
         <View style={{ flex: 1, marginRight: 10 }}>
-          <Text style={{ fontSize: 17, fontWeight: "700", color: t.text, fontFamily: "Geist-Bold", marginBottom: 3 }}>
+          <Text style={{ fontSize: 17, color: t.text, fontFamily: fonts.bold, marginBottom: 3 }}>
             {appointment.title}
           </Text>
           {appointment.doctor ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
               <User size={13} color={t.textSecondary} />
-              <Text style={{ fontSize: 14, color: t.textSecondary, fontFamily: "Geist-Regular" }}>
+              <Text style={{ fontSize: 14, color: t.textSecondary, fontFamily: fonts.regular }}>
                 Dr. {appointment.doctor}
                 {appointment.specialty ? `  ·  ${appointment.specialty}` : ""}
               </Text>
@@ -103,14 +104,14 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
       {/* Type pill */}
       <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 10, gap: 8 }}>
         <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : typeColor.bg, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: t.isDark ? t.text : typeColor.text, fontFamily: "Geist-SemiBold" }}>
+          <Text style={{ fontSize: 12, color: t.isDark ? t.text : typeColor.text, fontFamily: fonts.semibold }}>
             {TYPE_LABELS[appointment.type] ?? appointment.type}
           </Text>
         </View>
         {appointment.addedToCalendar && (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             <CalendarCheck size={12} color={t.text} />
-            <Text style={{ fontSize: 12, color: t.text, fontFamily: "Geist-Regular" }}>In calendar</Text>
+            <Text style={{ fontSize: 12, color: t.text, fontFamily: fonts.regular }}>In calendar</Text>
           </View>
         )}
       </View>
@@ -119,18 +120,18 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
       <View style={{ gap: 6 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <Calendar size={14} color="#A9334D" />
-          <Text style={{ fontSize: 14, color: t.text, fontFamily: "Geist-Regular" }}>
+          <Text style={{ fontSize: 14, color: t.text, fontFamily: fonts.regular }}>
             {formatApptDate(appointment.date)}
           </Text>
           <Clock size={14} color="#A9334D" style={{ marginLeft: 8 }} />
-          <Text style={{ fontSize: 14, color: t.text, fontFamily: "Geist-Regular" }}>
+          <Text style={{ fontSize: 14, color: t.text, fontFamily: fonts.regular }}>
             {appointment.time}
           </Text>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
           <MapPin size={14} color={t.textSecondary} />
-          <Text style={{ fontSize: 14, color: t.textSecondary, fontFamily: "Geist-Regular", flex: 1 }}>
+          <Text style={{ fontSize: 14, color: t.textSecondary, fontFamily: fonts.regular, flex: 1 }}>
             {appointment.facility}
           </Text>
         </View>
@@ -138,7 +139,7 @@ function AppointmentCard({ appointment, onEdit, onMore }) {
         {appointment.notes ? (
           <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 8, marginTop: 2 }}>
             <FileText size={14} color={t.textSecondary} style={{ marginTop: 2 }} />
-            <Text style={{ fontSize: 13, color: t.textSecondary, fontFamily: "Geist-Regular", flex: 1 }} numberOfLines={2}>
+            <Text style={{ fontSize: 13, color: t.textSecondary, fontFamily: fonts.regular, flex: 1 }} numberOfLines={2}>
               {appointment.notes}
             </Text>
           </View>
@@ -206,9 +207,9 @@ export default function AppointmentsScreen() {
 
   const SectionHeader = ({ label, count }) => (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12, marginTop: 8 }}>
-      <Text style={{ fontSize: 16, fontWeight: "700", color: t.text, fontFamily: "Geist-Bold" }}>{label}</Text>
+      <Text style={{ fontSize: 16, color: t.text, fontFamily: fonts.bold }}>{label}</Text>
       <View style={{ backgroundColor: t.surfaceElevated, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 }}>
-        <Text style={{ fontSize: 12, fontWeight: "600", color: t.textSecondary, fontFamily: "Geist-SemiBold" }}>{count}</Text>
+        <Text style={{ fontSize: 12, color: t.textSecondary, fontFamily: fonts.semibold }}>{count}</Text>
       </View>
     </View>
   );
@@ -216,7 +217,7 @@ export default function AppointmentsScreen() {
   const EmptyState = ({ message }) => (
     <View style={{ backgroundColor: t.surface, borderRadius: 16, padding: 24, alignItems: "center", borderWidth: 1, borderColor: t.border, borderStyle: "dashed", marginBottom: 12 }}>
       <Calendar size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
-      <Text style={{ fontSize: 14, color: t.textSecondary, textAlign: "center", fontFamily: "Geist-Regular" }}>{message}</Text>
+      <Text style={{ fontSize: 14, color: t.textSecondary, textAlign: "center", fontFamily: fonts.regular }}>{message}</Text>
     </View>
   );
 
@@ -244,10 +245,10 @@ export default function AppointmentsScreen() {
           </TouchableOpacity>
 
           <View style={{ alignItems: "center" }}>
-            <Text style={{ fontSize: 22, fontWeight: "700", color: "#F8E9E7", fontFamily: "Geist-Bold" }}>
+            <Text style={{ fontSize: 22, color: "#F8E9E7", fontFamily: fonts.bold }}>
               Appointments
             </Text>
-            <Text style={{ fontSize: 13, color: "rgba(248,233,231,0.6)", marginTop: 2, fontFamily: "Geist-Regular" }}>
+            <Text style={{ fontSize: 13, color: "rgba(248,233,231,0.6)", marginTop: 2, fontFamily: fonts.regular }}>
               {upcoming.length} upcoming
             </Text>
           </View>
@@ -312,10 +313,10 @@ export default function AppointmentsScreen() {
           {selectedAppt && (
             <>
               {/* Appointment label */}
-              <Text style={{ fontSize: 17, fontWeight: "700", color: t.text, fontFamily: "Geist-Bold", marginBottom: 4 }}>
+              <Text style={{ fontSize: 17, color: t.text, fontFamily: fonts.bold, marginBottom: 4 }}>
                 {selectedAppt.title}
               </Text>
-              <Text style={{ fontSize: 13, color: t.textSecondary, fontFamily: "Geist-Regular", marginBottom: 20 }}>
+              <Text style={{ fontSize: 13, color: t.textSecondary, fontFamily: fonts.regular, marginBottom: 20 }}>
                 {formatApptDate(selectedAppt.date)}  ·  {selectedAppt.time}
               </Text>
 
@@ -327,7 +328,7 @@ export default function AppointmentsScreen() {
                 <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.background, alignItems: "center", justifyContent: "center" }}>
                   <Pencil size={18} color="#A9334D" />
                 </View>
-                <Text style={{ fontSize: 16, fontWeight: "600", color: t.text, fontFamily: "Geist-SemiBold" }}>Edit Appointment</Text>
+                <Text style={{ fontSize: 16, color: t.text, fontFamily: fonts.semibold }}>Edit Appointment</Text>
               </TouchableOpacity>
 
               {/* Delete */}
@@ -338,7 +339,7 @@ export default function AppointmentsScreen() {
                 <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
                   <Trash2 size={18} color="#DC2626" />
                 </View>
-                <Text style={{ fontSize: 16, fontWeight: "600", color: "#DC2626", fontFamily: "Geist-SemiBold" }}>Delete Appointment</Text>
+                <Text style={{ fontSize: 16, color: "#DC2626", fontFamily: fonts.semibold }}>Delete Appointment</Text>
               </TouchableOpacity>
             </>
           )}

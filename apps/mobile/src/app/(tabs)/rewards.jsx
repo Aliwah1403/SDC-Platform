@@ -24,6 +24,7 @@ import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/Card";
+import { fonts } from "@/utils/fonts";
 
 const { width } = Dimensions.get("window");
 
@@ -54,7 +55,7 @@ export default function RewardsScreen() {
       <Text
         style={{
           fontSize: 14,
-          fontWeight: isActive ? "600" : "400",
+          fontFamily: isActive ? fonts.semibold : fonts.regular,
           color: isActive ? "#DC2626" : t.textSecondary,
           marginLeft: 6,
         }}
@@ -140,7 +141,7 @@ export default function RewardsScreen() {
                 <Text
                   style={{
                     fontSize: 11,
-                    fontWeight: "500",
+                    fontFamily: fonts.medium,
                     color: getTypeColor(challenge.type),
                     textTransform: "capitalize",
                   }}
@@ -159,7 +160,7 @@ export default function RewardsScreen() {
                 <Text
                   style={{
                     fontSize: 12,
-                    fontWeight: "500",
+                    fontFamily: fonts.medium,
                     color: "#F59E0B",
                     marginLeft: 2,
                   }}
@@ -172,7 +173,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: t.text,
                 marginBottom: 4,
               }}
@@ -216,7 +217,7 @@ export default function RewardsScreen() {
           <Text
             style={{
               fontSize: 14,
-              fontWeight: "500",
+              fontFamily: fonts.medium,
               color: t.text,
             }}
           >
@@ -283,7 +284,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: size === "large" ? 14 : 12,
-            fontWeight: "600",
+            fontFamily: fonts.semibold,
             color: t.text,
             textAlign: "center",
             marginBottom: 4,
@@ -309,7 +310,7 @@ export default function RewardsScreen() {
             style={{
               fontSize: 10,
               color: "#059669",
-              fontWeight: "500",
+              fontFamily: fonts.medium,
             }}
           >
             {new Date(badge.unlockedAt).toLocaleDateString()}
@@ -366,7 +367,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: 14,
-            fontWeight: "bold",
+            fontFamily: fonts.bold,
             color: rank <= 3 ? "#ffffff" : t.textSecondary,
           }}
         >
@@ -378,7 +379,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: 16,
-            fontWeight: "600",
+            fontFamily: fonts.semibold,
             color: t.text,
             marginBottom: 2,
           }}
@@ -471,7 +472,7 @@ export default function RewardsScreen() {
         <Text
           style={{
             fontSize: 28,
-            fontWeight: "bold",
+            fontFamily: fonts.bold,
             color: t.text,
             marginBottom: 4,
           }}
@@ -505,7 +506,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: "#ffffff",
                 marginBottom: 4,
               }}
@@ -532,7 +533,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 32,
-                fontWeight: "bold",
+                fontFamily: fonts.bold,
                 color: "#ffffff",
                 marginLeft: 8,
               }}
@@ -592,7 +593,7 @@ export default function RewardsScreen() {
               <Text
                 style={{
                   fontSize: 18,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: t.text,
                 }}
               >
@@ -611,7 +612,7 @@ export default function RewardsScreen() {
                   style={{
                     fontSize: 12,
                     color: "#DC2626",
-                    fontWeight: "500",
+                    fontFamily: fonts.medium,
                   }}
                 >
                   {mockChallenges.length} active
@@ -639,7 +640,7 @@ export default function RewardsScreen() {
                 <Text
                   style={{
                     fontSize: 14,
-                    fontWeight: "600",
+                    fontFamily: fonts.semibold,
                     color: t.text,
                   }}
                 >
@@ -664,7 +665,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: t.text,
                 marginBottom: 16,
               }}
@@ -681,7 +682,7 @@ export default function RewardsScreen() {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: t.text,
                   marginBottom: 12,
                 }}
@@ -706,7 +707,7 @@ export default function RewardsScreen() {
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: t.text,
                 marginBottom: 12,
               }}
@@ -743,7 +744,7 @@ export default function RewardsScreen() {
               <Text
                 style={{
                   fontSize: 18,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: t.text,
                 }}
               >
@@ -762,7 +763,7 @@ export default function RewardsScreen() {
                   style={{
                     fontSize: 12,
                     color: "#DC2626",
-                    fontWeight: "500",
+                    fontFamily: fonts.medium,
                   }}
                 >
                   This Week
@@ -799,7 +800,7 @@ export default function RewardsScreen() {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: t.text,
                   marginBottom: 12,
                 }}
@@ -817,7 +818,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 20,
-                      fontWeight: "bold",
+                      fontFamily: fonts.bold,
                       color: "#DC2626",
                     }}
                   >
@@ -837,7 +838,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 20,
-                      fontWeight: "bold",
+                      fontFamily: fonts.bold,
                       color: "#059669",
                     }}
                   >
@@ -857,7 +858,7 @@ export default function RewardsScreen() {
                   <Text
                     style={{
                       fontSize: 20,
-                      fontWeight: "bold",
+                      fontFamily: fonts.bold,
                       color: "#A9334D",
                     }}
                   >

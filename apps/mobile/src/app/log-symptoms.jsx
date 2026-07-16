@@ -29,6 +29,7 @@ import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackg
 import { PainOrb } from "@/components/LogSymptoms/PainOrb";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
@@ -853,7 +854,7 @@ export default function LogSymptomsScreen() {
           flexDirection: "row",
           alignItems: "center",
         }}>
-          <Text style={{ fontSize: 13, color: "#A9334D", fontFamily: "Geist-Medium" }}>
+          <Text style={{ fontSize: 13, color: "#A9334D", fontFamily: fonts.medium }}>
             You've already logged today — adding a new entry
           </Text>
         </View>

@@ -18,6 +18,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { fonts } from "@/utils/fonts";
 
 export interface Zone {
   min: number;
@@ -464,7 +465,7 @@ export const HomeLineChart = ({ data, config = {}, style }: Props) => {
               {renderTooltip ? (
                 renderTooltip(activeDataPoint, activeIndex!)
               ) : (
-                <RNText style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>
+                <RNText style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>
                   {activeDataPoint.tooltipLabel || activeDataPoint.label} · {activeDataPoint.y}
                 </RNText>
               )}

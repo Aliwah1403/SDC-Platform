@@ -1,6 +1,7 @@
 import React from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { View, Text } from "react-native";
+import { fonts } from "@/utils/fonts";
 
 export function CrisisFreePeriods({ crisisPeriods }) {
   const t = useTheme();
@@ -26,7 +27,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
+        <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: t.text }}>
           Crisis-Free Periods
         </Text>
         <View
@@ -37,7 +38,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.semibold, color: "#A9334D" }}>
             Low pain days
           </Text>
         </View>
@@ -63,7 +64,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             <Text
               style={{
                 fontSize: 32,
-                fontWeight: "700",
+                fontFamily: fonts.bold,
                 color: "#781D11",
               }}
             >
@@ -76,7 +77,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
           <Text
             style={{
               fontSize: 13,
-              fontWeight: "600",
+              fontFamily: fonts.semibold,
               color: t.text,
               marginTop: 12,
             }}
@@ -101,7 +102,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
             <Text
               style={{
                 fontSize: 32,
-                fontWeight: "700",
+                fontFamily: fonts.bold,
                 color: "#781D11",
               }}
             >
@@ -114,7 +115,7 @@ export function CrisisFreePeriods({ crisisPeriods }) {
           <Text
             style={{
               fontSize: 13,
-              fontWeight: "600",
+              fontFamily: fonts.semibold,
               color: t.text,
               marginTop: 12,
             }}

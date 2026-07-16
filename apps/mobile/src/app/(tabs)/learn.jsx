@@ -26,6 +26,7 @@ import {
 import { useAppStore } from "../../store/appStore";
 import { mockArticles } from "../../types";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
 
 export default function LearnScreen() {
   const insets = useSafeAreaInsets();
@@ -170,7 +171,7 @@ export default function LearnScreen() {
         <Text
           style={{
             fontSize: 14,
-            fontWeight: "600",
+            fontFamily: fonts.semibold,
             color: t.text,
             flex: 1,
           }}
@@ -345,7 +346,7 @@ export default function LearnScreen() {
           style={{
             fontSize: 11,
             color: "#DC2626",
-            fontWeight: "500",
+            fontFamily: fonts.medium,
             textTransform: "capitalize",
           }}
         >
@@ -356,7 +357,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 16,
-          fontWeight: "600",
+          fontFamily: fonts.semibold,
           color: t.text,
           marginBottom: 8,
           lineHeight: 22,
@@ -395,7 +396,7 @@ export default function LearnScreen() {
           style={{
             fontSize: 11,
             color: "#DC2626",
-            fontWeight: "500",
+            fontFamily: fonts.medium,
           }}
         >
           Read More →
@@ -427,7 +428,7 @@ export default function LearnScreen() {
       <Text
         style={{
           fontSize: 24,
-          fontWeight: "bold",
+          fontFamily: fonts.bold,
           color: t.text,
           marginBottom: 8,
           textAlign: "center",
@@ -488,7 +489,7 @@ export default function LearnScreen() {
             <Text
               style={{
                 fontSize: 28,
-                fontWeight: "bold",
+                fontFamily: fonts.bold,
                 color: t.text,
                 marginBottom: 4,
               }}
@@ -526,7 +527,7 @@ export default function LearnScreen() {
             <Text
               style={{
                 fontSize: 16,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: t.text,
                 marginBottom: 12,
               }}
@@ -659,7 +660,7 @@ export default function LearnScreen() {
             <Text
               style={{
                 fontSize: 18,
-                fontWeight: "600",
+                fontFamily: fonts.semibold,
                 color: t.text,
               }}
             >
@@ -671,7 +672,7 @@ export default function LearnScreen() {
                 style={{
                   fontSize: 14,
                   color: "#DC2626",
-                  fontWeight: "500",
+                  fontFamily: fonts.medium,
                 }}
               >
                 See All

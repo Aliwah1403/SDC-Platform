@@ -66,7 +66,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
+        <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: t.text }}>
           Pain Level Trends
         </Text>
         <View
@@ -77,7 +77,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.semibold, color: "#A9334D" }}>
             Last 30 days
           </Text>
         </View>
@@ -129,7 +129,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Average
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: t.text }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: t.text }}>
             {avgPainLevel}
           </Text>
         </View>
@@ -137,7 +137,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Highest
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#DC2626" }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#DC2626" }}>
             {highest}
           </Text>
         </View>
@@ -145,7 +145,7 @@ export function PainLevelChart({ painLevelData, avgPainLevel, chartData }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Lowest
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#A9334D" }}>
             {isFinite(lowestLogged) ? lowestLogged : 0}
           </Text>
         </View>

@@ -57,7 +57,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           marginBottom: 4,
         }}
       >
-        <Text style={{ fontSize: 18, fontWeight: "700", color: t.text }}>
+        <Text style={{ fontSize: 18, fontFamily: fonts.bold, color: t.text }}>
           Hydration Levels
         </Text>
         <View
@@ -68,7 +68,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
             borderRadius: 12,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: "#A9334D" }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.semibold, color: "#A9334D" }}>
             Last 30 days
           </Text>
         </View>
@@ -143,7 +143,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Daily Avg
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: t.text }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: t.text }}>
             {avgHydration}
           </Text>
         </View>
@@ -151,7 +151,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Goal
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#A9334D" }}>
             8
           </Text>
         </View>
@@ -159,7 +159,7 @@ export function HydrationChart({ hydrationData, avgHydration }) {
           <Text style={{ fontSize: 12, color: t.textSecondary, marginBottom: 4 }}>
             Days at goal
           </Text>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: "#A9334D" }}>
+          <Text style={{ fontSize: 20, fontFamily: fonts.bold, color: "#A9334D" }}>
             {daysAtGoal}
           </Text>
         </View>

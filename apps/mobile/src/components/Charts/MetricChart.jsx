@@ -5,6 +5,7 @@ import { BarChart } from "./bar-chart";
 import { HeatmapChart } from "./heatmap-chart";
 import { BubbleChart } from "./bubble-chart";
 import { SleepHypnogramChart } from "./sleep-hypnogram-chart";
+import { fonts } from "@/utils/fonts";
 
 function shortDate(date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -26,7 +27,7 @@ function formatSleepHours(value) {
 
 function TooltipText({ children }) {
   return (
-    <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700", textAlign: "center" }}>
+    <Text style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold, textAlign: "center" }}>
       {children}
     </Text>
   );
@@ -225,7 +226,7 @@ function HeartRateLegend({ zonePercentages }) {
       {items.map((item) => (
         <View key={item.label} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color }} />
-          <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+          <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontFamily: fonts.semibold }}>
             {item.label} · {item.pct}%
           </Text>
         </View>
@@ -250,7 +251,7 @@ function SleepStageLegend({ segments }) {
       {(["awake", "rem", "core", "deep"]).map((stage) => (
         <View key={stage} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: SLEEP_STAGE_COLORS[stage] }} />
-          <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+          <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontFamily: fonts.semibold }}>
             {SLEEP_STAGE_LABELS[stage]} · {formatSleepHours(totals[stage])}
           </Text>
         </View>
@@ -265,13 +266,13 @@ function SleepTrendLegend({ avgValue }) {
     <View style={{ flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <View style={{ width: 12, height: 12, borderRadius: 3, backgroundColor: "#6366F120", borderWidth: 1, borderColor: "#6366F1" }} />
-        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontFamily: fonts.semibold }}>
           Optimal range · 7-9h
         </Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <View style={{ width: 12, height: 0, borderTopWidth: 1.5, borderColor: "#1A1A1A", borderStyle: "dashed" }} />
-        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontWeight: "600" }}>
+        <Text style={{ fontSize: 11, color: "rgba(107,107,107,0.9)", fontFamily: fonts.semibold }}>
           Avg. {formatSleepHours(avgValue)}
         </Text>
       </View>
@@ -443,14 +444,14 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
       <>
         {sleepSegments?.length > 0 && (
           <View style={{ marginBottom: 24 }}>
-            <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+            <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
               Last night
             </Text>
             <SleepHypnogramChart segments={sleepSegments} config={{ height: 260 }} />
             <SleepStageLegend segments={sleepSegments} />
           </View>
         )}
-        <Text style={{ fontSize: 11, fontWeight: "700", color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
+        <Text style={{ fontSize: 11, fontFamily: fonts.bold, color: "rgba(107,107,107,0.9)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>
           {range}-day trend
         </Text>
         <BarChart data={chartData} config={{ ...config, width }} />

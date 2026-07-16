@@ -21,6 +21,7 @@ import { StreakFireIcon } from "@/utils/streakFire";
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
 
 const MILESTONE_ICONS = {
   days: Trophy,
@@ -261,7 +262,7 @@ const s = StyleSheet.create({
   closeBtnX: {
     fontSize: 14,
     color: "#1A1A1A",
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   // Note: dynamic colors (card bg, sheet bg, handle, text) applied via inline overrides using useTheme()
   badgeWrapper: {
@@ -295,7 +296,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: "800",
+    fontFamily: fonts.extrabold,
     color: "#1A1A1A",
     marginBottom: 24,
   },
@@ -318,14 +319,14 @@ const s = StyleSheet.create({
   },
   rarityLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   rarityValue: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#F0531C",
   },
   rarityBar: {
@@ -362,7 +363,7 @@ const s = StyleSheet.create({
   },
   requirementLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -370,7 +371,7 @@ const s = StyleSheet.create({
   },
   requirementValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#1A1A1A",
   },
 
@@ -391,12 +392,12 @@ const s = StyleSheet.create({
   },
   unlockLabel: {
     fontSize: 13,
-    fontWeight: "500",
+    fontFamily: fonts.medium,
     color: "#9CA3AF",
   },
   unlockDate: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#1A1A1A",
   },
 

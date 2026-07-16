@@ -26,6 +26,7 @@ import { addToDeviceCalendar, scheduleReminders, cancelReminders } from "@/utils
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { format } from "date-fns";
+import { fonts } from "@/utils/fonts";
 
 const TYPES = [
   { key: "routine",   label: "Routine" },
@@ -215,7 +216,7 @@ export default function AppointmentForm() {
   const SectionLabel = ({ icon: Icon, label }) => (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 20 }}>
       <Icon size={16} color={t.text} strokeWidth={2} />
-      <Text style={{ fontSize: 13, fontWeight: "600", color: t.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <Text style={{ fontSize: 13, fontFamily: fonts.semibold, color: t.text, textTransform: "uppercase", letterSpacing: 0.5 }}>
         {label}
       </Text>
     </View>
@@ -230,7 +231,7 @@ export default function AppointmentForm() {
     color: t.text,
     borderWidth: 1,
     borderColor: t.border,
-    fontFamily: "Geist-Regular",
+    fontFamily: fonts.regular,
   };
 
   return (
@@ -293,9 +294,8 @@ export default function AppointmentForm() {
         <Text
           style={{
             fontSize: 18,
-            fontWeight: "700",
             color: "#F8E9E7",
-            fontFamily: "Geist-Bold",
+            fontFamily: fonts.bold,
           }}
         >
           {existing ? "Edit Appointment" : "New Appointment"}
@@ -315,9 +315,8 @@ export default function AppointmentForm() {
           <Text
             style={{
               fontSize: 15,
-              fontWeight: "600",
               color: isValid ? "#F8E9E7" : "rgba(255,255,255,0.4)",
-              fontFamily: "Geist-SemiBold",
+              fontFamily: fonts.semibold,
             }}
           >
             {saving ? "Saving…" : "Save"}
@@ -363,9 +362,8 @@ export default function AppointmentForm() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
                   color: type === typ.key ? "#fff" : t.textSecondary,
-                  fontFamily: "Geist-SemiBold",
+                  fontFamily: fonts.semibold,
                 }}
               >
                 {typ.label}
@@ -400,7 +398,7 @@ export default function AppointmentForm() {
               style={{
                 fontSize: 16,
                 color: specialty ? t.text : t.textSecondary,
-                fontFamily: "Geist-Regular",
+                fontFamily: fonts.regular,
               }}
             >
               {specialty || "Specialty (optional)"}
@@ -438,7 +436,7 @@ export default function AppointmentForm() {
                     style={{
                       fontSize: 16,
                       color: specialty === s ? "#A9334D" : t.text,
-                      fontWeight: specialty === s ? "600" : "400",
+                      fontFamily: specialty === s ? fonts.semibold : fonts.regular,
                     }}
                   >
                     {s}
@@ -555,7 +553,7 @@ export default function AppointmentForm() {
             style={{
               fontSize: 16,
               color: t.text,
-              fontFamily: "Geist-Regular",
+              fontFamily: fonts.regular,
             }}
           >
             {format(date, "EEE, d MMMM yyyy")}
@@ -581,7 +579,7 @@ export default function AppointmentForm() {
             style={{
               fontSize: 16,
               color: t.text,
-              fontFamily: "Geist-Regular",
+              fontFamily: fonts.regular,
             }}
           >
             {formatTime(time)}
@@ -754,7 +752,7 @@ export default function AppointmentForm() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <Bell size={20} color={t.text} />
               <View>
-                <Text style={{ fontSize: 15, fontFamily: "Geist-SemiBold", color: t.text }}>Reminders</Text>
+                <Text style={{ fontSize: 15, fontFamily: fonts.semibold, color: t.text }}>Reminders</Text>
                 <Text style={{ fontSize: 13, color: t.textSecondary, marginTop: 2 }}>Push notification before appointment</Text>
               </View>
             </View>
@@ -779,9 +777,9 @@ export default function AppointmentForm() {
                 onPress={() => setShowReminder1Picker(true)}
                 style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 }}
               >
-                <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: t.text }}>Reminder</Text>
+                <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: t.text }}>Reminder</Text>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: reminder1 !== null ? "#A9334D" : "#9CA3AF" }}>
+                  <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: reminder1 !== null ? "#A9334D" : "#9CA3AF" }}>
                     {reminder1 !== null ? REMINDER_OPTIONS.find((o) => o.minutes === reminder1)?.label ?? "1 hour before" : "None"}
                   </Text>
                   <Text style={{ fontSize: 18, color: t.textTertiary }}>›</Text>
@@ -796,9 +794,9 @@ export default function AppointmentForm() {
                     onPress={() => setShowReminder2Picker(true)}
                     style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 }}
                   >
-                    <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: t.text }}>Second Reminder</Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: t.text }}>Second Reminder</Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontFamily: "Geist-Regular", fontSize: 15, color: reminder2 !== null ? "#A9334D" : "#9CA3AF" }}>
+                      <Text style={{ fontFamily: fonts.regular, fontSize: 15, color: reminder2 !== null ? "#A9334D" : "#9CA3AF" }}>
                         {reminder2 !== null ? REMINDER_OPTIONS.find((o) => o.minutes === reminder2)?.label ?? "1 day before" : "None"}
                       </Text>
                       <Text style={{ fontSize: 18, color: t.textTertiary }}>›</Text>
@@ -900,9 +898,8 @@ export default function AppointmentForm() {
                 <Text
                   style={{
                     fontSize: 15,
-                    fontWeight: "600",
                     color: t.text,
-                    fontFamily: "Geist-SemiBold",
+                    fontFamily: fonts.semibold,
                   }}
                 >
                   Add to Calendar

@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { G, Rect, Text as SvgText } from "react-native-svg";
+import { fonts } from "@/utils/fonts";
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -242,7 +243,7 @@ export const HeatmapChart = ({ data, config = {}, style }: Props) => {
           {renderTooltip ? (
             renderTooltip(activeCell as HeatmapDataPoint, activeIndex!)
           ) : (
-            <RNText style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>
+            <RNText style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>
               {activeCell.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
               {activeCell.value != null ? ` · ${activeCell.value}` : ""}
             </RNText>

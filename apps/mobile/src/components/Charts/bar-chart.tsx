@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import Svg, { G, Line, Rect, Text as SvgText } from "react-native-svg";
+import { fonts } from "@/utils/fonts";
 
 // Animated SVG Components
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -237,7 +238,7 @@ export const BarChart = ({ data, config = {}, style }: Props) => {
           {renderTooltip ? (
             renderTooltip(activeItem, activeIndex!)
           ) : (
-            <RNText style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>
+            <RNText style={{ color: "#fff", fontSize: 12, fontFamily: fonts.bold }}>
               {activeItem.tooltipLabel || activeItem.label} · {activeItem.value}
             </RNText>
           )}
