@@ -135,9 +135,9 @@ export default function HealthInsightsScreen() {
   const patternsLoggedCount = countLogged(patternsDays);
 
   const tap = (section) => posthog?.capture("hub_section_tapped", { section });
-  const goToPatternsEducation = () => {
+  const goToPatternsEducation = (topic) => {
     tap("patterns_education");
-    router.push("/(tabs)/learn");
+    router.push(`/education-article?topic=${topic}&from=hub`);
   };
 
   return (

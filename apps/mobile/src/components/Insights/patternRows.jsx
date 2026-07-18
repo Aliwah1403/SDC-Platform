@@ -155,7 +155,11 @@ export function PatternRow({ pattern, isLast, onEducationPress }) {
       </Text>
       <PatternEvidence evidence={pattern.evidence} metric={pattern.metric} />
       {educationCopy ? (
-        <TouchableOpacity onPress={onEducationPress} activeOpacity={0.7} style={{ marginTop: 14 }}>
+        <TouchableOpacity
+          onPress={() => onEducationPress?.(pattern.educationTopic)}
+          activeOpacity={0.7}
+          style={{ marginTop: 14 }}
+        >
           <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.accent }}>{educationCopy}</Text>
         </TouchableOpacity>
       ) : null}

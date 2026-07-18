@@ -1,0 +1,368 @@
+import { useEffect } from "react";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { usePostHog } from "posthog-react-native";
+import { ChevronLeft, Clock, AlertCircle } from "lucide-react-native";
+import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
+import { getEducationArticle, getRelatedArticles } from "@/utils/educationContent";
+
+const CARD_WIDTH = 220;
+
+function RelatedCard({ item, t, onPress }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={{
+        width: CARD_WIDTH,
+        borderRadius: 16,
+        backgroundColor: t.surface,
+        borderWidth: 1,
+        borderColor: t.border,
+        padding: 16,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 11,
+          letterSpacing: 1,
+          color: "#A9334D",
+          marginBottom: 8,
+        }}
+      >
+        {item.kicker}
+      </Text>
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 16,
+          color: t.text,
+          lineHeight: 21,
+          marginBottom: 10,
+        }}
+        numberOfLines={2}
+      >
+        {item.title}
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <Clock size={12} color={t.textSecondary} />
+        <Text
+          style={{
+            fontFamily: fonts.medium,
+            fontSize: 12,
+            color: t.textSecondary,
+          }}
+        >
+          {item.readTime} min read
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function Header({ t, router, insets }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingTop: insets.top + 10,
+        paddingBottom: 12,
+      }}
+    >
+      <TouchableOpacity
+        onPress={() => router.back()}
+        activeOpacity={0.6}
+        style={{
+          width: 38,
+          height: 38,
+          borderRadius: 19,
+          backgroundColor: t.surfaceElevated,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <ChevronLeft size={22} color={t.text} />
+      </TouchableOpacity>
+      <View style={{ width: 38 }} />
+    </View>
+  );
+}
+
+export default function EducationArticleScreen() {
+  const t = useTheme();
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+  const posthog = usePostHog();
+  const { topic, from } = useLocalSearchParams();
+  const article = getEducationArticle(topic);
+  const relatedArticles = getRelatedArticles(topic);
+
+  useEffect(() => {
+    posthog?.capture("education_article_viewed", {
+      topic,
+      from: from ?? "unknown",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!article) {
+    return (
+      <View style={{ flex: 1, backgroundColor: t.background }}>
+        <StatusBar style={t.isDark ? "light" : "dark"} />
+        <Header t={t} router={router} insets={insets} />
+        <View
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 16,
+              color: t.textSecondary,
+              textAlign: "center",
+              lineHeight: 24,
+            }}
+          >
+            This article isn't ready yet — check back soon.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <StatusBar style={t.isDark ? "light" : "dark"} />
+      <ScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingBottom: insets.bottom + 40,
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Header t={t} router={router} insets={insets} />
+
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 12,
+            letterSpacing: 1.2,
+            color: "#A9334D",
+            marginBottom: 8,
+          }}
+        >
+          {article.kicker}
+        </Text>
+
+        <Text
+          style={{
+            fontFamily: fonts.bold,
+            fontSize: 28,
+            lineHeight: 34,
+            color: t.text,
+            marginBottom: 10,
+          }}
+        >
+          {article.title}
+        </Text>
+
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: 20,
+          }}
+        >
+          <Clock size={13} color={t.textSecondary} />
+          <Text
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 13,
+              color: t.textSecondary,
+            }}
+          >
+            {article.readTime} min read
+          </Text>
+        </View>
+
+        <Text
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 16,
+            lineHeight: 26,
+            color: t.textSecondary,
+          }}
+        >
+          {article.intro}
+        </Text>
+
+        {article.sections.map((section, i) => (
+          <View key={i}>
+            <Text
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 18,
+                color: t.text,
+                marginTop: 28,
+                marginBottom: 8,
+              }}
+            >
+              {section.heading}
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 16,
+                lineHeight: 26,
+                color: t.textSecondary,
+              }}
+            >
+              {section.body}
+            </Text>
+            {section.bullets?.length > 0 && (
+              <View style={{ marginTop: 10, gap: 10 }}>
+                {section.bullets.map((bullet, j) => (
+                  <View
+                    key={j}
+                    style={{ flexDirection: "row", gap: 10 }}
+                  >
+                    <View
+                      style={{
+                        width: 5,
+                        height: 5,
+                        borderRadius: 2.5,
+                        backgroundColor: "#A9334D",
+                        marginTop: 9,
+                      }}
+                    />
+                    <Text
+                      style={{
+                        flex: 1,
+                        fontFamily: fonts.regular,
+                        fontSize: 16,
+                        lineHeight: 26,
+                        color: t.textSecondary,
+                      }}
+                    >
+                      {bullet}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        ))}
+
+        {article.callout && (
+          <View
+            style={{
+              marginTop: 32,
+              borderRadius: 16,
+              backgroundColor: "#A9334D0D",
+              borderWidth: 1,
+              borderColor: "#A9334D22",
+              padding: 18,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
+              <AlertCircle size={16} color="#A9334D" />
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 15,
+                  color: t.text,
+                }}
+              >
+                {article.callout.title}
+              </Text>
+            </View>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: 14,
+                lineHeight: 21,
+                color: t.textSecondary,
+              }}
+            >
+              {article.callout.body}
+            </Text>
+          </View>
+        )}
+
+        <Text
+          style={{
+            marginTop: 28,
+            fontFamily: fonts.regular,
+            fontSize: 12,
+            color: t.textSecondary,
+            opacity: 0.8,
+          }}
+        >
+          This is general education, not medical advice. Always follow the
+          plan you've agreed with your care team.
+        </Text>
+
+        {relatedArticles.length > 0 && (
+          <View>
+            <Text
+              style={{
+                fontFamily: fonts.bold,
+                fontSize: 19,
+                color: t.text,
+                marginTop: 36,
+                marginBottom: 12,
+              }}
+            >
+              Others you might like
+            </Text>
+            <View style={{ marginHorizontal: -20 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={CARD_WIDTH + 12}
+                snapToAlignment="start"
+                contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+              >
+                {relatedArticles.map((item) => (
+                  <RelatedCard
+                    key={item.topic}
+                    item={item}
+                    t={t}
+                    onPress={() => {
+                      posthog?.capture("education_related_tapped", {
+                        from_topic: topic,
+                        to_topic: item.topic,
+                      });
+                      router.push(
+                        `/education-article?topic=${item.topic}&from=related`,
+                      );
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+}

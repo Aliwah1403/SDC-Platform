@@ -431,6 +431,10 @@ export default function RootLayout() {
             name="help-center-article"
             options={{ presentation: "card", headerShown: false }}
           />
+          <Stack.Screen
+            name="education-article"
+            options={{ presentation: "card", headerShown: false }}
+          />
         </Stack>
 
         <StatusBar style={theme.isDark ? "light" : "dark"} />

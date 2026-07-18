@@ -189,7 +189,7 @@ function EducationLink({ topic, onPress }) {
   if (!topic || !EDUCATION_COPY[topic]) return null;
   return (
     <TouchableOpacity
-      onPress={onPress}
+      onPress={() => onPress(topic)}
       activeOpacity={0.7}
       style={{ marginTop: 14 }}
     >
@@ -700,7 +700,10 @@ export default function RecapScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const goToEducation = () => router.push("/(tabs)/learn");
+  const goToEducation = (topic) =>
+    router.push(
+      `/education-article?topic=${topic}&from=${isMonth ? "recap_month" : "recap_week"}`,
+    );
   const goToShare = () => {
     posthog?.capture("share_recap_tapped", {
       period: isMonth ? "month" : "week",
