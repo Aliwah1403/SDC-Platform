@@ -49,7 +49,10 @@ export function generatePreviewHealthData(daysBack = 100) {
     let painLevel, hydration, mood, steps, sleepHours;
     if (inFlare(daysAgo)) {
       painLevel = rand(7, 9);
-      hydration = rand(700, 1400);
+      // Every third flare day gets decent hydration so the hub's dot-row
+      // receipts show a realistic filled/hollow mix instead of a uniform
+      // "every hard day was low-hydration" wall.
+      hydration = daysAgo % 3 === 0 ? rand(2500, 3000) : rand(700, 1400);
       mood = rand(1, 2);
       steps = rand(600, 2500);
       sleepHours = rand(35, 58) / 10;

@@ -11,6 +11,7 @@ import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { PressableScale } from "@/components/PressableScale";
 import { UnderstandingSCDRow } from "@/components/Insights/UnderstandingSCDRow";
+import { PatternRow, WatchingRow } from "@/components/Insights/patternRows";
 import {
   RecapCard,
   CARD_GAP,
@@ -29,6 +30,7 @@ import {
   buildDayRange,
   countLogged,
   computePatterns,
+  computeWatchlist,
   buildMonthlyRecaps,
 } from "@/utils/recapEngine";
 
@@ -59,29 +61,6 @@ function buildWeeklyRecaps(healthData) {
     });
   }
   return weeks;
-}
-
-function PatternRow({ pattern, isLast }) {
-  const t = useTheme();
-  return (
-    <View
-      style={{
-        paddingVertical: 14,
-        borderBottomWidth: isLast ? 0 : 1,
-        borderBottomColor: t.divider,
-      }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 4 }}>
-        <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, lineHeight: 20 }}>
-          {pattern.headline}
-        </Text>
-      </View>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 19, marginLeft: 20 }}>
-        {pattern.body}
-      </Text>
-    </View>
-  );
 }
 
 function SectionHeader({ children }) {
@@ -144,6 +123,10 @@ export default function HealthInsightsScreen() {
     () => computePatterns(patternsDays, { goalMl, triggerCounts }),
     [patternsDays, goalMl, triggerCounts],
   );
+  const watchlist = useMemo(
+    () => computeWatchlist(patternsDays, { triggerCounts, activeIds: patterns.map((p) => p.id) }),
+    [patternsDays, triggerCounts, patterns],
+  );
 
   useEffect(() => {
     patterns.forEach((p) => posthog?.capture("insight_pattern_shown", { pattern_id: p.id }));
@@ -152,6 +135,10 @@ export default function HealthInsightsScreen() {
   const patternsLoggedCount = countLogged(patternsDays);
 
   const tap = (section) => posthog?.capture("hub_section_tapped", { section });
+  const goToPatternsEducation = () => {
+    tap("patterns_education");
+    router.push("/(tabs)/learn");
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -256,10 +243,21 @@ export default function HealthInsightsScreen() {
 
           <View style={{ marginBottom: 28 }}>
             <SectionHeader>Your patterns</SectionHeader>
-            {patterns.length > 0 ? (
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: -6, marginBottom: 14 }}>
+              From your last {PATTERNS_WINDOW_DAYS} days
+            </Text>
+            {patterns.length > 0 || watchlist.length > 0 ? (
               <View>
                 {patterns.map((p, i) => (
-                  <PatternRow key={p.id} pattern={p} isLast={i === patterns.length - 1} />
+                  <PatternRow
+                    key={p.id}
+                    pattern={p}
+                    isLast={i === patterns.length - 1 && watchlist.length === 0}
+                    onEducationPress={goToPatternsEducation}
+                  />
+                ))}
+                {watchlist.map((w, i) => (
+                  <WatchingRow key={w.id} row={w} isLast={i === watchlist.length - 1} />
                 ))}
               </View>
             ) : (

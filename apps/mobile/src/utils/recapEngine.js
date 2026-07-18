@@ -120,6 +120,11 @@ export function countHighPainDays(days) {
   return days.filter((d) => d.painLevel >= 7).length;
 }
 
+// "Good mood day" = a logged day with mood ≥ 4.
+export function countGoodMoodDays(days) {
+  return days.filter((d) => d.mood >= 4).length;
+}
+
 export function avgPain(days) {
   const logged = days.filter((d) => d.painLevel > 0);
   if (!logged.length) return null;
@@ -212,26 +217,47 @@ export function pickWeeklySignal({ days, prevDays, goalMl, firstName }) {
   return { highlight, flag, flagEducation, quiet: !highlight && !flag };
 }
 
+// Monday-first weekday names — shared by the weekday-pain pattern and its
+// evidence label. Index matches startOfWeekMonday's (getDay()+6)%7 math.
+const WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+function weekdayIndexMonFirst(date) {
+  return (date.getDay() + 6) % 7;
+}
+
 // "Your patterns" engine — used both by the hub (60-day rolling window) and
 // the monthly recap (scoped to that calendar month). `triggerCounts` is a
 // { label: count } map already aggregated for the same window.
-// Each pattern carries a `metric` key ("hydration" | "sleep" | "trigger") so
-// the UI can pick an icon/color, a short bold `headline`, and a supporting
-// `body` sentence. All numbers come from the deterministic guards — no LLM.
+// Each pattern carries a `metric` key ("hydration" | "sleep" | "mood" | "pain"
+// | "trigger") so the UI can pick an icon/color, a short bold `headline`
+// written TO the user, and a supporting `body` sentence with the numbers
+// spelled out. All numbers come from the deterministic guards below — no LLM.
+// Two extra fields feed the hub's redesigned rows (recap.jsx ignores both and
+// keeps working off headline/body/educationTopic only):
+//   - `support` (number) — count of supporting days/selections, used to sort.
+//   - `evidence` (object) — small "receipt" visual data, one of:
+//       { type: "dots", filled, total }
+//       { type: "bars", items: [{ label, count }] }
+//       { type: "weekdays", counts: [7 numbers, Monday-first] }
 export function computePatterns(days, { goalMl, triggerCounts } = {}) {
   const patterns = [];
   const loggedCount = countLogged(days);
   const highPainDays = days.filter((d) => d.painLevel >= 7);
 
+  // Correlational patterns (hydration/sleep/mood/weekday vs. pain) all share
+  // the same ≥14-logged-days guard — below that, a handful of flares is too
+  // thin a sample to call a "pattern" without it reading like noise.
   if (loggedCount >= 14) {
     const lowHydrationSupport = highPainDays.filter((d) => d.hydration > 0 && d.hydration < goalMl).length;
     if (lowHydrationSupport >= 3) {
       patterns.push({
         id: "hydration-pain",
         metric: "hydration",
-        headline: "Low hydration shows up on your hardest days",
-        body: `${lowHydrationSupport} of your highest-pain days had below-goal hydration.`,
+        headline: "You drank less on your hardest days",
+        body: `On ${lowHydrationSupport} of your ${highPainDays.length} highest-pain days, you were below your hydration goal.`,
         educationTopic: "hydration",
+        support: lowHydrationSupport,
+        evidence: { type: "dots", filled: lowHydrationSupport, total: highPainDays.length },
       });
     }
 
@@ -242,26 +268,120 @@ export function computePatterns(days, { goalMl, triggerCounts } = {}) {
         patterns.push({
           id: "sleep-pain",
           metric: "sleep",
-          headline: "Short nights tend to precede high pain",
-          body: `${lowSleepSupport} of your highest-pain days followed under 7 hours of sleep.`,
+          headline: "Short nights show up before your hard days",
+          body: `You slept under 7 hours on ${lowSleepSupport} of your ${highPainDays.length} highest-pain days.`,
           educationTopic: null,
+          support: lowSleepSupport,
+          evidence: { type: "dots", filled: lowSleepSupport, total: highPainDays.length },
         });
       }
     }
-  }
 
-  if (triggerCounts && Object.keys(triggerCounts).length) {
-    const [topTrigger, topCount] = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1])[0];
-    if (topCount >= 3) {
+    // Fires at ≥3 supporting days, same threshold as hydration/sleep above.
+    const moodDipSupport = highPainDays.filter((d) => d.mood > 0 && d.mood <= 2).length;
+    if (moodDipSupport >= 3) {
       patterns.push({
-        id: "trigger-frequency",
-        metric: "trigger",
-        headline: `${topTrigger} keeps coming up`,
-        body: `Your most logged contributor — selected ${topCount} times in this period.`,
+        id: "mood-pain",
+        metric: "mood",
+        headline: "Tough pain days weigh on your mood",
+        body: `Your mood dipped on ${moodDipSupport} of your ${highPainDays.length} highest-pain days.`,
         educationTopic: null,
+        support: moodDipSupport,
+        evidence: { type: "dots", filled: moodDipSupport, total: highPainDays.length },
+      });
+    }
+
+    // An "honest cluster, not noise" guard: needs ≥4 high-pain days total,
+    // the top weekday needs ≥3 of them, AND that weekday needs to account for
+    // at least half of all high-pain days — otherwise a slight lean on one
+    // weekday out of a small spread would get over-called as a pattern.
+    const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+    highPainDays.forEach((d) => {
+      weekdayCounts[weekdayIndexMonFirst(d.date)]++;
+    });
+    const totalHighPain = highPainDays.length;
+    const topWeekdayCount = Math.max(...weekdayCounts);
+    const topWeekdayIndex = weekdayCounts.indexOf(topWeekdayCount);
+    if (totalHighPain >= 4 && topWeekdayCount >= 3 && topWeekdayCount >= totalHighPain / 2) {
+      const weekdayName = WEEKDAY_NAMES[topWeekdayIndex];
+      patterns.push({
+        id: "weekday-pain",
+        metric: "pain",
+        headline: `Your hardest days often land on ${weekdayName}s`,
+        body: `${topWeekdayCount} of your ${totalHighPain} high-pain days this period were ${weekdayName}s.`,
+        educationTopic: null,
+        support: topWeekdayCount,
+        evidence: { type: "weekdays", counts: weekdayCounts },
       });
     }
   }
 
-  return patterns.slice(0, 3);
+  if (triggerCounts && Object.keys(triggerCounts).length) {
+    const sortedTriggers = Object.entries(triggerCounts).sort((a, b) => b[1] - a[1]);
+    const [topTrigger, topCount] = sortedTriggers[0];
+    if (topCount >= 3) {
+      patterns.push({
+        id: "trigger-frequency",
+        metric: "trigger",
+        headline: `${topTrigger} keeps coming up for you`,
+        body: `You've logged it ${topCount} times in this period — more than any other contributor.`,
+        educationTopic: null,
+        support: topCount,
+        evidence: {
+          type: "bars",
+          items: sortedTriggers.slice(0, 3).map(([label, count]) => ({ label, count })),
+        },
+      });
+    }
+  }
+
+  return patterns.sort((a, b) => b.support - a.support).slice(0, 4);
+}
+
+// "Still watching" rows for the hub — up to 3 patterns that haven't unlocked
+// yet, each with a reason-aware, natural-language hint (never "×" notation).
+// Deliberately excludes patterns blocked only by "not enough supporting days
+// found despite enough logging" — that's an absence of correlation, which is
+// a good thing, not a locked feature, so it's not something to dangle as
+// "still watching".
+export function computeWatchlist(days, { triggerCounts, activeIds = [] } = {}) {
+  const isActive = (id) => activeIds.includes(id);
+  const rows = [];
+  const loggedCount = countLogged(days);
+  const sleepDataExists = days.some((d) => d.sleepHours > 0);
+
+  // Specific, concrete blockers first — each names an action the user can
+  // plausibly take right now.
+  if (!isActive("sleep-pain") && !sleepDataExists) {
+    rows.push({ id: "sleep-pain", label: "Sleep and pain", hint: "Add sleep to your logs to unlock this." });
+  }
+
+  if (!isActive("trigger-frequency")) {
+    const topCount = triggerCounts && Object.keys(triggerCounts).length ? Math.max(...Object.values(triggerCounts)) : 0;
+    if (topCount < 3) {
+      rows.push({
+        id: "trigger-frequency",
+        label: "Repeat contributors",
+        hint: "Log contributors when symptoms flare and Hemo will watch for repeats.",
+      });
+    }
+  }
+
+  // Generic "hasn't hit the 14-day baseline yet" blocker — shared by every
+  // correlational pattern, so it's collapsed to at most 2 rows (most
+  // interesting first) rather than repeating the same sentence four times.
+  if (loggedCount < 14) {
+    const needsMoreDays = 14 - loggedCount;
+    const hint = `Needs about ${needsMoreDays} more logged day${needsMoreDays === 1 ? "" : "s"}`;
+    const loggingCandidates = [
+      { id: "hydration-pain", label: "Hydration and pain" },
+      { id: "mood-pain", label: "Mood and pain" },
+      { id: "weekday-pain", label: "Weekday patterns" },
+      { id: "sleep-pain", label: "Sleep and pain" },
+    ].filter((c) => !isActive(c.id) && !rows.some((r) => r.id === c.id));
+
+    loggingCandidates.slice(0, 2).forEach((c) => rows.push({ id: c.id, label: c.label, hint }));
+  }
+
+  return rows.slice(0, 3);
 }
