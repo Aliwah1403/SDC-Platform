@@ -3,6 +3,7 @@ import { useAuthStore } from '@/utils/auth/store';
 import {
   fetchDailySummaries,
   fetchHealthLogs,
+  fetchTriggersInRange,
   submitHealthLog,
   addHydrationQuickly,
 } from '@/services/supabaseQueries';
@@ -33,6 +34,19 @@ export function useHealthLogsQuery(date) {
     queryKey: ['healthLogs', userId, date],
     queryFn: () => fetchHealthLogs(userId, date),
     enabled: !!userId && !!date,
+  });
+}
+
+/**
+ * Trigger/mood-contributor frequency counts for a date range — feeds the
+ * recap engine's "Your patterns" trigger-frequency insight (Step 5).
+ */
+export function useTriggersQuery(startDate, endDate) {
+  const userId = useUserId();
+  return useQuery({
+    queryKey: ['triggers', userId, startDate ?? null, endDate ?? null],
+    queryFn: () => fetchTriggersInRange(userId, startDate, endDate),
+    enabled: !!userId && !!startDate,
   });
 }
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { HomeLineChart } from "./line-chart";
 import { BarChart } from "./bar-chart";
 import { HeatmapChart } from "./heatmap-chart";
@@ -11,7 +11,8 @@ function shortDate(date) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function labelStep(range) {
+function labelStep(range, dense) {
+  if (dense) return 1;
   return Math.max(1, Math.ceil(range / 6));
 }
 
@@ -43,8 +44,8 @@ function TooltipSubtext({ children }) {
 
 // ─── Per-metric chart configuration ────────────────────────────────────────
 
-function buildLineConfig({ metric, data, range, color, getStatus }) {
-  const step = labelStep(range);
+function buildLineConfig({ metric, data, range, color, getStatus, dense }) {
+  const step = labelStep(range, dense);
   const chartData = data.map((d, i) => ({
     x: i,
     y: d.value,
@@ -55,7 +56,9 @@ function buildLineConfig({ metric, data, range, color, getStatus }) {
   const base = {
     animated: true,
     gradient: true,
-    interactive: true,
+    // Pan-to-scrub would fight the chart's own horizontal ScrollView, so it's
+    // dropped when the chart renders in scrollable/dense mode.
+    interactive: !dense,
     showGrid: true,
     showYLabels: false,
     showXLabels: true,
@@ -280,8 +283,8 @@ function SleepTrendLegend({ avgValue }) {
   );
 }
 
-function buildBarConfig({ metric, data, range, goal, unit }) {
-  const step = labelStep(range);
+function buildBarConfig({ metric, data, range, goal, unit, dense }) {
+  const step = labelStep(range, dense);
   const chartData = data.map((d, i) => ({
     label: i % step === 0 ? d.date.getDate().toString() : "",
     value: d.value,
@@ -368,8 +371,8 @@ function buildBarConfig({ metric, data, range, goal, unit }) {
   }
 }
 
-function buildBubbleConfig({ data, range, getStatus }) {
-  const step = labelStep(range);
+function buildBubbleConfig({ data, range, getStatus, dense }) {
+  const step = labelStep(range, dense);
   const chartData = data
     .filter((d) => d.value > 0)
     .map((d, i) => ({
@@ -428,13 +431,27 @@ function buildHeatmapConfig({ data, getStatus }) {
 
 // ─── Main component ─────────────────────────────────────────────────────────
 
-export function MetricChart({ metric, data, range, goal, color, unit, getStatus, sleepSegments }) {
-  const [width, setWidth] = useState(300);
+// Metrics whose chart is a single scrollable strip (line/bar/bubble) — the
+// only ones `scrollable` applies to. Heatmap has a fixed 14-day window and
+// sleep/heartrate render extra legend rows that shouldn't scroll with the
+// chart, so they always render at container width regardless of this prop.
+const SCROLLABLE_METRICS = new Set(["pain", "spo2", "temperature", "resprate", "mood", "hydration", "steps"]);
+
+// Pixel width given to each day when scrollable — wide enough to show every
+// day's label without crowding (vs. the sparse every-Nth-day labels used
+// when the whole range has to be squeezed into one screen width).
+const POINT_WIDTH = 40;
+
+export function MetricChart({ metric, data, range, goal, color, unit, getStatus, sleepSegments, scrollable = false }) {
+  const [containerWidth, setContainerWidth] = useState(300);
 
   const handleLayout = (e) => {
     const w = e.nativeEvent.layout.width;
-    if (w > 0) setWidth(w);
+    if (w > 0) setContainerWidth(w);
   };
+
+  const canScroll = scrollable && SCROLLABLE_METRICS.has(metric) && !(metric === "pain" && range === 14);
+  const width = canScroll ? Math.max(containerWidth, POINT_WIDTH * data.length) : containerWidth;
 
   let content = null;
 
@@ -442,7 +459,7 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
     const { chartData, config } = buildHeatmapConfig({ data, getStatus });
     content = <HeatmapChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "mood") {
-    const { chartData, config } = buildBubbleConfig({ data, range, getStatus });
+    const { chartData, config } = buildBubbleConfig({ data, range, getStatus, dense: canScroll });
     content = <BubbleChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "sleep") {
     const { chartData, config, avgValue } = buildBarConfig({ metric, data, range, goal, color, unit, getStatus });
@@ -465,7 +482,7 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
       </>
     );
   } else if (metric === "hydration" || metric === "steps") {
-    const { chartData, config } = buildBarConfig({ metric, data, range, goal, color, unit, getStatus });
+    const { chartData, config } = buildBarConfig({ metric, data, range, goal, color, unit, getStatus, dense: canScroll });
     content = <BarChart data={chartData} config={{ ...config, width }} />;
   } else if (metric === "heartrate") {
     const { chartData, config, zonePercentages } = buildHeartRateWaveformConfig({ data, range, getStatus });
@@ -476,13 +493,23 @@ export function MetricChart({ metric, data, range, goal, color, unit, getStatus,
       </>
     );
   } else {
-    const { chartData, config } = buildLineConfig({ metric, data, range, goal, color, unit, getStatus });
+    const { chartData, config } = buildLineConfig({ metric, data, range, goal, color, unit, getStatus, dense: canScroll });
     content = <HomeLineChart data={chartData} config={{ ...config, width }} />;
   }
 
+  if (!canScroll) {
+    return (
+      <View style={{ width: "100%" }} onLayout={handleLayout}>
+        {content}
+      </View>
+    );
+  }
+
   return (
-    <View style={{ width: "100%" }} onLayout={handleLayout}>
-      {content}
+    <View onLayout={handleLayout}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ width }}>
+        {content}
+      </ScrollView>
     </View>
   );
 }

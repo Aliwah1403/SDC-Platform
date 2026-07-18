@@ -7,6 +7,10 @@ import { fonts } from "@/utils/fonts";
 const SCREEN_W = Dimensions.get("window").width;
 export const CARD_GAP = 12;
 export const CARD_WIDTH = SCREEN_W - 45; // 16px page padding + ~40px peek of next card
+export const MINI_CARD_WIDTH = 140;
+export const MONTHLY_CARD_WIDTH = 240;
+export const WEEKLY_GRADIENT = ["#A9334D", "#781D11", "#4A1309"];
+export const MONTHLY_GRADIENT = ["#D09F9A", "#A9334D", "#781D11"];
 
 export function toDateStr(d) {
   const y = d.getFullYear();
@@ -66,14 +70,19 @@ export function RecapCard({
   badgeColor,
   onDismiss,
   onPress,
+  width,
+  compact = false,
 }) {
+  const cardWidth = width ?? CARD_WIDTH;
+  const spacerHeight = compact ? 48 : 96;
+
   return (
-    <Pressable onPress={onPress} style={{ width: CARD_WIDTH }}>
+    <Pressable onPress={onPress} style={{ width: cardWidth }}>
     <LinearGradient
       colors={gradient}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
-      style={{ width: CARD_WIDTH, borderRadius: 22, overflow: "hidden" }}
+      style={{ width: cardWidth, borderRadius: compact ? 18 : 22, overflow: "hidden" }}
     >
       {/* Abstract floating circles */}
       <View
@@ -89,42 +98,53 @@ export function RecapCard({
       </View>
 
       {/* NEW badge */}
-      <View
-        style={{
-          position: "absolute",
-          top: 12,
-          left: 12,
-          backgroundColor: badgeBg,
-          borderRadius: 999,
-          paddingHorizontal: 9,
-          paddingVertical: 3,
-        }}
-      >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 9, letterSpacing: 0.8, color: badgeColor }}>
-          NEW
-        </Text>
-      </View>
+      {badgeBg && (
+        <View
+          style={{
+            position: "absolute",
+            top: 12,
+            left: 12,
+            backgroundColor: badgeBg,
+            borderRadius: 999,
+            paddingHorizontal: 9,
+            paddingVertical: 3,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 9, letterSpacing: 0.8, color: badgeColor }}>
+            NEW
+          </Text>
+        </View>
+      )}
 
       {/* Dismiss */}
-      <TouchableOpacity
-        onPress={onDismiss}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        accessibilityLabel="Dismiss recap"
-        style={{ position: "absolute", top: 10, right: 10, zIndex: 2 }}
-      >
-        <X size={18} color="rgba(255,255,255,0.85)" />
-      </TouchableOpacity>
+      {onDismiss && (
+        <TouchableOpacity
+          onPress={onDismiss}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel="Dismiss recap"
+          style={{ position: "absolute", top: 10, right: 10, zIndex: 2 }}
+        >
+          <X size={18} color="rgba(255,255,255,0.85)" />
+        </TouchableOpacity>
+      )}
 
       {/* Spacer — circles-only zone */}
-      <View style={{ height: 96 }} />
+      <View style={{ height: spacerHeight }} />
 
       {/* Frosted glass panel */}
       <BlurView intensity={22} tint="dark" style={{ overflow: "hidden" }}>
-        <View style={{ backgroundColor: "rgba(10,0,4,0.18)", paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 }}>
+        <View
+          style={{
+            backgroundColor: "rgba(10,0,4,0.18)",
+            paddingHorizontal: compact ? 12 : 16,
+            paddingTop: compact ? 10 : 12,
+            paddingBottom: compact ? 12 : 14,
+          }}
+        >
           <Text
             style={{
               fontFamily: fonts.semibold,
-              fontSize: 10,
+              fontSize: compact ? 9 : 10,
               letterSpacing: 1.2,
               color: "rgba(255,255,255,0.55)",
               marginBottom: 2,
@@ -135,16 +155,20 @@ export function RecapCard({
 
           {/* Title */}
           <Text
+            numberOfLines={1}
             style={{ fontFamily: fonts.bold, fontSize: titleSize, color: "#FFFFFF", lineHeight: titleSize + 4, marginBottom: 2 }}
           >
             {title}
           </Text>
 
-          <Text
-            style={{ fontFamily: fonts.regular, fontSize: 13, color: "rgba(255,255,255,0.6)" }}
-          >
-            {subtitle}
-          </Text>
+          {subtitle && (
+            <Text
+              numberOfLines={1}
+              style={{ fontFamily: fonts.regular, fontSize: compact ? 12 : 13, color: "rgba(255,255,255,0.6)" }}
+            >
+              {subtitle}
+            </Text>
+          )}
         </View>
       </BlurView>
     </LinearGradient>

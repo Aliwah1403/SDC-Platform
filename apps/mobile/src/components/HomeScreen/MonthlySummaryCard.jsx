@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
 import { RecapCard } from "./recapShared";
+import { toDateStr } from "@/utils/recapEngine";
 
-export function MonthlySummaryCard({ stats, dayCount, monthName, onDismiss }) {
+export function MonthlySummaryCard({ stats, dayCount, monthName, monthStart, onDismiss }) {
   const router = useRouter();
   return (
     <RecapCard
@@ -13,7 +14,7 @@ export function MonthlySummaryCard({ stats, dayCount, monthName, onDismiss }) {
       badgeBg="rgba(255,255,255,0.92)"
       badgeColor="#A9334D"
       onDismiss={onDismiss}
-      onPress={() => router.push("/health-insights")}
+      onPress={() => router.push(`/recap?period=month&start=${toDateStr(monthStart)}&from=card`)}
     />
   );
 }

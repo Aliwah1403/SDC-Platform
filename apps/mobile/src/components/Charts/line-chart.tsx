@@ -228,21 +228,20 @@ export const HomeLineChart = ({ data, config = {}, style }: Props) => {
 
   const clearActiveIndex = () => setActiveIndex(null);
 
+  // .enabled(false) fully detaches the recognizer (not just its callbacks) so
+  // an ancestor horizontal ScrollView can claim the pan gesture instead —
+  // gating only the callbacks left the recognizer attached and still
+  // fighting the scroll view for touches when interactive is false.
   const panGesture = Gesture.Pan()
+    .enabled(interactive)
     .onStart((event) => {
-      if (interactive) {
-        runOnJS(updateActiveIndex)(event.x);
-      }
+      runOnJS(updateActiveIndex)(event.x);
     })
     .onUpdate((event) => {
-      if (interactive) {
-        runOnJS(updateActiveIndex)(event.x);
-      }
+      runOnJS(updateActiveIndex)(event.x);
     })
     .onEnd(() => {
-      if (interactive) {
-        runOnJS(clearActiveIndex)();
-      }
+      runOnJS(clearActiveIndex)();
     });
 
   const activePoint = activeIndex !== null ? points[activeIndex] : null;

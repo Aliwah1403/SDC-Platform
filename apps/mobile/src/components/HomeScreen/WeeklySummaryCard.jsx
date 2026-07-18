@@ -1,7 +1,8 @@
 import { useRouter } from "expo-router";
 import { RecapCard } from "./recapShared";
+import { toDateStr } from "@/utils/recapEngine";
 
-export function WeeklySummaryCard({ stats, weekRange, onDismiss }) {
+export function WeeklySummaryCard({ stats, weekRange, weekStart, onDismiss }) {
   const router = useRouter();
   return (
     <RecapCard
@@ -13,7 +14,7 @@ export function WeeklySummaryCard({ stats, weekRange, onDismiss }) {
       badgeBg="#F0531C"
       badgeColor="#FFFFFF"
       onDismiss={onDismiss}
-      onPress={() => router.push("/health-insights")}
+      onPress={() => router.push(`/recap?period=week&start=${toDateStr(weekStart)}&from=card`)}
     />
   );
 }

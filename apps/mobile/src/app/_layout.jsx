@@ -348,6 +348,10 @@ export default function RootLayout() {
           />
           <Stack.Screen name="health-insights" />
           <Stack.Screen
+            name="recap"
+            options={{ presentation: "card" }}
+          />
+          <Stack.Screen
             name="streak-repairs"
             options={{ presentation: "modal" }}
           />

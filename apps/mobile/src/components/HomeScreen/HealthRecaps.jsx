@@ -74,6 +74,7 @@ export function HealthRecaps({ healthData }) {
     <WeeklySummaryCard
       stats={weekStats}
       weekRange={weekRange}
+      weekStart={weekStart}
       onDismiss={() => dismissRecap(weekKey)}
     />
   );
@@ -83,6 +84,7 @@ export function HealthRecaps({ healthData }) {
       stats={monthStats}
       dayCount={monthData.length}
       monthName={monthName}
+      monthStart={prevMonthDate}
       onDismiss={() => dismissRecap(monthKey)}
     />
   );

@@ -1,379 +1,169 @@
-import { View, Text, TouchableOpacity, ScrollView, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useMemo, useEffect } from "react";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { X, TrendingUp, TrendingDown } from "lucide-react-native";
-import { BarChart } from "react-native-gifted-charts";
-import { useAuthStore } from "@/utils/auth/store";
-import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
-import { useChartData } from "@/hooks/useChartData";
-import { PainLevelChart } from "@/components/TrendsInsights/PainLevelChart";
-import { HydrationChart } from "@/components/TrendsInsights/HydrationChart";
-import { MoodChart } from "@/components/TrendsInsights/MoodChart";
-import { CrisisFreePeriods } from "@/components/TrendsInsights/CrisisFreePeriods";
+import { usePostHog } from "posthog-react-native";
+import { ChevronLeft, Sparkles, Share2 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useHealthDataQuery, useTriggersQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
-import { useHydrationStore } from "@/store/hydrationStore";
-import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "@/utils/hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { PressableScale } from "@/components/PressableScale";
+import { UnderstandingSCDRow } from "@/components/Insights/UnderstandingSCDRow";
+import {
+  RecapCard,
+  CARD_GAP,
+  MINI_CARD_WIDTH,
+  MONTHLY_CARD_WIDTH,
+  WEEKLY_GRADIENT,
+  MONTHLY_GRADIENT,
+} from "@/components/HomeScreen/recapShared";
+import { generatePreviewHealthData, PREVIEW_TRIGGER_COUNTS } from "@/utils/previewHealthData";
+import {
+  toDateStr,
+  addDays,
+  startOfWeekMonday,
+  weekRange,
+  formatWeekLabel,
+  buildDayRange,
+  countLogged,
+  computePatterns,
+  buildMonthlyRecaps,
+} from "@/utils/recapEngine";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_PADDING = 20;
-const CARD_WIDTH = SCREEN_WIDTH - 40;
-const CHART_WIDTH = CARD_WIDTH - CARD_PADDING * 2 - 8;
+const WEEKS_TO_SCAN = 12; // ~complete-90-day fetch window
+const PATTERNS_WINDOW_DAYS = 60;
 
-// ─── data helpers ─────────────────────────────────────────────────────────────
+// DEV-ONLY: swaps real Supabase data for a rich generated sample so the hub
+// (weekly/monthly cards, "Your patterns") can be reviewed visually. Flip to
+// false — or delete this + the previewHealthData.js import — once done.
+const PREVIEW_MODE = true;
+const PREVIEW_DATA = PREVIEW_MODE ? generatePreviewHealthData() : null;
 
-function daysBetween(dateStr) {
+function buildWeeklyRecaps(healthData) {
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(dateStr);
-  d.setHours(0, 0, 0, 0);
-  return Math.round((today - d) / 86400000);
-}
-
-function sliceWeek(healthData, startDaysAgo, endDaysAgo) {
-  return healthData.filter((d) => {
-    const n = daysBetween(d.date);
-    return n >= startDaysAgo && n <= endDaysAgo;
-  });
-}
-
-// Build 7 labelled bars for the current week (Mon → today order)
-function weekBars(healthData, valueFn) {
-  const today = new Date();
-  const bars = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
-    const entry = healthData.find((e) => e.date === dateStr);
-    bars.push({
-      value: entry ? valueFn(entry) : 0,
-      label: d.toLocaleDateString("en-US", { weekday: "short" }).charAt(0),
-      labelTextStyle: { color: "#9CA3AF", fontSize: 10 },
+  const thisMonday = startOfWeekMonday(today);
+  const weeks = [];
+  for (let i = 1; i <= WEEKS_TO_SCAN; i++) {
+    const monday = addDays(thisMonday, -7 * i);
+    const { start, end } = weekRange(monday);
+    const days = buildDayRange(healthData, start, end);
+    const daysLogged = countLogged(days);
+    if (daysLogged === 0) continue;
+    weeks.push({
+      key: `week-${toDateStr(start)}`,
+      start,
+      label: formatWeekLabel(start, end),
+      daysLogged,
     });
   }
-  return bars;
+  return weeks;
 }
 
-function dailyWellbeing(entry, goalMl) {
-  const pain = (10 - (entry.painLevel || 0)) / 10;
-  const mood = (entry.mood || 0) / 5;
-  const hydration = Math.min((entry.hydration || 0) / goalMl, 1);
-  return parseFloat(((pain * 0.4 + mood * 0.3 + hydration * 0.3) * 10).toFixed(1));
-}
-
-// ─── insight definitions ──────────────────────────────────────────────────────
-
-function buildInsights(healthData, firstName, goalMl, displayUnit) {
-  const goalInUnit = Math.max(0.1, hydrationValueInUnit(goalMl, displayUnit));
-  const unitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
-  const thisWeek = sliceWeek(healthData, 0, 6);
-  const lastWeek = sliceWeek(healthData, 7, 13);
-  const hasHistory = lastWeek.length > 0;
-
-  // 1. Pain-Free Days ─ days with painLevel ≤ 2
-  const painFreeDaysThis = thisWeek.filter((d) => (d.painLevel || 0) <= 2).length;
-  const painFreeDaysLast = lastWeek.filter((d) => (d.painLevel || 0) <= 2).length;
-  const painFreePct =
-    hasHistory && painFreeDaysLast > 0
-      ? parseFloat((((painFreeDaysThis - painFreeDaysLast) / painFreeDaysLast) * 100).toFixed(1))
-      : null;
-  const painFreePositive = painFreePct !== null && painFreePct >= 0;
-
-  // 2. Hydration Goal Days ─ days hitting the user's base goal
-  const hydGoalThis = thisWeek.filter((d) => (d.hydration || 0) >= goalMl).length;
-  const hydGoalLast = lastWeek.filter((d) => (d.hydration || 0) >= goalMl).length;
-  const hydGoalPct =
-    hasHistory && hydGoalLast > 0
-      ? parseFloat((((hydGoalThis - hydGoalLast) / hydGoalLast) * 100).toFixed(1))
-      : null;
-  const hydGoalPositive = hydGoalPct !== null && hydGoalPct >= 0;
-
-  // 3. Wellbeing Score ─ composite (pain 40% + mood 30% + hydration 30%)
-  const wellThis =
-    thisWeek.length > 0
-      ? parseFloat(
-          (thisWeek.reduce((s, d) => s + dailyWellbeing(d, goalMl), 0) / thisWeek.length).toFixed(1),
-        )
-      : null;
-  const wellLast =
-    lastWeek.length > 0
-      ? parseFloat(
-          (lastWeek.reduce((s, d) => s + dailyWellbeing(d, goalMl), 0) / lastWeek.length).toFixed(1),
-        )
-      : null;
-  const wellPct =
-    wellThis !== null && wellLast !== null && wellLast > 0
-      ? parseFloat((((wellThis - wellLast) / wellLast) * 100).toFixed(1))
-      : null;
-  const wellPositive = wellPct !== null && wellPct >= 0;
-
-  return [
-    {
-      id: "pain-free-days",
-      title: painFreePositive ? "Pain Progress" : "Pain Check-In",
-      color: "#059669",
-      metricLabel: "PAIN-FREE DAYS",
-      thisValue: String(painFreeDaysThis),
-      lastValue: hasHistory ? String(painFreeDaysLast) : "—",
-      pctChange: painFreePct,
-      isPositive: painFreePositive,
-      hasHistory,
-      description: !hasHistory
-        ? `${firstName}, you had ${painFreeDaysThis} pain-free days this week. Keep logging every day so we can start comparing your trends next week.`
-        : painFreePositive
-        ? `${firstName}, you had ${painFreeDaysThis} pain-free days this week, up from ${painFreeDaysLast} last week. That's real progress — your consistent logging is helping you spot what works.`
-        : `${firstName}, you had ${painFreeDaysThis} pain-free days this week, down from ${painFreeDaysLast} last week. Consider checking for patterns — rest, hydration, and stress all play a role in SCD pain.`,
-      bars: weekBars(healthData, (d) => Math.max(0, 10 - (d.painLevel || 0))), // inverted so taller = less pain
-      maxValue: 10,
-    },
-    {
-      id: "hydration-goal",
-      title: hydGoalPositive ? "Hydration Momentum" : "Hydration Reminder",
-      color: "#2563EB",
-      metricLabel: `GOAL DAYS (${goalInUnit}+ ${unitLabel.toUpperCase()})`,
-      thisValue: String(hydGoalThis),
-      lastValue: hasHistory ? String(hydGoalLast) : "—",
-      pctChange: hydGoalPct,
-      isPositive: hydGoalPositive,
-      hasHistory,
-      description: !hasHistory
-        ? `${firstName}, you hit your ${goalInUnit}-${unitLabel} hydration goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} this week. Staying hydrated is one of the most effective ways to reduce SCD complications.`
-        : hydGoalPositive
-        ? `${firstName}, you hit your hydration goal on ${hydGoalThis} days this week, up from ${hydGoalLast} last week. Excellent — hydration directly impacts how your body manages SCD.`
-        : `${firstName}, your hydration dropped this week — you hit the ${goalInUnit}-${unitLabel} goal on ${hydGoalThis} day${hydGoalThis !== 1 ? "s" : ""} vs ${hydGoalLast} last week. Remember to drink water throughout the day, especially in the morning.`,
-      bars: weekBars(healthData, (d) => hydrationValueInUnit(d.hydration || 0, displayUnit)),
-      maxValue: Math.max(goalInUnit * 1.2, goalInUnit + 2),
-    },
-    {
-      id: "wellbeing-score",
-      title: wellPositive ? "Wellbeing Rising" : "Wellbeing Snapshot",
-      color: "#A9334D",
-      metricLabel: "WELLBEING SCORE",
-      thisValue: wellThis !== null ? String(wellThis) : "—",
-      lastValue: wellLast !== null ? String(wellLast) : "—",
-      pctChange: wellPct,
-      isPositive: wellPositive,
-      hasHistory,
-      description: !hasHistory
-        ? `${firstName}, your composite wellbeing score this week is ${wellThis ?? "—"}/10. This is calculated from your pain levels, mood, and hydration combined. Keep logging to see your trend.`
-        : wellPositive
-        ? `${firstName}, your overall wellbeing score improved to ${wellThis}/10 this week (up from ${wellLast} last week). Pain management, mood, and hydration are all factored in — you're moving in the right direction.`
-        : `${firstName}, your wellbeing score dipped to ${wellThis}/10 this week (from ${wellLast} last week). Small daily habits — logging consistently, drinking water, and managing stress — add up over time.`,
-      bars: weekBars(healthData, (d) => dailyWellbeing(d, goalMl)),
-      maxValue: 10,
-    },
-  ];
-}
-
-// ─── InsightCard ──────────────────────────────────────────────────────────────
-
-function InsightCard({ insight }) {
+function PatternRow({ pattern, isLast }) {
   const t = useTheme();
-  const { isPositive, pctChange, hasHistory } = insight;
-  const showBadge = pctChange !== null;
-  const trendColor = isPositive ? "#059669" : "#DC2626";
-  const badgeBg = isPositive ? "#DCFCE7" : "#FEF2F2";
-  const TrendIcon = isPositive ? TrendingUp : TrendingDown;
-
-  const barWidth = Math.max(18, Math.floor(CHART_WIDTH / 10));
-  const spacing = Math.max(4, Math.floor((CHART_WIDTH - barWidth * 7) / 8));
-
   return (
     <View
       style={{
-        backgroundColor: t.surface,
-        borderRadius: 24,
-        padding: CARD_PADDING,
-        marginBottom: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 12,
-        elevation: 3,
+        paddingVertical: 14,
+        borderBottomWidth: isLast ? 0 : 1,
+        borderBottomColor: t.divider,
       }}
     >
-      {/* Card title */}
-      <Text
-        style={{
-          fontFamily: fonts.bold,
-          fontSize: 22,
-          color: t.text,
-          marginBottom: 10,
-        }}
-      >
-        {insight.title}
-      </Text>
-
-      {/* Description — plain text, no bubble */}
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: 15,
-          color: t.textSecondary,
-          lineHeight: 23,
-          marginBottom: 20,
-        }}
-      >
-        {insight.description}
-      </Text>
-
-      {/* Metric label */}
-      <Text
-        style={{
-          fontFamily: fonts.semibold,
-          fontSize: 11,
-          color: t.textSecondary,
-          textTransform: "uppercase",
-          letterSpacing: 1,
-          marginBottom: 10,
-        }}
-      >
-        {insight.metricLabel}
-      </Text>
-
-      {/* This week / Last week numbers */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-end",
-          marginBottom: 14,
-        }}
-      >
-        <View>
-          <Text
-            style={{
-              fontFamily: fonts.extrabold,
-              fontSize: 42,
-              color: insight.color,
-              lineHeight: 46,
-            }}
-          >
-            {insight.thisValue}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 13,
-              color: t.textSecondary,
-              marginTop: 4,
-            }}
-          >
-            This Week
-          </Text>
-        </View>
-
-        <View style={{ alignItems: "flex-end" }}>
-          <Text
-            style={{
-              fontFamily: fonts.extrabold,
-              fontSize: 42,
-              color: t.text,
-              lineHeight: 46,
-              opacity: hasHistory ? 1 : 0.25,
-            }}
-          >
-            {insight.lastValue}
-          </Text>
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: 13,
-              color: t.textSecondary,
-              marginTop: 4,
-            }}
-          >
-            Last Week
-          </Text>
-        </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 7, marginBottom: 4 }}>
+        <Sparkles size={13} color={t.textSecondary} strokeWidth={2} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, lineHeight: 20 }}>
+          {pattern.headline}
+        </Text>
       </View>
-
-      {/* % change badge */}
-      {showBadge && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: badgeBg,
-            alignSelf: "flex-start",
-            borderRadius: 100,
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            marginBottom: 20,
-            gap: 5,
-          }}
-        >
-          <TrendIcon size={13} color={trendColor} strokeWidth={2.5} />
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: trendColor }}>
-            {pctChange > 0 ? "+" : ""}{pctChange}% from last week
-          </Text>
-        </View>
-      )}
-
-      {/* Bar chart */}
-      <View style={{ marginLeft: -4 }}>
-        <BarChart
-          data={insight.bars}
-          width={CHART_WIDTH}
-          height={130}
-          barWidth={barWidth}
-          spacing={spacing}
-          roundedTop
-          frontColor={insight.color + "CC"}
-          noOfSections={4}
-          maxValue={insight.maxValue}
-          yAxisColor="transparent"
-          xAxisColor={t.border}
-          rulesColor={t.divider}
-          rulesType="solid"
-          initialSpacing={spacing}
-          yAxisTextStyle={{ color: "#9CA3AF", fontSize: 9 }}
-          backgroundColor="transparent"
-          yAxisLabelWidth={22}
-          showXAxisIndices={false}
-        />
-      </View>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 19, marginLeft: 20 }}>
+        {pattern.body}
+      </Text>
     </View>
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
+function SectionHeader({ children }) {
+  const t = useTheme();
+  return (
+    <Text style={{ fontFamily: fonts.bold, fontSize: 19, color: t.text, marginBottom: 12 }}>
+      {children}
+    </Text>
+  );
+}
+
+function EmptyFirstRun({ daysLogged }) {
+  const t = useTheme();
+  return (
+    <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 24 }}>
+      <View
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 32,
+          backgroundColor: t.surfaceElevated,
+          alignItems: "center",
+          justifyContent: "center",
+          marginBottom: 18,
+        }}
+      >
+        <Sparkles size={26} color={t.accent} strokeWidth={1.5} />
+      </View>
+      <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, textAlign: "center", marginBottom: 8 }}>
+        Your first weekly recap arrives Monday
+      </Text>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", lineHeight: 21 }}>
+        {daysLogged} day{daysLogged === 1 ? "" : "s"} logged so far — keep going and your recaps and patterns will start showing up here.
+      </Text>
+    </View>
+  );
+}
 
 export default function HealthInsightsScreen() {
   const router = useRouter();
   const t = useTheme();
-  const { auth } = useAuthStore();
-  const { data: healthData = [] } = useHealthDataQuery();
+  const posthog = usePostHog();
+  const { data: realHealthData = [] } = useHealthDataQuery();
+  const healthData = PREVIEW_MODE ? PREVIEW_DATA : realHealthData;
   const { data: metricGoals } = useMetricGoalsQuery();
-  const { displayUnit } = useHydrationStore();
-  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
-  const firstName = auth?.user?.user_metadata?.full_name?.split(" ")[0] || "there";
+  const goalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
-  const insights = buildInsights(healthData, firstName, hydrationGoalMl, displayUnit);
-  const { painLevelData, hydrationData, moodData, chartData, crisisPeriods, avgPainLevel, avgHydration } =
-    useChartData(healthData);
+  const totalDaysLogged = useMemo(() => countLogged(healthData), [healthData]);
+  const isFirstRun = totalDaysLogged < 7;
 
-  const graphWidth = Dimensions.get("window").width - 80;
+  const weeklyRecaps = useMemo(() => (isFirstRun ? [] : buildWeeklyRecaps(healthData)), [healthData, isFirstRun]);
+  const monthlyRecaps = useMemo(() => (isFirstRun ? [] : buildMonthlyRecaps(healthData)), [healthData, isFirstRun]);
+
+  const patternsStart = useMemo(() => addDays(new Date(), -(PATTERNS_WINDOW_DAYS - 1)), []);
+  const patternsEnd = useMemo(() => new Date(), []);
+  const patternsDays = useMemo(() => buildDayRange(healthData, patternsStart, patternsEnd), [healthData, patternsStart, patternsEnd]);
+  const { data: realTriggerCounts } = useTriggersQuery(toDateStr(patternsStart), toDateStr(patternsEnd));
+  const triggerCounts = PREVIEW_MODE ? PREVIEW_TRIGGER_COUNTS : realTriggerCounts;
+  const patterns = useMemo(
+    () => computePatterns(patternsDays, { goalMl, triggerCounts }),
+    [patternsDays, goalMl, triggerCounts],
+  );
+
+  useEffect(() => {
+    patterns.forEach((p) => posthog?.capture("insight_pattern_shown", { pattern_id: p.id }));
+  }, [patterns]);
+
+  const patternsLoggedCount = countLogged(patternsDays);
+
+  const tap = (section) => posthog?.capture("hub_section_tapped", { section });
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
-      {/* Header */}
+    <View style={{ flex: 1, backgroundColor: t.background }}>
       <View
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          paddingHorizontal: 20,
+          paddingHorizontal: 16,
           paddingTop: 8,
           paddingBottom: 16,
         }}
       >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 30, color: t.text }}>
-          Insights
-        </Text>
         <TouchableOpacity
           onPress={() => router.back()}
           style={{
@@ -385,74 +175,143 @@ export default function HealthInsightsScreen() {
             justifyContent: "center",
           }}
         >
-          <X size={18} color={t.text} />
+          <ChevronLeft size={20} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
+        <Text style={{ flex: 1, textAlign: "center", fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
+          Insights
+        </Text>
+        <View style={{ width: 36 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {insights.map((insight) => (
-          <InsightCard key={insight.id} insight={insight} />
-        ))}
-
-        {/* 30-day trend charts */}
-        <Text
-          style={{
-            fontFamily: fonts.bold,
-            fontSize: 22,
-            color: t.text,
-            marginTop: 8,
-            marginBottom: 16,
-          }}
+      {isFirstRun ? (
+        <EmptyFirstRun daysLogged={totalDaysLogged} />
+      ) : (
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={false}
         >
-          30-Day Trends
-        </Text>
+          {weeklyRecaps.length > 0 && (
+            <View style={{ marginBottom: 28, marginHorizontal: -20 }}>
+              <View style={{ paddingHorizontal: 20 }}>
+                <SectionHeader>Weekly recaps</SectionHeader>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={MINI_CARD_WIDTH + CARD_GAP}
+                snapToAlignment="start"
+                contentContainerStyle={{ paddingHorizontal: 20, gap: CARD_GAP }}
+              >
+                {weeklyRecaps.map((w) => (
+                  <RecapCard
+                    key={w.key}
+                    compact
+                    width={MINI_CARD_WIDTH}
+                    kicker="WEEKLY RECAP"
+                    title={w.label}
+                    titleSize={15}
+                    gradient={WEEKLY_GRADIENT}
+                    onPress={() => {
+                      tap("weekly_recaps");
+                      router.push(`/recap?period=week&start=${toDateStr(w.start)}&from=hub`);
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
-        <PainLevelChart
-          painLevelData={painLevelData}
-          graphWidth={graphWidth}
-          avgPainLevel={avgPainLevel}
-          chartData={chartData}
-        />
+          {monthlyRecaps.length > 0 && (
+            <View style={{ marginBottom: 28, marginHorizontal: -20 }}>
+              <View style={{ paddingHorizontal: 20 }}>
+                <SectionHeader>Monthly recaps</SectionHeader>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={MONTHLY_CARD_WIDTH + CARD_GAP}
+                snapToAlignment="start"
+                contentContainerStyle={{ paddingHorizontal: 20, gap: CARD_GAP }}
+              >
+                {monthlyRecaps.map((m) => (
+                  <RecapCard
+                    key={m.key}
+                    compact
+                    width={MONTHLY_CARD_WIDTH}
+                    kicker="MONTHLY RECAP"
+                    title={m.monthName}
+                    titleSize={22}
+                    gradient={MONTHLY_GRADIENT}
+                    onPress={() => {
+                      tap("monthly_recaps");
+                      router.push(`/recap?period=month&start=${toDateStr(m.start)}&from=hub`);
+                    }}
+                  />
+                ))}
+              </ScrollView>
+            </View>
+          )}
 
-        <HydrationChart
-          hydrationData={hydrationData}
-          graphWidth={graphWidth}
-          avgHydration={avgHydration}
-        />
+          <View style={{ marginBottom: 28 }}>
+            <SectionHeader>Your patterns</SectionHeader>
+            {patterns.length > 0 ? (
+              <View>
+                {patterns.map((p, i) => (
+                  <PatternRow key={p.id} pattern={p} isLast={i === patterns.length - 1} />
+                ))}
+              </View>
+            ) : (
+              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }}>
+                Patterns unlock with more logging — keep tracking daily and Hemo will start surfacing what's connected.
+              </Text>
+            )}
+          </View>
 
-        <MoodChart
-          moodData={moodData}
-          graphWidth={graphWidth}
-          chartData={chartData}
-        />
+          <View style={{ marginBottom: 32 }}>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginBottom: 10 }}>
+              Preparing for an appointment?
+            </Text>
+            <PressableScale
+              onPress={() => {
+                tap("share");
+                router.push("/share-summary");
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  backgroundColor: t.accent,
+                  borderRadius: 14,
+                  paddingVertical: 15,
+                }}
+              >
+                <Share2 size={16} color="#fff" strokeWidth={2} />
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#fff" }}>
+                  Share a health summary
+                </Text>
+              </View>
+            </PressableScale>
+          </View>
 
-        <CrisisFreePeriods crisisPeriods={crisisPeriods} />
+          <View style={{ marginBottom: 28 }}>
+            <UnderstandingSCDRow
+              onPress={() => {
+                tap("understanding_scd");
+                router.push("/(tabs)/learn");
+              }}
+            />
+          </View>
 
-        {/* Done button */}
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            backgroundColor: t.surface,
-            borderRadius: 100,
-            paddingVertical: 16,
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.06,
-            shadowRadius: 8,
-            elevation: 3,
-            marginTop: 4,
-            marginBottom: 16,
-          }}
-        >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
-            Done
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, textAlign: "center" }}>
+            Logged {patternsLoggedCount} of the last {PATTERNS_WINDOW_DAYS} days — insights get sharper the more you log.
           </Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      )}
+    </View>
   );
 }

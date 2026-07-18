@@ -172,6 +172,31 @@ export async function fetchHealthLogs(userId, date) {
 }
 
 /**
+ * Aggregate trigger/mood-contributor frequency across a date range, for the
+ * recap "Your patterns" trigger-frequency insight. `triggers` only lives on
+ * individual health_logs rows (not the daily_summaries aggregate), so this
+ * queries the raw log table directly and counts client-side.
+ */
+export async function fetchTriggersInRange(userId, startDate, endDate) {
+  let query = supabase
+    .from('health_logs')
+    .select('triggers')
+    .eq('user_id', userId)
+    .gte('date', startDate);
+  if (endDate) query = query.lte('date', endDate);
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const counts = {};
+  (data || []).forEach((row) => {
+    (row.triggers || []).forEach((t) => {
+      counts[t] = (counts[t] || 0) + 1;
+    });
+  });
+  return counts;
+}
+
+/**
  * Submit a symptom log:
  * 1. Insert raw log into health_logs
  * 2. Fetch all logs for today and aggregate

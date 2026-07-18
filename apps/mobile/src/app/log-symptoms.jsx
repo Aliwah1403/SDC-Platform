@@ -239,14 +239,14 @@ function HighPainSupport({ onOpenCrisisPlan, onOpenCareTeam }) {
 }
 
 // Step 0 — Pain Level
-function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam }) {
+function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam, relog }) {
   const t = useTheme();
   const color = getPainColor(value);
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your pain today?</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{relog ? "How's your pain right now?" : "How's your pain today?"}</Text>
         <Text style={styles.stepSubtitle}>Rate from 0 (no pain) to 10 (worst possible)</Text>
       </View>
 
@@ -304,7 +304,7 @@ function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam 
 // The full-bleed ambient background is rendered at the screen level (see
 // MoodAmbientBackground); this step keeps a light emoji centerpiece and a
 // continuous slider that drives that background via `progress`.
-function MoodStep({ value, progress, onChange }) {
+function MoodStep({ value, progress, onChange, relog }) {
   const t = useTheme();
   const idx = value - 1; // 1-indexed → 0-indexed
   const labelColor = t.isDark ? t.text : "#781D11";
@@ -313,7 +313,9 @@ function MoodStep({ value, progress, onChange }) {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={[styles.stepTitle, { color: labelColor }]}>How have you felt{"\n"}overall today?</Text>
+        <Text style={[styles.stepTitle, { color: labelColor }]}>
+          {relog ? "How are you feeling now?" : "How have you felt\noverall today?"}
+        </Text>
       </View>
 
       {/* Emoji centerpiece (blob lives in the ambient background behind it) */}
@@ -428,11 +430,11 @@ function LocationsStep({ selected, onToggle }) {
 }
 
 // Step 2 — Symptoms Checklist
-function SymptomsStep({ selected, onToggle }) {
+function SymptomsStep({ selected, onToggle, relog }) {
   const t = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Any symptoms today?</Text>
+      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{relog ? "Any symptoms right now?" : "Any symptoms today?"}</Text>
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if none</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -589,7 +591,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit }) {
+function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -625,6 +627,11 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit }) {
             </View>
           </MotiView>
         ))}
+        {relog && (
+          <Text style={{ fontFamily: "Geist_400Regular", fontSize: 12.5, color: t.textSecondary, textAlign: "center", marginTop: 4, marginBottom: 4 }}>
+            Updates today's summary — highest pain, latest mood.
+          </Text>
+        )}
       </ScrollView>
 
       <TouchableOpacity onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
@@ -881,22 +888,18 @@ export default function LogSymptomsScreen() {
       {/* Progress dots (not on summary) */}
       {!isSummary && <ProgressDots step={step} />}
 
-      {/* Already logged today notice */}
+      {/* Already logged today notice — quiet line, same idiom as the hydration heat-bump note */}
       {hasLoggedToday && step === 0 && (
-        <View style={{
+        <Text style={{
           marginHorizontal: 24,
           marginBottom: 8,
-          paddingVertical: 8,
-          paddingHorizontal: 14,
-          backgroundColor: "#A9334D18",
-          borderRadius: 10,
-          flexDirection: "row",
-          alignItems: "center",
+          fontSize: 13,
+          color: t.textTertiary,
+          fontFamily: fonts.regular,
+          textAlign: "center",
         }}>
-          <Text style={{ fontSize: 13, color: "#A9334D", fontFamily: fonts.medium }}>
-            You've already logged today — adding a new entry
-          </Text>
-        </View>
+          Checking in again — tell us how things are now
+        </Text>
       )}
 
       {/* Step content */}
@@ -908,16 +911,17 @@ export default function LogSymptomsScreen() {
             onChange={setPainLevel}
             onOpenCrisisPlan={() => router.push("/(tabs)/care/crisis-plan")}
             onOpenCareTeam={() => router.push("/(tabs)/care/care-team")}
+            relog={hasLoggedToday}
           />
         )}
         {step === 1 && (
           <LocationsStep selected={bodyLocations} onToggle={toggleLocation} />
         )}
         {step === 2 && (
-          <SymptomsStep selected={symptoms} onToggle={toggleSymptom} />
+          <SymptomsStep selected={symptoms} onToggle={toggleSymptom} relog={hasLoggedToday} />
         )}
         {step === 3 && (
-          <MoodStep value={moodValue} progress={moodAnim} onChange={setMoodValue} />
+          <MoodStep value={moodValue} progress={moodAnim} onChange={setMoodValue} relog={hasLoggedToday} />
         )}
         {step === 4 && (
           <MoodWhyStep
@@ -944,7 +948,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} />
         )}
       </View>
 
