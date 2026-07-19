@@ -133,6 +133,80 @@ export async function completeOnboarding(userId, onboardingData) {
       .insert(medRows);
     if (medError) throw medError;
   }
+
+  // 4. Seed default hydration containers (Step 9 amendment, 2026-07-19) — skip
+  // if this user already has some (e.g. onboarding retried after a partial
+  // failure above), so a re-run never duplicates seed rows.
+  const { data: existingContainers, error: existingContainersError } = await supabase
+    .from('hydration_containers')
+    .select('id')
+    .eq('user_id', userId)
+    .limit(1);
+  if (existingContainersError) throw existingContainersError;
+  if (!existingContainers || existingContainers.length === 0) {
+    const { error: containersError } = await supabase
+      .from('hydration_containers')
+      .insert([
+        { user_id: userId, name: 'Glass', ml: 250, emoji: '🥛', is_default: true, sort_order: 0 },
+        { user_id: userId, name: 'Bottle', ml: 500, emoji: '🍶', is_default: false, sort_order: 1 },
+        { user_id: userId, name: 'Large', ml: 1000, emoji: '🫙', is_default: false, sort_order: 2 },
+      ]);
+    if (containersError) throw containersError;
+  }
+}
+
+// ============================================================
+// HYDRATION CONTAINERS (Step 9 amendment — Supabase-backed, synced across
+// a user's devices; see supabase/migrations/20260719000000_hydration_containers.sql
+// for the table, RLS policies, and the two atomic RPCs used below)
+// ============================================================
+
+export async function fetchHydrationContainers(userId) {
+  const { data, error } = await supabase
+    .from('hydration_containers')
+    .select('*')
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(toCamelCase);
+}
+
+export async function addHydrationContainer(userId, { name, ml, emoji, sortOrder }) {
+  const { data, error } = await supabase
+    .from('hydration_containers')
+    .insert({ user_id: userId, name, ml, emoji, is_default: false, sort_order: sortOrder })
+    .select()
+    .single();
+  if (error) throw error;
+  return toCamelCase(data);
+}
+
+export async function updateHydrationContainer(id, fields) {
+  const { error } = await supabase
+    .from('hydration_containers')
+    .update({ ...toSnakeCase(fields), updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Atomic RPC (see migration) — deletes the container and, if it was the
+// default, promotes the next remaining one. Returns false (no-op) if this
+// would remove the user's last container.
+export async function removeHydrationContainer(id) {
+  const { data, error } = await supabase.rpc('remove_hydration_container', {
+    p_container_id: id,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Atomic RPC (see migration) — makes exactly one container the default in a
+// single statement so "exactly one default" is never transiently violated.
+export async function setDefaultHydrationContainer(id) {
+  const { error } = await supabase.rpc('set_default_hydration_container', {
+    p_container_id: id,
+  });
+  if (error) throw error;
 }
 
 // ============================================================

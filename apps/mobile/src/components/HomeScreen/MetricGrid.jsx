@@ -13,8 +13,9 @@ import { PressableScale } from "@/components/PressableScale";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { useAddHydrationMutation } from "@/hooks/queries/useHealthDataQuery";
 import { useHydrationStore } from "@/store/hydrationStore";
+import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
 import { formatHydrationPair } from "@/utils/hydrationUnits";
-import { DEFAULT_SUGGESTED_ML, GLASS_ML } from "@/utils/hydrationGoal";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -351,13 +352,16 @@ function SleepMoon({ hours }) {
 
 function QuickAddHydrationButton() {
   const addHydrationMutation = useAddHydrationMutation();
+  const { data: containersData } = useHydrationContainersQuery();
+  const containers = containersData?.length ? containersData : FALLBACK_CONTAINERS;
+  const defaultContainer = containers.find((c) => c.isDefault) ?? containers[0];
 
   const handlePress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    addHydrationMutation.mutate(GLASS_ML, {
+    addHydrationMutation.mutate(defaultContainer.ml, {
       onError: () => {
         Alert.alert(
-          "Couldn't log that glass",
+          "Couldn't log that",
           "Something went wrong — please try again.",
         );
       },

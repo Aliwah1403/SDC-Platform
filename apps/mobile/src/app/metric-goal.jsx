@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
+  TextInput,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
@@ -14,13 +15,23 @@ import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCheck } from "lucide-react-native";
+import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCheck, Pencil, ChevronUp, Plus } from "lucide-react-native";
 import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { useHydrationStore } from "@/store/hydrationStore";
+import {
+  useHydrationContainersQuery,
+  useAddHydrationContainerMutation,
+  useUpdateHydrationContainerMutation,
+  useRemoveHydrationContainerMutation,
+  useSetDefaultHydrationContainerMutation,
+  CONTAINER_EMOJI_OPTIONS,
+  MAX_CONTAINERS,
+  FALLBACK_CONTAINERS,
+} from "@/hooks/queries/useHydrationContainersQuery";
 import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
-import { hydrationNumberAndUnit } from "@/utils/hydrationUnits";
+import { hydrationNumberAndUnit, formatHydration } from "@/utils/hydrationUnits";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { colors } from "@/utils/colors";
@@ -333,6 +344,275 @@ function SectionDivider({ t }) {
   return <View style={{ height: 1, backgroundColor: t.divider, marginVertical: 24 }} />;
 }
 
+// Shared name/capacity/emoji fields for both editing an existing container and
+// adding a new one (Step 9).
+function ContainerEditorFields({ name, setName, ml, setMl, emoji, setEmoji, displayUnit, t }) {
+  return (
+    <>
+      <TextInput
+        value={name}
+        onChangeText={(v) => setName(v.slice(0, 16))}
+        placeholder="Name"
+        placeholderTextColor={t.textTertiary}
+        style={{
+          fontFamily: fonts.medium,
+          fontSize: 15,
+          color: t.text,
+          borderBottomWidth: 1,
+          borderBottomColor: t.border,
+          paddingVertical: 6,
+          marginBottom: 14,
+        }}
+      />
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <TouchableOpacity
+          onPress={() => setMl((v) => Math.max(100, v - 50))}
+          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#3B82F6" }}>−</Text>
+        </TouchableOpacity>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
+          {formatHydration(ml, displayUnit)}
+        </Text>
+        <TouchableOpacity
+          onPress={() => setMl((v) => Math.min(2000, v + 50))}
+          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center" }}
+        >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#3B82F6" }}>+</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {CONTAINER_EMOJI_OPTIONS.map((e) => (
+          <TouchableOpacity
+            key={e}
+            onPress={() => {
+              Haptics.selectionAsync();
+              setEmoji(e);
+            }}
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: emoji === e ? colors.burgundyTint : "transparent",
+              borderWidth: emoji === e ? 1.5 : 0,
+              borderColor: "#3B82F6",
+            }}
+          >
+            <Text style={{ fontSize: 18 }}>{e}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </>
+  );
+}
+
+function ContainerRow({ container, displayUnit, isExpanded, onToggleExpand, onSetDefault, onSave, onRemove, canRemove, pending, t }) {
+  const [name, setName] = useState(container.name);
+  const [ml, setMl] = useState(container.ml);
+  const [emoji, setEmoji] = useState(container.emoji);
+  const isDefault = container.isDefault;
+
+  return (
+    <View style={{ marginBottom: 10, borderRadius: 14, backgroundColor: t.surfaceElevated, padding: 14, opacity: pending ? 0.6 : 1 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <PressableScale
+          disabled={pending}
+          onPress={() => {
+            if (!isDefault) {
+              Haptics.selectionAsync();
+              onSetDefault(container.id);
+            }
+          }}
+          style={{
+            width: 26,
+            height: 26,
+            borderRadius: 13,
+            borderWidth: 1.5,
+            borderColor: isDefault ? "#3B82F6" : t.border,
+            backgroundColor: isDefault ? "#3B82F6" : "transparent",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {isDefault && <Check size={13} color="#fff" strokeWidth={3} />}
+        </PressableScale>
+        <Text style={{ fontSize: 22 }}>{container.emoji}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>{container.name}</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
+            {formatHydration(container.ml, displayUnit)}{isDefault ? " · Default" : ""}
+          </Text>
+        </View>
+        <PressableScale disabled={pending} onPress={onToggleExpand} style={{ padding: 6 }}>
+          {isExpanded ? <ChevronUp size={18} color={t.textSecondary} /> : <Pencil size={16} color={t.textSecondary} />}
+        </PressableScale>
+      </View>
+
+      {isExpanded && (
+        <View style={{ marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: t.border }}>
+          <ContainerEditorFields
+            name={name} setName={setName}
+            ml={ml} setMl={setMl}
+            emoji={emoji} setEmoji={setEmoji}
+            displayUnit={displayUnit} t={t}
+          />
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+            {canRemove && (
+              <PressableScale
+                disabled={pending}
+                onPress={() => onRemove(container.id)}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: "#DC2626" }}
+              >
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#DC2626" }}>Delete</Text>
+              </PressableScale>
+            )}
+            <PressableScale
+              disabled={pending}
+              onPress={() => {
+                onSave(container.id, { name: name.trim() || container.name, ml, emoji });
+                onToggleExpand();
+              }}
+              style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: "#3B82F6" }}
+            >
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Save</Text>
+            </PressableScale>
+          </View>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function AddContainerRow({ displayUnit, onAdd, pending, t }) {
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const [ml, setMl] = useState(250);
+  const [emoji, setEmoji] = useState(CONTAINER_EMOJI_OPTIONS[0]);
+
+  const cancel = () => {
+    setAdding(false);
+    setName("");
+    setMl(250);
+    setEmoji(CONTAINER_EMOJI_OPTIONS[0]);
+  };
+
+  if (!adding) {
+    return (
+      <PressableScale
+        onPress={() => setAdding(true)}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 8,
+          paddingVertical: 14,
+          borderRadius: 14,
+          borderWidth: 1.5,
+          borderColor: t.border,
+          borderStyle: "dashed",
+        }}
+      >
+        <Plus size={16} color="#3B82F6" />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#3B82F6" }}>Add container</Text>
+      </PressableScale>
+    );
+  }
+
+  const save = () => {
+    if (!name.trim()) return;
+    onAdd({ name: name.trim().slice(0, 16), ml, emoji });
+    cancel();
+  };
+
+  return (
+    <View style={{ borderRadius: 14, backgroundColor: t.surfaceElevated, padding: 14, opacity: pending ? 0.6 : 1 }}>
+      <ContainerEditorFields
+        name={name} setName={setName}
+        ml={ml} setMl={setMl}
+        emoji={emoji} setEmoji={setEmoji}
+        displayUnit={displayUnit} t={t}
+      />
+      <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+        <PressableScale disabled={pending} onPress={cancel} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: t.border }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}>Cancel</Text>
+        </PressableScale>
+        <PressableScale disabled={pending} onPress={save} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: "#3B82F6" }}>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Save</Text>
+        </PressableScale>
+      </View>
+    </View>
+  );
+}
+
+function ContainersSection({ displayUnit, t }) {
+  const posthog = usePostHog();
+  const { data: containersData } = useHydrationContainersQuery();
+  const containers = containersData?.length ? containersData : FALLBACK_CONTAINERS;
+  const [expandedId, setExpandedId] = useState(null);
+
+  const addMutation = useAddHydrationContainerMutation();
+  const updateMutation = useUpdateHydrationContainerMutation();
+  const removeMutation = useRemoveHydrationContainerMutation();
+  const setDefaultMutation = useSetDefaultHydrationContainerMutation();
+
+  return (
+    <View>
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 11,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          color: t.textTertiary,
+          marginBottom: 10,
+        }}
+      >
+        Containers
+      </Text>
+      {containers.map((c) => (
+        <ContainerRow
+          key={c.id}
+          container={c}
+          displayUnit={displayUnit}
+          isExpanded={expandedId === c.id}
+          onToggleExpand={() => setExpandedId((id) => (id === c.id ? null : c.id))}
+          onSetDefault={(id) => {
+            setDefaultMutation.mutate(id, {
+              onSuccess: () => posthog?.capture("hydration_container_default_changed", { ml: c.ml }),
+            });
+          }}
+          onSave={(id, fields) => updateMutation.mutate({ id, fields })}
+          onRemove={(id) => {
+            removeMutation.mutate(id, { onSuccess: () => setExpandedId(null) });
+          }}
+          canRemove={containers.length > 1}
+          pending={
+            (setDefaultMutation.isPending && setDefaultMutation.variables === c.id) ||
+            (updateMutation.isPending && updateMutation.variables?.id === c.id) ||
+            (removeMutation.isPending && removeMutation.variables === c.id)
+          }
+          t={t}
+        />
+      ))}
+      {containers.length < MAX_CONTAINERS && (
+        <AddContainerRow
+          displayUnit={displayUnit}
+          t={t}
+          pending={addMutation.isPending}
+          onAdd={({ name, ml, emoji }) => {
+            addMutation.mutate(
+              { name, ml, emoji, sortOrder: containers.length },
+              { onSuccess: () => posthog?.capture("hydration_container_added", { ml }) },
+            );
+          }}
+        />
+      )}
+    </View>
+  );
+}
+
 function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
   const t = useTheme();
   const { data: profile } = useProfileQuery();
@@ -476,6 +756,13 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
       {/* Display unit */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 6 }}>
         <DisplayUnitRow displayUnit={displayUnit} onChange={setDisplayUnit} t={t} />
+      </MotiView>
+
+      <SectionDivider t={t} />
+
+      {/* Containers (Step 9) */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 7 }}>
+        <ContainersSection displayUnit={displayUnit} t={t} />
       </MotiView>
 
       {/* Footnote */}

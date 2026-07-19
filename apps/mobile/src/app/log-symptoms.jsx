@@ -22,12 +22,13 @@ import { useSharedValue, withSpring } from "react-native-reanimated";
 import { useAppStore } from "@/store/appStore";
 import { writeDailyLog } from "@/services/healthService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
-import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useHealthLogsQuery, useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
 import { useHydrationStore } from "@/store/hydrationStore";
+import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
 import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl } from "@/utils/hydrationGoal";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
@@ -461,15 +462,12 @@ function SymptomsStep({ selected, onToggle, relog }) {
 }
 
 // Step 5 — Hydration
-const DRINK_SIZES = [
-  { label: "Glass", ml: GLASS_ML },
-  { label: "Bottle", ml: 500 },
-  { label: "Large", ml: 1000 },
-];
 const HYDRATION_MAX_ML = 5000;
 
-function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit }) {
+function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit, containers }) {
   const t = useTheme();
+  // Default container renders first and filled; the rest stay outlined.
+  const orderedContainers = [...containers].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
   const { number, unitLabel } = hydrationNumberAndUnit(value, displayUnit);
   const goalParts = hydrationNumberAndUnit(goalMl, displayUnit);
   const goalReached = value >= goalMl;
@@ -501,26 +499,44 @@ function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit
         )}
       </View>
 
-      {/* Drink-size quick add */}
+      {/* Container quick add */}
       <View style={{ alignItems: "center", marginBottom: 16 }}>
         <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>ADD A DRINK</Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {DRINK_SIZES.map((d) => (
-            <TouchableOpacity
-              key={d.label}
-              onPress={() => addDrink(d.ml)}
+        <View
+          style={{
+            width: SCREEN_WIDTH - 48,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: 10,
+          }}
+        >
+          {orderedContainers.map((c) => (
+            <PressableScale
+              key={c.id}
+              onPress={() => addDrink(c.ml)}
               style={{
-                paddingHorizontal: 18,
+                width: (SCREEN_WIDTH - 48 - 10) / 2,
+                alignItems: "center",
+                paddingHorizontal: 12,
                 paddingVertical: 10,
                 borderRadius: 24,
                 borderWidth: 2,
                 borderColor: "#3B82F6",
+                backgroundColor: c.isDefault ? "#3B82F6" : "transparent",
               }}
             >
-              <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#3B82F6" }}>
-                {d.label} +{formatHydration(d.ml, displayUnit)}
+              <Text
+                numberOfLines={1}
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 14,
+                  color: c.isDefault ? "#fff" : "#3B82F6",
+                }}
+              >
+                {c.emoji} {c.name} +{formatHydration(c.ml, displayUnit)}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           ))}
         </View>
       </View>
@@ -684,6 +700,9 @@ export default function LogSymptomsScreen() {
   const { data: metricGoals } = useMetricGoalsQuery();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const { displayUnit: hydrationDisplayUnit } = useHydrationStore();
+  const { data: containersData } = useHydrationContainersQuery();
+  const containers = containersData?.length ? containersData : FALLBACK_CONTAINERS;
+  const { data: dailySummaries } = useHealthDataQuery();
 
   const { data: profile } = useProfileQuery();
   const { weather } = useWeatherData(profile?.locationEnabled ?? false);
@@ -706,6 +725,26 @@ export default function LogSymptomsScreen() {
   const [bodyLocations, setBodyLocations] = useState([...currentSymptomLog.bodyLocations]);
   const [symptoms, setSymptoms] = useState([...currentSymptomLog.symptoms]);
   const [hydration, setHydration] = useState(currentSymptomLog.hydration || 0);
+  // Once the user has touched hydration (a fresh in-progress log with a real
+  // value, or an on-screen edit below), the running-total prefill below must
+  // not clobber it.
+  const hydrationTouchedRef = useRef(!!currentSymptomLog.hydration);
+  const setHydrationTouched = (val) => {
+    hydrationTouchedRef.current = true;
+    setHydration(val);
+  };
+  // Seeds the vessel from today's real running total (home quick-adds +
+  // any earlier check-in today) so a second check-in confirms/adjusts that
+  // total instead of starting at 0 and silently discarding it — daily_summaries
+  // aggregates hydration via MAX(...), so re-entering a lower number would
+  // otherwise be lost.
+  useEffect(() => {
+    if (hydrationTouchedRef.current) return;
+    const todaySummary = dailySummaries?.find((d) => d.date === todayStr);
+    if (todaySummary?.hydration) {
+      setHydration((h) => Math.max(h, todaySummary.hydration));
+    }
+  }, [dailySummaries]);
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
@@ -951,7 +990,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 5 && (
-          <HydrationStep value={hydration} onChange={setHydration} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} displayUnit={hydrationDisplayUnit} />
+          <HydrationStep value={hydration} onChange={setHydrationTouched} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} displayUnit={hydrationDisplayUnit} containers={containers} />
         )}
         {step === 6 && (
           <NotesStep
