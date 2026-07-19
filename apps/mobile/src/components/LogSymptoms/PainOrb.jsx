@@ -1,5 +1,6 @@
 import { View, Text } from "react-native";
-import { useDerivedValue } from "react-native-reanimated";
+import { useEffect } from "react";
+import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 import {
   Canvas,
   Circle,
@@ -61,8 +62,13 @@ function buildPainBlob(cx, cy, R, amp, phase, k1, k2) {
  * breath — calmer/rounder at low pain, faster/throbbing and more turbulent at
  * high pain — while a radial glow grows but fades before the canvas edges.
  */
-export function PainOrb({ progress, value, isDark }) {
+export function PainOrb({ progress, value, isDark, reducedMotion = false }) {
   const clock = useClock();
+  const motionScale = useSharedValue(reducedMotion ? 0 : 1);
+
+  useEffect(() => {
+    motionScale.value = reducedMotion ? 0 : 1;
+  }, [reducedMotion]);
 
   const p = useDerivedValue(() => {
     const v = progress.value / 10;
@@ -75,14 +81,14 @@ export function PainOrb({ progress, value, isDark }) {
   const breath = useDerivedValue(() => {
     const t = clock.value / 1000;
     const rate = 1.1 + p.value * 2.6;
-    const depth = 0.02 + p.value * 0.05;
+    const depth = (0.02 + p.value * 0.05) * motionScale.value;
     return 1 + Math.sin(t * rate) * depth;
   });
 
   const orbPath = useDerivedValue(() => {
     const t = clock.value / 1000;
-    const turb = 0.02 + p.value * 0.15; // smooth (low) → jagged (high)
-    const speed = 0.5 + p.value * 1.2;
+    const turb = (0.02 + p.value * 0.15) * motionScale.value; // smooth (low) → jagged (high)
+    const speed = (0.5 + p.value * 1.2) * motionScale.value;
     const R = BASE_R * breath.value;
     return buildPainBlob(CENTER, CENTER, R, turb, t * speed, 3, 6);
   });

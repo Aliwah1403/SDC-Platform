@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMetricInsights } from "@/hooks/useMetricInsights";
 import { usePostHog } from "posthog-react-native";
+import * as Haptics from "expo-haptics";
 import {
   View,
   Text,
@@ -14,6 +15,8 @@ import { MetricChart } from "@/components/Charts/MetricChart";
 import { ArcGaugeChart } from "@/components/Charts/arc-gauge-chart";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
+import { PressableScale } from "@/components/PressableScale";
+import { enterTiming, exitTiming } from "@/utils/motion";
 import { MotiView, AnimatePresence } from "moti";
 import {
   ChevronLeft,
@@ -537,7 +540,7 @@ export default function MetricDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
-  const { metric } = useLocalSearchParams();
+  const { metric, date: dateParam } = useLocalSearchParams();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
 
@@ -560,7 +563,15 @@ export default function MetricDetailScreen() {
   }, [metric, displayUnit]);
 
   const [range, setRange] = useState(14);
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  // Track passes the date the user had selected there so this screen opens
+  // on the same day instead of always defaulting to today.
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (typeof dateParam === "string") {
+      const [y, m, d] = dateParam.split("-").map(Number);
+      if (y && m && d) return new Date(y, m - 1, d);
+    }
+    return new Date();
+  });
   const [pickerOpen, setPickerOpen] = useState(false);
   const { isToday, isFuture, isSelected } = useDateNavigation();
 
@@ -665,7 +676,7 @@ export default function MetricDetailScreen() {
         alignItems: "center",
         backgroundColor: t.background,
       }}>
-        <TouchableOpacity
+        <PressableScale
           onPress={() => router.back()}
           style={{
             width: 36, height: 36, borderRadius: 18,
@@ -674,11 +685,10 @@ export default function MetricDetailScreen() {
           }}
         >
           <ChevronLeft size={20} color={t.text} strokeWidth={2} />
-        </TouchableOpacity>
+        </PressableScale>
 
-        <TouchableOpacity
+        <PressableScale
           onPress={() => setPickerOpen((o) => !o)}
-          activeOpacity={0.7}
           style={{ flex: 1, alignItems: "center" }}
         >
           <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
@@ -695,10 +705,10 @@ export default function MetricDetailScreen() {
               style={{ transform: [{ rotate: pickerOpen ? "180deg" : "0deg" }] }}
             />
           </View>
-        </TouchableOpacity>
+        </PressableScale>
 
         {meta.hasGoal ? (
-          <TouchableOpacity
+          <PressableScale
             onPress={() => router.push(`/metric-goal?metric=${metric}`)}
             style={{
               width: 36, height: 36, borderRadius: 18,
@@ -707,7 +717,7 @@ export default function MetricDetailScreen() {
             }}
           >
             <Settings size={18} color={t.text} strokeWidth={2} />
-          </TouchableOpacity>
+          </PressableScale>
         ) : (
           <View style={{ width: 36 }} />
         )}
@@ -720,7 +730,8 @@ export default function MetricDetailScreen() {
             from={{ opacity: 0, translateY: -8 }}
             animate={{ opacity: 1, translateY: 0 }}
             exit={{ opacity: 0, translateY: -8 }}
-            transition={{ type: "timing", duration: 200 }}
+            transition={enterTiming}
+            exitTransition={exitTiming}
             style={{ paddingBottom: 8 }}
           >
             <DatePicker
@@ -838,7 +849,7 @@ export default function MetricDetailScreen() {
               {[7, 14].map((r) => (
                 <TouchableOpacity
                   key={r}
-                  onPress={() => { posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
+                  onPress={() => { Haptics.selectionAsync(); posthog?.capture('metric_range_changed', { metric: metric ?? 'pain', range: r }); setRange(r); }}
                   style={{
                     paddingHorizontal: 14,
                     paddingVertical: 6,

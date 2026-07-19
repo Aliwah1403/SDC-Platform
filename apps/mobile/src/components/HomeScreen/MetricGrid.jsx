@@ -394,6 +394,7 @@ function MetricTile({
   metric,
   hasData,
   quickAdd,
+  date,
 }) {
   const router = useRouter();
   const t = useTheme();
@@ -401,7 +402,7 @@ function MetricTile({
   return (
     <View style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}>
       <Card
-        onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric } }) : undefined}
+        onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric, date } }) : undefined}
         style={{
           width: TILE_WIDTH,
           height: TILE_HEIGHT,
@@ -506,6 +507,7 @@ export function MetricGrid({ selectedDateData }) {
         hasData={hydration > 0}
         visual={<HydrationTank hydration={hydration} goal={hydrationGoalMl} unit={displayUnit} />}
         quickAdd={<QuickAddHydrationButton />}
+        date={selectedDateData?.date}
       />
     ),
     mood: (
@@ -517,6 +519,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="mood"
         hasData={mood > 0}
         visual={<MoodHalo mood={mood} />}
+        date={selectedDateData?.date}
       />
     ),
     steps: (
@@ -530,6 +533,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="steps"
         hasData={steps > 0}
         visual={<StepsGauge steps={steps} />}
+        date={selectedDateData?.date}
       />
     ),
     sleep: (
@@ -543,6 +547,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="sleep"
         hasData={sleep > 0}
         visual={<SleepMoon hours={sleep} />}
+        date={selectedDateData?.date}
       />
     ),
   };

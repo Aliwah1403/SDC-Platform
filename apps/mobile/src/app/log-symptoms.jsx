@@ -36,6 +36,9 @@ import { PainOrb } from "@/components/LogSymptoms/PainOrb";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { fonts } from "@/utils/fonts";
+import { PressableScale } from "@/components/PressableScale";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { celebrationSpring } from "@/utils/motion";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
@@ -241,6 +244,7 @@ function HighPainSupport({ onOpenCrisisPlan, onOpenCareTeam }) {
 // Step 0 — Pain Level
 function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam, relog }) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const color = getPainColor(value);
 
   return (
@@ -253,7 +257,7 @@ function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam,
       {/* Breathing pain orb + number, with support prompt at high pain */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
         <View style={{ alignItems: "center", justifyContent: "center" }}>
-          <PainOrb progress={progress} value={value} isDark={t.isDark} />
+          <PainOrb progress={progress} value={value} isDark={t.isDark} reducedMotion={reducedMotion} />
           <Text
             style={{
               position: "absolute",
@@ -591,7 +595,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog }) {
+function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, showSaveSuccess }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -617,7 +621,7 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog }) 
             key={row.label}
             from={{ opacity: 0, translateY: 16 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: i * 80, type: "timing", duration: 300 }}
+            transition={{ delay: i * 40, type: "timing", duration: 300 }}
             style={[styles.summaryRow, { backgroundColor: t.isDark ? t.surface : "#F8E9E7" }]}
           >
             <View style={[styles.summaryDot, { backgroundColor: row.color }]} />
@@ -634,14 +638,22 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog }) 
         )}
       </ScrollView>
 
-      <TouchableOpacity onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
+      <PressableScale onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
         {isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
+        ) : showSaveSuccess ? (
+          <MotiView
+            from={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={celebrationSpring}
+          >
+            <Check color="#fff" size={20} strokeWidth={2.5} />
+          </MotiView>
         ) : (
           <Check color="#fff" size={20} strokeWidth={2.5} />
         )}
-        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : "Save log"}</Text>
-      </TouchableOpacity>
+        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : showSaveSuccess ? "Saved!" : "Save log"}</Text>
+      </PressableScale>
     </View>
   );
 }
@@ -654,6 +666,7 @@ export default function LogSymptomsScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const {
     currentSymptomLog, updateSymptomLog, resetSymptomLog,
     healthKitConnected, healthKitPreferences,
@@ -694,6 +707,7 @@ export default function LogSymptomsScreen() {
   const [symptoms, setSymptoms] = useState([...currentSymptomLog.symptoms]);
   const [hydration, setHydration] = useState(currentSymptomLog.hydration || 0);
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
   const STEP_COUNT = 8; // steps 0-6 + summary (7)
 
@@ -814,7 +828,9 @@ export default function LogSymptomsScreen() {
         if (isHealthConnected && !hasLoggedToday) {
           writeDailyLog({ hydrationMl: hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
         }
-        router.back();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowSaveSuccess(true);
+        setTimeout(() => router.back(), 350);
       },
     });
   }
@@ -861,7 +877,7 @@ export default function LogSymptomsScreen() {
           pointerEvents="none"
           style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
         >
-          <MoodAmbientBackground progress={moodAnim} isDark={t.isDark} />
+          <MoodAmbientBackground progress={moodAnim} isDark={t.isDark} reducedMotion={reducedMotion} />
         </MotiView>
       )}
 
@@ -948,16 +964,16 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} />
         )}
       </View>
 
       {/* Next button (not on summary — summary has its own submit) */}
       {!isSummary && (
         <View style={{ paddingHorizontal: 24, paddingBottom: 8, paddingTop: 4 }}>
-          <TouchableOpacity onPress={handleNext} style={styles.nextBtn}>
+          <PressableScale onPress={handleNext} style={styles.nextBtn}>
             <Text style={styles.nextBtnText}>Next</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       )}
     </SafeAreaView>

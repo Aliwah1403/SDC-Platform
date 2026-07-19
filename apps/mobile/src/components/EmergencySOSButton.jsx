@@ -7,8 +7,8 @@ import {
   Alert,
   Animated,
   Linking,
-  Vibration,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
@@ -81,7 +81,7 @@ export default function EmergencySOSButton() {
 
   const handleEmergencyPress = () => {
     posthog?.capture('emergency_sos_triggered', { has_emergency_contacts: emergencyContacts.length > 0 });
-    Vibration.vibrate(200);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     startShakeAnimation();
     setSOSModalVisible(true);
     setEmergencyMode(true);
@@ -92,7 +92,7 @@ export default function EmergencySOSButton() {
     setCountdownActive(true);
     setCountdown(5);
     startPulseAnimation();
-    Vibration.vibrate([500, 500, 500, 500, 500]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // tick for "5"
 
     countdownInterval.current = setInterval(() => {
       setCountdown((prev) => {
@@ -102,11 +102,15 @@ export default function EmergencySOSButton() {
           setCountdownActive(false);
           setSOSModalVisible(false);
           setEmergencyMode(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           triggerEmergencyCall();
           return 0;
         }
-        Vibration.vibrate(100);
-        return prev - 1;
+        const nextCount = prev - 1;
+        if (nextCount >= 4) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        else if (nextCount >= 2) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        return nextCount;
       });
     }, 1000);
   };
@@ -117,7 +121,6 @@ export default function EmergencySOSButton() {
     setCountdown(5);
     pulseAnim.stopAnimation();
     pulseAnim.setValue(1);
-    Vibration.cancel();
   };
 
   const closeModal = () => {

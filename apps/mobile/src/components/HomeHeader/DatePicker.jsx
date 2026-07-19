@@ -6,6 +6,7 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -63,7 +64,12 @@ function DayItem({
 
   return (
     <TouchableOpacity
-      onPress={() => !future && setSelectedDate(date)}
+      onPress={() => {
+        if (!future) {
+          Haptics.selectionAsync();
+          setSelectedDate(date);
+        }
+      }}
       disabled={future}
       style={{
         width: SCREEN_WIDTH / 7,

@@ -6,6 +6,7 @@ import { getStreakFireAsset } from "@/utils/streakFire";
 import Svg, { Path } from "react-native-svg";
 import { useRouter } from "expo-router";
 import { DatePicker } from "./DatePicker";
+import { AnimatedStreakCount } from "./AnimatedStreakCount";
 import { Bone } from "@/components/Skeleton/Bone";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
@@ -126,16 +127,15 @@ export function HomeHeader({
                 style={{ width: 15, height: 20 }}
                 contentFit="contain"
               />
-              <Text
-                style={{
+              <AnimatedStreakCount
+                value={healthStreak}
+                textStyle={{
                   fontFamily: fonts.bold,
                   fontSize: 14,
                   color: "#FFFFFF",
                   marginLeft: 4,
                 }}
-              >
-                {healthStreak}
-              </Text>
+              />
             </TouchableOpacity>
 
             <TouchableOpacity

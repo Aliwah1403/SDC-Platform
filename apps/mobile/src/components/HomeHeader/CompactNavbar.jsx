@@ -5,6 +5,7 @@ import { fonts } from "@/utils/fonts";
 import { Image } from "expo-image";
 import { getStreakFireAsset } from "@/utils/streakFire";
 import { useTheme } from "@/hooks/useTheme";
+import { AnimatedStreakCount } from "./AnimatedStreakCount";
 
 export function CompactNavbar({ date, healthStreak, insets }) {
   const router = useRouter();
@@ -46,16 +47,15 @@ export function CompactNavbar({ date, healthStreak, insets }) {
           }}
         >
           <Image source={getStreakFireAsset(healthStreak)} style={{ width: 15, height: 20 }} contentFit="contain" />
-          <Text
-            style={{
+          <AnimatedStreakCount
+            value={healthStreak}
+            textStyle={{
               fontFamily: fonts.bold,
               fontSize: 14,
               color: "#FFFFFF",
               marginLeft: 4,
             }}
-          >
-            {healthStreak}
-          </Text>
+          />
         </TouchableOpacity>
 
         <TouchableOpacity

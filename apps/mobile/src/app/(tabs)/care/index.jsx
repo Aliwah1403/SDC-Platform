@@ -9,6 +9,9 @@ import { MotiView } from "moti";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/Card";
+import { PressableScale } from "@/components/PressableScale";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { STAGGER_MS } from "@/utils/motion";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { useAppStore } from "@/store/appStore";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -43,10 +46,10 @@ function formatApptDate(dateStr) {
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function EmergencyButton({ onPress, isActive }) {
+  const reducedMotion = useReducedMotion();
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.85}
       style={{
         borderRadius: 20,
         marginBottom: 16,
@@ -59,28 +62,32 @@ function EmergencyButton({ onPress, isActive }) {
       }}
     >
       {/* Pulse rings */}
-      <MotiView
-        from={{ scale: 1, opacity: 0.22 }}
-        animate={{ scale: 1.06, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true }}
-        style={{
-          position: "absolute",
-          top: -6, bottom: -6, left: -6, right: -6,
-          borderRadius: 26,
-          backgroundColor: isActive ? "#DC2626" : "#A9334D",
-        }}
-      />
-      <MotiView
-        from={{ scale: 1, opacity: 0.16 }}
-        animate={{ scale: 1.03, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true, delay: 400 }}
-        style={{
-          position: "absolute",
-          top: -3, bottom: -3, left: -3, right: -3,
-          borderRadius: 23,
-          backgroundColor: "#781D11",
-        }}
-      />
+      {!reducedMotion && (
+        <MotiView
+          from={{ scale: 1, opacity: 0.22 }}
+          animate={{ scale: 1.06, opacity: 0 }}
+          transition={{ type: "timing", duration: 2000, loop: true }}
+          style={{
+            position: "absolute",
+            top: -6, bottom: -6, left: -6, right: -6,
+            borderRadius: 26,
+            backgroundColor: isActive ? "#DC2626" : "#A9334D",
+          }}
+        />
+      )}
+      {!reducedMotion && (
+        <MotiView
+          from={{ scale: 1, opacity: 0.16 }}
+          animate={{ scale: 1.03, opacity: 0 }}
+          transition={{ type: "timing", duration: 2000, loop: true, delay: 400 }}
+          style={{
+            position: "absolute",
+            top: -3, bottom: -3, left: -3, right: -3,
+            borderRadius: 23,
+            backgroundColor: "#781D11",
+          }}
+        />
+      )}
 
       <LinearGradient
         colors={isActive ? ["#DC2626", "#A9334D", "#781D11"] : ["#A9334D", "#781D11", "#0D0D0D"]}
@@ -108,7 +115,7 @@ function EmergencyButton({ onPress, isActive }) {
           </View>
         </View>
       </LinearGradient>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -233,7 +240,7 @@ export default function CareMenuScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 20, paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
       >
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 0 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 0 * STAGGER_MS }}>
           <EmergencyButton
             onPress={() => {
               posthog?.capture('care_section_tapped', { section: 'crisis_mode', crisis_was_active: crisisMode.isActive });
@@ -243,7 +250,7 @@ export default function CareMenuScreen() {
           />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 80 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 1 * STAGGER_MS }}>
           <CareNavCard
             icon={<Pill size={26} color="#A9334D" strokeWidth={2} />}
             title="Medications"
@@ -259,7 +266,7 @@ export default function CareMenuScreen() {
           />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 160 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 2 * STAGGER_MS }}>
           <CareNavCard
             icon={<Calendar size={26} color={t.text} strokeWidth={2} />}
             title="Appointments"
@@ -278,7 +285,7 @@ export default function CareMenuScreen() {
           />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 240 }} style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 3 * STAGGER_MS }} style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
           <CareNavTile
             icon={<Users size={24} color="#059669" strokeWidth={2} />}
             title="Care Team"
@@ -316,7 +323,7 @@ export default function CareMenuScreen() {
           </CareNavTile>
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 320 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 4 * STAGGER_MS }}>
           <CareNavCard
             icon={<MapPin size={26} color="#F0531C" strokeWidth={2} />}
             title="Clinics & Hospitals"

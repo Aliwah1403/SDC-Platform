@@ -57,7 +57,10 @@ export function PainStatusTile({ selectedDateData, healthData }) {
       onPress={
         selectedDateData
           ? () =>
-              router.push({ pathname: "/metric-detail", params: { metric: "pain" } })
+              router.push({
+                pathname: "/metric-detail",
+                params: { metric: "pain", date: selectedDateData.date },
+              })
           : undefined
       }
       style={{

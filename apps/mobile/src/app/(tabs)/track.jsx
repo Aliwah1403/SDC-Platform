@@ -58,6 +58,7 @@ import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { hydrationValueInUnit, HYDRATION_UNIT_LABEL, HYDRATION_SCALE_MAX } from "@/utils/hydrationUnits";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { STAGGER_MS, enterTiming } from "@/utils/motion";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -648,7 +649,7 @@ function MiniSparkline({ data, color, maxValue }) {
   );
 }
 
-function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
+function MetricCard({ metricKey, entry, sparkData, wide, animIndex, selectedDate }) {
   const router = useRouter();
   const posthog = usePostHog();
   const t = useTheme();
@@ -692,7 +693,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
     <MotiView
       from={{ opacity: 0, translateY: 8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ delay: animIndex * 60, type: "timing", duration: 280 }}
+      transition={{ delay: Math.min(animIndex, 6) * STAGGER_MS, type: "timing", duration: 280 }}
     >
       <Card
         onPress={() => {
@@ -700,7 +701,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
             metric: metricKey,
             has_value: hasValue,
           });
-          router.push(`/metric-detail?metric=${metricKey}`);
+          router.push(`/metric-detail?metric=${metricKey}&date=${dateToStr(selectedDate)}`);
         }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
@@ -854,7 +855,7 @@ function WorkoutItem({ workout, index, isLast }) {
     <MotiView
       from={{ opacity: 0, translateY: 6 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 260, delay: 400 + index * 80 }}
+      transition={{ type: "timing", duration: 260, delay: Math.min(index, 6) * STAGGER_MS }}
     >
       <View
         style={{
@@ -1049,7 +1050,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
     <MotiView
       from={{ opacity: 0, translateY: -8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 320 }}
+      transition={enterTiming}
       style={{ marginHorizontal: 16, marginTop: 16, marginBottom: 4 }}
     >
       <Card variant="subtle" style={{ borderRadius: 16, flexDirection: "row", overflow: "hidden" }}>
@@ -1180,7 +1181,7 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
 
 // ─── Metrics Grid ─────────────────────────────────────────────────────────────
 
-function MetricsGrid({ entry, healthData, hkConnected }) {
+function MetricsGrid({ entry, healthData, hkConnected, selectedDate }) {
   const t = useTheme();
   const rows = hkConnected
     ? [...BASE_METRIC_ROWS, ...HK_METRIC_ROWS]
@@ -1214,6 +1215,7 @@ function MetricsGrid({ entry, healthData, hkConnected }) {
                   sparkData={wide ? getLast7(healthData, cfg.dataField) : null}
                   wide={wide}
                   animIndex={rowIdx * 2 + colIdx}
+                  selectedDate={selectedDate}
                 />
               );
             })}
@@ -1389,6 +1391,7 @@ export default function TrackScreen() {
           entry={entry}
           healthData={healthData}
           hkConnected={healthConnected}
+          selectedDate={selectedDate}
         />
         <ActivitySection
           workouts={workouts}

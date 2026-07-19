@@ -1,5 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import * as Haptics from "expo-haptics";
+import Animated, {
+  useSharedValue,
+  useAnimatedScrollHandler,
+  useAnimatedReaction,
+  clamp,
+} from "react-native-reanimated";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -8,14 +15,15 @@ import { ChevronLeft, Clock, AlertCircle } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { getEducationArticle, getRelatedArticles } from "@/utils/educationContent";
+import { ScrollProgressPill } from "@/components/ScrollProgressPill";
+import { PressableScale } from "@/components/PressableScale";
 
 const CARD_WIDTH = 220;
 
 function RelatedCard({ item, t, onPress }) {
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.85}
       style={{
         width: CARD_WIDTH,
         borderRadius: 16,
@@ -60,7 +68,7 @@ function RelatedCard({ item, t, onPress }) {
           {item.readTime} min read
         </Text>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -111,6 +119,44 @@ export default function EducationArticleScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Scroll-progress tracking for the floating pill — kept above the
+  // early-return so hook order stays stable whether or not the article
+  // exists (the pill itself is only rendered in the found-article branch).
+  const scrollRef = useRef(null);
+  const viewportHeight = useSharedValue(0);
+  const contentHeight = useSharedValue(0);
+  const progress = useSharedValue(0);
+  const isResetting = useSharedValue(false);
+  const currentScroll = useSharedValue(0);
+
+  const scrollHandler = useAnimatedScrollHandler((event) => {
+    const y = event.contentOffset.y;
+    currentScroll.set(y);
+    if (isResetting.get()) return;
+    const scrollableHeight = contentHeight.get() - viewportHeight.get();
+    progress.set(scrollableHeight > 0 ? clamp(y / scrollableHeight, 0, 1) : 0);
+  });
+
+  // Reset guard: onReset flips isResetting so the handler above ignores the
+  // scroll-to-top's intermediate offsets, then this reaction clears the flag
+  // (and snaps progress back to 0, so the pill returns to the reading-time
+  // state instead of staying stuck on the up-arrow) once the scroll actually
+  // lands at y === 0.
+  useAnimatedReaction(
+    () => isResetting.get() && currentScroll.get() === 0,
+    (shouldClear) => {
+      if (shouldClear) {
+        isResetting.set(false);
+        progress.set(0);
+      }
+    },
+  );
+
+  const onReset = () => {
+    isResetting.set(true);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
   if (!article) {
     return (
       <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -143,10 +189,17 @@ export default function EducationArticleScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style={t.isDark ? "light" : "dark"} />
-      <ScrollView
+      <Animated.ScrollView
+        ref={scrollRef}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+        onLayout={(e) => viewportHeight.set(e.nativeEvent.layout.height)}
+        onContentSizeChange={(w, h) => contentHeight.set(h)}
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: insets.bottom + 40,
+          // Clears the floating progress pill (bottom + 16 offset, 52 tall)
+          // so it never sits on the carousel at full scroll.
+          paddingBottom: insets.bottom + 88,
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -348,6 +401,7 @@ export default function EducationArticleScreen() {
                     item={item}
                     t={t}
                     onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                       posthog?.capture("education_related_tapped", {
                         from_topic: topic,
                         to_topic: item.topic,
@@ -362,7 +416,14 @@ export default function EducationArticleScreen() {
             </View>
           </View>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
+
+      <ScrollProgressPill
+        progress={progress}
+        readingTime={article.readTime}
+        onReset={onReset}
+        bottomOffset={insets.bottom + 16}
+      />
     </View>
   );
 }

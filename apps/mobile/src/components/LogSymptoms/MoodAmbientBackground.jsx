@@ -1,5 +1,6 @@
 import { useWindowDimensions } from "react-native";
-import { useDerivedValue } from "react-native-reanimated";
+import { useEffect } from "react";
+import { useDerivedValue, useSharedValue } from "react-native-reanimated";
 import {
   Canvas,
   Rect,
@@ -69,10 +70,15 @@ function buildBlob(cx, cy, R, amp, phase, k1, k2) {
  * from cool → warm as `progress` (a reanimated SharedValue in [1..5]) changes,
  * with two blurred organic blobs that morph shape and colour over time.
  */
-export function MoodAmbientBackground({ progress, isDark }) {
+export function MoodAmbientBackground({ progress, isDark, reducedMotion = false }) {
   const { width, height } = useWindowDimensions();
   const clock = useClock();
   const C = isDark ? DARK : LIGHT;
+  const motionScale = useSharedValue(reducedMotion ? 0 : 1);
+
+  useEffect(() => {
+    motionScale.value = reducedMotion ? 0 : 1;
+  }, [reducedMotion]);
 
   // Normalised mood 0..1.
   const m = useDerivedValue(() => {
@@ -93,15 +99,15 @@ export function MoodAmbientBackground({ progress, isDark }) {
 
   const blobPath = useDerivedValue(() => {
     const t = clock.value / 1000;
-    const energy = 0.08 + m.value * 0.16; // livelier when pleasant
-    const speed = 0.4 + m.value * 0.7;
+    const energy = (0.08 + m.value * 0.16) * motionScale.value; // livelier when pleasant
+    const speed = (0.4 + m.value * 0.7) * motionScale.value;
     return buildBlob(cx, cy, R, energy, t * speed, 3, 5);
   });
 
   const corePath = useDerivedValue(() => {
     const t = clock.value / 1000;
-    const energy = 0.06 + m.value * 0.12;
-    const speed = 0.5 + m.value * 0.9;
+    const energy = (0.06 + m.value * 0.12) * motionScale.value;
+    const speed = (0.5 + m.value * 0.9) * motionScale.value;
     return buildBlob(cx, cy, R * 0.7, energy, -t * speed + 2, 4, 6);
   });
 
