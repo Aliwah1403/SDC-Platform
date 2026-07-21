@@ -22,6 +22,7 @@ import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCh
 import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
+import { useTodaySteps } from "@/hooks/useTodaySteps";
 import { useHydrationStore } from "@/store/hydrationStore";
 import {
   useHydrationContainersQuery,
@@ -33,7 +34,7 @@ import {
   MAX_CONTAINERS,
   FALLBACK_CONTAINERS,
 } from "@/hooks/queries/useHydrationContainersQuery";
-import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML, describeBumpReason } from "@/utils/hydrationGoal";
 import {
   HYDRATION_CATEGORY,
   scheduleHydrationReminders,
@@ -771,12 +772,19 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
   const { data: profile } = useProfileQuery();
   const locationEnabled = profile?.locationEnabled ?? false;
   const { weather } = useWeatherData(locationEnabled);
+  const stepsToday = useTodaySteps();
   const { displayUnit, setDisplayUnit } = useHydrationStore();
 
   const suggestion = useMemo(
-    () => getHydrationSuggestion({ weightKg: profile?.weight ?? null, tempC: weather?.temp ?? null, baseGoalMl: value }),
-    [profile?.weight, weather?.temp, value],
+    () => getHydrationSuggestion({ weightKg: profile?.weight ?? null, tempC: weather?.temp ?? null, stepsToday, baseGoalMl: value }),
+    [profile?.weight, weather?.temp, stepsToday, value],
   );
+  const bumpReason = describeBumpReason({
+    heatBumpMl: suggestion.heatBumpMl,
+    activityBumpMl: suggestion.activityBumpMl,
+    tempC: weather?.temp ?? null,
+    stepsToday,
+  });
 
   const { number, label } = bigValueParts(value, displayUnit);
 
@@ -865,6 +873,11 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
             </View>
           </View>
         </PressableScale>
+        {suggestion.bumpMl > 0 && !!bumpReason && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textTertiary, textAlign: "center", marginTop: 10 }}>
+            +{formatHydration(suggestion.bumpMl, displayUnit)} suggested today — {bumpReason}
+          </Text>
+        )}
       </MotiView>
 
       <SectionDivider t={t} />
@@ -927,12 +940,16 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
 
       {/* Footnote */}
       <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 19, textAlign: "center", marginTop: 24, marginBottom: 20 }}>
-        Your needs rise with body size and hot weather — all drinks count. Your base goal
-        stays fixed; the app suggests extras on hot days instead of moving it.
+        Your needs rise with body size, hot weather, and activity — all drinks count. Your
+        base goal stays fixed; the app suggests extras on hot or active days instead of
+        moving it.
       </Text>
 
       {/* Save */}
-      <PressableScale onPress={onSave} style={{ backgroundColor: "#3B82F6", borderRadius: 16, paddingVertical: 17, alignItems: "center" }}>
+      <PressableScale
+        onPress={() => onSave({ activity_bump_ml: suggestion.activityBumpMl, steps_today: suggestion.inputs.stepsToday })}
+        style={{ backgroundColor: "#3B82F6", borderRadius: 16, paddingVertical: 17, alignItems: "center" }}
+      >
         <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#fff" }}>Done</Text>
       </PressableScale>
     </ScrollView>
@@ -978,12 +995,12 @@ export default function MetricGoalScreen() {
     setValue(v);
   };
 
-  const handleSave = () => {
+  const handleSave = (extra = {}) => {
     setGoalMutation.mutate(
       { metric, value },
       {
         onSuccess: () => {
-          posthog?.capture('metric_goal_set', { metric_name: metric, goal_value: bucketGoalValue(metric, value) });
+          posthog?.capture('metric_goal_set', { metric_name: metric, goal_value: bucketGoalValue(metric, value), ...extra });
           router.back();
         },
       },
@@ -1157,7 +1174,7 @@ function GenericGoalBody({ value, meta, metric, onSliderChange, onSave, insets, 
 
         {/* Save button */}
         <TouchableOpacity
-          onPress={onSave}
+          onPress={() => onSave()}
           style={{
             backgroundColor: meta.color,
             borderRadius: 16,

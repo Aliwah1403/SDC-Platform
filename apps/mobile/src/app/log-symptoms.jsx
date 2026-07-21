@@ -26,10 +26,11 @@ import { useHealthLogsQuery, useHealthDataQuery } from "@/hooks/queries/useHealt
 import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
+import { useTodaySteps } from "@/hooks/useTodaySteps";
 import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
-import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl } from "@/utils/hydrationGoal";
+import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl, getActivityBumpMl, combineBumpMl, describeBumpReason } from "@/utils/hydrationGoal";
 import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
@@ -465,8 +466,10 @@ function SymptomsStep({ selected, onToggle, relog }) {
 // Step 5 — Hydration
 const HYDRATION_MAX_ML = 5000;
 
-function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit, containers }) {
+function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, activityBumpMl, stepsToday, displayUnit, containers }) {
   const t = useTheme();
+  const bumpMl = combineBumpMl(heatBumpMl, activityBumpMl);
+  const bumpReason = describeBumpReason({ heatBumpMl, activityBumpMl, tempC, stepsToday });
   // Default container renders first and filled; the rest stay outlined.
   const orderedContainers = [...containers].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
   const { number, unitLabel } = hydrationNumberAndUnit(value, displayUnit);
@@ -493,9 +496,9 @@ function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, displayUnit
           <Text style={{ fontFamily: fonts.extrabold, fontSize: 32, color: "#3B82F6" }}>{number} {unitLabel}</Text>
           <Text style={{ fontFamily: fonts.medium, fontSize: 18, color: t.textSecondary }}> of {goalParts.number} {goalParts.unitLabel}</Text>
         </Text>
-        {heatBumpMl > 0 && tempC != null && (
+        {bumpMl > 0 && !!bumpReason && (
           <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textTertiary, marginTop: 6 }}>
-            +{formatHydration(heatBumpMl, displayUnit)} suggested today — it's {Math.round(tempC)}°
+            +{formatHydration(bumpMl, displayUnit)} suggested today — {bumpReason}
           </Text>
         )}
       </View>
@@ -709,6 +712,8 @@ export default function LogSymptomsScreen() {
   const { weather } = useWeatherData(profile?.locationEnabled ?? false);
   const tempC = weather?.temp ?? null;
   const heatBumpMl = getHeatBumpMl(tempC);
+  const stepsToday = useTodaySteps();
+  const activityBumpMl = getActivityBumpMl(stepsToday);
 
   const [step, setStep] = useState(0);
 
@@ -855,6 +860,8 @@ export default function LogSymptomsScreen() {
           amount_ml: hydration,
           goal_ml: hydrationGoalMl,
           goal_met: hydration >= hydrationGoalMl,
+          activity_bump_ml: activityBumpMl,
+          steps_today: stepsToday,
         });
         // Goal-aware silencing (Step 10 decision 3) — `hydration` here is
         // today's full running total (the vessel seeds from it above), and
@@ -995,7 +1002,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 5 && (
-          <HydrationStep value={hydration} onChange={setHydrationTouched} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} displayUnit={hydrationDisplayUnit} containers={containers} />
+          <HydrationStep value={hydration} onChange={setHydrationTouched} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} activityBumpMl={activityBumpMl} stepsToday={stepsToday} displayUnit={hydrationDisplayUnit} containers={containers} />
         )}
         {step === 6 && (
           <NotesStep

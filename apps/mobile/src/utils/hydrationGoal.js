@@ -20,6 +20,17 @@ export const HEAT_BUMPS = [
   { minTempC: 25, extraMl: 250 },
 ];
 
+// Activity advisory bumps, based on today's synced step count (Step 11). Same
+// semantics as HEAT_BUMPS — advisory only, never stored, never fed into suggestedMl.
+export const ACTIVITY_BUMPS = [
+  { minSteps: 12000, extraMl: 500 },
+  { minSteps: 8000, extraMl: 250 },
+];
+
+// Heat + activity bumps combine but are capped so a hot, active day shows one
+// reasonable nudge instead of stacking to an unreasonable total.
+export const MAX_DAILY_BUMP_ML = 750;
+
 export const GLASS_ML = 250;
 
 function roundTo(value, step) {
@@ -50,13 +61,49 @@ export function getHeatBumpMl(tempC) {
 }
 
 /**
- * Full suggestion payload for the hydration goal sheet + daily advisory.
- * `baseGoalMl` is the user's own fixed goal — the heat bump applies to it for
- * `todayTargetMl`, but never to `suggestedMl` itself.
+ * Today's-target activity bump — mirrors getHeatBumpMl. Returns 0 (no mention)
+ * when stepsToday is unavailable (no wearable permission / nothing synced today).
  */
-export function getHydrationSuggestion({ weightKg, tempC, baseGoalMl } = {}) {
+export function getActivityBumpMl(stepsToday) {
+  if (stepsToday == null) return 0;
+  for (const bump of ACTIVITY_BUMPS) {
+    if (stepsToday >= bump.minSteps) return bump.extraMl;
+  }
+  return 0;
+}
+
+/**
+ * Combines heat + activity bumps, capped at MAX_DAILY_BUMP_ML (decision 4) so a
+ * hot AND active day shows one reasonable number instead of stacking unchecked.
+ */
+export function combineBumpMl(heatBumpMl, activityBumpMl) {
+  return Math.min((heatBumpMl ?? 0) + (activityBumpMl ?? 0), MAX_DAILY_BUMP_ML);
+}
+
+/**
+ * Copy suffix naming why today's target is bumped (decision 5 — always phrased
+ * retrospectively, e.g. "you've been active", never a morning promise the user
+ * could "fail"; no guilt phrasing). Returns '' when neither bump applies.
+ */
+export function describeBumpReason({ heatBumpMl, activityBumpMl, tempC, stepsToday }) {
+  const hasHeat = heatBumpMl > 0 && tempC != null;
+  const hasActivity = activityBumpMl > 0 && stepsToday != null;
+  if (hasHeat && hasActivity) return `hot day (${Math.round(tempC)}°) + active day`;
+  if (hasHeat) return `it's ${Math.round(tempC)}°`;
+  if (hasActivity) return `you've been active (${stepsToday.toLocaleString()} steps)`;
+  return '';
+}
+
+/**
+ * Full suggestion payload for the hydration goal sheet + daily advisory.
+ * `baseGoalMl` is the user's own fixed goal — the heat/activity bumps apply to
+ * it for `todayTargetMl`, but never to `suggestedMl` itself.
+ */
+export function getHydrationSuggestion({ weightKg, tempC, stepsToday, baseGoalMl } = {}) {
   const suggestedMl = getSuggestedMl(weightKg);
-  const bumpMl = getHeatBumpMl(tempC);
+  const heatBumpMl = getHeatBumpMl(tempC);
+  const activityBumpMl = getActivityBumpMl(stepsToday);
+  const bumpMl = combineBumpMl(heatBumpMl, activityBumpMl);
   const todayTargetMl = baseGoalMl != null ? baseGoalMl + bumpMl : null;
 
   const explanation = weightKg
@@ -67,7 +114,9 @@ export function getHydrationSuggestion({ weightKg, tempC, baseGoalMl } = {}) {
     suggestedMl,
     todayTargetMl,
     bumpMl,
-    inputs: { weightKg: weightKg ?? null, tempC: tempC ?? null },
+    heatBumpMl,
+    activityBumpMl,
+    inputs: { weightKg: weightKg ?? null, tempC: tempC ?? null, stepsToday: stepsToday ?? null },
     explanation,
   };
 }
