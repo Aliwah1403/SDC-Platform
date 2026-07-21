@@ -3,6 +3,7 @@
   "main": "index",
   "version": "1.0.0",
   "scripts": {
+    "eas-build-pre-install": "npm install -g npm@11.16.0",
     "postinstall": "patch-package",
     "android": "expo run:android",
     "ios": "expo run:ios"
