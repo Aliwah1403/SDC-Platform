@@ -26,6 +26,14 @@ import {
 } from "@/services/healthConnectService";
 import { fetchProfile, updateProfile } from "@/services/supabaseQueries";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
+import { scheduleHydrationReminders } from "@/utils/hydrationReminders";
+import {
+  registerNotificationCategories,
+  processNotificationResponse,
+  HYDRATION_OPEN_ACTION,
+} from "@/utils/notificationActions";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { useHydrationContainersQuery } from "@/hooks/queries/useHydrationContainersQuery";
 import '@/utils/backgroundNotificationRefresh';
 import { registerNotificationRefreshTask } from "@/utils/backgroundNotificationRefresh";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -66,6 +74,22 @@ const queryClient = new QueryClient({
 });
 
 export default function RootLayout() {
+  return (
+    <PostHogProvider client={posthog} autocapture={false}>
+      <QueryClientProvider client={queryClient}>
+        <RootLayoutContent />
+      </QueryClientProvider>
+    </PostHogProvider>
+  );
+}
+
+// Split out from RootLayout so hooks that need the query client (e.g.
+// useHydrationContainersQuery, which calls useQuery internally) have
+// QueryClientProvider as an actual ancestor. RootLayout itself renders the
+// provider as part of its own JSX, so a hook called directly inside
+// RootLayout has no such ancestor yet at render time and would always throw
+// "No QueryClient set" — this component is what QueryClientProvider wraps.
+function RootLayoutContent() {
   const theme = useTheme();
   const { initiate, isReady } = useAuth();
   const router = useRouter();
@@ -75,6 +99,8 @@ export default function RootLayout() {
     setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout,
   } = useAppStore();
   const userId = useAuthStore((s) => s.auth?.user?.id);
+  const hydrationDisplayUnit = useHydrationStore((s) => s.displayUnit);
+  const { data: hydrationContainersData } = useHydrationContainersQuery();
   const [splashExiting, setSplashExiting] = useState(false);
   const [splashGone, setSplashGone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
@@ -288,17 +314,77 @@ export default function RootLayout() {
       })
       .catch(() => {});
     registerNotificationRefreshTask().catch(() => {});
+    // Hydration reminders are opt-in (default 'off') — only reschedule when the
+    // user has actually turned them on. Same "iOS clears locals" rationale as above.
+    const hydrationFrequency = useHydrationStore.getState().hydrationReminderFrequency;
+    if (hydrationFrequency !== 'off') {
+      scheduleHydrationReminders(hydrationFrequency).catch((err) => {
+        console.error("[HydrationReminders] Failed to reschedule on launch:", err);
+      });
+    }
+  }, [userId]);
+
+  // Register both notification categories on start, and again whenever the
+  // default container or displayUnit change (Step 10 decision 4) — cheap, and
+  // keeps the hydration action's button title from ever going stale.
+  useEffect(() => {
+    if (!userId) return;
+    registerNotificationCategories({ queryClient, userId }).catch((err) => {
+      console.error("[Notifications] Failed to register notification categories:", err);
+    });
+  }, [userId, hydrationContainersData, hydrationDisplayUnit]);
+
+  // Killed-app recovery: expo-notifications may not run the response listener
+  // headlessly when the app was fully killed (see POLISH-PLAN.md Step 10 spike
+  // note). getLastNotificationResponseAsync() gives us one more chance to catch
+  // an action tap on the next cold start — safe to always attempt because
+  // processNotificationResponse dedupes by identifier and drops anything not
+  // from today. Gated on userId: before auth rehydrates the handler can't
+  // apply the tap, and re-running once it resolves is what makes recovery
+  // actually land on a cold start.
+  useEffect(() => {
+    if (!userId) return;
+    Notifications.getLastNotificationResponseAsync()
+      .then((response) => {
+        if (!response) return;
+        if (
+          response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER ||
+          response.actionIdentifier === HYDRATION_OPEN_ACTION
+        ) {
+          return; // body taps / foreground-opening actions are handled by normal navigation, not recovery
+        }
+        processNotificationResponse(response, { queryClient }).catch((err) => {
+          console.error("[Notifications] Cold-start recovery failed:", err);
+        });
+      })
+      .catch((err) => {
+        console.error("[Notifications] Failed to read last notification response:", err);
+      });
   }, [userId]);
 
   // Route to the correct screen when user taps a remote or local notification
   useEffect(() => {
     const sub = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data ?? {};
+      const actionIdentifier = response.actionIdentifier;
       posthog.capture('notification_opened', {
         type: data.type ?? data.screen ?? 'unknown',
         trigger_type: response.notification.request.trigger?.type ?? 'unknown',
         notification_variant: data.variant ?? null,
+        action: actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER ? actionIdentifier : null,
       });
+
+      // Silent actions (log hydration / mark medication taken) never navigate —
+      // hand off to the shared handler and stop. "Open Hemo" is also a named
+      // action, but it opens the app to foreground, so it falls through to the
+      // routing switch below just like a body tap.
+      if (actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER && actionIdentifier !== HYDRATION_OPEN_ACTION) {
+        processNotificationResponse(response, { queryClient }).catch((err) => {
+          console.error("[Notifications] Failed to process notification action:", err);
+        });
+        return;
+      }
+
       if (data.type === "crisis_checkin" || data.type === "crisis_escalation") {
         router.push("/crisis-mode");
       } else if (data.type === "checkin") {
@@ -313,6 +399,8 @@ export default function RootLayout() {
         router.push(data.postId ? `/community/${data.postId}` : "/community/notifications");
       } else if (data.screen === "metric-detail" && data.metric) {
         router.push(`/metric-detail?metric=${data.metric}`);
+      } else if (data.type === "hydration_reminder") {
+        router.push("/log-symptoms");
       }
     });
     return () => sub.remove();
@@ -333,8 +421,6 @@ export default function RootLayout() {
   }
 
   return (
-    <PostHogProvider client={posthog} autocapture={false}>
-    <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
@@ -465,8 +551,6 @@ export default function RootLayout() {
         )}
         </KeyboardProvider>
       </GestureHandlerRootView>
-    </QueryClientProvider>
-    </PostHogProvider>
   );
 }
 

@@ -30,6 +30,7 @@ import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydration
 import { useHydrationStore } from "@/store/hydrationStore";
 import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
 import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl } from "@/utils/hydrationGoal";
+import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackground";
@@ -855,6 +856,10 @@ export default function LogSymptomsScreen() {
           goal_ml: hydrationGoalMl,
           goal_met: hydration >= hydrationGoalMl,
         });
+        // Goal-aware silencing (Step 10 decision 3) — `hydration` here is
+        // today's full running total (the vessel seeds from it above), and
+        // hydrationGoalMl is the user's BASE goal, never the heat-bumped one.
+        maybeSilenceHydrationReminders(hydration, hydrationGoalMl);
         if (!hasLoggedToday) {
           posthog?.capture('streak_saved', {
             trigger_type: 'organic',

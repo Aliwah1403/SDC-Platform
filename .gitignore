@@ -82,7 +82,7 @@ service-account*.json
 
 # Local planning notes
 POLISH-PLAN.md
-CLINICAL-REVIEW-hydration.md
+CLINICAL-REVIEW-*.md
 design-refs/
 MARKETING-PLAN.md
 SEO-PLAN.md

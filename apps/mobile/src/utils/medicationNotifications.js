@@ -1,5 +1,6 @@
 import * as Notifications from "expo-notifications";
 import { posthog } from "@/utils/analytics";
+import { MEDICATION_CATEGORY } from "@/utils/notificationActions";
 
 function parseTimeToHourMinute(timeStr) {
   const match = timeStr?.match(/(\d+):(\d+)\s*(AM|PM)/i);
@@ -88,6 +89,7 @@ export async function scheduleMedicationNotifications(med) {
           body: med.dosage ? `Take your ${med.dosage} dose` : "Take your dose",
           data: { type: "medication", medicationId: med.id },
           sound: true,
+          categoryIdentifier: MEDICATION_CATEGORY,
         },
         trigger: makeTrigger(parsed.hour, parsed.minute),
       });
@@ -110,6 +112,7 @@ export async function scheduleMedicationNotifications(med) {
             body: `A gentle reminder: your dose is soon.`,
             data: { type: "medication", medicationId: med.id },
             sound: true,
+            categoryIdentifier: MEDICATION_CATEGORY,
           },
           trigger:
             adjDay != null
@@ -130,6 +133,7 @@ export async function scheduleMedicationNotifications(med) {
             body: `Just checking in on your ${timeStr} dose.`,
             data: { type: "medication", medicationId: med.id },
             sound: true,
+            categoryIdentifier: MEDICATION_CATEGORY,
           },
           trigger:
             adjDay != null

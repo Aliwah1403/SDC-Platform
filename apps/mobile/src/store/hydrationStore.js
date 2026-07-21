@@ -12,6 +12,11 @@ export const useHydrationStore = create(
       // 'glasses' | 'ml' | 'L' | 'floz' — display format only, never the storage format.
       displayUnit: 'glasses',
       setDisplayUnit: (displayUnit) => set({ displayUnit }),
+      // 'off' | 'gentle' | 'regular' — opt-in hydration reminder cadence
+      // (Step 10 decision 2). Default 'off', unlike check-in reminders.
+      // Device-local: notification prefs were never asked to sync.
+      hydrationReminderFrequency: 'off',
+      setHydrationReminderFrequency: (hydrationReminderFrequency) => set({ hydrationReminderFrequency }),
     }),
     {
       name: 'hydration-store',

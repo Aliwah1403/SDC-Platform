@@ -8,11 +8,14 @@ import {
   ScrollView,
   Dimensions,
   TextInput,
+  Alert,
+  Linking,
 } from "react-native";
 import Slider from "@react-native-community/slider";
 import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
 import { MotiView } from "moti";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCheck, Pencil, ChevronUp, Plus } from "lucide-react-native";
@@ -31,6 +34,12 @@ import {
   FALLBACK_CONTAINERS,
 } from "@/hooks/queries/useHydrationContainersQuery";
 import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import {
+  HYDRATION_CATEGORY,
+  scheduleHydrationReminders,
+  cancelHydrationReminders,
+  describeHydrationSchedule,
+} from "@/utils/hydrationReminders";
 import { hydrationNumberAndUnit, formatHydration } from "@/utils/hydrationUnits";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
@@ -613,6 +622,150 @@ function ContainersSection({ displayUnit, t }) {
   );
 }
 
+const REMINDER_OPTIONS = [
+  { key: "off", label: "Off" },
+  { key: "gentle", label: "Gentle" },
+  { key: "regular", label: "Regular" },
+];
+
+// Dev-only spike harness (Step 10 prerequisite): fires a one-off 10s local
+// notification carrying the full hydration category, so the actions can be
+// tested foregrounded / backgrounded / killed, and mirrored to a paired
+// Apple Watch, without waiting for a real scheduled slot.
+function HydrationReminderDevTestButton({ t }) {
+  const fireTestReminder = async () => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Time for some water",
+          body: "Dev test reminder — spike harness for Step 10 action taps.",
+          data: { type: "hydration_reminder" },
+          categoryIdentifier: HYDRATION_CATEGORY,
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 10, repeats: false },
+      });
+    } catch (err) {
+      console.error("[HydrationReminders] Failed to fire test reminder:", err);
+    }
+  };
+
+  return (
+    <PressableScale onPress={fireTestReminder} style={{ marginTop: 14, paddingVertical: 8, alignItems: "center" }}>
+      <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textTertiary }}>
+        Dev: fire test reminder (10s)
+      </Text>
+    </PressableScale>
+  );
+}
+
+// Opt-in hydration reminder cadence (Step 10). Mirrors DisplayUnitRow's exact
+// segmented-control style; permission handling reuses the same
+// request/settings-redirect pattern as the check-in toggle in profile.jsx —
+// a denied/blocked permission never leaves the preference claiming to be on.
+function RemindersSection({ t }) {
+  const posthog = usePostHog();
+  const { hydrationReminderFrequency, setHydrationReminderFrequency } = useHydrationStore();
+  const [pending, setPending] = useState(false);
+
+  const handleChange = async (nextFrequency) => {
+    if (nextFrequency === hydrationReminderFrequency || pending) return;
+    Haptics.selectionAsync();
+    setPending(true);
+    try {
+      if (nextFrequency === "off") {
+        setHydrationReminderFrequency("off");
+        await cancelHydrationReminders();
+        posthog?.capture("hydration_reminders_set", { frequency: "off" });
+        return;
+      }
+
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === "denied") {
+        // iOS won't re-prompt after denial — send user to Settings, same as profile.jsx.
+        Alert.alert(
+          "Enable Notifications",
+          "Notifications are blocked. Open Settings to turn them on for Hemo.",
+          [
+            { text: "Cancel", style: "cancel" },
+            { text: "Open Settings", onPress: () => Linking.openSettings() },
+          ],
+        );
+        return;
+      }
+      if (status !== "granted") {
+        const { status: newStatus } = await Notifications.requestPermissionsAsync({
+          ios: { allowAlert: true, allowBadge: true, allowSound: true },
+        });
+        if (newStatus !== "granted") return;
+      }
+
+      setHydrationReminderFrequency(nextFrequency);
+      await scheduleHydrationReminders(nextFrequency);
+      posthog?.capture("hydration_reminders_set", { frequency: nextFrequency });
+    } catch (err) {
+      console.error("[HydrationReminders] Failed to update reminder frequency:", err);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const sublabel =
+    hydrationReminderFrequency !== "off"
+      ? `Reminders at ${describeHydrationSchedule(hydrationReminderFrequency)}`
+      : "Get gentle nudges to drink water during the day";
+
+  return (
+    <View style={{ opacity: pending ? 0.6 : 1 }}>
+      <Text
+        style={{
+          fontFamily: fonts.semibold,
+          fontSize: 11,
+          letterSpacing: 0.8,
+          textTransform: "uppercase",
+          color: t.textTertiary,
+          marginBottom: 10,
+        }}
+      >
+        Reminders
+      </Text>
+      <View style={{ flexDirection: "row", backgroundColor: t.surfaceElevated, borderRadius: 12, padding: 3 }}>
+        {REMINDER_OPTIONS.map((opt) => {
+          const active = hydrationReminderFrequency === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              disabled={pending}
+              onPress={() => handleChange(opt.key)}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                borderRadius: 9,
+                alignItems: "center",
+                backgroundColor: active ? "#3B82F6" : "transparent",
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.semibold,
+                  fontSize: 13,
+                  color: active ? "#fff" : t.textSecondary,
+                }}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 8 }}>
+        {sublabel}
+      </Text>
+
+      {__DEV__ && <HydrationReminderDevTestButton t={t} />}
+    </View>
+  );
+}
+
 function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
   const t = useTheme();
   const { data: profile } = useProfileQuery();
@@ -763,6 +916,13 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
       {/* Containers (Step 9) */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 7 }}>
         <ContainersSection displayUnit={displayUnit} t={t} />
+      </MotiView>
+
+      <SectionDivider t={t} />
+
+      {/* Reminders (Step 10) */}
+      <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 8 }}>
+        <RemindersSection t={t} />
       </MotiView>
 
       {/* Footnote */}

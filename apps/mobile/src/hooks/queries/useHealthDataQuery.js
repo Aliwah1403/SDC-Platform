@@ -7,6 +7,8 @@ import {
   submitHealthLog,
   addHydrationQuickly,
 } from '@/services/supabaseQueries';
+import { maybeSilenceHydrationReminders } from '@/utils/hydrationReminders';
+import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
@@ -95,6 +97,12 @@ export function useAddHydrationMutation() {
     onError: (err, _addedMl, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
       console.error('[useAddHydrationMutation] quick-add failed:', err?.message ?? err);
+    },
+    onSuccess: (result) => {
+      // Goal-aware silencing (Step 10 decision 3) — best-effort, uses the
+      // BASE goal from the metric-goals cache (never the heat-bumped goal).
+      const baseGoalMl = queryClient.getQueryData(['metricGoals', userId])?.hydration ?? DEFAULT_SUGGESTED_ML;
+      maybeSilenceHydrationReminders(result?.hydration, baseGoalMl);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });

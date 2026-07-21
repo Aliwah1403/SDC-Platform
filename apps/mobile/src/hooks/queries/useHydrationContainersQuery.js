@@ -7,21 +7,17 @@ import {
   removeHydrationContainer,
   setDefaultHydrationContainer,
 } from '@/services/supabaseQueries';
+import { registerNotificationCategories } from '@/utils/notificationActions';
 
-// Curated emoji picker for containers — not a full keyboard (Step 9 decision 2).
-export const CONTAINER_EMOJI_OPTIONS = ['🥛', '🍶', '🚰', '💧', '🍵', '☕', '🧋', '🫙'];
-export const MAX_CONTAINERS = 4;
-
-// Used only if the fetched list is empty/still loading (e.g. offline on first
-// launch before the onboarding seed or migration backfill has synced) — keeps
-// the quick-add UI functional even when the network read hasn't resolved yet.
-// Matches the seed every account gets in Supabase, so this is invisible in
-// the common case.
-export const FALLBACK_CONTAINERS = [
-  { id: 'glass', name: 'Glass', ml: 250, emoji: '🥛', isDefault: true },
-  { id: 'bottle', name: 'Bottle', ml: 500, emoji: '🍶', isDefault: false },
-  { id: 'large', name: 'Large', ml: 1000, emoji: '🫙', isDefault: false },
-];
+// Re-exported for backward compatibility — every existing importer of these
+// three constants points at this file. Values live in constants/hydrationContainers.js
+// so utils/notificationActions.js (which this file also imports) can read
+// FALLBACK_CONTAINERS without an import cycle.
+export {
+  CONTAINER_EMOJI_OPTIONS,
+  MAX_CONTAINERS,
+  FALLBACK_CONTAINERS,
+} from '@/constants/hydrationContainers';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
@@ -39,7 +35,19 @@ export function useHydrationContainersQuery() {
 function useInvalidateHydrationContainers() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: ['hydrationContainers', userId] });
+  // The hydration notification category's primary action title embeds the
+  // default container's name/ml (Step 10 decision 4) — re-register it any
+  // time a container write settles so a stale name/ml never lingers on an
+  // already-scheduled category.
+  return async () => {
+    // Awaited so the active query's cache is fresh by the time we read the
+    // default container back out of it below — invalidateQueries' promise
+    // resolves once the resulting refetch settles.
+    await queryClient.invalidateQueries({ queryKey: ['hydrationContainers', userId] });
+    registerNotificationCategories({ queryClient, userId }).catch((err) => {
+      console.error('[HydrationContainers] Failed to re-register notification categories:', err);
+    });
+  };
 }
 
 export function useAddHydrationContainerMutation() {
