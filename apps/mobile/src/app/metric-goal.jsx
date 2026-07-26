@@ -36,7 +36,6 @@ import {
 } from "@/hooks/queries/useHydrationContainersQuery";
 import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML, describeBumpReason } from "@/utils/hydrationGoal";
 import {
-  HYDRATION_CATEGORY,
   scheduleHydrationReminders,
   cancelHydrationReminders,
   describeHydrationSchedule,
@@ -629,36 +628,6 @@ const REMINDER_OPTIONS = [
   { key: "regular", label: "Regular" },
 ];
 
-// Dev-only spike harness (Step 10 prerequisite): fires a one-off 10s local
-// notification carrying the full hydration category, so the actions can be
-// tested foregrounded / backgrounded / killed, and mirrored to a paired
-// Apple Watch, without waiting for a real scheduled slot.
-function HydrationReminderDevTestButton({ t }) {
-  const fireTestReminder = async () => {
-    try {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Time for some water",
-          body: "Dev test reminder — spike harness for Step 10 action taps.",
-          data: { type: "hydration_reminder" },
-          categoryIdentifier: HYDRATION_CATEGORY,
-        },
-        trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 10, repeats: false },
-      });
-    } catch (err) {
-      console.error("[HydrationReminders] Failed to fire test reminder:", err);
-    }
-  };
-
-  return (
-    <PressableScale onPress={fireTestReminder} style={{ marginTop: 14, paddingVertical: 8, alignItems: "center" }}>
-      <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: t.textTertiary }}>
-        Dev: fire test reminder (10s)
-      </Text>
-    </PressableScale>
-  );
-}
-
 // Opt-in hydration reminder cadence (Step 10). Mirrors DisplayUnitRow's exact
 // segmented-control style; permission handling reuses the same
 // request/settings-redirect pattern as the check-in toggle in profile.jsx —
@@ -761,8 +730,6 @@ function RemindersSection({ t }) {
       <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 8 }}>
         {sublabel}
       </Text>
-
-      {__DEV__ && <HydrationReminderDevTestButton t={t} />}
     </View>
   );
 }

@@ -7,7 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "icon": "./assets/app-icon.icon",
       "supportsTablet": true,
@@ -124,7 +123,8 @@
           "project": "hemo-scd"
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-asset"
     ],
     "web": {
       "bundler": "metro",

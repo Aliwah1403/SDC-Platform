@@ -1,8 +1,8 @@
 diff --git a/node_modules/react-native/index.js b/node_modules/react-native/index.js
-index c737c93..f3edd25 100644
+index b205422..2b42073 100644
 --- a/node_modules/react-native/index.js
 +++ b/node_modules/react-native/index.js
-@@ -336,6 +336,9 @@ module.exports = {
+@@ -354,6 +354,9 @@ module.exports = {
      return require('./src/private/components/virtualview/VirtualView')
        .VirtualViewMode;
    },
@@ -12,7 +12,7 @@ index c737c93..f3edd25 100644
    // #endregion
  } as ReactNativePublicAPI;
  
-@@ -405,15 +408,4 @@ if (__DEV__) {
+@@ -423,15 +426,4 @@ if (__DEV__) {
     * attempting to access Slider. */
    /* $FlowFixMe[invalid-export] This is intentional: Flow will error when
     * attempting to access Slider. */

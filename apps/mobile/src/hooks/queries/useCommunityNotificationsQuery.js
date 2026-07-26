@@ -11,6 +11,49 @@ function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
 }
 
+// Supabase's `.channel(topic)` returns the existing channel if one with the
+// same topic is already open, rather than creating a new one. Since this hook
+// mounts in multiple screens at once (stack navigation keeps prior screens
+// mounted), a naive per-instance subscribe/unsubscribe races: a second mount
+// calls `.on()` on a channel the first mount already subscribed, which throws.
+// Reference-count a single shared channel per user instead.
+const notificationChannels = new Map();
+
+function acquireNotificationChannel(userId, invalidate) {
+  let entry = notificationChannels.get(userId);
+  if (!entry) {
+    const channel = supabase
+      .channel(`community_notifications:${userId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'community_notifications',
+        filter: `user_id=eq.${userId}`,
+      }, invalidate)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'community_notifications',
+        filter: `user_id=eq.${userId}`,
+      }, invalidate)
+      .subscribe();
+    entry = { channel, refCount: 0 };
+    notificationChannels.set(userId, entry);
+  }
+  entry.refCount += 1;
+  return entry;
+}
+
+function releaseNotificationChannel(userId) {
+  const entry = notificationChannels.get(userId);
+  if (!entry) return;
+  entry.refCount -= 1;
+  if (entry.refCount <= 0) {
+    supabase.removeChannel(entry.channel);
+    notificationChannels.delete(userId);
+  }
+}
+
 export function useCommunityNotificationsQuery() {
   const userId = useUserId();
   const queryClient = useQueryClient();
@@ -31,24 +74,10 @@ export function useCommunityNotificationsQuery() {
       queryClient.invalidateQueries({ queryKey: ['community_notifications', userId] });
     };
 
-    const channel = supabase
-      .channel(`community_notifications:${userId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'community_notifications',
-        filter: `user_id=eq.${userId}`,
-      }, invalidate)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'community_notifications',
-        filter: `user_id=eq.${userId}`,
-      }, invalidate)
-      .subscribe();
+    acquireNotificationChannel(userId, invalidate);
 
     return () => {
-      supabase.removeChannel(channel);
+      releaseNotificationChannel(userId);
     };
   }, [userId, queryClient]);
 
