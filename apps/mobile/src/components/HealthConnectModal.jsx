@@ -96,7 +96,17 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
           healthConnectPreferences
         );
       }
-    } catch {}
+    } catch (e) {
+      // Don't fail silently — a swallowed error here is what makes the button
+      // look like it "just loads". Surface it and let the user retry.
+      console.error("[HC] connect error", e);
+      setConnecting(false);
+      Alert.alert(
+        "Couldn't connect",
+        "We couldn't connect to Health Connect. Please make sure it's installed and up to date, then try again.",
+      );
+      return;
+    }
     setConnecting(false);
     onContinue ? onContinue() : onClose();
   };
