@@ -70,6 +70,20 @@ function isoDate(offsetDays = 0) {
   return d;
 }
 
+// Native requestPermission resolves only when Health Connect's permission
+// screen returns. If the native side ever fails to settle the promise (e.g.
+// the MainActivity permission delegate wasn't registered, so the launcher
+// throws inside an unguarded coroutine), the JS await would hang forever and
+// the connect button would spin indefinitely. This bounds any single native
+// call so the UI can always recover and report the failure.
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // ─── Public API ───────────────────────────────────────────────────────────────
 
 // Mirrors isHKAvailable — returns false on iOS (HealthKit handles that side)
@@ -135,19 +149,22 @@ export async function checkExistingHKAuthorization() {
 }
 
 // Request Health Connect read + write permissions.
-// Returns true if all read permissions were granted.
+// Returns true if all read permissions were granted, false if the user denied.
+// Throws if Health Connect is unavailable or the native request never settles —
+// callers should surface that to the user rather than spin forever.
 export async function requestHKAuthorization() {
   if (Platform.OS !== "android") return false;
-  try {
-    const ok = await ensureInitialized();
-    if (!ok) return false;
-    const result = await requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS]);
-    const grantedSet = new Set(result.map((p) => `${p.accessType}:${p.recordType}`));
-    return READ_PERMISSIONS.every((p) => grantedSet.has(`${p.accessType}:${p.recordType}`));
-  } catch (e) {
-    console.error("[HC] auth error", e);
-    return false;
-  }
+  const ok = await ensureInitialized();
+  if (!ok) throw new Error("Health Connect is not available on this device.");
+  // 90s is generous for a user reading and tapping through the permission
+  // screen, but still guarantees the promise settles if the native side hangs.
+  const result = await withTimeout(
+    requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS]),
+    90000,
+    "Health Connect permission request",
+  );
+  const grantedSet = new Set(result.map((p) => `${p.accessType}:${p.recordType}`));
+  return READ_PERMISSIONS.every((p) => grantedSet.has(`${p.accessType}:${p.recordType}`));
 }
 
 // Fetch all Health Connect metrics for the last `daysBack` days.

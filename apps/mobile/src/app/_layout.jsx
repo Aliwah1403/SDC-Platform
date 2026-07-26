@@ -521,6 +521,10 @@ function RootLayoutContent() {
             name="education-article"
             options={{ presentation: "card", headerShown: false }}
           />
+          <Stack.Screen
+            name="legal"
+            options={{ presentation: "card", headerShown: false }}
+          />
         </Stack>
 
         <StatusBar style={theme.isDark ? "light" : "dark"} />

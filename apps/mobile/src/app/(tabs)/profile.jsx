@@ -1773,14 +1773,14 @@ export default function ProfileScreen() {
               icon={ShieldHalf}
               iconColor="#6B7280"
               label="Privacy Policy"
-              onPress={() => comingSoon("Privacy Policy")}
+              onPress={() => router.push("/legal?type=privacy")}
               rightElement="chevron"
             />
             <SettingRow
               icon={Shield}
               iconColor="#6B7280"
               label="Terms of Service"
-              onPress={() => comingSoon("Terms of Service")}
+              onPress={() => router.push("/legal?type=terms")}
               rightElement="chevron"
             />
           </SectionCard>
