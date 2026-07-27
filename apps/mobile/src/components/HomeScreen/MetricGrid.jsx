@@ -1,8 +1,7 @@
 import { useState, useCallback } from "react";
 import { View, Text, TouchableOpacity, Dimensions, Alert } from "react-native";
 import Svg, { Circle, Rect, Path, G, Defs, ClipPath } from "react-native-svg";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { LayoutGrid, Plus } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";

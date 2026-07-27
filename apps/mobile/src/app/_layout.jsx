@@ -24,7 +24,8 @@ import {
   checkExistingHKAuthorization as checkExistingHCAuthorization,
   fetchHealthKitRange as fetchHealthConnectRange,
 } from "@/services/healthConnectService";
-import { fetchProfile, updateProfile } from "@/services/supabaseQueries";
+import { fetchProfile, updateProfile, fetchMedications } from "@/services/supabaseQueries";
+import { scheduleMedicationNotifications } from "@/utils/medicationNotifications";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
 import { scheduleHydrationReminders } from "@/utils/hydrationReminders";
 import {
@@ -322,6 +323,29 @@ function RootLayoutContent() {
         console.error("[HydrationReminders] Failed to reschedule on launch:", err);
       });
     }
+  }, [userId]);
+
+  // Re-schedule medication notifications on every launch. Unlike hydration and
+  // check-ins, these are otherwise only (re)scheduled when the user adds/edits a
+  // med — so any change to how they're scheduled (e.g. adding the "Mark as taken"
+  // action category) never reaches meds added before the change, and iOS-cleared
+  // locals (after restore/reinstall) never come back. Rescheduling here mirrors
+  // the hydration/check-in self-heal. scheduleMedicationNotifications cancels its
+  // own med's notifications first, so this is idempotent and safe to re-run; it
+  // also no-ops on "As Needed" / time-less meds.
+  useEffect(() => {
+    if (!userId) return;
+    fetchMedications(userId)
+      .then((meds) => {
+        for (const med of meds ?? []) {
+          scheduleMedicationNotifications(med, { trackAnalytics: false }).catch((err) => {
+            console.error("[MedicationNotifications] Failed to reschedule on launch:", err);
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("[MedicationNotifications] Failed to load medications for reschedule:", err);
+      });
   }, [userId]);
 
   // Register both notification categories on start, and again whenever the
