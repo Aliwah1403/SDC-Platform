@@ -41,7 +41,12 @@ function dailyTrigger(hour, minute) {
   };
 }
 
-export async function scheduleMedicationNotifications(med) {
+// `trackAnalytics` fires the medication_reminder_sent event per scheduled dose —
+// meaningful when the user creates/edits a schedule, but noise when we simply
+// re-schedule existing meds on every launch / background refresh (which would
+// inflate the metric on each app open). Callers doing a routine reschedule pass
+// false.
+export async function scheduleMedicationNotifications(med, { trackAnalytics = true } = {}) {
   await cancelMedicationNotifications(med.id);
 
   const isAsNeeded = med.frequency === "As Needed" || med.frequency === "As needed";
@@ -93,12 +98,14 @@ export async function scheduleMedicationNotifications(med) {
         },
         trigger: makeTrigger(parsed.hour, parsed.minute),
       });
-      posthog.capture("medication_reminder_sent", {
-        medication_category: med.category,
-        trigger_type: day != null ? "weekly" : "daily",
-        offset_minutes: 0,
-        notification_variant: "dose",
-      });
+      if (trackAnalytics) {
+        posthog.capture("medication_reminder_sent", {
+          medication_category: med.category,
+          trigger_type: day != null ? "weekly" : "daily",
+          offset_minutes: 0,
+          notification_variant: "dose",
+        });
+      }
 
       // "Remind before" notifications
       for (const r of reminders.filter((r) => r.direction === "before")) {
