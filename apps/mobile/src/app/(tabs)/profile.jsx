@@ -375,6 +375,7 @@ export default function ProfileScreen() {
   const [locationLabel, setLocationLabel] = useState(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -652,8 +653,14 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           posthog?.capture("sign_out", {});
-          await signOut();
-          setTimeout(() => router.replace("/(auth)/welcome"), 100);
+          setIsSigningOut(true);
+          try {
+            await signOut();
+            setTimeout(() => router.replace("/(auth)/welcome"), 100);
+          } catch (err) {
+            setIsSigningOut(false);
+            Alert.alert("Sign Out Failed", "Something went wrong. Please try again.");
+          }
         },
       },
     ]);
@@ -1789,8 +1796,14 @@ export default function ProfileScreen() {
             <SettingRow
               icon={LogOut}
               iconColor="#DC2626"
-              label="Sign Out"
+              label={isSigningOut ? "Signing Out..." : "Sign Out"}
               onPress={handleSignOut}
+              disabled={isSigningOut}
+              rightElement={
+                isSigningOut ? (
+                  <ActivityIndicator size="small" color="#DC2626" />
+                ) : null
+              }
             />
           </SectionCard>
 

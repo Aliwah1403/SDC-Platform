@@ -10,10 +10,15 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
+// Stable reference so a disabled/cleared query (e.g. right after sign-out,
+// when userId goes undefined) doesn't hand back a new [] every render and
+// bust the useMemo chain below — that was causing an infinite update loop.
+const EMPTY_HEALTH_DATA = [];
+
 // Unified hook — works on both iOS (HealthKit) and Android (Health Connect).
 // Returns { alertState, baselines, isConnected, healthData, manualBaselines }
 export function useHealthService() {
-  const { data: healthData = [] } = useHealthDataQuery();
+  const { data: healthData = EMPTY_HEALTH_DATA } = useHealthDataQuery();
 
   const isIOS = Platform.OS === "ios";
 
