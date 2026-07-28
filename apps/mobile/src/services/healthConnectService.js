@@ -36,6 +36,17 @@ const WRITE_PERMISSIONS = [
   { accessType: "write", recordType: "Weight" },
 ];
 
+// Special Health Connect permissions. Requested but never required for the
+// "connected" check — the user can decline them and sync still works:
+//   ReadHealthDataHistory      — read data older than 30 days before first grant
+//   BackgroundAccessPermission — read while the app is in the background
+// Note: the request result does not echo ReadHealthDataHistory back even when
+// granted (library quirk), so these must stay out of any granted-set check.
+const SPECIAL_PERMISSIONS = [
+  { accessType: "read", recordType: "ReadHealthDataHistory" },
+  { accessType: "read", recordType: "BackgroundAccessPermission" },
+];
+
 // Sleep stage values considered "asleep" (excludes AWAKE=1, AWAKE_IN_BED=5)
 const ASLEEP_STAGES = new Set([2, 3, 4, 6]); // LIGHT, DEEP, REM, SLEEPING
 
@@ -102,11 +113,13 @@ export async function getHealthConnectStatus() {
   if (Platform.OS !== "android") return "unsupported";
   try {
     const status = await getSdkStatus();
+    console.log(`[HC] getSdkStatus raw=${status} (AVAILABLE=${SdkAvailabilityStatus.SDK_AVAILABLE})`);
     if (status === SdkAvailabilityStatus.SDK_AVAILABLE) return "available";
     if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
       return "update_required";
     return "not_installed";
-  } catch {
+  } catch (e) {
+    console.error("[HC] getSdkStatus threw:", e?.message ?? e);
     return "not_installed";
   }
 }
@@ -123,12 +136,17 @@ async function ensureInitialized() {
   // never hit HealthConnectClient.getOrCreate() (which throws) on a device
   // without a usable Health Connect install.
   const status = await getHealthConnectStatus();
-  if (status !== "available") return false;
+  if (status !== "available") {
+    console.log(`[HC] ensureInitialized: provider status "${status}", bailing`);
+    return false;
+  }
   try {
     const result = await initialize();
+    console.log(`[HC] initialize() returned ${result}`);
     _initialized = result;
     return result;
-  } catch {
+  } catch (e) {
+    console.error("[HC] initialize() threw:", e?.message ?? e);
     return false;
   }
 }
@@ -156,12 +174,23 @@ export async function requestHKAuthorization() {
   if (Platform.OS !== "android") return false;
   const ok = await ensureInitialized();
   if (!ok) throw new Error("Health Connect is not available on this device.");
+  console.log("[HC] requestPermission: launching native permission screen…");
   // 90s is generous for a user reading and tapping through the permission
   // screen, but still guarantees the promise settles if the native side hangs.
-  const result = await withTimeout(
-    requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS]),
-    90000,
-    "Health Connect permission request",
+  let result;
+  try {
+    result = await withTimeout(
+      requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS, ...SPECIAL_PERMISSIONS]),
+      90000,
+      "Health Connect permission request",
+    );
+  } catch (e) {
+    console.error("[HC] requestPermission threw:", e?.message ?? e);
+    throw e;
+  }
+  console.log(
+    `[HC] requestPermission settled, granted ${result.length}:`,
+    result.map((p) => `${p.accessType}:${p.recordType}`).join(", ") || "(none)",
   );
   const grantedSet = new Set(result.map((p) => `${p.accessType}:${p.recordType}`));
   return READ_PERMISSIONS.every((p) => grantedSet.has(`${p.accessType}:${p.recordType}`));

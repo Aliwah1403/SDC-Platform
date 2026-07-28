@@ -9,8 +9,13 @@
 //   2. Declare the health <uses-permission> entries in the manifest — so the
 //      permissions passed to the library's plugin are silently ignored and no
 //      permission is ever actually granted.
+//   3. Declare the Android 14+ ViewPermissionUsageActivity activity-alias —
+//      on Android 14+ (Health Connect built into the OS) this declaration is
+//      how HC recognizes the app as a health integration. Without it the app
+//      never appears in Health Connect's app list and every permission
+//      request settles immediately with nothing granted (no sheet shown).
 //
-// This plugin fixes both. Add it to app.json plugins AFTER
+// This plugin fixes all three. Add it to app.json plugins AFTER
 // "react-native-health-connect" and move the health permission list here.
 
 const {
@@ -82,9 +87,50 @@ function withHealthPermissions(config, permissions) {
   });
 }
 
+// Android 14+ requires an activity-alias handling VIEW_PERMISSION_USAGE with
+// the HEALTH_PERMISSIONS category for the app to be listed in Health Connect.
+function withPermissionUsageAlias(config) {
+  return withAndroidManifest(config, (config) => {
+    const app = config.modResults.manifest.application?.[0];
+    if (!app) {
+      throw new Error(
+        "[withHealthConnect] AndroidManifest has no <application> to attach the permission-usage alias to."
+      );
+    }
+
+    app["activity-alias"] = app["activity-alias"] || [];
+    const exists = app["activity-alias"].some(
+      (a) => a.$?.["android:name"] === "ViewPermissionUsageActivity"
+    );
+    if (!exists) {
+      app["activity-alias"].push({
+        $: {
+          "android:name": "ViewPermissionUsageActivity",
+          "android:exported": "true",
+          "android:targetActivity": ".MainActivity",
+          "android:permission": "android.permission.START_VIEW_PERMISSION_USAGE",
+        },
+        "intent-filter": [
+          {
+            action: [
+              { $: { "android:name": "android.intent.action.VIEW_PERMISSION_USAGE" } },
+            ],
+            category: [
+              { $: { "android:name": "android.intent.category.HEALTH_PERMISSIONS" } },
+            ],
+          },
+        ],
+      });
+    }
+
+    return config;
+  });
+}
+
 module.exports = function withHealthConnect(config, props = {}) {
   const permissions = props.permissions || [];
   config = withPermissionDelegate(config);
   config = withHealthPermissions(config, permissions);
+  config = withPermissionUsageAlias(config);
   return config;
 };

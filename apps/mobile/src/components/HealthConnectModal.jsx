@@ -26,6 +26,7 @@ import {
   fetchHealthKitRange,
   setupBackgroundDelivery,
   getHealthConnectStatus,
+  openHealthConnectSettings,
 } from "@/services/healthConnectService";
 import { useAppStore } from "@/store/appStore";
 
@@ -62,12 +63,14 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ translateY: translateY.value }] }));
 
   const handleConnect = async () => {
+    console.log("[HC] Continue tapped — starting connect flow");
     setConnecting(true);
     try {
       // Health Connect is a separate app on Android ≤13 and can be outdated on
       // any version. Check first so we can send the user to the Play Store
       // instead of failing silently (or crashing) inside a permission request.
       const status = await getHealthConnectStatus();
+      console.log(`[HC] provider status: ${status}`);
       if (status !== "available") {
         setConnecting(false);
         Alert.alert(
@@ -87,14 +90,32 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
       }
 
       const granted = await requestHKAuthorization();
+      console.log(`[HC] authorization granted: ${granted}`);
       if (granted) {
         setHealthConnectConnected(true);
         const rangeData = await fetchHealthKitRange(30, healthConnectPreferences);
+        console.log(`[HC] fetched range, ${Object.keys(rangeData).length} day(s) of data`);
         setHealthConnectRange(rangeData);
         setupBackgroundDelivery(
           (date, metrics) => mergeHealthConnectDay(date, metrics),
           healthConnectPreferences
         );
+      } else {
+        // Health Connect permanently stops showing the permission sheet after
+        // a request has been denied or dismissed too many times — it then
+        // settles instantly with nothing granted. Closing silently here made
+        // the button look dead; instead route the user to HC settings, the
+        // only place the permissions can still be granted.
+        setConnecting(false);
+        Alert.alert(
+          "Allow access in Health Connect",
+          "Health Connect didn't show the permission screen. This usually means it has stopped asking after earlier requests were dismissed. Grant Hemo access manually in Health Connect settings, then come back and tap Continue.",
+          [
+            { text: "Not now", style: "cancel" },
+            { text: "Open Health Connect", onPress: () => openHealthConnectSettings() },
+          ],
+        );
+        return;
       }
     } catch (e) {
       // Don't fail silently — a swallowed error here is what makes the button
@@ -103,7 +124,7 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
       setConnecting(false);
       Alert.alert(
         "Couldn't connect",
-        "We couldn't connect to Health Connect. Please make sure it's installed and up to date, then try again.",
+        `We couldn't connect to Health Connect. Please make sure it's installed and up to date, then try again.\n\nDetails: ${e?.message ?? String(e)}`,
       );
       return;
     }
