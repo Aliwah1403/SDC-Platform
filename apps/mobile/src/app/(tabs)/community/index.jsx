@@ -150,7 +150,7 @@ export default function CommunityFeedScreen() {
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onNotifications={() => router.push("/notifications")}
-        onProfile={() => router.push("/(tabs)/profile")}
+        onProfile={() => router.push("/profile")}
         notificationCount={notificationCount}
       />
       <FeedFilter active={activeFeed} onSelect={handleFeedChange} />

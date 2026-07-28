@@ -17,6 +17,7 @@ import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
+import { SymbolView } from "expo-symbols";
 import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
 import { useSharedValue, withSpring } from "react-native-reanimated";
 import { useAppStore } from "@/store/appStore";
@@ -667,7 +668,15 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, sh
             animate={{ scale: 1, opacity: 1 }}
             transition={celebrationSpring}
           >
-            <Check color="#fff" size={20} strokeWidth={2.5} />
+            <SymbolView
+              name="checkmark"
+              weight="bold"
+              tintColor="#fff"
+              size={20}
+              type="monochrome"
+              animationSpec={{ effect: { type: "bounce", wholeSymbol: true } }}
+              fallback={<Check color="#fff" size={20} strokeWidth={2.5} />}
+            />
           </MotiView>
         ) : (
           <Check color="#fff" size={20} strokeWidth={2.5} />

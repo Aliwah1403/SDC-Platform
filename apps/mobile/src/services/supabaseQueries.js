@@ -402,7 +402,7 @@ export async function addHydrationQuickly(userId, addedMl) {
 
   const newHydration = (summary?.hydration ?? 0) + addedMl;
   const painLevel = summary?.pain_level ?? 0;
-  const mood = summary?.mood ?? 1;
+  const mood = summary?.mood ?? 0;
 
   const { error: logError } = await supabase
     .from('health_logs')

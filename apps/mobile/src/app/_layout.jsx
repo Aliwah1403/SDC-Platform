@@ -452,6 +452,8 @@ function RootLayoutContent() {
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(onboarding)" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="profile" options={{ presentation: "card" }} />
+          <Stack.Screen name="rewards" options={{ presentation: "card" }} />
           <Stack.Screen
             name="streak-modal"
             options={{ presentation: "modal" }}

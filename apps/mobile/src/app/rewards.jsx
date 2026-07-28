@@ -19,9 +19,9 @@ import {
   Target,
   ChevronRight,
 } from "lucide-react-native";
-import { useAuthStore } from "../../utils/auth/store";
-import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
-import { mockBadges, mockChallenges } from "../../types";
+import { useAuthStore } from "@/utils/auth/store";
+import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
+import { mockBadges, mockChallenges } from "@/types";
 import { useTheme } from "@/hooks/useTheme";
 import { Card } from "@/components/Card";
 import { fonts } from "@/utils/fonts";
