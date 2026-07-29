@@ -96,7 +96,7 @@ export async function registerNotificationCategories({ queryClient, userId } = {
   await Notifications.setNotificationCategoryAsync(HYDRATION_CATEGORY, [
     {
       identifier: HYDRATION_LOG_ACTION,
-      buttonTitle: `Log ${container.emoji} ${container.name} · +${formatHydration(container.ml, displayUnit)}`,
+      buttonTitle: `Log ${container.name} · +${formatHydration(container.ml, displayUnit)}`,
       options: { opensAppToForeground: false },
     },
     {

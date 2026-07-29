@@ -30,7 +30,7 @@ import { useWeatherData } from "@/hooks/useWeatherData";
 import { useTodaySteps } from "@/hooks/useTodaySteps";
 import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
 import { useHydrationStore } from "@/store/hydrationStore";
-import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
+import { useHydrationContainersQuery, FALLBACK_CONTAINERS, containerIconKey } from "@/hooks/queries/useHydrationContainersQuery";
 import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl, getActivityBumpMl, combineBumpMl, describeBumpReason } from "@/utils/hydrationGoal";
 import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
 import { ChevronLeft, X, Check } from "lucide-react-native";
@@ -41,6 +41,8 @@ import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
 import { fonts } from "@/utils/fonts";
 import { PressableScale } from "@/components/PressableScale";
+import { colors } from "@/utils/colors";
+import ContainerIcon from "@/components/ContainerIcon";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { celebrationSpring } from "@/utils/motion";
 
@@ -76,13 +78,13 @@ function HydrationVessel({ valueMl, goalMl }) {
           <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} />
         </ClipPath>
       </Defs>
-      <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} fill="rgba(59,130,246,0.08)" />
+      <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} fill={colors.burgundyTint} />
       <AnimatedSvgRect
         x={0}
         y={fillY}
         width={VESSEL_W}
         height={fillHeightAnim}
-        fill="#3B82F6"
+        fill={colors.burgundy}
         opacity={0.85}
         clipPath="url(#vesselClip)"
       />
@@ -94,7 +96,7 @@ function HydrationVessel({ valueMl, goalMl }) {
         rx={VESSEL_R - 1}
         ry={VESSEL_R - 1}
         fill="none"
-        stroke="#3B82F6"
+        stroke={colors.burgundy}
         strokeWidth={2.5}
       />
     </Svg>
@@ -494,7 +496,7 @@ function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, activityBum
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
         <HydrationVessel valueMl={value} goalMl={goalMl} />
         <Text style={{ marginTop: 14 }}>
-          <Text style={{ fontFamily: fonts.extrabold, fontSize: 32, color: "#3B82F6" }}>{number} {unitLabel}</Text>
+          <Text style={{ fontFamily: fonts.extrabold, fontSize: 32, color: colors.burgundy }}>{number} {unitLabel}</Text>
           <Text style={{ fontFamily: fonts.medium, fontSize: 18, color: t.textSecondary }}> of {goalParts.number} {goalParts.unitLabel}</Text>
         </Text>
         {bumpMl > 0 && !!bumpReason && (
@@ -504,46 +506,47 @@ function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, activityBum
         )}
       </View>
 
-      {/* Container quick add */}
-      <View style={{ alignItems: "center", marginBottom: 16 }}>
-        <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>ADD A DRINK</Text>
-        <View
-          style={{
-            width: SCREEN_WIDTH - 48,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: 10,
-          }}
+      {/* Container quick add — horizontal carousel, default container first */}
+      <View style={{ alignSelf: "stretch", marginBottom: 16 }}>
+        <Text style={[styles.sliderEndLabel, { marginBottom: 10, textAlign: "center" }]}>ADD A DRINK</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 10, paddingHorizontal: 24 }}
         >
-          {orderedContainers.map((c) => (
-            <PressableScale
-              key={c.id}
-              onPress={() => addDrink(c.ml)}
-              style={{
-                width: (SCREEN_WIDTH - 48 - 10) / 2,
-                alignItems: "center",
-                paddingHorizontal: 12,
-                paddingVertical: 10,
-                borderRadius: 24,
-                borderWidth: 2,
-                borderColor: "#3B82F6",
-                backgroundColor: c.isDefault ? "#3B82F6" : "transparent",
-              }}
-            >
-              <Text
-                numberOfLines={1}
+          {orderedContainers.map((c) => {
+            const selected = c.isDefault;
+            return (
+              <PressableScale
+                key={c.id}
+                onPress={() => addDrink(c.ml)}
                 style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 14,
-                  color: c.isDefault ? "#fff" : "#3B82F6",
+                  width: 92,
+                  alignItems: "center",
+                  gap: 8,
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  borderRadius: 18,
+                  backgroundColor: selected ? colors.burgundy : t.surfaceElevated,
                 }}
               >
-                {c.emoji} {c.name} +{formatHydration(c.ml, displayUnit)}
-              </Text>
-            </PressableScale>
-          ))}
-        </View>
+                <ContainerIcon iconKey={containerIconKey(c)} size={30} color={selected ? colors.cream : colors.burgundy} />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontFamily: fonts.semibold, fontSize: 13, color: selected ? colors.cream : t.text }}
+                >
+                  {c.name}
+                </Text>
+                <Text
+                  numberOfLines={1}
+                  style={{ fontFamily: fonts.medium, fontSize: 11, color: selected ? "rgba(248,233,231,0.85)" : t.textSecondary }}
+                >
+                  +{formatHydration(c.ml, displayUnit)}
+                </Text>
+              </PressableScale>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* +/- fine adjust (250 ml steps) */}
@@ -553,23 +556,23 @@ function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, activityBum
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onChange(Math.max(0, value - GLASS_ML));
           }}
-          style={[styles.hydBtn, { borderColor: "#3B82F6" }]}
+          style={[styles.hydBtn, { borderColor: colors.burgundy }]}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: "#3B82F6" }}>−</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: colors.burgundy }}>−</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onChange(Math.min(HYDRATION_MAX_ML, value + GLASS_ML));
           }}
-          style={[styles.hydBtn, { borderColor: "#3B82F6", backgroundColor: "#3B82F6" }]}
+          style={[styles.hydBtn, { borderColor: colors.burgundy, backgroundColor: colors.burgundy }]}
         >
           <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: "#fff" }}>+</Text>
         </TouchableOpacity>
       </View>
 
       <View style={{ width: "100%", paddingHorizontal: 24, marginTop: 8 }}>
-        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: "#3B82F6" }]}>
+        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: colors.burgundy }]}>
           {goalReached ? "Goal reached" : remainingText}
         </Text>
       </View>
@@ -627,7 +630,7 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, sh
     { label: "What contributed", value: log.triggers.length ? log.triggers.join(", ") : "—", color: "#8B5CF6" },
     { label: "Body Locations", value: log.bodyLocations.length ? log.bodyLocations.join(", ") : "None", color: "#A9334D" },
     { label: "Symptoms", value: log.symptoms.length ? log.symptoms.join(", ") : "None reported", color: "#781D11" },
-    { label: "Hydration", value: formatHydration(log.hydration, hydrationDisplayUnit), color: "#3B82F6" },
+    { label: "Hydration", value: formatHydration(log.hydration, hydrationDisplayUnit), color: colors.burgundy },
     { label: "Notes", value: log.notes || "—", color: "#9CA3AF" },
   ];
 

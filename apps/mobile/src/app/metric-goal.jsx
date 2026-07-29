@@ -30,10 +30,12 @@ import {
   useUpdateHydrationContainerMutation,
   useRemoveHydrationContainerMutation,
   useSetDefaultHydrationContainerMutation,
-  CONTAINER_EMOJI_OPTIONS,
+  DEFAULT_ICON_KEY,
   MAX_CONTAINERS,
   FALLBACK_CONTAINERS,
+  containerIconKey,
 } from "@/hooks/queries/useHydrationContainersQuery";
+import ContainerIcon, { CONTAINER_ICON_OPTIONS } from "@/components/ContainerIcon";
 import { getHydrationSuggestion, GLASS_ML, DEFAULT_SUGGESTED_ML, describeBumpReason } from "@/utils/hydrationGoal";
 import {
   scheduleHydrationReminders,
@@ -111,7 +113,7 @@ const GOAL_META = {
     max: 5000,
     step: 250,
     icon: Droplets,
-    color: "#3B82F6",
+    color: colors.burgundy,
   },
   sleep: {
     goalLabel: "Sleep Goal",
@@ -329,7 +331,7 @@ function DisplayUnitRow({ displayUnit, onChange, t }) {
                 paddingVertical: 10,
                 borderRadius: 9,
                 alignItems: "center",
-                backgroundColor: active ? "#3B82F6" : "transparent",
+                backgroundColor: active ? colors.burgundy : "transparent",
               }}
             >
               <Text
@@ -353,9 +355,10 @@ function SectionDivider({ t }) {
   return <View style={{ height: 1, backgroundColor: t.divider, marginVertical: 24 }} />;
 }
 
-// Shared name/capacity/emoji fields for both editing an existing container and
-// adding a new one (Step 9).
-function ContainerEditorFields({ name, setName, ml, setMl, emoji, setEmoji, displayUnit, t }) {
+// Shared name/capacity/icon fields for both editing an existing container and
+// adding a new one (Step 9). Icon picker is a soft-card grid (burgundy fill when
+// selected) rather than the old emoji swatches.
+function ContainerEditorFields({ name, setName, ml, setMl, icon, setIcon, displayUnit, t }) {
   return (
     <>
       <TextInput
@@ -376,42 +379,53 @@ function ContainerEditorFields({ name, setName, ml, setMl, emoji, setEmoji, disp
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
         <TouchableOpacity
           onPress={() => setMl((v) => Math.max(100, v - 50))}
-          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center" }}
+          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: colors.burgundy, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#3B82F6" }}>−</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: colors.burgundy }}>−</Text>
         </TouchableOpacity>
         <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>
           {formatHydration(ml, displayUnit)}
         </Text>
         <TouchableOpacity
           onPress={() => setMl((v) => Math.min(2000, v + 50))}
-          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: "#3B82F6", alignItems: "center", justifyContent: "center" }}
+          style={{ width: 36, height: 36, borderRadius: 18, borderWidth: 1.5, borderColor: colors.burgundy, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: "#3B82F6" }}>+</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 20, color: colors.burgundy }}>+</Text>
         </TouchableOpacity>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {CONTAINER_EMOJI_OPTIONS.map((e) => (
-          <TouchableOpacity
-            key={e}
-            onPress={() => {
-              Haptics.selectionAsync();
-              setEmoji(e);
-            }}
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: emoji === e ? colors.burgundyTint : "transparent",
-              borderWidth: emoji === e ? 1.5 : 0,
-              borderColor: "#3B82F6",
-            }}
-          >
-            <Text style={{ fontSize: 18 }}>{e}</Text>
-          </TouchableOpacity>
-        ))}
+        {CONTAINER_ICON_OPTIONS.map((opt) => {
+          const selected = icon === opt.key;
+          return (
+            <TouchableOpacity
+              key={opt.key}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setIcon(opt.key);
+              }}
+              style={{
+                width: "31%",
+                aspectRatio: 1,
+                borderRadius: 14,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                backgroundColor: selected ? colors.burgundy : t.surfaceElevated,
+              }}
+            >
+              <ContainerIcon iconKey={opt.key} size={26} color={selected ? colors.cream : colors.burgundy} />
+              <Text
+                style={{
+                  fontFamily: fonts.medium,
+                  fontSize: 11,
+                  color: selected ? colors.cream : t.textSecondary,
+                }}
+              >
+                {opt.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </>
   );
@@ -420,7 +434,7 @@ function ContainerEditorFields({ name, setName, ml, setMl, emoji, setEmoji, disp
 function ContainerRow({ container, displayUnit, isExpanded, onToggleExpand, onSetDefault, onSave, onRemove, canRemove, pending, t }) {
   const [name, setName] = useState(container.name);
   const [ml, setMl] = useState(container.ml);
-  const [emoji, setEmoji] = useState(container.emoji);
+  const [icon, setIcon] = useState(containerIconKey(container));
   const isDefault = container.isDefault;
 
   return (
@@ -439,15 +453,15 @@ function ContainerRow({ container, displayUnit, isExpanded, onToggleExpand, onSe
             height: 26,
             borderRadius: 13,
             borderWidth: 1.5,
-            borderColor: isDefault ? "#3B82F6" : t.border,
-            backgroundColor: isDefault ? "#3B82F6" : "transparent",
+            borderColor: isDefault ? colors.burgundy : t.border,
+            backgroundColor: isDefault ? colors.burgundy : "transparent",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
           {isDefault && <Check size={13} color="#fff" strokeWidth={3} />}
         </PressableScale>
-        <Text style={{ fontSize: 22 }}>{container.emoji}</Text>
+        <ContainerIcon iconKey={containerIconKey(container)} size={24} color={colors.burgundy} />
         <View style={{ flex: 1 }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>{container.name}</Text>
           <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
@@ -464,7 +478,7 @@ function ContainerRow({ container, displayUnit, isExpanded, onToggleExpand, onSe
           <ContainerEditorFields
             name={name} setName={setName}
             ml={ml} setMl={setMl}
-            emoji={emoji} setEmoji={setEmoji}
+            icon={icon} setIcon={setIcon}
             displayUnit={displayUnit} t={t}
           />
           <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
@@ -480,10 +494,10 @@ function ContainerRow({ container, displayUnit, isExpanded, onToggleExpand, onSe
             <PressableScale
               disabled={pending}
               onPress={() => {
-                onSave(container.id, { name: name.trim() || container.name, ml, emoji });
+                onSave(container.id, { name: name.trim() || container.name, ml, icon });
                 onToggleExpand();
               }}
-              style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: "#3B82F6" }}
+              style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: colors.burgundy }}
             >
               <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Save</Text>
             </PressableScale>
@@ -498,13 +512,13 @@ function AddContainerRow({ displayUnit, onAdd, pending, t }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
   const [ml, setMl] = useState(250);
-  const [emoji, setEmoji] = useState(CONTAINER_EMOJI_OPTIONS[0]);
+  const [icon, setIcon] = useState(DEFAULT_ICON_KEY);
 
   const cancel = () => {
     setAdding(false);
     setName("");
     setMl(250);
-    setEmoji(CONTAINER_EMOJI_OPTIONS[0]);
+    setIcon(DEFAULT_ICON_KEY);
   };
 
   if (!adding) {
@@ -523,15 +537,15 @@ function AddContainerRow({ displayUnit, onAdd, pending, t }) {
           borderStyle: "dashed",
         }}
       >
-        <Plus size={16} color="#3B82F6" />
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#3B82F6" }}>Add container</Text>
+        <Plus size={16} color={colors.burgundy} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: colors.burgundy }}>Add container</Text>
       </PressableScale>
     );
   }
 
   const save = () => {
     if (!name.trim()) return;
-    onAdd({ name: name.trim().slice(0, 16), ml, emoji });
+    onAdd({ name: name.trim().slice(0, 16), ml, icon });
     cancel();
   };
 
@@ -540,14 +554,14 @@ function AddContainerRow({ displayUnit, onAdd, pending, t }) {
       <ContainerEditorFields
         name={name} setName={setName}
         ml={ml} setMl={setMl}
-        emoji={emoji} setEmoji={setEmoji}
+        icon={icon} setIcon={setIcon}
         displayUnit={displayUnit} t={t}
       />
       <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
         <PressableScale disabled={pending} onPress={cancel} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: t.border }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}>Cancel</Text>
         </PressableScale>
-        <PressableScale disabled={pending} onPress={save} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: "#3B82F6" }}>
+        <PressableScale disabled={pending} onPress={save} style={{ flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", backgroundColor: colors.burgundy }}>
           <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#fff" }}>Save</Text>
         </PressableScale>
       </View>
@@ -610,9 +624,9 @@ function ContainersSection({ displayUnit, t }) {
           displayUnit={displayUnit}
           t={t}
           pending={addMutation.isPending}
-          onAdd={({ name, ml, emoji }) => {
+          onAdd={({ name, ml, icon }) => {
             addMutation.mutate(
-              { name, ml, emoji, sortOrder: containers.length },
+              { name, ml, icon, sortOrder: containers.length },
               { onSuccess: () => posthog?.capture("hydration_container_added", { ml }) },
             );
           }}
@@ -711,7 +725,7 @@ function RemindersSection({ t }) {
                 paddingVertical: 10,
                 borderRadius: 9,
                 alignItems: "center",
-                backgroundColor: active ? "#3B82F6" : "transparent",
+                backgroundColor: active ? colors.burgundy : "transparent",
               }}
             >
               <Text
@@ -782,7 +796,7 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
 
       {/* Glass row */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 2 }} style={{ marginBottom: 18 }}>
-        <GlassRow goalMl={value} color="#3B82F6" t={t} />
+        <GlassRow goalMl={value} color={colors.burgundy} t={t} />
       </MotiView>
 
       {/* Suggestion pill */}
@@ -799,9 +813,9 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
           step={meta.step}
           value={value}
           onValueChange={onSliderChange}
-          minimumTrackTintColor="#3B82F6"
+          minimumTrackTintColor={colors.burgundy}
           maximumTrackTintColor={t.border}
-          thumbTintColor="#3B82F6"
+          thumbTintColor={colors.burgundy}
         />
         <SuggestedNotch min={meta.min} max={meta.max} suggestedMl={suggestion.suggestedMl} t={t} />
 
@@ -822,8 +836,8 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
                 height: 22,
                 borderRadius: 11,
                 borderWidth: 1.5,
-                borderColor: value === suggestion.suggestedMl ? "#3B82F6" : t.border,
-                backgroundColor: value === suggestion.suggestedMl ? "#3B82F6" : "transparent",
+                borderColor: value === suggestion.suggestedMl ? colors.burgundy : t.border,
+                backgroundColor: value === suggestion.suggestedMl ? colors.burgundy : "transparent",
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -915,7 +929,7 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
       {/* Save */}
       <PressableScale
         onPress={() => onSave({ activity_bump_ml: suggestion.activityBumpMl, steps_today: suggestion.inputs.stepsToday })}
-        style={{ backgroundColor: "#3B82F6", borderRadius: 16, paddingVertical: 17, alignItems: "center" }}
+        style={{ backgroundColor: colors.burgundy, borderRadius: 16, paddingVertical: 17, alignItems: "center" }}
       >
         <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: "#fff" }}>Done</Text>
       </PressableScale>

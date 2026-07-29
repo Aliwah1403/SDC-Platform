@@ -147,9 +147,10 @@ export async function completeOnboarding(userId, onboardingData) {
     const { error: containersError } = await supabase
       .from('hydration_containers')
       .insert([
-        { user_id: userId, name: 'Glass', ml: 250, emoji: '🥛', is_default: true, sort_order: 0 },
-        { user_id: userId, name: 'Bottle', ml: 500, emoji: '🍶', is_default: false, sort_order: 1 },
-        { user_id: userId, name: 'Large', ml: 1000, emoji: '🫙', is_default: false, sort_order: 2 },
+        { user_id: userId, name: 'Glass', ml: 250, icon: 'glass-water', is_default: true, sort_order: 0 },
+        { user_id: userId, name: 'Bottle', ml: 500, icon: 'bottle', is_default: false, sort_order: 1 },
+        { user_id: userId, name: 'Mug', ml: 350, icon: 'mug', is_default: false, sort_order: 2 },
+        { user_id: userId, name: 'Carton', ml: 1000, icon: 'carton', is_default: false, sort_order: 3 },
       ]);
     if (containersError) throw containersError;
   }
@@ -171,10 +172,10 @@ export async function fetchHydrationContainers(userId) {
   return (data || []).map(toCamelCase);
 }
 
-export async function addHydrationContainer(userId, { name, ml, emoji, sortOrder }) {
+export async function addHydrationContainer(userId, { name, ml, icon, sortOrder }) {
   const { data, error } = await supabase
     .from('hydration_containers')
-    .insert({ user_id: userId, name, ml, emoji, is_default: false, sort_order: sortOrder })
+    .insert({ user_id: userId, name, ml, icon, is_default: false, sort_order: sortOrder })
     .select()
     .single();
   if (error) throw error;

@@ -14,9 +14,11 @@ import { registerNotificationCategories } from '@/utils/notificationActions';
 // so utils/notificationActions.js (which this file also imports) can read
 // FALLBACK_CONTAINERS without an import cycle.
 export {
-  CONTAINER_EMOJI_OPTIONS,
+  DEFAULT_ICON_KEY,
   MAX_CONTAINERS,
   FALLBACK_CONTAINERS,
+  emojiToIconKey,
+  containerIconKey,
 } from '@/constants/hydrationContainers';
 
 function useUserId() {
