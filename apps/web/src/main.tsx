@@ -68,6 +68,12 @@ const router = createBrowserRouter([
     }),
   },
   {
+    path: "/beta",
+    lazy: async () => ({
+      Component: (await import("./pages/Beta/BetaPage")).default,
+    }),
+  },
+  {
     element: <PageLayout />,
     children: [
       { path: "/", element: <Homepage /> },

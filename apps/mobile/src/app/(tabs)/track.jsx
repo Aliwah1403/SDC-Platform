@@ -965,6 +965,7 @@ function WorkoutItem({ workout, index, isLast }) {
 
 function ActivitySection({ workouts = [], hkConnected, loading }) {
   const t = useTheme();
+  const platformName = Platform.OS === "ios" ? "Apple Health" : "Health Connect";
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
       <View
@@ -1000,8 +1001,8 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
               }}
             >
               {hkConnected
-                ? "No workouts recorded in Apple Health for this day"
-                : "Connect Apple Health in your profile to see workout data"}
+                ? `No workouts recorded in ${platformName} for this day`
+                : `Connect ${platformName} in your profile to see workout data`}
             </Text>
           </View>
         ) : (
