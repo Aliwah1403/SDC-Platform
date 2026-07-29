@@ -1346,7 +1346,7 @@ export default function TrackScreen() {
               <Bell size={20} color="#fff" strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push("/profile")}
+              onPress={() => router.push("/(tabs)/profile")}
               style={{
                 backgroundColor: "rgba(255,255,255,0.2)",
                 borderRadius: 20,

@@ -139,7 +139,7 @@ export function HomeHeader({
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => router.push("/profile")}
+              onPress={() => router.push("/(tabs)/profile")}
               style={{
                 width: 34,
                 height: 34,

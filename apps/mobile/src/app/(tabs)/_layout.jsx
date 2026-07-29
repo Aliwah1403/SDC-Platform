@@ -1,37 +1,67 @@
-import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { Tabs } from "expo-router";
+import {
+  Home,
+  TrendingUp,
+  Users,
+  HeartHandshake,
+} from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 
 export default function TabLayout() {
   const theme = useTheme();
   return (
-    <NativeTabs
-      backgroundColor={theme.tabBarBackground}
-      tintColor={theme.tabActiveText}
-      iconColor={{ default: theme.tabInactiveText, selected: theme.tabActiveText }}
-      labelStyle={{
-        default: { fontFamily: fonts.semibold, fontSize: 10, color: theme.tabInactiveText },
-        selected: { fontFamily: fonts.semibold, fontSize: 10, color: theme.tabActiveText },
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.tabBarBackground,
+          borderTopWidth: 1,
+          borderColor: theme.border,
+          paddingTop: 6,
+          paddingBottom: 6,
+        },
+        tabBarActiveTintColor: theme.tabActiveText,
+        tabBarInactiveTintColor: theme.tabInactiveText,
+        tabBarLabelStyle: {
+          fontFamily: fonts.semibold,
+          fontSize: 10,
+          marginTop: 2,
+        },
       }}
     >
-      <NativeTabs.Trigger name="home">
-        <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="track">
-        <NativeTabs.Trigger.Icon sf="chart.line.uptrend.xyaxis" md="trending_up" />
-        <NativeTabs.Trigger.Label>Track</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
+      <Tabs.Screen
+        name="home"
+        options={{
+          title: "Home",
+          tabBarIcon: ({ color }) => <Home color={color} size={20} />,
+        }}
+      />
+      <Tabs.Screen
+        name="track"
+        options={{
+          title: "Track",
+          tabBarIcon: ({ color }) => <TrendingUp color={color} size={20} />,
+        }}
+      />
       {/* Learn tab hidden — direction TBD */}
-      <NativeTabs.Trigger name="learn" hidden />
-      <NativeTabs.Trigger name="care">
-        <NativeTabs.Trigger.Icon sf={{ default: "cross.case", selected: "cross.case.fill" }} md="medical_services" />
-        <NativeTabs.Trigger.Label>Care</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="community">
-        <NativeTabs.Trigger.Icon sf={{ default: "person.2", selected: "person.2.fill" }} md="group" />
-        <NativeTabs.Trigger.Label>Community</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
+      <Tabs.Screen name="learn" options={{ href: null }} />
+      <Tabs.Screen
+        name="care"
+        options={{
+          title: "Care",
+          tabBarIcon: ({ color }) => <HeartHandshake color={color} size={20} />,
+        }}
+      />
+      <Tabs.Screen
+        name="community"
+        options={{
+          title: "Community",
+          tabBarIcon: ({ color }) => <Users color={color} size={20} />,
+        }}
+      />
+      <Tabs.Screen name="profile" options={{ href: null }} />
+      <Tabs.Screen name="rewards" options={{ href: null }} />
+    </Tabs>
   );
 }

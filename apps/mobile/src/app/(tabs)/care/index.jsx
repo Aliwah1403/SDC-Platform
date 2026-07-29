@@ -218,7 +218,7 @@ export default function CareMenuScreen() {
               <Bell size={20} color="#F8E9E7" strokeWidth={2} />
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => router.push("/profile")}
+              onPress={() => router.push("/(tabs)/profile")}
               style={{ backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20, width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
               activeOpacity={0.7}
             >

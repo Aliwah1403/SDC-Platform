@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Iphone } from "@/components/ui/iphone";
+import HomeScreen from "@/assets/screenshots/home-screen.png";
+import HealthTrends from "@/assets/screenshots/health-trends.png";
 
 const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 if (!_supabaseUrl) {
@@ -159,8 +162,9 @@ const BetaPage = () => {
 
   return (
     <main className="min-h-dvh bg-gradient-to-b from-secondary to-background px-4 py-12 sm:py-16">
-      <div className="mx-auto flex max-w-lg flex-col items-center">
-        <img src="/logo.png" alt="Hemo" className="size-14" />
+      <div className="mx-auto grid max-w-6xl items-center gap-12 lg:min-h-[calc(100dvh-8rem)] lg:grid-cols-2 lg:gap-16">
+        <div className="mx-auto flex w-full max-w-lg flex-col">
+          <img src="/logo.png" alt="Hemo" className="size-14" />
 
         <AnimatePresence mode="wait">
           {status === "success" ? (
@@ -197,7 +201,7 @@ const BetaPage = () => {
               animate={{ opacity: 1, y: 0 }}
               className="mt-8 w-full"
             >
-              <div className="text-center">
+              <div className="text-center lg:text-left">
                 <h1 className="text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
                   You&apos;re one of the first.
                 </h1>
@@ -371,6 +375,40 @@ const BetaPage = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
+
+        <div
+          aria-hidden
+          className="relative hidden items-center justify-center lg:flex"
+        >
+          <div className="pointer-events-none absolute -z-10 size-[420px] rounded-full bg-primary/15 blur-3xl" />
+          <div className="relative w-full max-w-[320px]">
+            <motion.div
+              initial={{ opacity: 0, y: 24, rotate: 10 }}
+              animate={{ opacity: 1, y: 0, rotate: 6 }}
+              transition={{ duration: 0.6, delay: 0.15 }}
+              className="absolute -right-8 top-12 w-[68%]"
+            >
+              <Iphone
+                src={HealthTrends}
+                alt="Hemo health trends"
+                className="drop-shadow-2xl"
+              />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, y: 24, rotate: -8 }}
+              animate={{ opacity: 1, y: 0, rotate: -3 }}
+              transition={{ duration: 0.6 }}
+              className="relative w-full"
+            >
+              <Iphone
+                src={HomeScreen}
+                alt="Hemo home screen"
+                className="drop-shadow-2xl"
+              />
+            </motion.div>
+          </div>
+        </div>
       </div>
     </main>
   );

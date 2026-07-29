@@ -70,7 +70,7 @@ import {
 } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { useAppStore } from "@/store/appStore";
+import { useAppStore } from "../../store/appStore";
 import {
   useProfileQuery,
   useUpdateProfileMutation,
@@ -982,7 +982,7 @@ export default function ProfileScreen() {
             key: "health-connect",
             label: "Health Connect",
             section: "Data & Reports",
-            iconImage: require("../../assets/images/health_connect_logo.png"),
+            iconImage: require("../../../assets/images/health_connect_logo.png"),
             onPress: () =>
               healthConnectConnected
                 ? router.push("/health-connect-settings")
@@ -1536,7 +1536,7 @@ export default function ProfileScreen() {
             />
             {Platform.OS === "ios" ? (
               <SettingRow
-                iconImage={require("../../assets/images/icon-apple-health.png")}
+                iconImage={require("../../../assets/images/icon-apple-health.png")}
                 label="Apple Health"
                 value={appleHealthConnected ? "Connected" : "Not connected"}
                 rightElement="chevron"
@@ -1548,7 +1548,7 @@ export default function ProfileScreen() {
               />
             ) : (
               <SettingRow
-                iconImage={require("../../assets/images/health_connect_logo.png")}
+                iconImage={require("../../../assets/images/health_connect_logo.png")}
                 label="Health Connect"
                 value={healthConnectConnected ? "Connected" : "Not connected"}
                 rightElement="chevron"
@@ -1818,7 +1818,7 @@ export default function ProfileScreen() {
               }}
             >
               <Image
-                source={require("../../assets/images/icon.png")}
+                source={require("../../../assets/images/icon.png")}
                 style={{ width: 70, height: 50, borderRadius: 10 }}
               />
             </View>
