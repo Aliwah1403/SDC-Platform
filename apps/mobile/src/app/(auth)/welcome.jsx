@@ -227,6 +227,7 @@ export default function WelcomeScreen() {
           >
             By continuing, you agree to our{" "}
             <Text
+              onPress={() => router.push("/legal?type=terms")}
               style={[
                 styles.legalLink,
                 {
@@ -240,6 +241,7 @@ export default function WelcomeScreen() {
             </Text>
             {" and "}
             <Text
+              onPress={() => router.push("/legal?type=privacy")}
               style={[
                 styles.legalLink,
                 {

@@ -30,6 +30,7 @@ import {
 } from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
+import { STAGGER_MS } from "@/utils/motion";
 import MedicationIcon, { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
@@ -224,7 +225,7 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
     <MotiView
       from={{ opacity: 0, translateY: 6 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 280, delay: index * 60 }}
+      transition={{ type: "timing", duration: 280, delay: Math.min(index, 6) * STAGGER_MS }}
     >
       <TouchableOpacity
         onPress={onPress}

@@ -28,7 +28,7 @@ export default function Step6() {
   const posthog = usePostHog();
   const t = useTheme();
   const styles = getStyles(t);
-  const { setOnboardingField, updateCrisisPlan } = useAppStore();
+  const { setOnboardingField, setOnboardingStep, updateCrisisPlan } = useAppStore();
 
   const [bloodType, setBloodType] = useState(null);
   const [selectedPresets, setSelectedPresets] = useState([]);
@@ -58,11 +58,13 @@ export default function Step6() {
     setOnboardingField("allergies", allAllergies);
     // Also write to crisisPlan so this data persists after onboardingData is reset
     updateCrisisPlan({ bloodType, allergies: allAllergies });
+    setOnboardingStep(6);
     router.push("/(onboarding)/step-7");
   };
 
   const handleSkip = () => {
     posthog?.capture('onboarding_step_skipped', { step: 6 });
+    setOnboardingStep(6);
     router.push("/(onboarding)/step-7");
   };
 

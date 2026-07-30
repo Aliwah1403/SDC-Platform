@@ -1,4 +1,6 @@
 import { toLocalDateStr } from "./dateUtils";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "./hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "./hydrationGoal";
 
 const SCD_TIPS = [
   "Staying hydrated reduces your risk of a painful crisis.",
@@ -19,6 +21,8 @@ export function getDynamicMessage({
   healthData = [],
   alertState = null,
   weather = null,
+  hydrationGoalMl = DEFAULT_SUGGESTED_ML,
+  hydrationDisplayUnit = "glasses",
 }) {
   const today = new Date();
   const todayStr = toLocalDateStr(today);
@@ -31,7 +35,13 @@ export function getDynamicMessage({
   const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
 
   const pain = selectedDateData?.painLevel ?? 0;
-  const hydration = selectedDateData?.hydration ?? 0;
+  // hydration is tracked canonically in ml; this copy speaks in the user's
+  // chosen display unit (glasses/ml/L/fl oz) instead of a hardcoded one.
+  const hydration = hydrationValueInUnit(selectedDateData?.hydration ?? 0, hydrationDisplayUnit);
+  const hydrationGoalInUnit = Math.max(0.1, hydrationValueInUnit(hydrationGoalMl, hydrationDisplayUnit));
+  const hydrationUnitLabel = HYDRATION_UNIT_LABEL[hydrationDisplayUnit] ?? "glasses";
+  const lowHydrationThreshold = hydrationGoalInUnit * 0.625;
+  const nearGoalThreshold = hydrationGoalInUnit * 0.75;
   const mood = selectedDateData?.mood ?? 0;
 
   const last3 = healthData
@@ -48,7 +58,7 @@ export function getDynamicMessage({
     const { feelsLike, temp, humidity } = weather;
     if (feelsLike < 10 && pain >= 4)
       return "Cold weather may be contributing to pain";
-    if (temp > 30 && humidity > 70 && hydration < 5)
+    if (temp > 30 && humidity > 70 && hydration < lowHydrationThreshold)
       return "Heat + humidity increases dehydration risk";
     return null;
   })();
@@ -78,7 +88,7 @@ export function getDynamicMessage({
               : `High pain day — ${pain}/10.`,
       body:
         [
-          hydration > 0 ? `Hydration: ${hydration} of 8 glasses.` : null,
+          hydration > 0 ? `Hydration: ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel}.` : null,
           moodLabel ? `Mood: ${moodLabel}.` : null,
         ]
           .filter(Boolean)
@@ -137,7 +147,7 @@ export function getDynamicMessage({
         return {
           label: "TODAY'S FORECAST",
           headline: "Hot and humid — hydrate early.",
-          body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least 8 glasses today.`,
+          body: `${Math.round(temp)}°C with ${humidity}% humidity. This combination accelerates dehydration. Aim for at least ${hydrationGoalInUnit} ${hydrationUnitLabel} today.`,
         };
       }
     }
@@ -172,11 +182,11 @@ export function getDynamicMessage({
   }
 
   // High pain + low hydration — crisis risk
-  if (pain >= 7 && hydration < 5) {
+  if (pain >= 7 && hydration < lowHydrationThreshold) {
     return {
       label: "WATCH OUT",
       headline: "High pain with low hydration.",
-      body: `Pain at ${pain}/10 with only ${hydration} of 8 glasses logged. This combination raises your crisis risk. Rest, hydrate, and contact your care team if pain worsens.`,
+      body: `Pain at ${pain}/10 with only ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel} logged. This combination raises your crisis risk. Rest, hydrate, and contact your care team if pain worsens.`,
       basis: weatherBasis
         ? `Based on today's log · ${weatherBasis}`
         : "Based on today's log",
@@ -184,11 +194,11 @@ export function getDynamicMessage({
   }
 
   // Low hydration
-  if (hydration < 5 && hydration > 0) {
+  if (hydration < lowHydrationThreshold && hydration > 0) {
     return {
       label: "TODAY'S FORECAST",
       headline: "Hydration needs attention.",
-      body: `You've logged ${hydration} of your 8 daily glasses. Dehydration is one of the most common triggers for a sickle cell crisis — keep a bottle close.`,
+      body: `You've logged ${hydration} of your ${hydrationGoalInUnit} daily ${hydrationUnitLabel}. Dehydration is one of the most common triggers for a sickle cell crisis — keep a bottle close.`,
       basis: weatherBasis
         ? `Based on today's log · ${weatherBasis}`
         : "Based on today's log",
@@ -235,7 +245,7 @@ export function getDynamicMessage({
     return {
       label: "TODAY'S FORECAST",
       headline: "A moderate day — pace yourself.",
-      body: `Pain at ${pain}/10. Light activity is manageable, but avoid anything strenuous. Keep fluids up${hydration < 6 ? ` — you're at ${hydration} of 8 glasses` : ""}.`,
+      body: `Pain at ${pain}/10. Light activity is manageable, but avoid anything strenuous. Keep fluids up${hydration < nearGoalThreshold ? ` — you're at ${hydration} of ${hydrationGoalInUnit} ${hydrationUnitLabel}` : ""}.`,
       basis: "Based on today's log",
     };
   }
@@ -251,7 +261,7 @@ export function getDynamicMessage({
   }
 
   // Low pain, good hydration
-  if (pain <= 3 && hydration >= 6) {
+  if (pain <= 3 && hydration >= nearGoalThreshold) {
     return {
       label: "TODAY'S FORECAST",
       headline: "Good day for light activity.",

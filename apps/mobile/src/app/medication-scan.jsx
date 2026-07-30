@@ -35,6 +35,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { fonts } from "@/utils/fonts";
 import { lookupByNDC, lookupByName } from "@/utils/medicationApi";
 import { identifyPill } from "@/utils/pillVision";
+import { normalizeDoseForm } from "@/components/MedicationIcon";
 import { Sentry } from "@/utils/sentry";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -456,6 +457,8 @@ export default function MedicationScanScreen() {
   const [confirmedName, setConfirmedName] = useState("");
   const [confirmedStrength, setConfirmedStrength] = useState("");
   const [confirmedCategory, setConfirmedCategory] = useState("Supportive");
+  // Normalized med-type key resolved from the scan's dose form ("" when unknown)
+  const [confirmedType, setConfirmedType] = useState("");
   const [enriching, setEnriching] = useState(false);
   const userEditedNameRef = useRef(false);
 
@@ -464,6 +467,7 @@ export default function MedicationScanScreen() {
     setConfirmedName(identified.commonName || identified.name);
     setConfirmedStrength(identified.strength ?? "");
     setConfirmedCategory("Supportive");
+    setConfirmedType(identified.form ? normalizeDoseForm(identified.form) : "");
     userEditedNameRef.current = false;
     setEnriching(true);
     try {
@@ -488,11 +492,16 @@ export default function MedicationScanScreen() {
   const handleAdd = () => {
     if (!result) return;
     if (result._barcodeResult) {
+      const barcodeType = result._barcodeResult.form
+        ? normalizeDoseForm(result._barcodeResult.form)
+        : "";
       router.replace({
         pathname: "/add-medication",
         params: {
           prefillName: result._barcodeResult.name,
           prefillCategory: result._barcodeResult.category,
+          // Omit when unknown so add-medication asks for the type
+          ...(barcodeType ? { prefillType: barcodeType } : {}),
         },
       });
     } else {
@@ -502,6 +511,7 @@ export default function MedicationScanScreen() {
           prefillName: confirmedName,
           prefillCategory: confirmedCategory,
           prefillDosage: confirmedStrength,
+          ...(confirmedType ? { prefillType: confirmedType } : {}),
         },
       });
     }

@@ -17,69 +17,95 @@ import { useRouter } from "expo-router";
 import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
-import Svg, { Path, Rect, Defs, ClipPath } from "react-native-svg";
+import { SymbolView } from "expo-symbols";
+import Svg, { Rect, Defs, ClipPath } from "react-native-svg";
+import { useSharedValue, withSpring } from "react-native-reanimated";
 import { useAppStore } from "@/store/appStore";
-import { writeDailyLog } from "@/services/healthKitService";
+import { writeDailyLog } from "@/services/healthService";
 import { useSubmitLogMutation } from "@/hooks/queries/useHealthDataQuery";
-import { useHealthLogsQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useHealthLogsQuery, useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useWeatherData } from "@/hooks/useWeatherData";
+import { useTodaySteps } from "@/hooks/useTodaySteps";
+import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { useHydrationContainersQuery, FALLBACK_CONTAINERS, containerIconKey } from "@/hooks/queries/useHydrationContainersQuery";
+import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl, getActivityBumpMl, combineBumpMl, describeBumpReason } from "@/utils/hydrationGoal";
+import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
 import { ChevronLeft, X, Check } from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
+import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackground";
+import { PainOrb } from "@/components/LogSymptoms/PainOrb";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
+import { PressableScale } from "@/components/PressableScale";
+import { colors } from "@/utils/colors";
+import ContainerIcon from "@/components/ContainerIcon";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { celebrationSpring } from "@/utils/motion";
 
 const AnimatedSvgRect = Animated.createAnimatedComponent(Rect);
 
-const BOTTLE_PATH =
-  "M 36 0 L 64 0 Q 68 0 68 4 L 68 14 Q 68 18 64 18 L 60 18 L 60 30 " +
-  "C 60 42 84 46 84 52 L 84 186 Q 84 198 72 198 L 28 198 Q 16 198 16 186 " +
-  "L 16 52 C 16 46 40 42 40 30 L 40 18 L 36 18 Q 32 18 32 14 L 32 4 " +
-  "Q 32 0 36 0 Z";
-const BOTTLE_BODY_TOP = 52;
-const BOTTLE_BODY_H = 146; // 198 - 52
+const VESSEL_W = 130;
+const VESSEL_H = 200;
+const VESSEL_R = 20;
 
-function WaterBottle({ value, fillColor }) {
-  const fillHeightAnim = useRef(
-    new Animated.Value(BOTTLE_BODY_H * Math.min(value / 10, 1))
-  ).current;
+// Single hydration identity color everywhere — no amber/green threshold swap.
+function HydrationVessel({ valueMl, goalMl }) {
+  const progress = Math.min(valueMl / Math.max(goalMl, 1), 1);
+  const fillHeightAnim = useRef(new Animated.Value(VESSEL_H * progress)).current;
 
   useEffect(() => {
     Animated.spring(fillHeightAnim, {
-      toValue: BOTTLE_BODY_H * Math.min(value / 10, 1),
+      toValue: VESSEL_H * progress,
       useNativeDriver: false,
       damping: 20,
       stiffness: 100,
     }).start();
-  }, [value]);
+  }, [progress]);
 
   const fillY = fillHeightAnim.interpolate({
-    inputRange: [0, BOTTLE_BODY_H],
-    outputRange: [BOTTLE_BODY_TOP + BOTTLE_BODY_H, BOTTLE_BODY_TOP],
+    inputRange: [0, VESSEL_H],
+    outputRange: [VESSEL_H, 0],
   });
 
   return (
-    <Svg width={110} height={220} viewBox="0 0 100 210">
+    <Svg width={VESSEL_W} height={VESSEL_H}>
       <Defs>
-        <ClipPath id="bottleClip">
-          <Path d={BOTTLE_PATH} />
+        <ClipPath id="vesselClip">
+          <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} />
         </ClipPath>
       </Defs>
+      <Rect x={0} y={0} width={VESSEL_W} height={VESSEL_H} rx={VESSEL_R} ry={VESSEL_R} fill={colors.burgundyTint} />
       <AnimatedSvgRect
         x={0}
         y={fillY}
-        width={100}
+        width={VESSEL_W}
         height={fillHeightAnim}
-        fill={fillColor}
-        opacity={0.75}
-        clipPath="url(#bottleClip)"
+        fill={colors.burgundy}
+        opacity={0.85}
+        clipPath="url(#vesselClip)"
       />
-      <Path d={BOTTLE_PATH} fill="none" stroke={fillColor} strokeWidth={3.5} />
+      <Rect
+        x={1.25}
+        y={1.25}
+        width={VESSEL_W - 2.5}
+        height={VESSEL_H - 2.5}
+        rx={VESSEL_R - 1}
+        ry={VESSEL_R - 1}
+        fill="none"
+        stroke={colors.burgundy}
+        strokeWidth={2.5}
+      />
     </Svg>
   );
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const TOTAL_STEPS = 7; // 0-6, with 6 = summary
+const TOTAL_STEPS = 8; // 0-7, with 7 = summary
 
 const BODY_LOCATIONS = [
   "Head", "Neck", "Chest", "Back", "Arms",
@@ -94,6 +120,24 @@ const SCD_SYMPTOMS = [
 const MOOD_VALUES = ["terrible", "poor", "fair", "good", "excellent"];
 const MOOD_LABELS = ["Very Unpleasant", "Unpleasant", "Neutral", "Pleasant", "Very Pleasant"];
 const MOOD_EMOJIS = ["😢", "😞", "😐", "🙂", "😄"];
+
+const MOOD_FACTORS = [
+  { emoji: "😴", label: "Sleep" },
+  { emoji: "💧", label: "Hydration" },
+  { emoji: "😰", label: "Stress" },
+  { emoji: "🏃", label: "Activity" },
+  { emoji: "👥", label: "Social time" },
+  { emoji: "🥶", label: "Cold weather" },
+  { emoji: "🍽️", label: "Diet" },
+  { emoji: "💊", label: "Medication" },
+  { emoji: "💼", label: "Work / School" },
+];
+
+function getMoodWhyCopy(moodValue) {
+  if (moodValue >= 4) return { title: "What made today feel good?", subtitle: "Tap what helped — or skip" };
+  if (moodValue <= 2) return { title: "What weighed on you today?", subtitle: "Tap what contributed — or skip" };
+  return { title: "What shaped your day?", subtitle: "Tap what contributed — or skip" };
+}
 
 // Pain orb color interpolation
 function getPainColor(level) {
@@ -147,72 +191,95 @@ function ProgressDots({ step }) {
   );
 }
 
-// Step 0 — Pain Level
-function PainStep({ value, onChange }) {
-  const t = useTheme();
-  const color = getPainColor(value);
-  const scale = 0.55 + (value / 10) * 0.85;
+const PAIN_LABELS = [
+  "No Pain", "Very Mild", "Mild", "Mild+", "Moderate",
+  "Moderate+", "Significant", "Severe", "Intense", "Excruciating", "Worst Possible",
+];
 
-  const PAIN_LABELS = [
-    "No Pain", "Very Mild", "Mild", "Mild+", "Moderate",
-    "Moderate+", "Significant", "Severe", "Intense", "Excruciating", "Worst Possible",
-  ];
+// Escalating haptic — the higher the pain, the firmer the tick.
+function painHaptic(v) {
+  const style =
+    v >= 8 ? Haptics.ImpactFeedbackStyle.Heavy
+    : v >= 4 ? Haptics.ImpactFeedbackStyle.Medium
+    : Haptics.ImpactFeedbackStyle.Light;
+  Haptics.impactAsync(style);
+}
+
+// Gentle support prompt shown when pain is high (≥ 8).
+function HighPainSupport({ onOpenCrisisPlan, onOpenCareTeam }) {
+  const t = useTheme();
+  return (
+    <MotiView
+      from={{ opacity: 0, translateY: 10 }}
+      animate={{ opacity: 1, translateY: 0 }}
+      transition={{ type: "timing", duration: 300 }}
+      style={{ width: "100%", paddingHorizontal: 24, marginTop: 16 }}
+    >
+      <View
+        style={{
+          backgroundColor: t.isDark ? "rgba(169,51,77,0.20)" : "#A9334D14",
+          borderRadius: 16,
+          padding: 16,
+        }}
+      >
+        <Text style={{ fontFamily: "Geist_600SemiBold", fontSize: 15, color: t.isDark ? t.text : "#781D11" }}>
+          That sounds really tough.
+        </Text>
+        <Text style={{ fontFamily: "Geist_400Regular", fontSize: 13.5, color: t.textSecondary, marginTop: 3, lineHeight: 19 }}>
+          You don't have to manage this alone — your plan and care team are here.
+        </Text>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+          <TouchableOpacity
+            onPress={onOpenCrisisPlan}
+            style={{ flex: 1, backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 11, alignItems: "center" }}
+          >
+            <Text style={{ fontFamily: "Geist_600SemiBold", fontSize: 13.5, color: "#fff" }}>Crisis plan</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onOpenCareTeam}
+            style={{ flex: 1, borderWidth: 1.5, borderColor: "#A9334D", borderRadius: 12, paddingVertical: 9.5, alignItems: "center" }}
+          >
+            <Text style={{ fontFamily: "Geist_600SemiBold", fontSize: 13.5, color: "#A9334D" }}>Care team</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </MotiView>
+  );
+}
+
+// Step 0 — Pain Level
+function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam, relog }) {
+  const t = useTheme();
+  const reducedMotion = useReducedMotion();
+  const color = getPainColor(value);
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your pain today?</Text>
+        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{relog ? "How's your pain right now?" : "How's your pain today?"}</Text>
         <Text style={styles.stepSubtitle}>Rate from 0 (no pain) to 10 (worst possible)</Text>
       </View>
 
-      {/* Orb */}
+      {/* Breathing pain orb + number, with support prompt at high pain */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-        {/* Outer ring */}
-        <MotiView
-          animate={{ scale: scale * 1.55, opacity: 0.15 }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
-          style={{
-            position: "absolute",
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: color,
-          }}
-        />
-        {/* Mid ring */}
-        <MotiView
-          animate={{ scale: scale * 1.28, opacity: 0.3 }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
-          style={{
-            position: "absolute",
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: color,
-          }}
-        />
-        {/* Core orb */}
-        <MotiView
-          animate={{ scale }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
-          style={{
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: color,
-            shadowColor: color,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.6,
-            shadowRadius: 40,
-            elevation: 12,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 48, color: "#fff" }}>
+        <View style={{ alignItems: "center", justifyContent: "center" }}>
+          <PainOrb progress={progress} value={value} isDark={t.isDark} reducedMotion={reducedMotion} />
+          <Text
+            style={{
+              position: "absolute",
+              fontFamily: "Geist_800ExtraBold",
+              fontSize: 48,
+              color: "#fff",
+              textShadowColor: "rgba(0,0,0,0.22)",
+              textShadowRadius: 10,
+            }}
+          >
             {value}
           </Text>
-        </MotiView>
+        </View>
+        {value >= 8 && (
+          <HighPainSupport onOpenCrisisPlan={onOpenCrisisPlan} onOpenCareTeam={onOpenCareTeam} />
+        )}
       </View>
 
       {/* Label + Slider */}
@@ -224,8 +291,10 @@ function PainStep({ value, onChange }) {
           step={1}
           value={value}
           onValueChange={(v) => {
-            if (v !== value) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onChange(v);
+            if (v !== value) {
+              painHaptic(v);
+              onChange(v);
+            }
           }}
           minimumTrackTintColor={color}
           maximumTrackTintColor="#F8E9E7"
@@ -241,76 +310,109 @@ function PainStep({ value, onChange }) {
   );
 }
 
-// Step 1 — Mood
-function MoodStep({ value, onChange }) {
+// Step 3 — Mood
+// The full-bleed ambient background is rendered at the screen level (see
+// MoodAmbientBackground); this step keeps a light emoji centerpiece and a
+// continuous slider that drives that background via `progress`.
+function MoodStep({ value, progress, onChange, relog }) {
   const t = useTheme();
   const idx = value - 1; // 1-indexed → 0-indexed
-  const color = MOOD_ORB_COLORS[idx] || MOOD_ORB_COLORS[2];
-  const scale = 0.55 + ((value - 1) / 4) * 0.85;
+  const labelColor = t.isDark ? t.text : "#781D11";
+  const lastMoodRef = useRef(value); // for haptic ticks as the value snaps
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
-        <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Choose how you've felt{"\n"}overall today</Text>
+        <Text style={[styles.stepTitle, { color: labelColor }]}>
+          {relog ? "How are you feeling now?" : "How have you felt\noverall today?"}
+        </Text>
       </View>
 
-      {/* Orb */}
+      {/* Emoji centerpiece (blob lives in the ambient background behind it) */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
         <MotiView
-          animate={{ scale: scale * 1.55, opacity: 0.12 }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
-          style={{ position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: color }}
-        />
-        <MotiView
-          animate={{ scale: scale * 1.28, opacity: 0.25 }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
-          style={{ position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: color }}
-        />
-        <MotiView
-          animate={{ scale }}
-          transition={{ type: "spring", damping: 18, stiffness: 80 }}
+          animate={{ scale: 0.9 + ((value - 1) / 4) * 0.28 }}
+          transition={{ type: "spring", damping: 16, stiffness: 90 }}
           style={{
-            width: 200,
-            height: 200,
-            borderRadius: 100,
-            backgroundColor: color,
-            shadowColor: color,
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: 0.5,
-            shadowRadius: 40,
-            elevation: 12,
+            width: 150,
+            height: 150,
+            borderRadius: 75,
             alignItems: "center",
             justifyContent: "center",
+            backgroundColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.30)",
           }}
         >
-          <Text style={{ fontSize: 64 }}>{MOOD_EMOJIS[idx]}</Text>
+          <Text style={{ fontSize: 72, textShadowColor: "rgba(0,0,0,0.14)", textShadowRadius: 14 }}>
+            {MOOD_EMOJIS[idx]}
+          </Text>
         </MotiView>
       </View>
 
       {/* Label + Slider */}
       <View style={{ width: "100%", paddingHorizontal: 24 }}>
-        <Text style={[styles.valueLabel, { color }]}>{MOOD_LABELS[idx]}</Text>
+        <Text style={[styles.valueLabel, { color: labelColor }]}>{MOOD_LABELS[idx]}</Text>
         <Slider
           minimumValue={1}
           maximumValue={5}
-          step={1}
+          step={0}
           value={value}
-          onValueChange={onChange}
-          minimumTrackTintColor={color}
-          maximumTrackTintColor="#F8E9E7"
-          thumbTintColor={color}
+          onValueChange={(v) => {
+            progress.value = v;
+            const rounded = Math.round(v);
+            if (rounded !== lastMoodRef.current) {
+              lastMoodRef.current = rounded;
+              Haptics.selectionAsync();
+              onChange(rounded);
+            }
+          }}
+          minimumTrackTintColor={t.isDark ? "rgba(255,255,255,0.85)" : "#781D11"}
+          maximumTrackTintColor={t.isDark ? "rgba(255,255,255,0.22)" : "rgba(120,29,17,0.22)"}
+          thumbTintColor="#FFFFFF"
           style={{ width: "100%", height: 44 }}
         />
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
-          <Text style={styles.sliderEndLabel}>VERY UNPLEASANT</Text>
-          <Text style={styles.sliderEndLabel}>VERY PLEASANT</Text>
+          <Text style={[styles.sliderEndLabel, { color: labelColor, opacity: 0.7 }]}>VERY UNPLEASANT</Text>
+          <Text style={[styles.sliderEndLabel, { color: labelColor, opacity: 0.7 }]}>VERY PLEASANT</Text>
         </View>
       </View>
     </View>
   );
 }
 
-// Step 2 — Body Locations
+// Step 4 — Mood contributors ("why")
+function MoodWhyStep({ moodValue, selected, onToggle, onSkip }) {
+  const t = useTheme();
+  const { title, subtitle } = getMoodWhyCopy(moodValue);
+  return (
+    <View style={{ flex: 1 }}>
+      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{title}</Text>
+      <Text style={styles.stepSubtitle}>{subtitle}</Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
+      >
+        {MOOD_FACTORS.map(({ emoji, label }) => (
+          <CheckboxChip
+            key={label}
+            label={`${emoji} ${label}`}
+            checked={selected.includes(label)}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              onToggle(label);
+            }}
+          />
+        ))}
+      </ScrollView>
+      <TouchableOpacity onPress={onSkip} style={{ alignItems: "center", marginTop: 16 }}>
+        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 15, color: t.textSecondary }}>
+          Skip this step →
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+// Step 1 — Body Locations
 function LocationsStep({ selected, onToggle }) {
   const t = useTheme();
   return (
@@ -337,12 +439,12 @@ function LocationsStep({ selected, onToggle }) {
   );
 }
 
-// Step 3 — Symptoms Checklist
-function SymptomsStep({ selected, onToggle }) {
+// Step 2 — Symptoms Checklist
+function SymptomsStep({ selected, onToggle, relog }) {
   const t = useTheme();
   return (
     <View style={{ flex: 1 }}>
-      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>Any symptoms today?</Text>
+      <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{relog ? "Any symptoms right now?" : "Any symptoms today?"}</Text>
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if none</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -364,89 +466,121 @@ function SymptomsStep({ selected, onToggle }) {
   );
 }
 
-// Step 4 — Hydration
-const HYDRATION_PRESETS = [4, 8, 12];
+// Step 5 — Hydration
+const HYDRATION_MAX_ML = 5000;
 
-function HydrationStep({ value, onChange }) {
+function HydrationStep({ value, onChange, goalMl, heatBumpMl, tempC, activityBumpMl, stepsToday, displayUnit, containers }) {
   const t = useTheme();
-  const fillColor = value >= 8 ? "#10B981" : value >= 5 ? "#3B82F6" : "#F59E0B";
+  const bumpMl = combineBumpMl(heatBumpMl, activityBumpMl);
+  const bumpReason = describeBumpReason({ heatBumpMl, activityBumpMl, tempC, stepsToday });
+  // Default container renders first and filled; the rest stay outlined.
+  const orderedContainers = [...containers].sort((a, b) => Number(b.isDefault) - Number(a.isDefault));
+  const { number, unitLabel } = hydrationNumberAndUnit(value, displayUnit);
+  const goalParts = hydrationNumberAndUnit(goalMl, displayUnit);
+  const goalReached = value >= goalMl;
+  const remainingText = formatHydrationRemaining(goalMl - value, displayUnit);
+
+  const addDrink = (ml) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onChange(Math.min(HYDRATION_MAX_ML, value + ml));
+  };
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "space-between", paddingBottom: 16 }}>
       <View style={{ alignItems: "center" }}>
         <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>How's your hydration?</Text>
-        <Text style={styles.stepSubtitle}>How many glasses of water today?</Text>
+        <Text style={styles.stepSubtitle}>Log today's water intake</Text>
       </View>
 
-      {/* Water bottle visual */}
+      {/* Vessel visual */}
       <View style={{ alignItems: "center", justifyContent: "center", flex: 1 }}>
-        <WaterBottle value={value} fillColor={fillColor} />
-        <Text style={{ fontFamily: "Geist_800ExtraBold", fontSize: 52, color: fillColor, marginTop: 8 }}>
-          {value}
+        <HydrationVessel valueMl={value} goalMl={goalMl} />
+        <Text style={{ marginTop: 14 }}>
+          <Text style={{ fontFamily: fonts.extrabold, fontSize: 32, color: colors.burgundy }}>{number} {unitLabel}</Text>
+          <Text style={{ fontFamily: fonts.medium, fontSize: 18, color: t.textSecondary }}> of {goalParts.number} {goalParts.unitLabel}</Text>
         </Text>
-        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 16, color: t.textSecondary, marginTop: 2 }}>
-          glasses
-        </Text>
+        {bumpMl > 0 && !!bumpReason && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textTertiary, marginTop: 6 }}>
+            +{formatHydration(bumpMl, displayUnit)} suggested today — {bumpReason}
+          </Text>
+        )}
       </View>
 
-      {/* Quick presets */}
-      <View style={{ alignItems: "center", marginBottom: 16 }}>
-        <Text style={[styles.sliderEndLabel, { marginBottom: 10 }]}>QUICK SELECT</Text>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          {HYDRATION_PRESETS.map((preset) => {
-            const active = value === preset;
+      {/* Container quick add — horizontal carousel, default container first */}
+      <View style={{ alignSelf: "stretch", marginBottom: 16 }}>
+        <Text style={[styles.sliderEndLabel, { marginBottom: 10, textAlign: "center" }]}>ADD A DRINK</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ gap: 10, paddingHorizontal: 24 }}
+        >
+          {orderedContainers.map((c) => {
+            const selected = c.isDefault;
             return (
-              <TouchableOpacity
-                key={preset}
-                onPress={() => onChange(preset)}
+              <PressableScale
+                key={c.id}
+                onPress={() => addDrink(c.ml)}
                 style={{
-                  paddingHorizontal: 22,
-                  paddingVertical: 10,
-                  borderRadius: 24,
-                  borderWidth: 2,
-                  borderColor: active ? fillColor : "#E8D5D2",
-                  backgroundColor: active ? fillColor : "transparent",
+                  width: 92,
+                  alignItems: "center",
+                  gap: 8,
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  borderRadius: 18,
+                  backgroundColor: selected ? colors.burgundy : t.surfaceElevated,
                 }}
               >
-                <Text style={{
-                  fontFamily: "Geist_600SemiBold",
-                  fontSize: 15,
-                  color: active ? "#fff" : fillColor,
-                }}>
-                  {preset}
+                <ContainerIcon iconKey={containerIconKey(c)} size={30} color={selected ? colors.cream : colors.burgundy} />
+                <Text
+                  numberOfLines={1}
+                  style={{ fontFamily: fonts.semibold, fontSize: 13, color: selected ? colors.cream : t.text }}
+                >
+                  {c.name}
                 </Text>
-              </TouchableOpacity>
+                <Text
+                  numberOfLines={1}
+                  style={{ fontFamily: fonts.medium, fontSize: 11, color: selected ? "rgba(248,233,231,0.85)" : t.textSecondary }}
+                >
+                  +{formatHydration(c.ml, displayUnit)}
+                </Text>
+              </PressableScale>
             );
           })}
-        </View>
+        </ScrollView>
       </View>
 
-      {/* +/- controls */}
+      {/* +/- fine adjust (250 ml steps) */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 32 }}>
         <TouchableOpacity
-          onPress={() => onChange(Math.max(0, value - 1))}
-          style={[styles.hydBtn, { borderColor: fillColor }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onChange(Math.max(0, value - GLASS_ML));
+          }}
+          style={[styles.hydBtn, { borderColor: colors.burgundy }]}
         >
-          <Text style={{ fontFamily: "Geist_700Bold", fontSize: 28, color: fillColor }}>−</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: colors.burgundy }}>−</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => onChange(Math.min(20, value + 1))}
-          style={[styles.hydBtn, { borderColor: fillColor, backgroundColor: fillColor }]}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onChange(Math.min(HYDRATION_MAX_ML, value + GLASS_ML));
+          }}
+          style={[styles.hydBtn, { borderColor: colors.burgundy, backgroundColor: colors.burgundy }]}
         >
-          <Text style={{ fontFamily: "Geist_700Bold", fontSize: 28, color: "#fff" }}>+</Text>
+          <Text style={{ fontFamily: fonts.bold, fontSize: 28, color: "#fff" }}>+</Text>
         </TouchableOpacity>
       </View>
 
       <View style={{ width: "100%", paddingHorizontal: 24, marginTop: 8 }}>
-        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: fillColor }]}>
-          {value >= 8 ? "Great hydration!" : value >= 5 ? "Getting there" : "Drink more water"}
+        <Text style={[styles.sliderEndLabel, { textAlign: "center", color: colors.burgundy }]}>
+          {goalReached ? "Goal reached" : remainingText}
         </Text>
       </View>
     </View>
   );
 }
 
-// Step 5 — Notes
+// Step 6 — Notes
 function NotesStep({ value, onChange, onSkip }) {
   const t = useTheme();
   return (
@@ -484,8 +618,8 @@ function NotesStep({ value, onChange, onSkip }) {
   );
 }
 
-// Step 6 — Summary
-function SummaryStep({ log, onSubmit, isLoading }) {
+// Step 7 — Summary
+function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, showSaveSuccess }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -493,9 +627,10 @@ function SummaryStep({ log, onSubmit, isLoading }) {
   const rows = [
     { label: "Pain Level", value: `${log.painLevel}/10`, color: getPainColor(log.painLevel) },
     { label: "Mood", value: `${MOOD_EMOJIS[moodIdx]} ${moodLabel}`, color: MOOD_ORB_COLORS[moodIdx] ?? "#A9334D" },
+    { label: "What contributed", value: log.triggers.length ? log.triggers.join(", ") : "—", color: "#8B5CF6" },
     { label: "Body Locations", value: log.bodyLocations.length ? log.bodyLocations.join(", ") : "None", color: "#A9334D" },
     { label: "Symptoms", value: log.symptoms.length ? log.symptoms.join(", ") : "None reported", color: "#781D11" },
-    { label: "Hydration", value: `${log.hydration} glasses`, color: log.hydration >= 8 ? "#10B981" : "#3B82F6" },
+    { label: "Hydration", value: formatHydration(log.hydration, hydrationDisplayUnit), color: colors.burgundy },
     { label: "Notes", value: log.notes || "—", color: "#9CA3AF" },
   ];
 
@@ -510,7 +645,7 @@ function SummaryStep({ log, onSubmit, isLoading }) {
             key={row.label}
             from={{ opacity: 0, translateY: 16 }}
             animate={{ opacity: 1, translateY: 0 }}
-            transition={{ delay: i * 80, type: "timing", duration: 300 }}
+            transition={{ delay: i * 40, type: "timing", duration: 300 }}
             style={[styles.summaryRow, { backgroundColor: t.isDark ? t.surface : "#F8E9E7" }]}
           >
             <View style={[styles.summaryDot, { backgroundColor: row.color }]} />
@@ -520,29 +655,57 @@ function SummaryStep({ log, onSubmit, isLoading }) {
             </View>
           </MotiView>
         ))}
+        {relog && (
+          <Text style={{ fontFamily: "Geist_400Regular", fontSize: 12.5, color: t.textSecondary, textAlign: "center", marginTop: 4, marginBottom: 4 }}>
+            Updates today's summary — highest pain, latest mood.
+          </Text>
+        )}
       </ScrollView>
 
-      <TouchableOpacity onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
+      <PressableScale onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
         {isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
+        ) : showSaveSuccess ? (
+          <MotiView
+            from={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={celebrationSpring}
+          >
+            <SymbolView
+              name="checkmark"
+              weight="bold"
+              tintColor="#fff"
+              size={20}
+              type="monochrome"
+              animationSpec={{ effect: { type: "bounce", wholeSymbol: true } }}
+              fallback={<Check color="#fff" size={20} strokeWidth={2.5} />}
+            />
+          </MotiView>
         ) : (
           <Check color="#fff" size={20} strokeWidth={2.5} />
         )}
-        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : "Save log"}</Text>
-      </TouchableOpacity>
+        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : showSaveSuccess ? "Saved!" : "Save log"}</Text>
+      </PressableScale>
     </View>
   );
 }
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
-const STEP_NAMES = ['pain_level', 'mood', 'body_locations', 'symptoms', 'hydration', 'notes', 'summary'];
+const STEP_NAMES = ['pain_level', 'body_locations', 'symptoms', 'mood', 'mood_why', 'hydration', 'notes', 'summary'];
 
 export default function LogSymptomsScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const t = useTheme();
-  const { currentSymptomLog, updateSymptomLog, resetSymptomLog, healthKitConnected, healthKitPreferences } = useAppStore();
+  const reducedMotion = useReducedMotion();
+  const {
+    currentSymptomLog, updateSymptomLog, resetSymptomLog,
+    healthKitConnected, healthKitPreferences,
+    healthConnectConnected, healthConnectPreferences,
+  } = useAppStore();
+  const isHealthConnected = Platform.OS === "ios" ? healthKitConnected : healthConnectConnected;
+  const healthPreferences = Platform.OS === "ios" ? healthKitPreferences : healthConnectPreferences;
   const submitLogMutation = useSubmitLogMutation();
   const openedAtRef = useRef(Date.now());
 
@@ -550,19 +713,60 @@ export default function LogSymptomsScreen() {
   const { data: todayLogs = [] } = useHealthLogsQuery(todayStr);
   const hasLoggedToday = todayLogs.length > 0;
 
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const { displayUnit: hydrationDisplayUnit } = useHydrationStore();
+  const { data: containersData } = useHydrationContainersQuery();
+  const containers = containersData?.length ? containersData : FALLBACK_CONTAINERS;
+  const { data: dailySummaries } = useHealthDataQuery();
+
+  const { data: profile } = useProfileQuery();
+  const { weather } = useWeatherData(profile?.locationEnabled ?? false);
+  const tempC = weather?.temp ?? null;
+  const heatBumpMl = getHeatBumpMl(tempC);
+  const stepsToday = useTodaySteps();
+  const activityBumpMl = getActivityBumpMl(stepsToday);
+
   const [step, setStep] = useState(0);
 
   // Local state mirrors (avoid calling updateSymptomLog on every slider tick)
   const [painLevel, setPainLevel] = useState(currentSymptomLog.painLevel);
+  // Springs between integer pain scores so the orb transitions smoothly.
+  const painAnim = useSharedValue(currentSymptomLog.painLevel);
   const [moodValue, setMoodValue] = useState(
     Math.max(1, MOOD_VALUES.indexOf(currentSymptomLog.mood) + 1) || 3
   );
+  // Continuous mirror of the mood slider (1..5) that drives the ambient
+  // background smoothly while the logged `moodValue` snaps to an integer.
+  const moodAnim = useSharedValue(moodValue);
+  const [moodContributors, setMoodContributors] = useState([...currentSymptomLog.triggers]);
   const [bodyLocations, setBodyLocations] = useState([...currentSymptomLog.bodyLocations]);
   const [symptoms, setSymptoms] = useState([...currentSymptomLog.symptoms]);
   const [hydration, setHydration] = useState(currentSymptomLog.hydration || 0);
+  // Once the user has touched hydration (a fresh in-progress log with a real
+  // value, or an on-screen edit below), the running-total prefill below must
+  // not clobber it.
+  const hydrationTouchedRef = useRef(!!currentSymptomLog.hydration);
+  const setHydrationTouched = (val) => {
+    hydrationTouchedRef.current = true;
+    setHydration(val);
+  };
+  // Seeds the vessel from today's real running total (home quick-adds +
+  // any earlier check-in today) so a second check-in confirms/adjusts that
+  // total instead of starting at 0 and silently discarding it — daily_summaries
+  // aggregates hydration via MAX(...), so re-entering a lower number would
+  // otherwise be lost.
+  useEffect(() => {
+    if (hydrationTouchedRef.current) return;
+    const todaySummary = dailySummaries?.find((d) => d.date === todayStr);
+    if (todaySummary?.hydration) {
+      setHydration((h) => Math.max(h, todaySummary.hydration));
+    }
+  }, [dailySummaries]);
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
 
-  const STEP_COUNT = 7; // steps 0-5 + summary (6)
+  const STEP_COUNT = 8; // steps 0-6 + summary (7)
 
   // Track opened once on mount
   useEffect(() => {
@@ -573,6 +777,11 @@ export default function LogSymptomsScreen() {
   useEffect(() => {
     posthog?.capture('symptom_log_step_viewed', { step, step_name: STEP_NAMES[step] });
   }, [step]);
+
+  // Smoothly follow the (integer) pain score for the animated orb.
+  useEffect(() => {
+    painAnim.value = withSpring(painLevel, { damping: 15, stiffness: 130 });
+  }, [painLevel]);
 
   // Track already-logged notice shown (fires once when hasLoggedToday is known)
   useEffect(() => {
@@ -585,6 +794,7 @@ export default function LogSymptomsScreen() {
     updateSymptomLog({
       painLevel,
       mood: MOOD_VALUES[moodValue - 1],
+      triggers: moodContributors,
       bodyLocations,
       symptoms,
       hydration,
@@ -630,19 +840,22 @@ export default function LogSymptomsScreen() {
     const logData = {
       painLevel,
       mood: MOOD_VALUES[moodValue - 1],
+      triggers: moodContributors,
       bodyLocations,
       symptoms,
-      hydration,
+      hydration, // canonical ml
       notes,
     };
     updateSymptomLog(logData);
+
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
         const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
         posthog?.capture('symptom_log_submitted', {
           pain_level: painLevel,
-          hydration_level: hydration,
+          hydration_level: Math.round(glassesFromMl(hydration)),
           mood: MOOD_VALUES[moodValue - 1],
+          contributor_count: moodContributors.length,
           symptoms_selected: symptoms,
           location_count: bodyLocations.length,
           symptom_count: symptoms.length,
@@ -655,9 +868,17 @@ export default function LogSymptomsScreen() {
           crisis_step: null,
         });
         posthog?.capture('hydration_logged', {
-          amount_glasses: hydration,
-          goal_met: hydration >= 8,
+          amount_glasses: Math.round(glassesFromMl(hydration)),
+          amount_ml: hydration,
+          goal_ml: hydrationGoalMl,
+          goal_met: hydration >= hydrationGoalMl,
+          activity_bump_ml: activityBumpMl,
+          steps_today: stepsToday,
         });
+        // Goal-aware silencing (Step 10 decision 3) — `hydration` here is
+        // today's full running total (the vessel seeds from it above), and
+        // hydrationGoalMl is the user's BASE goal, never the heat-bumped one.
+        maybeSilenceHydrationReminders(hydration, hydrationGoalMl);
         if (!hasLoggedToday) {
           posthog?.capture('streak_saved', {
             trigger_type: 'organic',
@@ -665,12 +886,14 @@ export default function LogSymptomsScreen() {
           });
         }
         resetSymptomLog();
-        // Mirror to Apple Health on the first log of the day only — re-logs would
-        // append duplicate DietaryWater and symptom samples to HealthKit.
-        if (healthKitConnected && !hasLoggedToday) {
-          writeDailyLog({ hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthKitPreferences });
+        // Mirror to health platform on the first log of the day only — re-logs would
+        // append duplicate water samples. Android skips symptoms/mood (HC has no symptom types).
+        if (isHealthConnected && !hasLoggedToday) {
+          writeDailyLog({ hydrationMl: hydration, symptoms, mood: MOOD_VALUES[moodValue - 1], painLevel, prefs: healthPreferences });
         }
-        router.back();
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowSaveSuccess(true);
+        setTimeout(() => router.back(), 350);
       },
     });
   }
@@ -687,12 +910,19 @@ export default function LogSymptomsScreen() {
     );
   }
 
+  function toggleMoodContributor(label) {
+    setMoodContributors((prev) =>
+      prev.includes(label) ? prev.filter((l) => l !== label) : [...prev, label]
+    );
+  }
+
   const isSummary = step === STEP_COUNT - 1;
 
   // Build a snapshot for summary
   const logSnapshot = {
     painLevel,
     mood: MOOD_VALUES[moodValue - 1],
+    triggers: moodContributors,
     bodyLocations,
     symptoms,
     hydration,
@@ -701,6 +931,19 @@ export default function LogSymptomsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={["top", "bottom"]}>
+      {/* Full-bleed ambient mood background (mood step only) */}
+      {step === 3 && (
+        <MotiView
+          from={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ type: "timing", duration: 400 }}
+          pointerEvents="none"
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <MoodAmbientBackground progress={moodAnim} isDark={t.isDark} reducedMotion={reducedMotion} />
+        </MotiView>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.headerBtn}>
@@ -724,62 +967,76 @@ export default function LogSymptomsScreen() {
       {/* Progress dots (not on summary) */}
       {!isSummary && <ProgressDots step={step} />}
 
-      {/* Already logged today notice */}
+      {/* Already logged today notice — quiet line, same idiom as the hydration heat-bump note */}
       {hasLoggedToday && step === 0 && (
-        <View style={{
+        <Text style={{
           marginHorizontal: 24,
           marginBottom: 8,
-          paddingVertical: 8,
-          paddingHorizontal: 14,
-          backgroundColor: "#A9334D18",
-          borderRadius: 10,
-          flexDirection: "row",
-          alignItems: "center",
+          fontSize: 13,
+          color: t.textTertiary,
+          fontFamily: fonts.regular,
+          textAlign: "center",
         }}>
-          <Text style={{ fontSize: 13, color: "#A9334D", fontFamily: "Geist-Medium" }}>
-            You've already logged today — adding a new entry
-          </Text>
-        </View>
+          Checking in again — tell us how things are now
+        </Text>
       )}
 
       {/* Step content */}
       <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }}>
         {step === 0 && (
-          <PainStep value={painLevel} onChange={setPainLevel} />
+          <PainStep
+            value={painLevel}
+            progress={painAnim}
+            onChange={setPainLevel}
+            onOpenCrisisPlan={() => router.push("/(tabs)/care/crisis-plan")}
+            onOpenCareTeam={() => router.push("/(tabs)/care/care-team")}
+            relog={hasLoggedToday}
+          />
         )}
         {step === 1 && (
-          <MoodStep value={moodValue} onChange={setMoodValue} />
-        )}
-        {step === 2 && (
           <LocationsStep selected={bodyLocations} onToggle={toggleLocation} />
         )}
+        {step === 2 && (
+          <SymptomsStep selected={symptoms} onToggle={toggleSymptom} relog={hasLoggedToday} />
+        )}
         {step === 3 && (
-          <SymptomsStep selected={symptoms} onToggle={toggleSymptom} />
+          <MoodStep value={moodValue} progress={moodAnim} onChange={setMoodValue} relog={hasLoggedToday} />
         )}
         {step === 4 && (
-          <HydrationStep value={hydration} onChange={setHydration} />
-        )}
-        {step === 5 && (
-          <NotesStep
-            value={notes}
-            onChange={setNotes}
+          <MoodWhyStep
+            moodValue={moodValue}
+            selected={moodContributors}
+            onToggle={toggleMoodContributor}
             onSkip={() => {
-              posthog?.capture('symptom_log_step_skipped', { step: 5, step_name: 'notes' });
+              posthog?.capture('symptom_log_step_skipped', { step: 4, step_name: 'mood_why' });
               handleNext();
             }}
           />
         )}
+        {step === 5 && (
+          <HydrationStep value={hydration} onChange={setHydrationTouched} goalMl={hydrationGoalMl} heatBumpMl={heatBumpMl} tempC={tempC} activityBumpMl={activityBumpMl} stepsToday={stepsToday} displayUnit={hydrationDisplayUnit} containers={containers} />
+        )}
         {step === 6 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} />
+          <NotesStep
+            value={notes}
+            onChange={setNotes}
+            onSkip={() => {
+              posthog?.capture('symptom_log_step_skipped', { step: 6, step_name: 'notes' });
+              handleNext();
+            }}
+          />
+        )}
+        {step === 7 && (
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} />
         )}
       </View>
 
       {/* Next button (not on summary — summary has its own submit) */}
       {!isSummary && (
         <View style={{ paddingHorizontal: 24, paddingBottom: 8, paddingTop: 4 }}>
-          <TouchableOpacity onPress={handleNext} style={styles.nextBtn}>
+          <PressableScale onPress={handleNext} style={styles.nextBtn}>
             <Text style={styles.nextBtnText}>Next</Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       )}
     </SafeAreaView>

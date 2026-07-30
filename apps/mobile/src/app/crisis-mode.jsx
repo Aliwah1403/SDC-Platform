@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { usePostHog } from "posthog-react-native";
 import {
+  Alert,
   Linking,
   Pressable,
   ScrollView,
@@ -15,6 +16,7 @@ import { MotiView } from "moti";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
+import * as SMS from "expo-sms";
 import {
   ShieldAlert,
   ThumbsUp,
@@ -22,7 +24,6 @@ import {
   TrendingUp,
   Phone,
   AlertTriangle,
-  CheckCircle2,
   ChevronDown,
   MapPin,
   Clock,
@@ -30,6 +31,7 @@ import {
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import {
   scheduleCrisisCheckIns,
   cancelCrisisNotifications,
@@ -75,11 +77,11 @@ const ESCALATION_STEPS = {
     painRange: "Pain 8–10+",
     color: "#DC2626",
     description:
-      "This is a medical emergency. Call 999 / 911 now. Your care team is being alerted.",
+      "This is a medical emergency. Call {NUMBER} now, then send the alert to your care team below.",
     actions: [
-      "Call 999 / 911 immediately — do not wait",
+      "Call {NUMBER} immediately — do not wait",
       "Stay still, stay warm, and breathe steadily",
-      "Your care team has been alerted via SMS",
+      "Send the alert to your care team using the button below",
       "Tell emergency services you have sickle cell disease",
       "Mention any fever, chest pain, or stroke symptoms",
       "Do not eat or drink until evaluated by a doctor",
@@ -152,10 +154,14 @@ export default function CrisisModeScreen() {
   const setCrisisNotificationIds = useAppStore((s) => s.setCrisisNotificationIds);
 
   const { data: contacts = [] } = useEmergencyContactsQuery();
+  // Alerts go to the PRIMARY contact only — never a group message, which would
+  // expose every contact's number to the others. Same primary-resolution the
+  // SOS button uses: the explicitly-flagged primary, else the first contact.
+  const primaryContact = contacts.find((c) => c.isPrimary) || contacts[0] || null;
   const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
   const preferredHospital = savedFacilities[0] ?? null;
+  const { number: emergencyNumber } = useEmergencyNumber();
 
-  const alertedRef = useRef(false);
   const elapsed = useElapsedTimer(crisisMode.startedAt);
 
   // ── Local UI state ──────────────────────────────────────────────────────────
@@ -192,36 +198,74 @@ export default function CrisisModeScreen() {
     }
   }, [crisisMode.isActive]);
 
-  // Step 3 auto-alert
+  // Step 3 warning haptic (no auto-send — the user must tap "Alert Care Team")
   useEffect(() => {
-    if (crisisMode.currentStep === 3 && !alertedRef.current && contacts.length > 0) {
-      alertedRef.current = true;
+    if (crisisMode.currentStep === 3) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      sendAlertsToContacts(contacts, nickname, 3);
     }
   }, [crisisMode.currentStep]);
 
   // ── Helpers ────────────────────────────────────────────────────────────────
 
-  async function sendAlertsToContacts(contactList, name, step) {
-    const locString = await getLocationString();
-    contactList.forEach((contact) => {
-      let body = `[Hemo SCD] ${name || "Your contact"} is experiencing a sickle cell crisis (Step ${step}).`;
-      if (step === 3) {
-        body += " Please contact emergency services or check in immediately.";
-      } else {
-        body += " Please check in or assist them to get help.";
+  function severityWordForStep(step) {
+    if (step === 1) return "mild";
+    if (step === 2) return "moderate";
+    return "severe";
+  }
+
+  const showComposerFailureAlert = () => {
+    Alert.alert(
+      "Can't send a text from this device",
+      "Please call or message your care team directly to let them know you need help."
+    );
+  };
+
+  async function alertPrimaryContact(contact, name, step) {
+    if (!contact) return;
+    try {
+      const severityWord = severityWordForStep(step);
+      const isAvailable = await SMS.isAvailableAsync();
+
+      if (!isAvailable) {
+        showComposerFailureAlert();
+        posthog?.capture('care_team_alert_unavailable', {
+          crisis_step: step,
+        });
+        return;
       }
-      if (locString) body += `\nCurrent location: ${locString}`;
-      Linking.openURL(`sms:${contact.phone}?body=${encodeURIComponent(body)}`).catch(() => {});
+
+      const locString = await getLocationString();
+
+      let body = `Hemo Alert: ${name || "Someone"} is having a sickle cell pain crisis (${severityWord}) and needs help.`;
+      if (locString) {
+        body += `\nLocation: ${locString}`;
+      }
+      body += `\nWhat to do: call ${name || "them"} now. If they don't answer, call ${emergencyNumber} for an ambulance.`;
+      if (preferredHospital) {
+        body += `\nPreferred hospital: ${preferredHospital.name}`;
+      }
+
+      // Single recipient only — never a group message (privacy: contacts must
+      // not see each other's numbers).
+      const { result } = await SMS.sendSMSAsync([contact.phone], body);
+
+      if (result === 'cancelled') {
+        posthog?.capture('care_team_alert_composer_result', {
+          result: 'cancelled',
+          crisis_step: step,
+        });
+        return;
+      }
+
       addCrisisAlert(contact.id);
-    });
-    posthog?.capture('care_team_alert_sent', {
-      alert_type: 'sms',
-      delivery_method: 'sms',
-      contacts_count: contactList.length,
-      crisis_step: step,
-    });
+      posthog?.capture('care_team_alert_composer_result', {
+        result,
+        crisis_step: step,
+      });
+    } catch (err) {
+      console.error('[CrisisMode] Failed to open SMS composer:', err);
+      showComposerFailureAlert();
+    }
   }
 
   const handleCheckIn = useCallback(
@@ -266,9 +310,15 @@ export default function CrisisModeScreen() {
     [consecutiveBetter, crisisMode.currentStep, crisisMode.checkInHistory.length, recordCrisisCheckIn, deescalateCrisis]
   );
 
+  // emergencyNumber and preferredHospital must be in the dep array even though
+  // they aren't passed as args: alertPrimaryContact reads them from closure,
+  // and emergencyNumber resolves asynchronously (SIM/GPS) — often after
+  // contacts/nickname/step have already settled. Without them here, this
+  // memoized handler would capture a stale alertPrimaryContact holding the
+  // "112" fallback instead of the resolved local ambulance number.
   const handleAlertTeam = useCallback(async () => {
-    await sendAlertsToContacts(contacts, nickname, crisisMode.currentStep);
-  }, [contacts, nickname, crisisMode.currentStep]);
+    await alertPrimaryContact(primaryContact, nickname, crisisMode.currentStep);
+  }, [primaryContact, nickname, crisisMode.currentStep, emergencyNumber, preferredHospital]);
 
   const handleEndCrisis = useCallback(async () => {
     posthog?.capture('crisis_mode_ended', {
@@ -375,7 +425,9 @@ export default function CrisisModeScreen() {
             <Text style={[styles.stepLabel, { color: stepData.color }]}>{stepData.label}</Text>
             <Text style={styles.stepPainRange}>{stepData.painRange}</Text>
           </View>
-          <Text style={styles.stepDescription}>{stepData.description}</Text>
+          <Text style={styles.stepDescription}>
+            {stepData.description.replace("{NUMBER}", emergencyNumber)}
+          </Text>
         </MotiView>
 
         {/* Step 3 auto-alert banner */}
@@ -386,9 +438,9 @@ export default function CrisisModeScreen() {
             transition={{ type: "spring", damping: 16, stiffness: 80 }}
             style={styles.alertBanner}
           >
-            <CheckCircle2 size={16} color="#DC2626" strokeWidth={2.5} />
+            <AlertTriangle size={16} color="#DC2626" strokeWidth={2.5} />
             <Text style={styles.alertBannerText}>
-              Care team alerted via SMS. Emergency services should be called now.
+              Call emergency services now, then use the button below to message your care team.
             </Text>
           </MotiView>
         )}
@@ -401,7 +453,7 @@ export default function CrisisModeScreen() {
               <View style={[styles.actionNumber, { backgroundColor: stepData.color }]}>
                 <Text style={styles.actionNumberText}>{i + 1}</Text>
               </View>
-              <Text style={styles.actionText}>{action}</Text>
+              <Text style={styles.actionText}>{action.replace("{NUMBER}", emergencyNumber)}</Text>
             </View>
           ))}
         </View>
@@ -606,8 +658,8 @@ export default function CrisisModeScreen() {
                 {alreadyAlerted ? "Alert Care Team Again" : "Alert Care Team"}
               </Text>
               <Text style={styles.alertTeamSubtitle}>
-                Sends SMS + location to {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
-                {alreadyAlerted ? " (already alerted)" : ""}
+                Opens a text to review + send to {primaryContact?.name || "your primary contact"}
+                {alreadyAlerted ? " · messaged earlier" : ""}
               </Text>
             </View>
           </Pressable>

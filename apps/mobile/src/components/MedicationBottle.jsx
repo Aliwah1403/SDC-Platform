@@ -3,6 +3,7 @@ import Svg, {
   Path, Circle, Ellipse, Rect, Line, G,
   Text as SvgText, Defs, LinearGradient, Stop, ClipPath,
 } from "react-native-svg";
+import { fonts } from "@/utils/fonts";
 
 function lighten(hex, amount = 0.5) {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -77,7 +78,7 @@ function PillBottle({ color, drugName, subIcon, width = 120, height = 160, idPre
         y="114"
         textAnchor="middle"
         fontSize={label.length > 8 ? "7.5" : "9"}
-        fontWeight="600"
+        fontFamily={fonts.semibold}
         fill="#1A1A1A"
         letterSpacing="0.3"
       >
@@ -177,7 +178,7 @@ function LiquidBottle({ color, drugName, width = 120, height = 160, idPrefix }) 
         y="93"
         textAnchor="middle"
         fontSize={label.length > 8 ? "7.5" : "9"}
-        fontWeight="600"
+        fontFamily={fonts.semibold}
         fill="#1A1A1A"
         letterSpacing="0.3"
       >
@@ -215,7 +216,7 @@ function OintmentTube({ color, drugName, width = 120, height = 160, idPrefix }) 
         y="90"
         textAnchor="middle"
         fontSize={label.length > 8 ? "7" : "8.5"}
-        fontWeight="600"
+        fontFamily={fonts.semibold}
         fill="#1A1A1A"
         letterSpacing="0.3"
       >
@@ -282,7 +283,7 @@ function Inhaler({ color, drugName, width = 120, height = 160, idPrefix }) {
         y="52"
         textAnchor="middle"
         fontSize={label.length > 7 ? "6.5" : "7.5"}
-        fontWeight="600"
+        fontFamily={fonts.semibold}
         fill="#1A1A1A"
         letterSpacing="0.2"
       >
@@ -356,7 +357,7 @@ function InjectionVial({ color, drugName, width = 120, height = 160, idPrefix })
         y="86"
         textAnchor="middle"
         fontSize={label.length > 8 ? "6.5" : "7.5"}
-        fontWeight="600"
+        fontFamily={fonts.semibold}
         fill="#1A1A1A"
         letterSpacing="0.2"
       >

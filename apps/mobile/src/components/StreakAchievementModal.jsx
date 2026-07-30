@@ -18,14 +18,17 @@ import Animated, {
   SensorType,
   withSpring,
   withDelay,
+  withTiming,
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
 import { Image } from "expo-image";
+import * as Haptics from "expo-haptics";
 import { Canvas, Group, Circle, Shadow, vec } from "@shopify/react-native-skia";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
@@ -177,6 +180,7 @@ export default function StreakAchievementModal({
 }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   // Badge spring entrance
   const badgeScale = useSharedValue(0.5);
@@ -245,17 +249,26 @@ export default function StreakAchievementModal({
   }));
 
   useEffect(() => {
+    if (reducedMotion) {
+      badgeScale.value = 1;
+      badgeOpacity.value = visible ? withTiming(1, { duration: 200 }) : 0;
+      if (visible) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      return;
+    }
     if (visible) {
       badgeScale.value = withDelay(
         250,
         withSpring(1, { damping: 11, stiffness: 170 }),
       );
       badgeOpacity.value = withDelay(200, withSpring(1, { damping: 20 }));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
       badgeScale.value = 0.5;
       badgeOpacity.value = 0;
     }
-  }, [visible]);
+  }, [visible, reducedMotion]);
 
   if (!milestone) return null;
 
@@ -323,27 +336,29 @@ export default function StreakAchievementModal({
           />
 
           {/* Confetti — only in hero area */}
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              overflow: "hidden",
-            }}
-            pointerEvents="none"
-          >
-            {CONFETTI_PIECES.map(({ key, ...p }) => (
-              <ConfettiPiece key={key} {...p} />
-            ))}
-          </View>
+          {!reducedMotion && (
+            <View
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                overflow: "hidden",
+              }}
+              pointerEvents="none"
+            >
+              {CONFETTI_PIECES.map(({ key, ...p }) => (
+                <ConfettiPiece key={key} {...p} />
+              ))}
+            </View>
+          )}
 
           {/* "NEW ACHIEVEMENT" label */}
           <MotiView
-            from={{ opacity: 0, translateY: -10 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 400, delay: 100 }}
+            from={reducedMotion ? { opacity: 0 } : { opacity: 0, translateY: -10 }}
+            animate={reducedMotion ? { opacity: 1 } : { opacity: 1, translateY: 0 }}
+            transition={reducedMotion ? { type: "timing", duration: 200 } : { type: "timing", duration: 400, delay: 100 }}
             style={{
               flexDirection: "row",
               alignItems: "center",
@@ -458,14 +473,13 @@ export default function StreakAchievementModal({
 
         {/* ── Content card ── */}
         <MotiView
-          from={{ translateY: 40, opacity: 0 }}
-          animate={{ translateY: 0, opacity: 1 }}
-          transition={{
-            type: "spring",
-            damping: 20,
-            stiffness: 180,
-            delay: 150,
-          }}
+          from={reducedMotion ? { opacity: 0 } : { translateY: 40, opacity: 0 }}
+          animate={reducedMotion ? { opacity: 1 } : { translateY: 0, opacity: 1 }}
+          transition={
+            reducedMotion
+              ? { type: "timing", duration: 200 }
+              : { type: "spring", damping: 20, stiffness: 180, delay: 150 }
+          }
           style={{
             backgroundColor: t.background,
             borderTopLeftRadius: 32,

@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import LottieView from "lottie-react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
   Sparkles,
@@ -22,11 +22,15 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { glassesFromMl } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { fonts } from "@/utils/fonts";
 import { LinearGradient } from "expo-linear-gradient";
 import MilestoneModal from "@/components/MilestoneModal";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { useTheme } from "@/hooks/useTheme";
+import { PressableScale } from "@/components/PressableScale";
 
 const HEMO = {
   dark: "#781D11",
@@ -36,25 +40,25 @@ const HEMO = {
 };
 
 const MILESTONE_BADGE = {
-  "days-1":       require("../../assets/images/badges-3/first-step.png"),
-  "days-5":       require("../../assets/images/badges-3/getting-started.png"),
-  "days-10":      require("../../assets/images/badges-3/double-digits.png"),
-  "days-25":      require("../../assets/images/badges-3/quarter-century.png"),
-  "days-50":      require("../../assets/images/badges-3/health-champion.png"),
-  "days-100":     require("../../assets/images/badges-3/century-master.png"),
-  "streak-3":     require("../../assets/images/badges-3/on-track.png"),
-  "streak-7":     require("../../assets/images/badges-3/habit-builder.png"),
-  "streak-14":    require("../../assets/images/badges-3/fortnight-fighter.png"),
-  "streak-30":    require("../../assets/images/badges-3/monthly-monster.png"),
+  "days-1": require("../../assets/images/badges-3/first-step.png"),
+  "days-5": require("../../assets/images/badges-3/getting-started.png"),
+  "days-10": require("../../assets/images/badges-3/double-digits.png"),
+  "days-25": require("../../assets/images/badges-3/quarter-century.png"),
+  "days-50": require("../../assets/images/badges-3/health-champion.png"),
+  "days-100": require("../../assets/images/badges-3/century-master.png"),
+  "streak-3": require("../../assets/images/badges-3/on-track.png"),
+  "streak-7": require("../../assets/images/badges-3/habit-builder.png"),
+  "streak-14": require("../../assets/images/badges-3/fortnight-fighter.png"),
+  "streak-30": require("../../assets/images/badges-3/monthly-monster.png"),
   "week-perfect": require("../../assets/images/badges-3/perfect-week.png"),
-  "symptoms-10":  require("../../assets/images/badges-3/pattern-seeker.png"),
-  "symptoms-25":  require("../../assets/images/badges-3/symptom-tracker.png"),
-  "hydration-7":  require("../../assets/images/badges-3/hydration-junkie.png"),
-  "care-10":      require("../../assets/images/badges-3/self-care.png"),
-  "learning-5":   require("../../assets/images/badges-3/knowledge-seeker.png"),
-  "repair-1":     require("../../assets/images/badges-3/back-on-track.png"),
-  "restart-1":    require("../../assets/images/badges-3/resilient-restart.png"),
-  "meds-first":   require("../../assets/images/badges-3/dose-one.png"),
+  "symptoms-10": require("../../assets/images/badges-3/pattern-seeker.png"),
+  "symptoms-25": require("../../assets/images/badges-3/symptom-tracker.png"),
+  "hydration-7": require("../../assets/images/badges-3/hydration-junkie.png"),
+  "care-10": require("../../assets/images/badges-3/self-care.png"),
+  "learning-5": require("../../assets/images/badges-3/knowledge-seeker.png"),
+  "repair-1": require("../../assets/images/badges-3/back-on-track.png"),
+  "restart-1": require("../../assets/images/badges-3/resilient-restart.png"),
+  "meds-first": require("../../assets/images/badges-3/dose-one.png"),
   "meds-streak-7": require("../../assets/images/badges-3/on-time-hero.png"),
 };
 
@@ -62,11 +66,14 @@ export default function StreakModal() {
   const posthog = usePostHog();
   const router = useRouter();
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const { auth } = useAuthStore();
   const { data: profile } = useProfileQuery();
   const { data: healthData = [] } = useHealthDataQuery();
   const { data: streak } = useStreakQuery();
   const { data: medications = [] } = useMedicationsQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
   const currentUser = {
     name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You",
@@ -110,10 +117,12 @@ export default function StreakModal() {
     if (!healthData.length) return 0;
     const last7 = healthData.slice(-7);
     const sum = last7.reduce((acc, d) => acc + (d.hydration ?? 0), 0);
-    return parseFloat((sum / last7.length).toFixed(1));
+    return parseFloat(glassesFromMl(sum / last7.length).toFixed(1));
   }, [healthData]);
   const totalEntries = healthData.length;
-  const totalDaysLogged = new Set(healthData.map((d) => d.date?.split("T")[0]).filter(Boolean)).size;
+  const totalDaysLogged = new Set(
+    healthData.map((d) => d.date?.split("T")[0]).filter(Boolean),
+  ).size;
   const avgSteps = 8200;
 
   const stats = [
@@ -132,7 +141,7 @@ export default function StreakModal() {
     (sum, day) => sum + (day.symptoms?.length || 0),
     0,
   );
-  const hydrationDays = healthData.filter((day) => day.hydration >= 8).length;
+  const hydrationDays = healthData.filter((day) => day.hydration >= hydrationGoalMl).length;
   const careTasksCompleted = 0;
   const learningModulesCompleted = 0;
 
@@ -574,34 +583,9 @@ export default function StreakModal() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }}>
-      {/* Close button */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "flex-end",
-          paddingHorizontal: 20,
-          paddingTop: 12,
-          paddingBottom: 4,
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: t.surfaceElevated,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <X size={20} color={t.text} />
-        </TouchableOpacity>
-      </View>
-
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={["bottom", "left", "right"]}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* ── GRADIENT HERO ── */}
+        {/* ── GRADIENT HERO — extends to the very top; close button floats on top of it ── */}
         <LinearGradient
           colors={
             t.isDark
@@ -609,12 +593,29 @@ export default function StreakModal() {
               : ["#FFF9F8", "#F8E9E7", "#ECDAD4"]
           }
           style={{
-            paddingTop: 8,
+            paddingTop: insets.top + 12,
             paddingBottom: 56,
             paddingHorizontal: 24,
             alignItems: "center",
           }}
         >
+          <PressableScale
+            onPress={() => router.back()}
+            style={{
+              position: "absolute",
+              top: insets.top + 12,
+              right: 20,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              backgroundColor: t.isDark ? "rgba(255,255,255,0.08)" : "rgba(26,26,26,0.06)",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <X size={20} color={t.text} />
+          </PressableScale>
+
           {/* Animated fire */}
           <LottieView
             source={require("../../assets/animations/streak-animation.json")}
@@ -754,107 +755,6 @@ export default function StreakModal() {
             paddingBottom: 48,
           }}
         >
-          {/* Stats Card */}
-          <View
-            style={{
-              backgroundColor: t.isDark ? t.surfaceElevated : "#F8F4F0",
-              borderRadius: 20,
-              padding: 20,
-              marginBottom: 24,
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.04,
-              shadowRadius: 8,
-              elevation: 2,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: fonts.medium,
-                fontSize: 16,
-                color: t.textSecondary,
-                textAlign: "center",
-                marginBottom: 24,
-              }}
-            >
-              Your Stats
-            </Text>
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginBottom: 20,
-              }}
-            >
-              {stats.map((stat, index) => (
-                <React.Fragment key={index}>
-                  {index > 0 && (
-                    <View
-                      style={{
-                        width: 1,
-                        height: 36,
-                        backgroundColor: t.border,
-                        alignSelf: "center",
-                      }}
-                    />
-                  )}
-                  <View style={{ alignItems: "center", flex: 1 }}>
-                    <Text
-                      style={{
-                        fontFamily: fonts.medium,
-                        fontSize: 13,
-                        color: t.textSecondary,
-                        marginBottom: 8,
-                      }}
-                    >
-                      {stat.label}
-                    </Text>
-                    <Text
-                      style={{
-                        fontFamily: fonts.bold,
-                        fontSize: 20,
-                        color: t.text,
-                      }}
-                    >
-                      {stat.value}
-                    </Text>
-                  </View>
-                </React.Fragment>
-              ))}
-            </View>
-
-            <TouchableOpacity
-              onPress={() => router.push("/health-insights")}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: t.surface,
-                borderRadius: 100,
-                paddingVertical: 8,
-                paddingHorizontal: 14,
-                alignSelf: "flex-start",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 3,
-                elevation: 2,
-                gap: 6,
-              }}
-            >
-              <Sparkles size={14} color={t.isDark ? t.text : HEMO.wine} />
-              <Text
-                style={{
-                  fontFamily: fonts.semibold,
-                  fontSize: 12,
-                  color: t.isDark ? t.text : HEMO.wine,
-                }}
-              >
-                2 Insights Available
-              </Text>
-            </TouchableOpacity>
-          </View>
-
           {/* Streak Repairs */}
           <TouchableOpacity
             onPress={() => router.push("/streak-repairs")}

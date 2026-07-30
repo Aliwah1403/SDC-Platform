@@ -11,20 +11,23 @@ import Svg, {
 } from "react-native-svg";
 
 export const MED_TYPE_IMAGES = {
-  tablet: require("../../assets/med-types/Tablet.jpeg"),
-  liquid: require("../../assets/med-types/Liquid.jpeg"),
-  ointment: require("../../assets/med-types/Ointment.jpeg"),
-  injection: require("../../assets/med-types/Injection.jpeg"),
-  chewable: require("../../assets/med-types/Chewable.jpeg"),
-  drops: require("../../assets/med-types/Drops.jpeg"),
-  effervescent: require("../../assets/med-types/Effervescent-table.jpeg"),
-  enema: require("../../assets/med-types/Enema.jpeg"),
-  lozenge: require("../../assets/med-types/Lozenge.jpeg"),
-  mouthwash: require("../../assets/med-types/Mouthwash.jpeg"),
-  "nasal-spray": require("../../assets/med-types/Nasal-spray.jpeg"),
-  patch: require("../../assets/med-types/Patch.jpeg"),
-  powder: require("../../assets/med-types/Powder.jpeg"),
-  spray: require("../../assets/med-types/Spray.jpeg"),
+  tablet: require("../../assets/med-types/Tablet.png"),
+  capsule: require("../../assets/med-types/Capsule.png"),
+  liquid: require("../../assets/med-types/Liquid.png"),
+  ointment: require("../../assets/med-types/Ointment.png"),
+  inhaler: require("../../assets/med-types/Inhaler.png"),
+  injection: require("../../assets/med-types/Injection.png"),
+  chewable: require("../../assets/med-types/Chewable.png"),
+  drops: require("../../assets/med-types/Drops.png"),
+  effervescent: require("../../assets/med-types/Effervescent-table.png"),
+  enema: require("../../assets/med-types/Enema.png"),
+  lozenge: require("../../assets/med-types/Lozenge.png"),
+  mouthwash: require("../../assets/med-types/Mouthwash.png"),
+  "nasal-spray": require("../../assets/med-types/Nasal-spray.png"),
+  patch: require("../../assets/med-types/Patch.png"),
+  powder: require("../../assets/med-types/Powder.png"),
+  spray: require("../../assets/med-types/Spray.png"),
+  suppository: require("../../assets/med-types/Suppository.png"),
 };
 
 /**
@@ -37,13 +40,14 @@ export function normalizeDoseForm(apiDoseForm = "") {
   if (f.includes("CHEWABLE")) return "chewable";
   if (f.includes("LOZENGE") || f.includes("TROCHE")) return "lozenge";
   if (f.includes("PATCH") || f.includes("TRANSDERMAL")) return "patch";
+  if (f.includes("SUPPOSITORY")) return "suppository";
   if (f.includes("ENEMA")) return "enema";
   if (f.includes("MOUTHWASH") || f.includes("RINSE")) return "mouthwash";
   if (f.includes("NASAL")) return "nasal-spray";
   if (f.includes("DROP")) return "drops";
   if (f.includes("POWDER")) return "powder";
-  if (f.includes("SOFTGEL")) return "softgel";
-  if (f.includes("CAPSULE")) return "capsule";
+  // Softgels are visually near-identical to capsules — route to the capsule photo
+  if (f.includes("SOFTGEL") || f.includes("CAPSULE")) return "capsule";
   if (f.includes("TABLET")) return "tablet";
   if (f.includes("CREAM") || f.includes("OINTMENT") || f.includes("TOPICAL"))
     return "ointment";
@@ -393,6 +397,7 @@ const ICONS = {
   drops: LiquidIcon,
   powder: TabletIcon,
   spray: InhalerIcon,
+  suppository: SoftgelIcon,
 };
 
 export default function MedicationIcon({

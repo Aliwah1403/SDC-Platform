@@ -10,7 +10,7 @@ import { SCD_MEDICATIONS, SCD_CATEGORIES as CATEGORIES } from '@/utils/scdDrugs'
 
 export default function Step11() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const toggleDrug = (id) => {
@@ -21,7 +21,9 @@ export default function Step11() {
     });
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 11 }); router.push('/(onboarding)/complete'); };
+  const goNext = () => { setOnboardingStep(11); router.push('/(onboarding)/complete'); };
+
+  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 11 }); goNext(); };
 
   const handleContinue = () => {
     const selected = SCD_MEDICATIONS.filter((d) => selectedIds.has(d.id)).map((d) => ({
@@ -30,7 +32,7 @@ export default function Step11() {
       frequency: '',
     }));
     if (selected.length) setOnboardingField('medications', selected);
-    router.push('/(onboarding)/complete');
+    goNext();
   };
 
   const selectedCount = selectedIds.size;

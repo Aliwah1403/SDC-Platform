@@ -7,6 +7,7 @@ import { Fingerprint, ShieldCheck, AlertCircle } from 'lucide-react-native';
 import Svg, { Path, Circle } from 'react-native-svg';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 async function authenticateAsync() {
   console.log('[BIOMETRICS STUB] authenticateAsync');
@@ -32,8 +33,9 @@ function FaceIdGraphic() {
 
 export default function Step10() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [status, setStatus] = useState('idle');
+  const reducedMotion = useReducedMotion();
   const biometricType = Platform.OS === 'ios' ? 'Face ID' : 'Fingerprint';
 
   const handleEnable = async () => {
@@ -50,10 +52,12 @@ export default function Step10() {
     }
   };
 
+  const goNext = () => { setOnboardingStep(10); router.push('/(onboarding)/step-11'); };
+
   const handleSkip = () => {
     posthog?.capture('onboarding_step_skipped', { step: 10 });
     setOnboardingField('biometricsEnabled', false);
-    router.push('/(onboarding)/step-11');
+    goNext();
   };
 
   return (
@@ -66,7 +70,7 @@ export default function Step10() {
       onBack={() => router.back()}
       skippable
       onSkip={handleSkip}
-      onCta={status === 'success' ? () => router.push('/(onboarding)/step-11') : handleEnable}
+      onCta={status === 'success' ? goNext : handleEnable}
       ctaLabel={status === 'success' ? 'Continue' : `Enable ${biometricType}`}
     >
       <View style={styles.graphicContainer}>
@@ -76,7 +80,7 @@ export default function Step10() {
           transition={{ type: 'spring', damping: 15, stiffness: 80, delay: 100 }}
           style={styles.graphicWrapper}
         >
-          {status === 'success' && (
+          {status === 'success' && !reducedMotion && (
             <>
               <MotiView from={{ scale: 1, opacity: 0.4 }} animate={{ scale: 1.5, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />
               <MotiView from={{ scale: 1, opacity: 0.3 }} animate={{ scale: 1.3, opacity: 0 }} transition={{ type: 'timing', duration: 1500, loop: true, delay: 300 }} style={[StyleSheet.absoluteFill, styles.pulseRing]} />

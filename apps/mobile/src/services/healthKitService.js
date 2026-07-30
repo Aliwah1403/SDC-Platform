@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { mlFromGlasses } from "@/utils/hydrationUnits";
 import * as Notifications from "expo-notifications";
 import {
   requestAuthorization,
@@ -83,6 +84,15 @@ const ASLEEP_VALUES = new Set([
   CategoryValueSleepAnalysis.asleepCore,
   CategoryValueSleepAnalysis.asleepDeep,
   CategoryValueSleepAnalysis.asleepREM,
+]);
+
+// Maps HealthKit sleep sample values to the 4 hypnogram buckets used by MetricChart
+const SLEEP_STAGE_BUCKET = new Map([
+  [CategoryValueSleepAnalysis.awake, "awake"],
+  [CategoryValueSleepAnalysis.asleepUnspecified, "core"],
+  [CategoryValueSleepAnalysis.asleepCore, "core"],
+  [CategoryValueSleepAnalysis.asleepDeep, "deep"],
+  [CategoryValueSleepAnalysis.asleepREM, "rem"],
 ]);
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -259,16 +269,41 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
         ascending: true,
       });
       const sleepByDate = {};
+      const stagesByDate = {};
+      const segmentsByDate = {};
       for (const s of samples) {
-        if (!ASLEEP_VALUES.has(s.value)) continue;
         // Attribute sleep to the wake-up date (endDate) — matches Apple Health's
         // convention. A session starting 11 PM Tue / ending 7 AM Wed belongs to Wed.
         const key = dateStr(s.endDate);
         const hours = (new Date(s.endDate) - new Date(s.startDate)) / 3600000;
-        sleepByDate[key] = (sleepByDate[key] ?? 0) + hours;
+
+        if (ASLEEP_VALUES.has(s.value)) {
+          sleepByDate[key] = (sleepByDate[key] ?? 0) + hours;
+        }
+
+        const bucket = SLEEP_STAGE_BUCKET.get(s.value);
+        if (bucket) {
+          stagesByDate[key] = stagesByDate[key] ?? { awake: 0, core: 0, deep: 0, rem: 0 };
+          stagesByDate[key][bucket] += hours;
+          segmentsByDate[key] = segmentsByDate[key] ?? [];
+          segmentsByDate[key].push({ start: s.startDate, end: s.endDate, stage: bucket });
+        }
       }
       for (const [key, hours] of Object.entries(sleepByDate)) {
         merge(key, { sleepHours: Math.round(hours * 10) / 10 });
+      }
+      for (const [key, stages] of Object.entries(stagesByDate)) {
+        merge(key, {
+          sleepStages: {
+            awake: Math.round(stages.awake * 10) / 10,
+            core: Math.round(stages.core * 10) / 10,
+            deep: Math.round(stages.deep * 10) / 10,
+            rem: Math.round(stages.rem * 10) / 10,
+          },
+        });
+      }
+      for (const [key, segments] of Object.entries(segmentsByDate)) {
+        merge(key, { sleepSegments: segments.sort((a, b) => new Date(a.start) - new Date(b.start)) });
       }
     } catch {}
   }
@@ -278,7 +313,7 @@ export async function fetchHealthKitRange(daysBack = 30, prefs = {}) {
 
 // Write a completed symptom log entry back to Apple Health.
 // Called after a successful Supabase save so HealthKit always mirrors real data.
-export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLevel = 0, prefs = {} }) {
+export async function writeDailyLog({ hydrationMl = 0, symptoms = [], mood, painLevel = 0, prefs = {} }) {
   if (!isHKAvailable()) return;
 
   const p = { writeHydration: true, writeSymptoms: true, writeMood: true, ...prefs };
@@ -286,9 +321,9 @@ export async function writeDailyLog({ hydration = 0, symptoms = [], mood, painLe
   const now = new Date();
   const start = new Date(now.getTime() - 60000); // 1 min duration
 
-  if (p.writeHydration && hydration > 0) {
+  if (p.writeHydration && hydrationMl > 0) {
     try {
-      await saveQuantitySample(QT.WATER, "mL", hydration * 237, start, now);
+      await saveQuantitySample(QT.WATER, "mL", hydrationMl, start, now);
     } catch {}
   }
 
@@ -511,7 +546,7 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
     hrAboveBaseline &&
     stepsBaseline != null && steps != null && steps < stepsBaseline * 0.4 &&
     (sleepHours == null || sleepHours < 6 || hasSymptom("Fatigue")) &&
-    (hasSymptom("Fatigue") || (todayMetrics.hydration != null && todayMetrics.hydration < 5));
+    (hasSymptom("Fatigue") || (todayMetrics.hydration != null && todayMetrics.hydration < mlFromGlasses(5)));
 
   // ── Level resolution ────────────────────────────────────────────────────────
 

@@ -1,13 +1,26 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, Animated } from "react-native";
+import { View, Text, Animated } from "react-native";
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
 import { X, Wrench, Flame, Shield } from "lucide-react-native";
 import { MotiView } from "moti";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { useMissedDay, useStreakQuery, useStreakRepairMutation } from "@/hooks/queries/useStreakQuery";
 import { fonts } from "@/utils/fonts";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { PressableScale } from "@/components/PressableScale";
+
+const HEMO = {
+  dark: "#781D11",
+  wine: "#A9334D",
+  rose: "#D09F9A",
+  blush: "#F8E9E7",
+};
+
+const WINE_TINT = "rgba(169,51,77,0.08)";
+const ORANGE_TINT_BG = "rgba(240,83,28,0.08)";
+const ORANGE_TINT_BORDER = "rgba(240,83,28,0.28)";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
   const t = useTheme();
@@ -49,6 +62,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
 
   const handleRepair = useCallback(() => {
     setIsRepairing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     Animated.sequence([
       Animated.timing(wrenchRotation, { toValue: 1, duration: 300, useNativeDriver: true }),
@@ -100,7 +114,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
         {!repairComplete ? (
           <>
             {/* Close button */}
-            <TouchableOpacity
+            <PressableScale
               onPress={handleClose}
               style={{
                 alignSelf: "flex-end",
@@ -114,7 +128,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               }}
             >
               <X size={16} color={t.textSecondary} strokeWidth={2.5} />
-            </TouchableOpacity>
+            </PressableScale>
 
             {/* Icon + headline */}
             <MotiView
@@ -126,7 +140,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               {/* Icon */}
               <View style={{ marginBottom: 16 }}>
                 <LinearGradient
-                  colors={["#781D11", "#A9334D"]}
+                  colors={[HEMO.dark, HEMO.wine]}
                   style={{
                     width: 80,
                     height: 80,
@@ -135,7 +149,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                     justifyContent: "center",
                   }}
                 >
-                  <Flame size={38} color="#F8E9E7" strokeWidth={1.8} />
+                  <Flame size={38} color={HEMO.blush} strokeWidth={1.8} />
                 </LinearGradient>
 
                 {/* Repair badge */}
@@ -151,7 +165,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                     alignItems: "center",
                     justifyContent: "center",
                     borderWidth: 2.5,
-                    borderColor: "#F8F4F0",
+                    borderColor: t.background,
                     transform: [{ rotate: rotateInterpolate }],
                   }}
                 >
@@ -165,8 +179,8 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               </Text>
 
               {/* Missed date chip */}
-              <View style={{ backgroundColor: "#F0E8E5", borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: "#A9334D" }}>
+              <View style={{ backgroundColor: WINE_TINT, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 }}>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: HEMO.wine }}>
                   Missed · {missedDay.formattedDate}
                 </Text>
               </View>
@@ -190,7 +204,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               </View>
 
               {/* Repairs stat */}
-              <View style={{ flex: 1, backgroundColor: canRepair ? "#FEF0EB" : (t.isDark ? t.surfaceElevated : "#F5F5F5"), borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: canRepair ? "#F0C4B4" : t.border }}>
+              <View style={{ flex: 1, backgroundColor: canRepair ? ORANGE_TINT_BG : t.surfaceElevated, borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: canRepair ? ORANGE_TINT_BORDER : t.border }}>
                 <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: canRepair ? "#F0531C" : t.textSecondary, lineHeight: 34 }}>
                   {repairsAvailable}
                 </Text>
@@ -222,32 +236,30 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
 
             {/* CTA buttons */}
             <View style={{ gap: 10 }}>
-              <TouchableOpacity
+              <PressableScale
                 onPress={handleRepair}
                 disabled={isRepairing || !canRepair}
-                activeOpacity={0.88}
                 style={{
-                  backgroundColor: canRepair ? "#F0531C" : "#E5E0DB",
+                  backgroundColor: canRepair ? "#F0531C" : t.surfaceElevated,
                   paddingVertical: 16,
                   borderRadius: 16,
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: canRepair ? "#fff" : "#A09890" }}>
+                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: canRepair ? "#fff" : t.textTertiary }}>
                   {isRepairing ? "Repairing…" : canRepair ? "Use a Repair" : "No Repairs Left"}
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
 
-              <TouchableOpacity
+              <PressableScale
                 onPress={handleClose}
                 disabled={isRepairing}
-                activeOpacity={0.7}
                 style={{ paddingVertical: 14, alignItems: "center" }}
               >
                 <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.textSecondary }}>
                   Skip for now
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           </>
         ) : (
@@ -261,7 +273,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               }}
             >
               <LinearGradient
-                colors={["#781D11", "#A9334D"]}
+                colors={[HEMO.dark, HEMO.wine]}
                 style={{
                   width: 100,
                   height: 100,
@@ -271,7 +283,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                   marginBottom: 24,
                 }}
               >
-                <Shield size={48} color="#F8E9E7" strokeWidth={1.8} />
+                <Shield size={48} color={HEMO.blush} strokeWidth={1.8} />
               </LinearGradient>
 
               <Text style={{ fontFamily: fonts.extrabold, fontSize: 28, color: t.text, marginBottom: 8 }}>

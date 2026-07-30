@@ -16,7 +16,7 @@ export const PREFS_KEY = "hemo_visible_metrics";
 export const DEFAULT_VISIBLE = ["hydration", "mood", "steps", "sleep"];
 
 const METRICS = [
-  { key: "hydration", label: "Hydration", emoji: "💧", description: "Daily water intake vs. your 8-glass goal" },
+  { key: "hydration", label: "Hydration", emoji: "💧", description: "Daily water intake vs. your goal" },
   { key: "mood",      label: "Mood",       emoji: "😊", description: "How you're feeling each day" },
   { key: "steps",     label: "Steps",      emoji: "👟", description: "Daily step count toward 10,000" },
   { key: "sleep",     label: "Sleep",      emoji: "🌙", description: "Hours of sleep each night" },

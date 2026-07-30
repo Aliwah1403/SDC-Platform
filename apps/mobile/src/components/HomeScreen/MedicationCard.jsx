@@ -1,9 +1,10 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Image } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { Check, Pill } from "lucide-react-native";
+import { Check } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 
 function RingProgress({ taken, total }) {
   const t = useTheme();
@@ -67,12 +68,17 @@ function MedRow({ med, isLast }) {
             backgroundColor: taken ? "#A9334D" : "#F8E9E7",
             alignItems: "center",
             justifyContent: "center",
+            overflow: "hidden",
           }}
         >
           {taken ? (
             <Check size={18} color="#FFFFFF" strokeWidth={2.5} />
           ) : (
-            <Pill size={18} color="#A9334D" strokeWidth={2} />
+            <Image
+              source={MED_TYPE_IMAGES[med.type] ?? MED_TYPE_IMAGES.tablet}
+              style={{ width: "78%", height: "78%" }}
+              resizeMode="contain"
+            />
           )}
         </View>
 

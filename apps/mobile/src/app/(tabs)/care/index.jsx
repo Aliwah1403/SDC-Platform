@@ -8,6 +8,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/Card";
+import { PressableScale } from "@/components/PressableScale";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { STAGGER_MS } from "@/utils/motion";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { useAppStore } from "@/store/appStore";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -29,15 +33,6 @@ import {
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const HALF_CARD = (SCREEN_WIDTH - 40 - 12) / 2;
 
-const CARD_SHADOW = {
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.06,
-  shadowRadius: 8,
-  elevation: 3,
-};
-
-
 function formatApptDate(dateStr) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -51,10 +46,10 @@ function formatApptDate(dateStr) {
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
 function EmergencyButton({ onPress, isActive }) {
+  const reducedMotion = useReducedMotion();
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.85}
       style={{
         borderRadius: 20,
         marginBottom: 16,
@@ -67,28 +62,32 @@ function EmergencyButton({ onPress, isActive }) {
       }}
     >
       {/* Pulse rings */}
-      <MotiView
-        from={{ scale: 1, opacity: 0.22 }}
-        animate={{ scale: 1.06, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true }}
-        style={{
-          position: "absolute",
-          top: -6, bottom: -6, left: -6, right: -6,
-          borderRadius: 26,
-          backgroundColor: isActive ? "#DC2626" : "#A9334D",
-        }}
-      />
-      <MotiView
-        from={{ scale: 1, opacity: 0.16 }}
-        animate={{ scale: 1.03, opacity: 0 }}
-        transition={{ type: "timing", duration: 2000, loop: true, delay: 400 }}
-        style={{
-          position: "absolute",
-          top: -3, bottom: -3, left: -3, right: -3,
-          borderRadius: 23,
-          backgroundColor: "#781D11",
-        }}
-      />
+      {!reducedMotion && (
+        <MotiView
+          from={{ scale: 1, opacity: 0.22 }}
+          animate={{ scale: 1.06, opacity: 0 }}
+          transition={{ type: "timing", duration: 2000, loop: true }}
+          style={{
+            position: "absolute",
+            top: -6, bottom: -6, left: -6, right: -6,
+            borderRadius: 26,
+            backgroundColor: isActive ? "#DC2626" : "#A9334D",
+          }}
+        />
+      )}
+      {!reducedMotion && (
+        <MotiView
+          from={{ scale: 1, opacity: 0.16 }}
+          animate={{ scale: 1.03, opacity: 0 }}
+          transition={{ type: "timing", duration: 2000, loop: true, delay: 400 }}
+          style={{
+            position: "absolute",
+            top: -3, bottom: -3, left: -3, right: -3,
+            borderRadius: 23,
+            backgroundColor: "#781D11",
+          }}
+        />
+      )}
 
       <LinearGradient
         colors={isActive ? ["#DC2626", "#A9334D", "#781D11"] : ["#A9334D", "#781D11", "#0D0D0D"]}
@@ -116,163 +115,48 @@ function EmergencyButton({ onPress, isActive }) {
           </View>
         </View>
       </LinearGradient>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
-function MedsCard({ taken, total, onPress }) {
-  const t = useTheme();
-  const pct = total > 0 ? taken / total : 0;
-  const due = total - taken;
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
-        <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14, marginTop: 2 }}>
-          <Pill size={26} color="#A9334D" strokeWidth={2} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
-            <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text }}>Medications</Text>
-            {due > 0 && (
-              <View style={{ backgroundColor: "#FEE2E2", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#DC2626" }}>{due} due</Text>
-              </View>
-            )}
-          </View>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginBottom: 12 }}>
-            {total > 0 ? `${taken} of ${total} taken today` : "No medications added"}
-          </Text>
-          <View style={{ height: 6, backgroundColor: t.surfaceElevated, borderRadius: 3, overflow: "hidden" }}>
-            <View style={{ height: "100%", width: `${pct * 100}%`, backgroundColor: "#A9334D", borderRadius: 3 }} />
-          </View>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-function AppointmentsCard({ appointment, onPress }) {
+// Full-width nav row: icon, title, subtitle, optional badge
+function CareNavCard({ icon, title, subtitle, subtitleColor, badge, onPress }) {
   const t = useTheme();
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
-    >
+    <Card variant="subtle" onPress={onPress} style={{ padding: 18, marginBottom: 14 }}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-          <Calendar size={26} color={t.text} strokeWidth={2} />
+          {icon}
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 3 }}>Appointments</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: appointment ? t.text : t.textSecondary }}>
-            {appointment ? (appointment.doctor || appointment.title) : "No upcoming appointments"}
+          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 3 }}>{title}</Text>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: subtitleColor ?? t.textSecondary }}>
+            {subtitle}
           </Text>
         </View>
-        {appointment && (
-          <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : "#E6F0EF", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.text }}>
-              {formatApptDate(appointment.date)}
-            </Text>
-          </View>
-        )}
+        {badge}
       </View>
-    </TouchableOpacity>
+    </Card>
   );
 }
 
 const AVATAR_PLACEHOLDERS = ["#A9334D", "#059669", "#2563EB", "#7C3AED"];
 
-function CareTeamCard({ contactCount, onPress }) {
+// Half-width nav tile: icon, title, custom body content
+function CareNavTile({ icon, title, onPress, children }) {
   const t = useTheme();
   return (
-    <TouchableOpacity
+    <Card
+      variant="subtle"
       onPress={onPress}
-      activeOpacity={0.75}
-      style={{ width: HALF_CARD, backgroundColor: t.surface, borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
+      style={{ width: HALF_CARD, padding: 16, minHeight: 148, justifyContent: "space-between" }}
     >
-      <View style={{ marginBottom: 12 }}>
-        <Users size={24} color="#059669" strokeWidth={2} />
-      </View>
+      <View style={{ marginBottom: 12 }}>{icon}</View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 8 }}>Care Team</Text>
-        <View style={{ flexDirection: "row", marginBottom: 8 }}>
-          {AVATAR_PLACEHOLDERS.map((color, i) => (
-            <View
-              key={i}
-              style={{
-                width: 28, height: 28, borderRadius: 14,
-                backgroundColor: color,
-                marginLeft: i === 0 ? 0 : -8,
-                zIndex: AVATAR_PLACEHOLDERS.length - i,
-                borderWidth: 2, borderColor: t.surface,
-              }}
-            />
-          ))}
-        </View>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
-          {contactCount} {contactCount === 1 ? "contact" : "contacts"}
-        </Text>
+        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 8 }}>{title}</Text>
+        {children}
       </View>
-    </TouchableOpacity>
-  );
-}
-
-function CrisisPlanCard({ onPress }) {
-  const t = useTheme();
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ width: HALF_CARD, backgroundColor: t.surface, borderRadius: 18, padding: 16, minHeight: 148, justifyContent: "space-between", ...CARD_SHADOW }}
-    >
-      <View style={{ marginBottom: 12 }}>
-        <FileText size={24} color="#DC2626" strokeWidth={2} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: t.text, marginBottom: 8 }}>Crisis Plan</Text>
-        <View style={{ alignSelf: "flex-start", backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 6 }}>
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#059669" }}>Plan ready</Text>
-        </View>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
-          View your personalized plan
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
-
-function ClinicsCard({ savedCount, onPress }) {
-  const t = useTheme();
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.75}
-      style={{ backgroundColor: t.surface, borderRadius: 18, padding: 18, marginBottom: 14, ...CARD_SHADOW }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <View style={{ width: 36, alignItems: "center", justifyContent: "center", marginRight: 14 }}>
-          <MapPin size={26} color="#F0531C" strokeWidth={2} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: fonts.bold, fontSize: 17, color: t.text, marginBottom: 3 }}>Clinics & Hospitals</Text>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
-            {savedCount > 0 ? `${savedCount} saved nearby` : "Find nearby facilities"}
-          </Text>
-        </View>
-        {savedCount > 0 && (
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FEF0EB", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, gap: 4 }}>
-            <MapPin size={12} color="#F0531C" strokeWidth={2.5} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#F0531C" }}>{savedCount}</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+    </Card>
   );
 }
 
@@ -356,7 +240,7 @@ export default function CareMenuScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 20, paddingHorizontal: 20, paddingBottom: insets.bottom + 100 }}
       >
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 0 }}>
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 0 * STAGGER_MS }}>
           <EmergencyButton
             onPress={() => {
               posthog?.capture('care_section_tapped', { section: 'crisis_mode', crisis_was_active: crisisMode.isActive });
@@ -366,21 +250,94 @@ export default function CareMenuScreen() {
           />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 80 }}>
-          <MedsCard taken={medsTaken} total={medsTotal} onPress={() => { posthog?.capture('care_section_tapped', { section: 'medications' }); router.push("/(tabs)/care/medications"); }} />
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 1 * STAGGER_MS }}>
+          <CareNavCard
+            icon={<Pill size={26} color="#A9334D" strokeWidth={2} />}
+            title="Medications"
+            subtitle={medsTotal > 0 ? `${medsTaken} of ${medsTotal} taken today` : "No medications added"}
+            badge={
+              medsDue > 0 ? (
+                <View style={{ backgroundColor: "#FEE2E2", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#DC2626" }}>{medsDue} due</Text>
+                </View>
+              ) : null
+            }
+            onPress={() => { posthog?.capture('care_section_tapped', { section: 'medications' }); router.push("/(tabs)/care/medications"); }}
+          />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 160 }}>
-          <AppointmentsCard appointment={nextAppt} onPress={() => { posthog?.capture('care_section_tapped', { section: 'appointments' }); router.push("/(tabs)/care/appointments"); }} />
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 2 * STAGGER_MS }}>
+          <CareNavCard
+            icon={<Calendar size={26} color={t.text} strokeWidth={2} />}
+            title="Appointments"
+            subtitle={nextAppt ? (nextAppt.doctor || nextAppt.title) : "No upcoming appointments"}
+            subtitleColor={nextAppt ? t.text : undefined}
+            badge={
+              nextAppt ? (
+                <View style={{ backgroundColor: t.isDark ? t.surfaceElevated : "#E6F0EF", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: t.text }}>
+                    {formatApptDate(nextAppt.date)}
+                  </Text>
+                </View>
+              ) : null
+            }
+            onPress={() => { posthog?.capture('care_section_tapped', { section: 'appointments' }); router.push("/(tabs)/care/appointments"); }}
+          />
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 240 }} style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
-          <CareTeamCard contactCount={contacts.length} onPress={() => { posthog?.capture('care_section_tapped', { section: 'care_team' }); router.push("/(tabs)/care/care-team"); }} />
-          <CrisisPlanCard onPress={() => { posthog?.capture('care_section_tapped', { section: 'crisis_plan' }); router.push("/(tabs)/care/crisis-plan"); }} />
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 3 * STAGGER_MS }} style={{ flexDirection: "row", gap: 12, marginBottom: 14 }}>
+          <CareNavTile
+            icon={<Users size={24} color="#059669" strokeWidth={2} />}
+            title="Care Team"
+            onPress={() => { posthog?.capture('care_section_tapped', { section: 'care_team' }); router.push("/(tabs)/care/care-team"); }}
+          >
+            <View style={{ flexDirection: "row", marginBottom: 8 }}>
+              {AVATAR_PLACEHOLDERS.map((color, i) => (
+                <View
+                  key={i}
+                  style={{
+                    width: 28, height: 28, borderRadius: 14,
+                    backgroundColor: color,
+                    marginLeft: i === 0 ? 0 : -8,
+                    zIndex: AVATAR_PLACEHOLDERS.length - i,
+                    borderWidth: 2, borderColor: t.surface,
+                  }}
+                />
+              ))}
+            </View>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
+              {contacts.length} {contacts.length === 1 ? "contact" : "contacts"}
+            </Text>
+          </CareNavTile>
+          <CareNavTile
+            icon={<FileText size={24} color="#DC2626" strokeWidth={2} />}
+            title="Crisis Plan"
+            onPress={() => { posthog?.capture('care_section_tapped', { section: 'crisis_plan' }); router.push("/(tabs)/care/crisis-plan"); }}
+          >
+            <View style={{ alignSelf: "flex-start", backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, marginBottom: 6 }}>
+              <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#059669" }}>Plan ready</Text>
+            </View>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
+              View your personalized plan
+            </Text>
+          </CareNavTile>
         </MotiView>
 
-        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 320, delay: 320 }}>
-          <ClinicsCard savedCount={savedFacilities.length} onPress={() => { posthog?.capture('care_section_tapped', { section: 'facilities' }); router.push("/(tabs)/care/facilities"); }} />
+        <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 4 * STAGGER_MS }}>
+          <CareNavCard
+            icon={<MapPin size={26} color="#F0531C" strokeWidth={2} />}
+            title="Clinics & Hospitals"
+            subtitle={savedFacilities.length > 0 ? `${savedFacilities.length} saved nearby` : "Find nearby facilities"}
+            badge={
+              savedFacilities.length > 0 ? (
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FEF0EB", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, gap: 4 }}>
+                  <MapPin size={12} color="#F0531C" strokeWidth={2.5} />
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#F0531C" }}>{savedFacilities.length}</Text>
+                </View>
+              ) : null
+            }
+            onPress={() => { posthog?.capture('care_section_tapped', { section: 'facilities' }); router.push("/(tabs)/care/facilities"); }}
+          />
         </MotiView>
       </ScrollView>
     </View>

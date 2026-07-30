@@ -20,18 +20,22 @@ import {
 } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useAppointmentsQuery } from "@/hooks/queries/useAppointmentsQuery";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { HomeHeader } from "@/components/HomeHeader/HomeHeader";
 import { CompactNavbar } from "@/components/HomeHeader/CompactNavbar";
 import { TodayContextCard } from "@/components/HomeScreen/TodayContextCard";
 import { QuickActions } from "@/components/HomeScreen/QuickActions";
 import { PainStatusTile } from "@/components/HomeScreen/PainStatusTile";
 import { MetricGrid } from "@/components/HomeScreen/MetricGrid";
-import { ContextualCards } from "@/components/HomeScreen/ContextualCards";
-import { MonthlySummaryCard } from "@/components/HomeScreen/MonthlySummaryCard";
+import { AppointmentSection } from "@/components/HomeScreen/AppointmentSection";
+import { ContextualCardsSkeleton } from "@/components/HomeScreen/ContextualCardsSkeleton";
+import { HealthRecaps } from "@/components/HomeScreen/HealthRecaps";
 import { HealthSignalSection } from "@/components/HomeScreen/HealthSignalSection";
 import { useHomeData } from "@/hooks/useHomeData";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
+import { useHydrationStore } from "@/store/hydrationStore";
 import { useTheme } from "@/hooks/useTheme";
 import { toLocalDateStr } from "@/utils/dateUtils";
 
@@ -169,6 +173,8 @@ export default function HomeScreen() {
   const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
 
   const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
     b != null && typeof b === "object" ? b.id : b,
   );
@@ -184,8 +190,8 @@ export default function HomeScreen() {
     [healthData],
   );
   const hydrationDays = useMemo(
-    () => healthData.filter((d) => d.hydration >= 8).length,
-    [healthData],
+    () => healthData.filter((d) => d.hydration >= hydrationGoalMl).length,
+    [healthData, hydrationGoalMl],
   );
 
   const hasLoggedToday = (() => {
@@ -239,6 +245,7 @@ export default function HomeScreen() {
   const alertState = useAppStore((s) => s.computedAlertState);
 
   const { formatNavDate, isToday, isFuture, isSelected } = useDateNavigation();
+  const { displayUnit: hydrationDisplayUnit } = useHydrationStore();
 
   const message = getDynamicMessage({
     hasLoggedData,
@@ -249,6 +256,8 @@ export default function HomeScreen() {
     healthData,
     alertState,
     weather,
+    hydrationGoalMl,
+    hydrationDisplayUnit,
   });
   const t = useTheme();
   const gradientColors = getGradientColors(hasLoggedData, t.isDark);
@@ -358,13 +367,15 @@ export default function HomeScreen() {
 
         <MetricGrid selectedDateData={selectedDateData} />
 
-        <MonthlySummaryCard healthData={healthData} />
+        <HealthRecaps healthData={healthData} />
 
-        <ContextualCards
-          appointments={appointments}
-          medications={medications}
-          isLoading={medsLoading || apptLoading}
-        />
+        {apptLoading ? (
+          <ContextualCardsSkeleton />
+        ) : appointments.length > 0 ? (
+          <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+            <AppointmentSection appointments={appointments} />
+          </View>
+        ) : null}
       </Animated.ScrollView>
 
       <View

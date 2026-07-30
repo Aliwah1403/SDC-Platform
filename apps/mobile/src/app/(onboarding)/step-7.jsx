@@ -55,7 +55,7 @@ const getInitials = (name = "") =>
     .toUpperCase();
 
 export default function Step7() {
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
 
   const [contacts, setContacts] = useState([]);
   const [isManual, setIsManual] = useState(false);
@@ -159,6 +159,7 @@ export default function Step7() {
       .filter((c) => c.name?.trim() && c.phone?.trim())
       .map(({ name, phone, relationship }) => ({ name, phone, relationship }));
     setOnboardingField("emergencyContacts", valid);
+    setOnboardingStep(7);
     router.push("/(onboarding)/step-8");
   };
 

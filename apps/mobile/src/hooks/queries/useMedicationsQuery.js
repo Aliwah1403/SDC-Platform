@@ -86,8 +86,9 @@ export function useToggleMedicationTakenMutation() {
     onError: (_err, _medId, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
     },
-    onSettled: () => {
+    onSettled: (_data, _err, medId) => {
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
     },
   });
 }
@@ -123,8 +124,9 @@ export function useAddMedicationLogMutation() {
       queryClient.setQueryData(queryKey, ctx.prev);
       Alert.alert('Couldn\'t log dose', 'Something went wrong. Please try again.');
     },
-    onSettled: () => {
+    onSettled: (_data, _err, medId) => {
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
     },
   });
 }
@@ -151,8 +153,9 @@ export function useDeleteLatestMedicationLogMutation() {
     onError: (_err, _medId, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
     },
-    onSettled: () => {
+    onSettled: (_data, _err, medId) => {
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
     },
   });
 }
@@ -179,8 +182,9 @@ export function useDeleteMedicationLogByIdMutation() {
     onError: (_err, _vars, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
     },
-    onSettled: () => {
+    onSettled: (_data, _err, { medId }) => {
       queryClient.invalidateQueries({ queryKey });
+      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
     },
   });
 }
@@ -226,8 +230,11 @@ export function useMarkGroupTakenMutation() {
     onError: (_err, _ids, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
     },
-    onSettled: () => {
+    onSettled: (_data, _err, medIds) => {
       queryClient.invalidateQueries({ queryKey });
+      (medIds ?? []).forEach((id) =>
+        queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, id] })
+      );
     },
   });
 }

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
+  Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -19,7 +20,6 @@ import {
   Plus,
   Bell,
   User,
-  Pill,
   Zap,
   Droplets,
   Smile,
@@ -30,7 +30,6 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-  Check,
   Footprints,
   Wind,
   Timer,
@@ -38,27 +37,28 @@ import {
   Thermometer,
   Waves,
   AlertTriangle,
+  TrendingUp,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
-import {
-  useMedicationsQuery,
-  useToggleMedicationTakenMutation,
-  useAddMedicationLogMutation,
-  useDeleteLatestMedicationLogMutation,
-} from "@/hooks/queries/useMedicationsQuery";
-import { MedicationsSkeleton } from "@/components/Track/MedicationsSkeleton";
+import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
+import { MedicationCard } from "@/components/HomeScreen/MedicationCard";
+import { Card } from "@/components/Card";
 import { ActivitySkeleton } from "@/components/Track/ActivitySkeleton";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { fonts } from "@/utils/fonts";
 import { useAppStore } from "@/store/appStore";
-import { useHealthKitAlerts } from "@/hooks/useHealthKitAlerts";
-import { fetchWorkoutsForDate } from "@/services/healthKitService";
+import { useHealthService } from "@/hooks/useHealthService";
+import { fetchWorkoutsForDate } from "@/services/healthService";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useTheme } from "@/hooks/useTheme";
-import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL, HYDRATION_SCALE_MAX } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
+import { STAGGER_MS, enterTiming } from "@/utils/motion";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const DAY_CELL_SIZE = Math.floor(SCREEN_WIDTH / 7);
@@ -341,11 +341,11 @@ function LogTodayCard() {
       animate={{ opacity: 1, translateY: 0 }}
       transition={{ type: "timing", duration: 300 }}
       style={{
-        backgroundColor: t.isDark ? t.surface : "#F8E9E7",
-        borderRadius: 16,
-        padding: 16,
         marginHorizontal: 16,
         marginTop: 16,
+        paddingLeft: 12,
+        borderLeftWidth: 3,
+        borderLeftColor: WINE,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
@@ -356,7 +356,7 @@ function LogTodayCard() {
           style={{
             fontFamily: fonts.bold,
             fontSize: 16,
-            color: t.isDark ? t.text : "#781D11",
+            color: t.text,
             marginBottom: 2,
           }}
         >
@@ -396,46 +396,35 @@ function LogTodayCard() {
   );
 }
 
-// ─── Medications ──────────────────────────────────────────────────────────────
+// ─── Insights Entry Card ──────────────────────────────────────────────────────
 
-function MedicationItem({ medication, taken, onToggle }) {
+function InsightsEntryCard() {
+  const router = useRouter();
   const t = useTheme();
   return (
-    <View
+    <TouchableOpacity
+      onPress={() => router.push("/health-insights")}
+      activeOpacity={0.7}
       style={{
+        marginHorizontal: 16,
+        marginTop: 8,
+        marginBottom: 32,
+        paddingVertical: 10,
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: t.surface,
-        borderRadius: 14,
-        padding: 14,
-        marginBottom: 10,
-        borderLeftWidth: 3,
-        borderLeftColor: taken ? WINE : t.border,
+        gap: 12,
       }}
     >
-      <View
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          backgroundColor: taken ? "#FBE8EC" : t.surfaceElevated,
-          alignItems: "center",
-          justifyContent: "center",
-          marginRight: 12,
-        }}
-      >
-        <Pill color={taken ? WINE : "#9CA3AF"} size={18} strokeWidth={2} />
-      </View>
+      <TrendingUp size={20} color="#A9334D" strokeWidth={2} />
       <View style={{ flex: 1 }}>
         <Text
           style={{
             fontFamily: fonts.semibold,
             fontSize: 15,
             color: t.text,
-            marginBottom: 1,
           }}
         >
-          {medication.name}
+          Health Insights
         </Text>
         <Text
           style={{
@@ -444,105 +433,11 @@ function MedicationItem({ medication, taken, onToggle }) {
             color: t.textSecondary,
           }}
         >
-          {medication.dosage} · {medication.time}
+          Trends in your pain, hydration &amp; mood
         </Text>
       </View>
-      <TouchableOpacity
-        onPress={onToggle}
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 8,
-          borderWidth: 2,
-          borderColor: taken ? WINE : "#D1D5DB",
-          backgroundColor: taken ? WINE : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {taken && <Check color="#fff" size={13} strokeWidth={2.5} />}
-      </TouchableOpacity>
-    </View>
-  );
-}
-
-function MedicationsSection({ selectedDate }) {
-  const { data: medications = [], isLoading } = useMedicationsQuery();
-  const toggleTaken = useToggleMedicationTakenMutation();
-  const addLog = useAddMedicationLogMutation();
-  const deleteLatestLog = useDeleteLatestMedicationLogMutation();
-  const posthog = usePostHog();
-  const t = useTheme();
-  if (isLoading) return <MedicationsSkeleton />;
-  const active = medications.filter((m) => m.isActive);
-  const dateLabel = selectedDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  return (
-    <View style={{ marginTop: 24, paddingHorizontal: 16 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 14,
-        }}
-      >
-        <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>
-          Medications due
-        </Text>
-        <Text
-          style={{
-            fontFamily: fonts.regular,
-            fontSize: 13,
-            color: t.textSecondary,
-          }}
-        >
-          {dateLabel}
-        </Text>
-      </View>
-      {active.map((med) => (
-        <MedicationItem
-          key={med.id}
-          medication={med}
-          taken={!!med.taken}
-          onToggle={() => {
-            const _now = new Date();
-            let _delayMinutes = null;
-            if (med.time) {
-              const [_hStr, _mStr] = med.time.split(':');
-              const _h = parseInt(_hStr, 10);
-              const _m = parseInt(_mStr, 10);
-              if (!isNaN(_h) && !isNaN(_m) && _h >= 0 && _h <= 23 && _m >= 0 && _m <= 59) {
-                const _scheduled = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate(), _h, _m);
-                _delayMinutes = Math.round((_now.getTime() - _scheduled.getTime()) / 60000);
-              }
-            }
-            posthog?.capture("dose_logged", {
-              medication_name: med.name,
-              dose_time: med.time ?? null,
-              delay_minutes: _delayMinutes,
-              new_state: !med.taken,
-            });
-            const isMultiDose = Array.isArray(med.times) && med.times.length > 1;
-            if (isMultiDose) {
-              if (!med.taken) {
-                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
-                addLog.mutate(med.id);
-              } else {
-                deleteLatestLog.mutate(med.id);
-              }
-            } else {
-              if (!med.taken) {
-                cancelAfterRemindersForTime(med.id, med.time).catch(console.error);
-              }
-              toggleTaken.mutate(med.id);
-            }
-          }}
-        />
-      ))}
-    </View>
+      <ChevronRight size={18} color={t.textSecondary} strokeWidth={2} />
+    </TouchableOpacity>
   );
 }
 
@@ -680,17 +575,19 @@ function getLast7(healthData, dataField) {
   return result;
 }
 
-function getStatus(metricKey, value) {
+function getStatus(metricKey, value, hydrationGoal) {
   if (!value) return null;
   switch (metricKey) {
     case "pain":
       if (value <= 2) return { label: "Low", color: "#059669" };
       if (value <= 5) return { label: "Moderate", color: "#F59E0B" };
       return { label: "High", color: "#DC2626" };
-    case "hydration":
-      if (value >= 8) return { label: "On track", color: "#059669" };
-      if (value >= 5) return { label: "Fair", color: "#F59E0B" };
+    case "hydration": {
+      const goal = hydrationGoal ?? 8;
+      if (value >= goal) return { label: "On track", color: "#059669" };
+      if (value >= goal * 0.625) return { label: "Fair", color: "#F59E0B" };
       return { label: "Low", color: "#DC2626" };
+    }
     case "mood":
       if (value >= 4) return { label: "Great", color: "#059669" };
       if (value >= 3) return { label: "Okay", color: "#F59E0B" };
@@ -752,13 +649,31 @@ function MiniSparkline({ data, color, maxValue }) {
   );
 }
 
-function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
+function MetricCard({ metricKey, entry, sparkData, wide, animIndex, selectedDate }) {
   const router = useRouter();
   const posthog = usePostHog();
   const t = useTheme();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const { displayUnit } = useHydrationStore();
   const config = METRIC_CONFIG_MAP[metricKey];
-  const rawValue = config.getValue(entry);
+  const rawValueRaw = config.getValue(entry);
+  // Hydration is stored canonically in ml; this card renders it in the user's
+  // chosen display unit (glasses/ml/L/fl oz) instead of a hardcoded scale.
+  const rawValue =
+    metricKey === "hydration" && rawValueRaw != null
+      ? hydrationValueInUnit(rawValueRaw, displayUnit)
+      : rawValueRaw;
   const hasValue = rawValue !== null && rawValue !== undefined;
+  const hydrationGoalInUnit =
+    metricKey === "hydration"
+      ? Math.max(0.1, hydrationValueInUnit(metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML, displayUnit))
+      : null;
+  const hydrationSparkData =
+    metricKey === "hydration" && sparkData
+      ? sparkData.map((v) => hydrationValueInUnit(v, displayUnit))
+      : sparkData;
+  const hydrationUnitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
+  const hydrationSparkMax = HYDRATION_SCALE_MAX[displayUnit] ?? HYDRATION_SCALE_MAX.glasses;
 
   let displayValue = "—";
   let moodDisplay = null;
@@ -772,33 +687,26 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
     }
   }
 
-  const status = hasValue ? getStatus(metricKey, rawValue) : null;
+  const status = hasValue ? getStatus(metricKey, rawValue, hydrationGoalInUnit) : null;
 
   return (
     <MotiView
       from={{ opacity: 0, translateY: 8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ delay: animIndex * 60, type: "timing", duration: 280 }}
+      transition={{ delay: Math.min(animIndex, 6) * STAGGER_MS, type: "timing", duration: 280 }}
     >
-      <TouchableOpacity
+      <Card
         onPress={() => {
           posthog?.capture("metric_card_tapped", {
             metric: metricKey,
             has_value: hasValue,
           });
-          router.push(`/metric-detail?metric=${metricKey}`);
+          router.push(`/metric-detail?metric=${metricKey}&date=${dateToStr(selectedDate)}`);
         }}
         style={{
           width: wide ? FULL_CARD_W : HALF_CARD_W,
-          backgroundColor: t.surface,
-          borderRadius: 20,
           padding: 18,
           marginBottom: 12,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 2,
         }}
       >
         {/* Top row: icon + label + AH badge */}
@@ -865,7 +773,7 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
                     marginBottom: 3,
                   }}
                 >
-                  {config.unit}
+                  {metricKey === "hydration" ? hydrationUnitLabel : config.unit}
                 </Text>
               )}
             </View>
@@ -896,13 +804,13 @@ function MetricCard({ metricKey, entry, sparkData, wide, animIndex }) {
 
           {wide && sparkData && (
             <MiniSparkline
-              data={sparkData}
+              data={hydrationSparkData}
               color={config.color}
-              maxValue={config.maxValue}
+              maxValue={metricKey === "hydration" ? hydrationSparkMax : config.maxValue}
             />
           )}
         </View>
-      </TouchableOpacity>
+      </Card>
     </MotiView>
   );
 }
@@ -947,7 +855,7 @@ function WorkoutItem({ workout, index, isLast }) {
     <MotiView
       from={{ opacity: 0, translateY: 6 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 260, delay: 400 + index * 80 }}
+      transition={{ type: "timing", duration: 260, delay: Math.min(index, 6) * STAGGER_MS }}
     >
       <View
         style={{
@@ -1057,6 +965,7 @@ function WorkoutItem({ workout, index, isLast }) {
 
 function ActivitySection({ workouts = [], hkConnected, loading }) {
   const t = useTheme();
+  const platformName = Platform.OS === "ios" ? "Apple Health" : "Health Connect";
   return (
     <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 32 }}>
       <View
@@ -1072,18 +981,7 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
         </Text>
       </View>
 
-      <View
-        style={{
-          backgroundColor: t.surface,
-          borderRadius: 20,
-          overflow: "hidden",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.06,
-          shadowRadius: 8,
-          elevation: 2,
-        }}
-      >
+      <Card style={{ overflow: "hidden" }}>
         {loading ? (
           <ActivitySkeleton />
         ) : workouts.length === 0 ? (
@@ -1103,8 +1001,8 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
               }}
             >
               {hkConnected
-                ? "No workouts recorded in Apple Health for this day"
-                : "Connect Apple Health in your profile to see workout data"}
+                ? `No workouts recorded in ${platformName} for this day`
+                : `Connect ${platformName} in your profile to see workout data`}
             </Text>
           </View>
         ) : (
@@ -1117,7 +1015,7 @@ function ActivitySection({ workouts = [], hkConnected, loading }) {
             />
           ))
         )}
-      </View>
+      </Card>
     </View>
   );
 }
@@ -1153,22 +1051,10 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
     <MotiView
       from={{ opacity: 0, translateY: -8 }}
       animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 320 }}
-      style={{
-        marginHorizontal: 16,
-        marginTop: 16,
-        marginBottom: 4,
-        backgroundColor: t.surface,
-        borderRadius: 16,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.07,
-        shadowRadius: 8,
-        elevation: 2,
-        flexDirection: "row",
-        overflow: "hidden",
-      }}
+      transition={enterTiming}
+      style={{ marginHorizontal: 16, marginTop: 16, marginBottom: 4 }}
     >
+      <Card variant="subtle" style={{ borderRadius: 16, flexDirection: "row", overflow: "hidden" }}>
       {/* Left accent bar */}
       <View style={{ width: 4, backgroundColor: accent }} />
 
@@ -1289,13 +1175,14 @@ function HealthAlertCard({ alertState, onLogSymptoms }) {
           </TouchableOpacity>
         )}
       </View>
+      </Card>
     </MotiView>
   );
 }
 
 // ─── Metrics Grid ─────────────────────────────────────────────────────────────
 
-function MetricsGrid({ entry, healthData, hkConnected }) {
+function MetricsGrid({ entry, healthData, hkConnected, selectedDate }) {
   const t = useTheme();
   const rows = hkConnected
     ? [...BASE_METRIC_ROWS, ...HK_METRIC_ROWS]
@@ -1329,6 +1216,7 @@ function MetricsGrid({ entry, healthData, hkConnected }) {
                   sparkData={wide ? getLast7(healthData, cfg.dataField) : null}
                   wide={wide}
                   animIndex={rowIdx * 2 + colIdx}
+                  selectedDate={selectedDate}
                 />
               );
             })}
@@ -1347,9 +1235,11 @@ export default function TrackScreen() {
   const posthog = usePostHog();
   const t = useTheme();
   const { data: healthData = [] } = useHealthDataQuery();
+  const { data: medications = [] } = useMedicationsQuery();
   const { isToday, isFuture, isSelected } = useDateNavigation();
-  const { healthKitData, healthKitConnected } = useAppStore();
-  const { alertState } = useHealthKitAlerts();
+  const { healthKitData, healthConnectData } = useAppStore();
+  const { alertState, isConnected: healthConnected } = useHealthService();
+  const platformHealthData = Platform.OS === "ios" ? healthKitData : healthConnectData;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [workouts, setWorkouts] = useState([]);
@@ -1369,22 +1259,21 @@ export default function TrackScreen() {
   const entry = useMemo(() => {
     const base =
       healthData.find((d) => d.date === dateToStr(selectedDate)) ?? null;
-    const hkDay = healthKitData[dateToStr(selectedDate)];
-    if (!hkDay) return base;
-    // HealthKit values silently override manual fields; new fields (spO2, temperature, respiratoryRate) are additive
+    const platformDay = platformHealthData[dateToStr(selectedDate)];
+    if (!platformDay) return base;
     return base
-      ? { ...base, ...hkDay }
-      : { date: dateToStr(selectedDate), ...hkDay };
-  }, [healthData, healthKitData, selectedDate]);
+      ? { ...base, ...platformDay }
+      : { date: dateToStr(selectedDate), ...platformDay };
+  }, [healthData, platformHealthData, selectedDate]);
 
   const hasLoggedData = !!(
     entry &&
     (entry.painLevel || entry.mood || entry.hydration)
   );
 
-  // Fetch real workouts from HealthKit whenever the selected date or connection changes
+  // Fetch real workouts from health platform whenever the selected date or connection changes
   useEffect(() => {
-    if (!healthKitConnected) {
+    if (!healthConnected) {
       setWorkouts([]);
       return;
     }
@@ -1392,7 +1281,7 @@ export default function TrackScreen() {
     fetchWorkoutsForDate(selectedDate)
       .then(setWorkouts)
       .finally(() => setWorkoutsLoading(false));
-  }, [selectedDate, healthKitConnected]);
+  }, [selectedDate, healthConnected]);
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -1486,7 +1375,7 @@ export default function TrackScreen() {
       {/* Scrollable content */}
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 0 }}
         showsVerticalScrollIndicator={false}
       >
         {isToday(selectedDate) && !hasLoggedData && <LogTodayCard />}
@@ -1496,17 +1385,21 @@ export default function TrackScreen() {
             onLogSymptoms={() => router.push("/log-symptoms")}
           />
         )}
-        <MedicationsSection selectedDate={selectedDate} />
+        <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
+          <MedicationCard medications={medications} />
+        </View>
         <MetricsGrid
           entry={entry}
           healthData={healthData}
-          hkConnected={healthKitConnected}
+          hkConnected={healthConnected}
+          selectedDate={selectedDate}
         />
         <ActivitySection
           workouts={workouts}
-          hkConnected={healthKitConnected}
+          hkConnected={healthConnected}
           loading={workoutsLoading}
         />
+        <InsightsEntryCard />
       </ScrollView>
     </View>
   );

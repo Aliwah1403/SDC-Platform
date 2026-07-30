@@ -1,12 +1,20 @@
 import { useState, useCallback } from "react";
-import { View, Text, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, TouchableOpacity, Dimensions, Alert } from "react-native";
 import Svg, { Circle, Rect, Path, G, Defs, ClipPath } from "react-native-svg";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
-import { LayoutGrid } from "lucide-react-native";
+import { useFocusEffect, useRouter } from "expo-router";
+import { LayoutGrid, Plus } from "lucide-react-native";
+import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/Card";
+import { PressableScale } from "@/components/PressableScale";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { useAddHydrationMutation } from "@/hooks/queries/useHealthDataQuery";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { useHydrationContainersQuery, FALLBACK_CONTAINERS } from "@/hooks/queries/useHydrationContainersQuery";
+import { formatHydrationPair } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const TILE_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -24,7 +32,7 @@ const METRIC_META = [
 
 // ─── Hydration: vertical fill tank ───────────────────────────────────────────
 
-function HydrationTank({ hydration, goal = 8 }) {
+function HydrationTank({ hydration, goal = DEFAULT_SUGGESTED_ML, unit = "glasses" }) {
   const W = 44;
   const H = 80;
   const R = 10;
@@ -79,8 +87,12 @@ function HydrationTank({ hydration, goal = 8 }) {
           />
         ))}
       </Svg>
-      <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#781D11" }}>
-        {hydration > 0 ? `${hydration} / ${goal}` : "—"}
+      <Text
+        style={{ fontFamily: fonts.bold, fontSize: 13, color: "#781D11" }}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {hydration > 0 ? formatHydrationPair(hydration, goal, unit) : "—"}
       </Text>
     </View>
   );
@@ -337,6 +349,46 @@ function SleepMoon({ hours }) {
 
 // ─── Individual tile ──────────────────────────────────────────────────────────
 
+function QuickAddHydrationButton() {
+  const addHydrationMutation = useAddHydrationMutation();
+  const { data: containersData } = useHydrationContainersQuery();
+  const containers = containersData?.length ? containersData : FALLBACK_CONTAINERS;
+  const defaultContainer = containers.find((c) => c.isDefault) ?? containers[0];
+
+  const handlePress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    addHydrationMutation.mutate(defaultContainer.ml, {
+      onError: () => {
+        Alert.alert(
+          "Couldn't log that",
+          "Something went wrong — please try again.",
+        );
+      },
+    });
+  };
+
+  return (
+    <PressableScale
+      onPress={handlePress}
+      disabled={addHydrationMutation.isPending}
+      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      style={{
+        position: "absolute",
+        bottom: 14,
+        right: 14,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: "#3B82F6",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Plus size={16} color="#fff" strokeWidth={2.5} />
+    </PressableScale>
+  );
+}
+
 function MetricTile({
   title,
   statusLabel,
@@ -344,56 +396,54 @@ function MetricTile({
   visual,
   metric,
   hasData,
+  quickAdd,
+  date,
 }) {
   const router = useRouter();
   const t = useTheme();
 
   return (
-    <TouchableOpacity
-      activeOpacity={hasData ? 0.8 : 1}
-      onPress={() =>
-        hasData &&
-        router.push({ pathname: "/metric-detail", params: { metric } })
-      }
-      style={{
-        width: TILE_WIDTH,
-        height: TILE_HEIGHT,
-        backgroundColor: t.surface,
-        borderRadius: 20,
-        padding: 14,
-        shadowColor: t.isDark ? t.background : t.text,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: t.isDark ? 0.02 : 0.06,
-        shadowRadius: 10,
-        elevation: t.isDark ? 0 : 3,
-        justifyContent: "space-between",
-      }}
-    >
-      <View
+    <View style={{ width: TILE_WIDTH, height: TILE_HEIGHT }}>
+      <Card
+        onPress={hasData ? () => router.push({ pathname: "/metric-detail", params: { metric, date } }) : undefined}
         style={{
-          flexDirection: "row",
+          width: TILE_WIDTH,
+          height: TILE_HEIGHT,
+          padding: 14,
           justifyContent: "space-between",
-          alignItems: "center",
         }}
       >
-        <Text
-          style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
         >
-          {title}
+          <Text
+            style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.textSecondary }}
+          >
+            {title}
+          </Text>
+          {hasData && <Text style={{ fontSize: 16, color: "#D09F9A" }}>›</Text>}
+        </View>
+
+        <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
+          {visual}
+        </View>
+
+        <Text
+          style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}
+        >
+          {statusLabel}
         </Text>
-        {hasData && <Text style={{ fontSize: 16, color: "#D09F9A" }}>›</Text>}
-      </View>
+      </Card>
 
-      <View style={{ alignItems: "center", flex: 1, justifyContent: "center" }}>
-        {visual}
-      </View>
-
-      <Text
-        style={{ fontFamily: fonts.medium, fontSize: 12, color: statusColor }}
-      >
-        {statusLabel}
-      </Text>
-    </TouchableOpacity>
+      {/* Rendered as a sibling of the Card's TouchableOpacity, not a descendant —
+          nesting inside it made the button unresponsive (the card's touch responder
+          was winning the gesture). */}
+      {quickAdd}
+    </View>
   );
 }
 
@@ -411,6 +461,9 @@ export function MetricGrid({ selectedDateData }) {
   const router = useRouter();
   const t = useTheme();
   const [visibleMetrics, setVisibleMetrics] = useState(DEFAULT_VISIBLE);
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const { displayUnit } = useHydrationStore();
 
   useFocusEffect(
     useCallback(() => {
@@ -426,7 +479,7 @@ export function MetricGrid({ selectedDateData }) {
   const sleep = selectedDateData?.sleepHours ?? 0;
 
   const hydrationStatus =
-    hydration === 0 ? "No data" : hydration >= 8 ? "At goal" : "Below goal";
+    hydration === 0 ? "No data" : hydration >= hydrationGoalMl ? "At goal" : "Below goal";
   const stepsStatus =
     steps === 0
       ? "No data"
@@ -451,11 +504,13 @@ export function MetricGrid({ selectedDateData }) {
         title="Hydration"
         statusLabel={hydrationStatus}
         statusColor={
-          hydration > 0 ? (hydration >= 8 ? "#A9334D" : "#D09F9A") : "#D1D5DB"
+          hydration > 0 ? (hydration >= hydrationGoalMl ? "#A9334D" : "#D09F9A") : "#D1D5DB"
         }
         metric="hydration"
         hasData={hydration > 0}
-        visual={<HydrationTank hydration={hydration} />}
+        visual={<HydrationTank hydration={hydration} goal={hydrationGoalMl} unit={displayUnit} />}
+        quickAdd={<QuickAddHydrationButton />}
+        date={selectedDateData?.date}
       />
     ),
     mood: (
@@ -467,6 +522,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="mood"
         hasData={mood > 0}
         visual={<MoodHalo mood={mood} />}
+        date={selectedDateData?.date}
       />
     ),
     steps: (
@@ -480,6 +536,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="steps"
         hasData={steps > 0}
         visual={<StepsGauge steps={steps} />}
+        date={selectedDateData?.date}
       />
     ),
     sleep: (
@@ -493,6 +550,7 @@ export function MetricGrid({ selectedDateData }) {
         metric="sleep"
         hasData={sleep > 0}
         visual={<SleepMoon hours={sleep} />}
+        date={selectedDateData?.date}
       />
     ),
   };

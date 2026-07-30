@@ -71,6 +71,7 @@ function parseFDAResult(result) {
     name,
     category: scdMatch?.category ?? "Supportive",
     rxcui,
+    form: result.dosage_form ?? null,
   };
 }
 

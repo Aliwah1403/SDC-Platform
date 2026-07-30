@@ -133,6 +133,81 @@ export async function completeOnboarding(userId, onboardingData) {
       .insert(medRows);
     if (medError) throw medError;
   }
+
+  // 4. Seed default hydration containers (Step 9 amendment, 2026-07-19) — skip
+  // if this user already has some (e.g. onboarding retried after a partial
+  // failure above), so a re-run never duplicates seed rows.
+  const { data: existingContainers, error: existingContainersError } = await supabase
+    .from('hydration_containers')
+    .select('id')
+    .eq('user_id', userId)
+    .limit(1);
+  if (existingContainersError) throw existingContainersError;
+  if (!existingContainers || existingContainers.length === 0) {
+    const { error: containersError } = await supabase
+      .from('hydration_containers')
+      .insert([
+        { user_id: userId, name: 'Glass', ml: 250, icon: 'glass-water', is_default: true, sort_order: 0 },
+        { user_id: userId, name: 'Bottle', ml: 500, icon: 'bottle', is_default: false, sort_order: 1 },
+        { user_id: userId, name: 'Mug', ml: 350, icon: 'mug', is_default: false, sort_order: 2 },
+        { user_id: userId, name: 'Carton', ml: 1000, icon: 'carton', is_default: false, sort_order: 3 },
+      ]);
+    if (containersError) throw containersError;
+  }
+}
+
+// ============================================================
+// HYDRATION CONTAINERS (Step 9 amendment — Supabase-backed, synced across
+// a user's devices; see supabase/migrations/20260719000000_hydration_containers.sql
+// for the table, RLS policies, and the two atomic RPCs used below)
+// ============================================================
+
+export async function fetchHydrationContainers(userId) {
+  const { data, error } = await supabase
+    .from('hydration_containers')
+    .select('*')
+    .eq('user_id', userId)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(toCamelCase);
+}
+
+export async function addHydrationContainer(userId, { name, ml, icon, sortOrder }) {
+  const { data, error } = await supabase
+    .from('hydration_containers')
+    .insert({ user_id: userId, name, ml, icon, is_default: false, sort_order: sortOrder })
+    .select()
+    .single();
+  if (error) throw error;
+  return toCamelCase(data);
+}
+
+export async function updateHydrationContainer(id, fields) {
+  const { error } = await supabase
+    .from('hydration_containers')
+    .update({ ...toSnakeCase(fields), updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// Atomic RPC (see migration) — deletes the container and, if it was the
+// default, promotes the next remaining one. Returns false (no-op) if this
+// would remove the user's last container.
+export async function removeHydrationContainer(id) {
+  const { data, error } = await supabase.rpc('remove_hydration_container', {
+    p_container_id: id,
+  });
+  if (error) throw error;
+  return data;
+}
+
+// Atomic RPC (see migration) — makes exactly one container the default in a
+// single statement so "exactly one default" is never transiently violated.
+export async function setDefaultHydrationContainer(id) {
+  const { error } = await supabase.rpc('set_default_hydration_container', {
+    p_container_id: id,
+  });
+  if (error) throw error;
 }
 
 // ============================================================
@@ -172,6 +247,31 @@ export async function fetchHealthLogs(userId, date) {
 }
 
 /**
+ * Aggregate trigger/mood-contributor frequency across a date range, for the
+ * recap "Your patterns" trigger-frequency insight. `triggers` only lives on
+ * individual health_logs rows (not the daily_summaries aggregate), so this
+ * queries the raw log table directly and counts client-side.
+ */
+export async function fetchTriggersInRange(userId, startDate, endDate) {
+  let query = supabase
+    .from('health_logs')
+    .select('triggers')
+    .eq('user_id', userId)
+    .gte('date', startDate);
+  if (endDate) query = query.lte('date', endDate);
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const counts = {};
+  (data || []).forEach((row) => {
+    (row.triggers || []).forEach((t) => {
+      counts[t] = (counts[t] || 0) + 1;
+    });
+  });
+  return counts;
+}
+
+/**
  * Submit a symptom log:
  * 1. Insert raw log into health_logs
  * 2. Fetch all logs for today and aggregate
@@ -198,7 +298,7 @@ export async function submitHealthLog(userId, logData) {
       body_locations: logData.bodyLocations ?? [],
       symptoms: logData.symptoms ?? [],
       mood: moodValue,
-      hydration: logData.hydration ?? 0,
+      hydration: logData.hydration ?? 0, // canonical ml — see src/utils/hydrationGoal.js
       notes: logData.notes || null,
       triggers: logData.triggers ?? [],
       activities: logData.activities ?? [],
@@ -281,6 +381,62 @@ export async function submitHealthLog(userId, logData) {
   }
 
   return { newStreak: streakRow.current_streak ?? 0, isNewDay: false, earnedRepair: false };
+}
+
+/**
+ * Home-tile "+250 ml" quick-add. Inserts a lightweight health_logs row (carrying
+ * forward today's existing pain_level/mood so the MAX-based daily_summaries
+ * aggregation in submitHealthLog isn't corrupted by defaults) and bumps
+ * daily_summaries.hydration. Does not touch the streak — only the full
+ * check-in flow (submitHealthLog) counts as "logged today" for streak purposes.
+ */
+export async function addHydrationQuickly(userId, addedMl) {
+  const todayStr = today();
+
+  const { data: summary, error: summaryFetchError } = await supabase
+    .from('daily_summaries')
+    .select('hydration, pain_level, mood')
+    .eq('user_id', userId)
+    .eq('date', todayStr)
+    .maybeSingle();
+  if (summaryFetchError) throw summaryFetchError;
+
+  const newHydration = (summary?.hydration ?? 0) + addedMl;
+  const painLevel = summary?.pain_level ?? 0;
+  const mood = summary?.mood ?? 0;
+
+  const { error: logError } = await supabase
+    .from('health_logs')
+    .insert({
+      user_id: userId,
+      date: todayStr,
+      pain_level: painLevel,
+      body_locations: [],
+      symptoms: [],
+      mood,
+      hydration: newHydration,
+      notes: null,
+      triggers: [],
+      activities: [],
+    });
+  if (logError) throw logError;
+
+  const { error: summaryError } = await supabase
+    .from('daily_summaries')
+    .upsert(
+      {
+        user_id: userId,
+        date: todayStr,
+        pain_level: painLevel,
+        hydration: newHydration,
+        mood,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,date' }
+    );
+  if (summaryError) throw summaryError;
+
+  return { hydration: newHydration };
 }
 
 // ============================================================

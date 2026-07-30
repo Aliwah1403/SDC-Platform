@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Linking,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,6 +32,9 @@ import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
+import { getCountryName } from "@/utils/countryNames";
+import emergencyNumbers from "@/data/emergencyNumbers.json";
 
 
 const SCD_TYPE_LABELS = {
@@ -43,7 +47,8 @@ const SCD_TYPE_LABELS = {
   unsure: "Not sure / undiagnosed",
 };
 
-const ESCALATION_TIERS = [
+function buildEscalationTiers(emergencyNumber) {
+  return [
   {
     step: 1,
     label: "MILD",
@@ -84,7 +89,7 @@ const ESCALATION_TIERS = [
     bg: "rgba(220,38,38,0.05)",
     border: "#DC2626",
     actions: [
-      "Call 999 / 911 immediately",
+      `Call ${emergencyNumber} immediately`,
       "Do not wait — this is a medical emergency",
       "Stay still, stay warm, and breathe steadily",
       "Alert your care team via the Crisis Mode feature",
@@ -92,7 +97,8 @@ const ESCALATION_TIERS = [
       "Mention any fever, chest pain, or stroke symptoms",
     ],
   },
-];
+  ];
+}
 
 const PRESET_ALLERGIES = [
   "Penicillin",
@@ -195,6 +201,38 @@ export default function CrisisPlanScreen() {
           m.name?.toLowerCase().includes(kw),
         )),
   );
+
+  // ── Emergency number (country-aware, never hardcoded 911) ────────
+  const { number: emergencyNumber, countryCode: emergencyCountryCode } = useEmergencyNumber();
+  const setEmergencyNumberOverrideIso = useAppStore((s) => s.setEmergencyNumberOverrideIso);
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const escalationTiers = useMemo(
+    () => buildEscalationTiers(emergencyNumber),
+    [emergencyNumber],
+  );
+
+  const countryOptions = useMemo(
+    () =>
+      Object.keys(emergencyNumbers)
+        .map((iso) => ({ iso, name: getCountryName(iso) ?? iso }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
+  const filteredCountryOptions = useMemo(() => {
+    const q = countrySearch.trim().toLowerCase();
+    if (!q) return countryOptions;
+    return countryOptions.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.iso.toLowerCase().includes(q),
+    );
+  }, [countryOptions, countrySearch]);
+
+  const handleSelectCountry = (iso) => {
+    posthog?.capture("emergency_number_override_set", { iso_country: iso });
+    setEmergencyNumberOverrideIso(iso);
+    setCountryPickerOpen(false);
+    setCountrySearch("");
+  };
 
   // ── Edit sheet state ─────────────────────────────────────────────
   const [editPresets, setEditPresets] = useState(
@@ -406,6 +444,19 @@ export default function CrisisPlanScreen() {
               <Text style={styles.infoValEmpty}>None recorded</Text>
             )}
           </View>
+          <View style={styles.divider} />
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Emergency Number</Text>
+            <Pressable onPress={() => setCountryPickerOpen(true)} hitSlop={8}>
+              <Text style={styles.infoVal}>
+                {emergencyNumber}
+                {emergencyCountryCode ? ` (${getCountryName(emergencyCountryCode)})` : ""}
+                {"  "}
+                <Text style={styles.infoValLink}>change</Text>
+              </Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.sectionDivider} />
@@ -435,7 +486,7 @@ export default function CrisisPlanScreen() {
             Start at Step 1 and only escalate if your condition worsens.
           </Text>
           <View style={{ gap: 8, marginTop: 12 }}>
-            {ESCALATION_TIERS.map((tier) => (
+            {escalationTiers.map((tier) => (
               <TierRow
                 key={tier.step}
                 tier={tier}
@@ -672,6 +723,60 @@ export default function CrisisPlanScreen() {
           </Pressable>
         </BottomSheetScrollView>
       </BottomSheet>
+
+      {/* Emergency number country override picker */}
+      <Modal
+        visible={countryPickerOpen}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setCountryPickerOpen(false)}
+      >
+        <View style={styles.pickerOverlay}>
+          <View style={[styles.pickerSheet, { paddingBottom: insets.bottom + 20 }]}>
+            <Text style={styles.sheetTitle}>Emergency Number Country</Text>
+            <Text style={styles.sheetHint}>
+              Choose the country whose ambulance number should be shown. Your
+              actual physical location (SIM/GPS) will still take priority over
+              this when detected.
+            </Text>
+            <TextInput
+              style={styles.sheetInput}
+              placeholder="Search country…"
+              placeholderTextColor={t.textTertiary}
+              value={countrySearch}
+              onChangeText={setCountrySearch}
+              autoCapitalize="words"
+            />
+            <ScrollView style={{ marginTop: 12 }} keyboardShouldPersistTaps="handled">
+              {filteredCountryOptions.map((c) => (
+                <Pressable
+                  key={c.iso}
+                  onPress={() => handleSelectCountry(c.iso)}
+                  style={({ pressed }) => [
+                    styles.pickerRow,
+                    pressed && { opacity: 0.7 },
+                  ]}
+                >
+                  <Text style={styles.pickerRowText}>{c.name}</Text>
+                  <Text style={styles.pickerRowSub}>
+                    {emergencyNumbers[c.iso]?.ambulance}
+                  </Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+            <Pressable
+              onPress={() => setCountryPickerOpen(false)}
+              style={({ pressed }) => [
+                styles.sheetSaveBtn,
+                { backgroundColor: t.surfaceElevated, marginTop: 12 },
+                pressed && { opacity: 0.85 },
+              ]}
+            >
+              <Text style={[styles.sheetSaveBtnText, { color: t.text }]}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -759,6 +864,10 @@ function createStyles(t) { return StyleSheet.create({
     color: t.textTertiary,
     textAlign: "right",
     flex: 1,
+  },
+  infoValLink: {
+    fontFamily: fonts.semibold,
+    color: "#A9334D",
   },
   divider: {
     height: 1,
@@ -1063,5 +1172,37 @@ function createStyles(t) { return StyleSheet.create({
     fontFamily: fonts.bold,
     fontSize: 16,
     color: "#FFFFFF",
+  },
+  // ── Country picker modal ───────────────────────────────────────────
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "flex-end",
+  },
+  pickerSheet: {
+    backgroundColor: t.surface,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    maxHeight: "80%",
+  },
+  pickerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: t.divider,
+  },
+  pickerRowText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: t.text,
+  },
+  pickerRowSub: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: t.textSecondary,
   },
 }); }

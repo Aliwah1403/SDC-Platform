@@ -63,8 +63,10 @@ function MapIllustration() {
 
 export default function Step9() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
+
+  const goNext = () => { setOnboardingStep(9); router.push("/(onboarding)/step-10"); };
 
   const handleRequestLocation = async () => {
     try {
@@ -72,22 +74,22 @@ export default function Step9() {
         await Location.getForegroundPermissionsAsync();
       if (current === "granted") {
         setOnboardingField("locationEnabled", true);
-        router.push("/(onboarding)/step-10");
+        goNext();
         return;
       }
       const { status } = await Location.requestForegroundPermissionsAsync();
       setOnboardingField("locationEnabled", status === "granted");
-      router.push("/(onboarding)/step-10");
+      goNext();
     } catch {
       setOnboardingField("locationEnabled", false);
-      router.push("/(onboarding)/step-10");
+      goNext();
     }
   };
 
   const handleSkip = () => {
     posthog?.capture('onboarding_step_skipped', { step: 9 });
     setOnboardingField("locationEnabled", false);
-    router.push("/(onboarding)/step-10");
+    goNext();
   };
 
   return (

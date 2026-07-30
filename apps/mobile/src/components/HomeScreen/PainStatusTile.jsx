@@ -1,31 +1,44 @@
 import { useMemo } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
+import { useTheme } from "@/hooks/useTheme";
+import { Card } from "@/components/Card";
 import { HomeLineChart } from "@/components/Charts/line-chart";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
+// Tinted-chip colors aligned with the app's pain scale (green → yellow →
+// orange → red, see PainOrb.jsx / log-symptoms.jsx getPainColor). Text uses a
+// darker shade of each hue for contrast on a light card — raw scale colors
+// like #FDE047 (yellow) are unreadable as text on white. "No data" reuses the
+// neutral gray convention from sibling MetricGrid tiles (e.g. MoodHalo's
+// mood===0 state) instead of an alarm color.
 function getPainStatus(painLevel) {
   if (painLevel === 0)
-    return { label: "No data", color: "rgba(255,255,255,0.5)" };
-  if (painLevel <= 3) return { label: "Low pain", color: "#D09F9A" };
-  if (painLevel <= 6) return { label: "Moderate", color: "#F8E9E7" };
-  if (painLevel <= 8) return { label: "High", color: "#F8E9E7" };
-  return { label: "Severe", color: "#F8E9E7" };
+    return { label: "No data", bg: "#F3F4F6", color: "#9CA3AF" };
+  if (painLevel <= 3) return { label: "Low pain", bg: "#10B98120", color: "#059669" };
+  if (painLevel <= 6) return { label: "Moderate", bg: "#FDE04730", color: "#CA8A04" };
+  if (painLevel <= 8) return { label: "High", bg: "#F59E0B22", color: "#C2410C" };
+  return { label: "Severe", bg: "#EF444422", color: "#DC2626" };
 }
 
-function computeScore(data) {
+function computeScore(data, goalMl) {
   if (!data) return null;
   const pain = (10 - (data.painLevel || 0)) * 0.4;
   const mood = ((data.mood || 0) / 5) * 10 * 0.3;
-  const hydration = Math.min((data.hydration || 0) / 8, 1) * 10 * 0.3;
+  const hydration = Math.min((data.hydration || 0) / goalMl, 1) * 10 * 0.3;
   return Math.round((pain + mood + hydration) * 10) / 10;
 }
 
 export function PainStatusTile({ selectedDateData, healthData }) {
   const router = useRouter();
+  const t = useTheme();
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const painLevel = selectedDateData?.painLevel ?? 0;
   const status = getPainStatus(painLevel);
-  const score = computeScore(selectedDateData);
+  const score = computeScore(selectedDateData, hydrationGoalMl);
 
   const chartData = useMemo(() => {
     const today = new Date();
@@ -40,34 +53,22 @@ export function PainStatusTile({ selectedDateData, healthData }) {
   }, [healthData]);
 
   return (
-    <TouchableOpacity
-      activeOpacity={selectedDateData ? 0.85 : 1}
-      onPress={() =>
-        selectedDateData &&
-        router.push({ pathname: "/metric-detail", params: { metric: "pain" } })
+    <Card
+      onPress={
+        selectedDateData
+          ? () =>
+              router.push({
+                pathname: "/metric-detail",
+                params: { metric: "pain", date: selectedDateData.date },
+              })
+          : undefined
       }
       style={{
-        backgroundColor: "#781D11",
-        borderRadius: 20,
         marginHorizontal: 16,
         marginBottom: 16,
         padding: 20,
-        overflow: "hidden",
       }}
     >
-      {/* Decorative circles */}
-      <View
-        style={{
-          position: "absolute",
-          width: 180,
-          height: 180,
-          borderRadius: 90,
-          backgroundColor: "rgba(208,159,154,0.08)",
-          top: -50,
-          right: -30,
-        }}
-      />
-
       {/* Header row */}
       <View
         style={{
@@ -78,14 +79,14 @@ export function PainStatusTile({ selectedDateData, healthData }) {
         }}
       >
         <Text
-          style={{ fontFamily: fonts.bold, fontSize: 16, color: "#FFFFFF" }}
+          style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}
         >
           Pain Status
         </Text>
         {selectedDateData && (
           <View
             style={{
-              backgroundColor: "rgba(255,255,255,0.15)",
+              backgroundColor: status.bg,
               borderRadius: 10,
               paddingHorizontal: 10,
               paddingVertical: 4,
@@ -111,7 +112,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
             style={{
               fontFamily: fonts.extrabold,
               fontSize: 56,
-              color: "#FFFFFF",
+              color: t.text,
               lineHeight: 60,
               marginBottom: 4,
             }}
@@ -121,7 +122,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 22,
-                color: "rgba(255,255,255,0.6)",
+                color: t.textSecondary,
               }}
             >
               {" "}
@@ -129,7 +130,8 @@ export function PainStatusTile({ selectedDateData, healthData }) {
             </Text>
           </Text>
 
-          {/* Sparkline */}
+          {/* Sparkline — burgundy accent, matching the progress-visual color
+              used by sibling home tiles (HydrationTank fill, StepsGauge arc) */}
           <View style={{ marginLeft: -12, marginBottom: 16 }}>
             <HomeLineChart
               data={chartData}
@@ -141,6 +143,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
                 showYLabels: false,
                 showXLabels: false,
                 padding: 16,
+                primaryColor: "#A9334D",
               }}
             />
           </View>
@@ -157,7 +160,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
               style={{
                 fontFamily: fonts.regular,
                 fontSize: 12,
-                color: "rgba(255,255,255,0.5)",
+                color: t.textSecondary,
               }}
             >
               Last 7 days
@@ -165,7 +168,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
             {score !== null && (
               <View
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.12)",
+                  backgroundColor: "#A9334D14",
                   borderRadius: 10,
                   paddingHorizontal: 10,
                   paddingVertical: 4,
@@ -175,7 +178,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
                   style={{
                     fontFamily: fonts.semibold,
                     fontSize: 12,
-                    color: "rgba(255,255,255,0.85)",
+                    color: "#A9334D",
                   }}
                 >
                   Wellbeing: {score}/10
@@ -190,7 +193,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
             style={{
               fontFamily: fonts.bold,
               fontSize: 17,
-              color: "#FFFFFF",
+              color: t.text,
               marginBottom: 6,
               textAlign: "center",
             }}
@@ -201,7 +204,7 @@ export function PainStatusTile({ selectedDateData, healthData }) {
             style={{
               fontFamily: fonts.regular,
               fontSize: 14,
-              color: "rgba(255,255,255,0.6)",
+              color: t.textSecondary,
               textAlign: "center",
             }}
           >
@@ -209,6 +212,6 @@ export function PainStatusTile({ selectedDateData, healthData }) {
           </Text>
         </View>
       )}
-    </TouchableOpacity>
+    </Card>
   );
 }

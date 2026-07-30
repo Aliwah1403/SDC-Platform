@@ -29,6 +29,7 @@ import { useAppStore } from "@/store/appStore";
 import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
 import { getPlaceDetails, photoUrl } from "@/utils/hospitalSearch";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
 
 const TYPE_GRADIENT = {
   [FACILITY_TYPES.HOSPITAL]: ["#DC2626", "#991B1B", "#7F1D1D"],
@@ -164,11 +165,11 @@ export default function FacilityDetailScreen() {
   if (fetchError) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: t.background, padding: 24 }}>
-        <Text style={{ color: t.text, fontSize: 16, fontFamily: "Geist-Medium", textAlign: "center", marginBottom: 20 }}>
+        <Text style={{ color: t.text, fontSize: 16, fontFamily: fonts.medium, textAlign: "center", marginBottom: 20 }}>
           {fetchError}
         </Text>
         <TouchableOpacity onPress={() => router.back()} style={{ backgroundColor: "#A9334D", borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24 }}>
-          <Text style={{ color: "#F8E9E7", fontFamily: "Geist-SemiBold", fontSize: 15 }}>Go Back</Text>
+          <Text style={{ color: "#F8E9E7", fontFamily: fonts.semibold, fontSize: 15 }}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );

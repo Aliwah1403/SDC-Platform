@@ -7,11 +7,14 @@ import {
   Alert,
   Animated,
   Linking,
-  Vibration,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Phone, X, AlertTriangle } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
+import { getCountryName } from "@/utils/countryNames";
+import { fonts } from "@/utils/fonts";
 import { useAppStore } from "../store/appStore";
 import { usePostHog } from "posthog-react-native";
 
@@ -28,6 +31,7 @@ export default function EmergencySOSButton() {
 
   const { data: emergencyContacts = [] } = useEmergencyContactsQuery();
   const { setEmergencyMode } = useAppStore();
+  const { number: resolvedNumber, countryCode: resolvedCountryCode } = useEmergencyNumber();
 
   const primaryContact =
     emergencyContacts.find((contact) => contact.isPrimary) ||
@@ -77,7 +81,7 @@ export default function EmergencySOSButton() {
 
   const handleEmergencyPress = () => {
     posthog?.capture('emergency_sos_triggered', { has_emergency_contacts: emergencyContacts.length > 0 });
-    Vibration.vibrate(200);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
     startShakeAnimation();
     setSOSModalVisible(true);
     setEmergencyMode(true);
@@ -88,7 +92,7 @@ export default function EmergencySOSButton() {
     setCountdownActive(true);
     setCountdown(5);
     startPulseAnimation();
-    Vibration.vibrate([500, 500, 500, 500, 500]);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); // tick for "5"
 
     countdownInterval.current = setInterval(() => {
       setCountdown((prev) => {
@@ -98,11 +102,15 @@ export default function EmergencySOSButton() {
           setCountdownActive(false);
           setSOSModalVisible(false);
           setEmergencyMode(false);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
           triggerEmergencyCall();
           return 0;
         }
-        Vibration.vibrate(100);
-        return prev - 1;
+        const nextCount = prev - 1;
+        if (nextCount >= 4) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        else if (nextCount >= 2) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        return nextCount;
       });
     }, 1000);
   };
@@ -113,7 +121,6 @@ export default function EmergencySOSButton() {
     setCountdown(5);
     pulseAnim.stopAnimation();
     pulseAnim.setValue(1);
-    Vibration.cancel();
   };
 
   const closeModal = () => {
@@ -131,7 +138,7 @@ export default function EmergencySOSButton() {
       contacts_count: emergencyContacts.length,
     });
     try {
-      const phoneNumber = primaryContact?.phone || "911";
+      const phoneNumber = primaryContact?.phone || resolvedNumber;
       const telUrl = `tel:${phoneNumber.replace(/[^0-9+]/g, "")}`;
 
       const canOpen = await Linking.canOpenURL(telUrl);
@@ -205,7 +212,7 @@ export default function EmergencySOSButton() {
           <Text
             style={{
               fontSize: 24,
-              fontWeight: "bold",
+              fontFamily: fonts.bold,
               color: "#A9334D", // Orange text
               marginBottom: 8,
               textAlign: "center",
@@ -242,7 +249,11 @@ export default function EmergencySOSButton() {
                 Primary Contact:{" "}
                 {primaryContact ? primaryContact.name : "Emergency Services"}
                 {"\n"}
-                {primaryContact ? primaryContact.phone : "911"}
+                {primaryContact
+                  ? primaryContact.phone
+                  : resolvedCountryCode
+                    ? `${resolvedNumber} (${getCountryName(resolvedCountryCode)})`
+                    : resolvedNumber}
               </Text>
 
               <View
@@ -265,7 +276,7 @@ export default function EmergencySOSButton() {
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "600",
+                      fontFamily: fonts.semibold,
                       color: "#F8E9E7", // Cream text
                     }}
                   >
@@ -291,7 +302,7 @@ export default function EmergencySOSButton() {
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "bold",
+                      fontFamily: fonts.bold,
                       color: "#F8E9E7", // Cream text
                     }}
                   >
@@ -305,7 +316,7 @@ export default function EmergencySOSButton() {
               <Text
                 style={{
                   fontSize: 72,
-                  fontWeight: "bold",
+                  fontFamily: fonts.bold,
                   color: "#A9334D", // Orange text
                   marginBottom: 12,
                 }}
@@ -338,7 +349,7 @@ export default function EmergencySOSButton() {
                 <Text
                   style={{
                     fontSize: 16,
-                    fontWeight: "bold",
+                    fontFamily: fonts.bold,
                     color: "#F8E9E7", // Cream text
                   }}
                 >
@@ -393,7 +404,7 @@ export default function EmergencySOSButton() {
           <Text
             style={{
               fontSize: 8,
-              fontWeight: "bold",
+              fontFamily: fonts.bold,
               color: "#A9334D", // Orange text
             }}
           >

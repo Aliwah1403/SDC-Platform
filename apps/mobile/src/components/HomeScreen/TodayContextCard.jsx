@@ -1,8 +1,14 @@
 import { View, Text } from "react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
+import { useHydrationStore } from "@/store/hydrationStore";
+import { hydrationValueInUnit, HYDRATION_UNIT_LABEL } from "@/utils/hydrationUnits";
+import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 
-function computeContext(healthData, healthStreak, currentUser) {
+function computeContext(healthData, healthStreak, currentUser, goalMl, displayUnit) {
+  const goalInUnit = Math.max(0.1, hydrationValueInUnit(goalMl, displayUnit));
+  const unitLabel = HYDRATION_UNIT_LABEL[displayUnit] ?? "glasses";
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -49,13 +55,13 @@ function computeContext(healthData, healthStreak, currentUser) {
   let lowHydrationRun = 0;
   for (const entry of last7) {
     if (!entry || entry.hydration === 0) break;
-    if (entry.hydration < 8) lowHydrationRun++;
+    if (entry.hydration < goalMl) lowHydrationRun++;
     else break;
   }
   if (lowHydrationRun >= 3) {
     return {
       headline: `Hydration below goal ${lowHydrationRun} days running`,
-      body: "Aim for 8 glasses today — hydration is key for SCD.",
+      body: `Aim for ${goalInUnit} ${unitLabel} today — hydration is key for SCD.`,
       severity: "warning",
     };
   }
@@ -91,7 +97,10 @@ const SEVERITY_STYLE = {
 
 export function TodayContextCard({ healthData, healthStreak, currentUser }) {
   const t = useTheme();
-  const ctx = computeContext(healthData, healthStreak, currentUser);
+  const { data: metricGoals } = useMetricGoalsQuery();
+  const { displayUnit } = useHydrationStore();
+  const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
+  const ctx = computeContext(healthData, healthStreak, currentUser, hydrationGoalMl, displayUnit);
   const s = SEVERITY_STYLE[ctx.severity];
 
   return (

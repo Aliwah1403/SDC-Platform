@@ -17,11 +17,14 @@ import {
   Users,
 } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
+import { fonts } from "@/utils/fonts";
 
 export default function EmergencyScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { number: emergencyNumber } = useEmergencyNumber();
 
   const EmergencyCard = ({
     title,
@@ -68,7 +71,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 18,
-              fontWeight: "700",
+              fontFamily: fonts.bold,
               color: t.text,
               marginBottom: 4,
             }}
@@ -101,7 +104,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 20,
-              fontWeight: "700",
+              fontFamily: fonts.bold,
               color: color,
               marginLeft: 8,
             }}
@@ -153,7 +156,7 @@ export default function EmergencyScreen() {
             <Text
               style={{
                 fontSize: 28,
-                fontWeight: "700",
+                fontFamily: fonts.bold,
                 color: t.text,
               }}
             >
@@ -188,7 +191,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "700",
+                  fontFamily: fonts.bold,
                   color: "#DC2626",
                   marginBottom: 8,
                 }}
@@ -202,7 +205,7 @@ export default function EmergencyScreen() {
                   lineHeight: 20,
                 }}
               >
-                If you're experiencing a medical emergency, call 911
+                If you're experiencing a medical emergency, call {emergencyNumber}
                 immediately. These contacts are for quick access to emergency
                 services.
               </Text>
@@ -213,7 +216,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginBottom: 16,
           }}
@@ -224,7 +227,7 @@ export default function EmergencyScreen() {
         <EmergencyCard
           title="Emergency Services"
           subtitle="Police, Fire, Medical Emergency"
-          phone="911"
+          phone={emergencyNumber}
           icon={Phone}
           color="#DC2626"
           bgColor="#FEE2E2"
@@ -251,7 +254,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginTop: 24,
             marginBottom: 16,
@@ -293,7 +296,7 @@ export default function EmergencyScreen() {
           <Text
             style={{
               fontSize: 16,
-              fontWeight: "600",
+              fontFamily: fonts.semibold,
               color: t.textSecondary,
             }}
           >
@@ -304,7 +307,7 @@ export default function EmergencyScreen() {
         <Text
           style={{
             fontSize: 20,
-            fontWeight: "700",
+            fontFamily: fonts.bold,
             color: t.text,
             marginTop: 24,
             marginBottom: 16,
@@ -352,7 +355,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 18,
-                  fontWeight: "700",
+                  fontFamily: fonts.bold,
                   color: t.text,
                   marginBottom: 4,
                 }}
@@ -393,7 +396,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: "#2563EB",
                 }}
               >
@@ -414,7 +417,7 @@ export default function EmergencyScreen() {
               <Text
                 style={{
                   fontSize: 14,
-                  fontWeight: "600",
+                  fontFamily: fonts.semibold,
                   color: "#FFFFFF",
                 }}
               >

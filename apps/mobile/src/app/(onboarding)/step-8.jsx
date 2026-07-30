@@ -78,16 +78,18 @@ function PhoneMockup({ name }) {
 
 export default function Step8() {
   const posthog = usePostHog();
-  const { setOnboardingField, onboardingData } = useAppStore();
+  const { setOnboardingField, setOnboardingStep, onboardingData } = useAppStore();
   const insets = useSafeAreaInsets();
   const name = onboardingData.nickname || "you";
+
+  const goNext = () => { setOnboardingStep(8); router.push("/(onboarding)/step-9"); };
 
   const handleRequestPermission = async () => {
     try {
       const { status: current } = await Notifications.getPermissionsAsync();
       if (current === "granted") {
         setOnboardingField("notificationsEnabled", true);
-        router.push("/(onboarding)/step-9");
+        goNext();
         return;
       }
       const { status } = await Notifications.requestPermissionsAsync({
@@ -99,17 +101,17 @@ export default function Step8() {
         posthog?.capture('notification_permission_denied', { platform: Platform.OS, prompt_variant: 'onboarding' });
       }
       setOnboardingField("notificationsEnabled", status === "granted");
-      router.push("/(onboarding)/step-9");
+      goNext();
     } catch {
       setOnboardingField("notificationsEnabled", false);
-      router.push("/(onboarding)/step-9");
+      goNext();
     }
   };
 
   const handleSkip = () => {
     posthog?.capture('onboarding_step_skipped', { step: 8 });
     setOnboardingField("notificationsEnabled", false);
-    router.push("/(onboarding)/step-9");
+    goNext();
   };
 
   return (

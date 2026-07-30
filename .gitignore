@@ -61,10 +61,35 @@ CLAUDE.md
 CODE_REVIEW.md
 FEATURES.md
 SUPABASE.md
+SETUP_CHECKLIST.md
+SDK-55-UPGRADE-PLAN.md
+LOCAL-SUPABASE-SETUP-PLAN.md
+CARD-REDESIGN-PLAN.md
+PR-AUTOMATION-PLAN.md
+EDUCATION-CONTENT-PLAN.md
 .mcp.json
+
+# Service-account / admin credentials — never commit
+*-firebase-adminsdk-*.json
+**/service-account.json
+service-account*.json
 
 # TypeScript
 *.tsbuildinfo
 
 # React Router / Vite
 .react-router/
+
+# Local planning notes
+POLISH-PLAN.md
+CRISIS-ALERTS-PLAN.md
+CLINICAL-REVIEW-*.md
+design-refs/
+MARKETING-PLAN.md
+SEO-PLAN.md
+PRICING-PLAN.md
+BETA-DISTRIBUTION.md
+ANDROID-BUILD-SDK-UPGRADE.md
+WAITLIST-EMAIL-1.md
+AI-STRATEGY.md
+WIDGETS-PLAN.md

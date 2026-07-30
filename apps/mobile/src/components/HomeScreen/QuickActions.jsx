@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { ChevronRight, NotebookPen, Flame, Pill } from "lucide-react-native";
 import { useTheme } from "@/hooks/useTheme";
+import { PressableScale } from "@/components/PressableScale";
 
 export function QuickActions({ medications = [] }) {
   const router = useRouter();
@@ -20,7 +21,7 @@ export function QuickActions({ medications = [] }) {
       }}
       style={{ flexGrow: 0, marginBottom: 16 }}
     >
-      <TouchableOpacity
+      <PressableScale
         onPress={() => router.push("/log-symptoms")}
         style={{
           display: "flex",
@@ -33,7 +34,6 @@ export function QuickActions({ medications = [] }) {
           paddingHorizontal: 13,
           paddingVertical: 7,
         }}
-        activeOpacity={0.8}
       >
         <NotebookPen size={15} color="#FFFFFF" />
         <Text
@@ -42,9 +42,9 @@ export function QuickActions({ medications = [] }) {
           Log today
         </Text>
         <ChevronRight size={16} color="#FFFFFF" />
-      </TouchableOpacity>
+      </PressableScale>
 
-      <TouchableOpacity
+      <PressableScale
         onPress={() => router.push("/log-symptoms")}
         style={{
           display: "flex",
@@ -52,14 +52,11 @@ export function QuickActions({ medications = [] }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 6,
-          backgroundColor: t.surface,
+          backgroundColor: t.divider,
           borderRadius: 10,
           paddingHorizontal: 13,
           paddingVertical: 7,
-          borderWidth: 1.5,
-          borderColor: t.border,
         }}
-        activeOpacity={0.8}
       >
         <Flame size={15} color={t.isDark ? t.text : "#A9334D"} opacity={0.8} />
         <Text
@@ -72,10 +69,10 @@ export function QuickActions({ medications = [] }) {
           color={t.isDark ? t.text : "#A9334D"}
           style={{ marginLeft: 4, opacity: 0.8 }}
         />
-      </TouchableOpacity>
+      </PressableScale>
 
       {hasMeds && (
-        <TouchableOpacity
+        <PressableScale
           onPress={() => router.push("/care/medications")}
           style={{
             display: "flex",
@@ -83,14 +80,11 @@ export function QuickActions({ medications = [] }) {
             alignItems: "center",
             justifyContent: "space-between",
             gap: 6,
-            backgroundColor: t.surface,
+            backgroundColor: t.divider,
             borderRadius: 10,
             paddingHorizontal: 13,
             paddingVertical: 7,
-            borderWidth: 1.5,
-            borderColor: t.border,
           }}
-          activeOpacity={0.8}
         >
           <Pill size={15} color={t.isDark ? t.text : "#A9334D"} opacity={0.8} />
           <Text
@@ -107,7 +101,7 @@ export function QuickActions({ medications = [] }) {
             color={t.isDark ? t.text : "#A9334D"}
             style={{ marginLeft: 4, opacity: 0.8 }}
           />
-        </TouchableOpacity>
+        </PressableScale>
       )}
     </ScrollView>
   );

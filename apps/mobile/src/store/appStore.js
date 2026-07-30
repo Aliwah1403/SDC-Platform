@@ -1,6 +1,18 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { MMKV } from "react-native-mmkv";
 
-export const useAppStore = create((set) => ({
+const mmkv = new MMKV({ id: "hemo-store" });
+
+const mmkvStorage = {
+  getItem: (name) => mmkv.getString(name) ?? null,
+  setItem: (name, value) => mmkv.set(name, value),
+  removeItem: (name) => mmkv.delete(name),
+};
+
+export const useAppStore = create(
+  persist(
+    (set) => ({
   // ── Onboarding form state (ephemeral; written to Supabase on complete) ────────
   onboardingData: {
     nickname: null,
@@ -21,13 +33,18 @@ export const useAppStore = create((set) => ({
     timezoneAuto: true,
   },
 
+  onboardingCurrentStep: 0,
+
   setOnboardingField: (field, value) =>
     set((state) => ({
       onboardingData: { ...state.onboardingData, [field]: value },
     })),
 
+  setOnboardingStep: (step) => set({ onboardingCurrentStep: step }),
+
   resetOnboarding: () =>
     set({
+      onboardingCurrentStep: 0,
       onboardingData: {
         nickname: null,
         dob: null,
@@ -91,6 +108,18 @@ export const useAppStore = create((set) => ({
 
   activeTab: "dashboard",
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  // ── Health recaps ───────────────────────────────────────────────────────────
+  // Stores recap keys the user has opened or cleared (e.g. "month-2026-05",
+  // "week-2026-06-22"), so each recap card stays surfaced through its period
+  // until acted on, then reappears next period when its key changes.
+  dismissedRecaps: [],
+  dismissRecap: (key) =>
+    set((state) => ({
+      dismissedRecaps: state.dismissedRecaps.includes(key)
+        ? state.dismissedRecaps
+        : [...state.dismissedRecaps, key],
+    })),
 
   // ── Community — device-local only (hide is not synced to server) ───────────
   hiddenPostIds: [],
@@ -296,6 +325,55 @@ export const useAppStore = create((set) => ({
       ),
     })),
 
+  // ── Android Health Connect ───────────────────────────────────────────────────
+  // Same structure as HealthKit fields — same data shape, same date-keyed map.
+  healthConnectConnected: false,
+  healthConnectData: {},
+  healthConnectPreferences: {
+    readSteps: true,
+    readHeartRate: true,
+    readSpO2: true,
+    readTemperature: true,
+    readRespiratoryRate: true,
+    readSleep: true,
+    writeHydration: true,
+    writeHeight: true,
+    writeWeight: true,
+  },
+  healthConnectManualBaselines: {
+    spO2: null,
+    heartRate: null,
+  },
+
+  setHealthConnectConnected: (val) => set({ healthConnectConnected: val }),
+
+  setHealthConnectPreference: (key, value) =>
+    set((state) => ({
+      healthConnectPreferences: { ...state.healthConnectPreferences, [key]: value },
+    })),
+
+  mergeHealthConnectDay: (date, metrics) =>
+    set((state) => ({
+      healthConnectData: {
+        ...state.healthConnectData,
+        [date]: { ...(state.healthConnectData[date] ?? {}), ...metrics },
+      },
+    })),
+
+  setHealthConnectRange: (rangeMap) =>
+    set((state) => {
+      const merged = { ...state.healthConnectData };
+      for (const [date, metrics] of Object.entries(rangeMap)) {
+        merged[date] = { ...(merged[date] ?? {}), ...metrics };
+      }
+      return { healthConnectData: merged };
+    }),
+
+  setHealthConnectManualBaseline: (metric, value) =>
+    set((state) => ({
+      healthConnectManualBaselines: { ...state.healthConnectManualBaselines, [metric]: value },
+    })),
+
   // ── App Lock ────────────────────────────────────────────────────────────────
   appLockEnabled: false,
   appLockTimeout: 1, // minutes: 0=immediately, 1, 5, 15, 60
@@ -316,4 +394,23 @@ export const useAppStore = create((set) => ({
     set((state) => ({
       healthKitManualBaselines: { ...state.healthKitManualBaselines, [metric]: value },
     })),
-}));
+
+  // ── Emergency number override ───────────────────────────────────────────────
+  // ISO alpha-2 country code the user manually picked in Crisis Plan "change".
+  // Physical location (SIM/GPS) in useEmergencyNumber still takes priority over
+  // this — it only wins over the device-region auto-detection.
+  emergencyNumberOverrideIso: null,
+  setEmergencyNumberOverrideIso: (iso) => set({ emergencyNumberOverrideIso: iso }),
+    }),
+    {
+      name: "hemo-onboarding",
+      storage: createJSONStorage(() => mmkvStorage),
+      partialize: (state) => ({
+        onboardingData: state.onboardingData,
+        onboardingCurrentStep: state.onboardingCurrentStep,
+        dismissedRecaps: state.dismissedRecaps,
+        emergencyNumberOverrideIso: state.emergencyNumberOverrideIso,
+      }),
+    }
+  )
+);

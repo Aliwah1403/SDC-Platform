@@ -10,30 +10,23 @@ const CORS_HEADERS = {
 
 const InsightSchema = z.object({
   headline: z.string().describe("A short, warm headline summarising the user's current metric status (1 sentence)"),
-  subtitle: z.string().describe("A supporting sentence that adds context or encouragement"),
-  sectionTitle: z.string().describe("A short action-oriented title for the tips section, e.g. 'Ways to improve your hydration'"),
-  tips: z.array(z.object({
-    heading: z.string().describe("Short tip category name"),
-    bullets: z.array(z.object({
-      label: z.string().describe("Bold label for the bullet point, e.g. 'Drink more water:'"),
-      text: z.string().describe("The actionable advice text"),
-    })).min(1).max(3),
-  })).min(2).max(4),
+  paragraph: z.string().describe("A single flowing paragraph (2-3 sentences) giving context and 1-2 concrete, actionable tips — written as natural prose, not a list"),
 });
 
 const SYSTEM_PROMPT = `You are a compassionate health coach inside Hemo, a mobile app for people living with Sickle Cell Disease (SCD).
 
-Your job: generate personalised, actionable health insights for a specific metric based on the user's current data.
+Your job: generate a personalised, actionable health insight for a specific metric based on the user's current data.
 
 Rules:
 - Write in a warm, encouraging, non-alarmist tone
 - Use "you" and "your" language
 - Be specific to SCD — mention relevant SCD context (e.g. dehydration triggering crises, pain management, fatigue)
 - Headlines should be reassuring even when values are poor — focus on what the user can do
-- Tips must be practical and immediately actionable, not generic
+- The paragraph must be short and scannable: 2-3 sentences, no bullet points, no headings, no colons-as-labels
+- Weave in 1-2 concrete, immediately actionable tips as part of the natural sentence flow, not a list
 - Never suggest stopping prescribed medication or ignoring a doctor's advice
-- If the metric is outside a healthy range, be empathetic — acknowledge it's hard before offering tips
-- Keep each tip concise: label is 2-4 words + colon, text is 1-2 sentences`;
+- If the metric is outside a healthy range, be empathetic — acknowledge it's hard before offering guidance
+- Keep the whole paragraph under ~45 words`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

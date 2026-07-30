@@ -6,6 +6,7 @@ import {
   FlatList,
   Dimensions,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import { fonts } from "@/utils/fonts";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -53,6 +54,9 @@ function DayItem({
   isFuture,
   isSelected,
   dayIndex,
+  labelColor,
+  numberColor,
+  selectedBg,
 }) {
   const future = isFuture(date);
   const selected = isSelected(date, selectedDate);
@@ -60,7 +64,12 @@ function DayItem({
 
   return (
     <TouchableOpacity
-      onPress={() => !future && setSelectedDate(date)}
+      onPress={() => {
+        if (!future) {
+          Haptics.selectionAsync();
+          setSelectedDate(date);
+        }
+      }}
       disabled={future}
       style={{
         width: SCREEN_WIDTH / 7,
@@ -76,7 +85,7 @@ function DayItem({
         style={{
           fontFamily: fonts.bold,
           fontSize: todayDate ? 9 : 11,
-          color: "rgba(255, 255, 255, 0.72)",
+          color: labelColor,
           marginBottom: 6,
           letterSpacing: todayDate ? 0.8 : 0,
         }}
@@ -90,7 +99,7 @@ function DayItem({
           width: 38,
           height: 38,
           borderRadius: 19,
-          backgroundColor: selected ? "#A9334D" : "transparent",
+          backgroundColor: selected ? selectedBg : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -99,7 +108,7 @@ function DayItem({
           style={{
             fontFamily: fonts.bold,
             fontSize: 17,
-            color: "#FFFFFF",
+            color: selected ? "#FFFFFF" : numberColor,
           }}
         >
           {date.getDate()}
@@ -115,6 +124,9 @@ export function DatePicker({
   isToday,
   isFuture,
   isSelected,
+  labelColor = "rgba(255, 255, 255, 0.72)",
+  numberColor = "#FFFFFF",
+  selectedBg = "#A9334D",
 }) {
   const flatListRef = useRef(null);
   const weeks = useMemo(() => generateWeeks(), []);
@@ -131,10 +143,13 @@ export function DatePicker({
           isFuture={isFuture}
           isSelected={isSelected}
           dayIndex={dayIndex}
+          labelColor={labelColor}
+          numberColor={numberColor}
+          selectedBg={selectedBg}
         />
       ))}
     </View>
-  ), [selectedDate, setSelectedDate, isToday, isFuture, isSelected]);
+  ), [selectedDate, setSelectedDate, isToday, isFuture, isSelected, labelColor, numberColor, selectedBg]);
 
   return (
     <FlatList

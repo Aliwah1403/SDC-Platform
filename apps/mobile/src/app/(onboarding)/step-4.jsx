@@ -43,7 +43,7 @@ function SegmentedControl({ options, selected, onSelect }) {
 
 export default function Step4() {
   const posthog = usePostHog();
-  const { setOnboardingField } = useAppStore();
+  const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [unit, setUnit] = useState('Metric');
   const [editing, setEditing] = useState(false);
   const [kgValue, setKgValue] = useState(70);
@@ -60,12 +60,13 @@ export default function Step4() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 4 }); router.push('/(onboarding)/step-5'); };
+  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 4 }); setOnboardingStep(4); router.push('/(onboarding)/step-5'); };
 
   const handleContinue = () => {
     const weightInKg =
       unit === 'Metric' ? kgValue : Math.round((lbValue / 2.20462) * 10) / 10;
     setOnboardingField('weight', weightInKg);
+    setOnboardingStep(4);
     router.push('/(onboarding)/step-5');
   };
 

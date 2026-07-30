@@ -83,6 +83,7 @@ import { useAuthStore } from "@/utils/auth/store";
 import { useAppearanceStore } from "@/store/appearanceStore";
 import { useTheme } from "@/hooks/useTheme";
 import { fonts } from "@/utils/fonts";
+import { SectionCard } from "@/components/SectionCard";
 import { useRouter } from "expo-router";
 import {
   signOut,
@@ -95,6 +96,7 @@ import { uploadAvatar } from "@/services/supabaseQueries";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";
+import HealthConnectModal from "@/components/HealthConnectModal";
 import {
   scheduleCheckInReminders,
   cancelCheckInReminders,
@@ -196,17 +198,11 @@ function formatAge(dob) {
 
 // ─── primitive components ────────────────────────────────────────────────────
 
-function Divider() {
-  const t = useTheme();
-  return (
-    <View style={{ height: 1, backgroundColor: t.divider, marginLeft: 54 }} />
-  );
-}
-
 function SettingRow({
   icon: Icon,
   iconColor = "#A9334D",
   iconImage,
+  iconComponent,
   label,
   value,
   rightElement,
@@ -233,7 +229,7 @@ function SettingRow({
           marginRight: 12,
         }}
       >
-        {iconImage ? (
+        {iconComponent ? iconComponent : iconImage ? (
           <Image source={iconImage} style={{ width: 28, height: 28 }} resizeMode="contain" />
         ) : (
           <Icon size={18} color={iconColor} />
@@ -346,49 +342,6 @@ function SettingRowToggle({
   );
 }
 
-function SectionCard({ title, children }) {
-  const t = useTheme();
-  return (
-    <View style={{ marginBottom: 24 }}>
-      {title ? (
-        <Text
-          style={{
-            fontFamily: fonts.semibold,
-            fontSize: 11,
-            color: t.textSecondary,
-            letterSpacing: 0.8,
-            textTransform: "uppercase",
-            marginBottom: 6,
-            marginLeft: 4,
-          }}
-        >
-          {title}
-        </Text>
-      ) : null}
-      <View
-        style={{
-          backgroundColor: t.surface,
-          borderRadius: 14,
-          borderWidth: 1,
-          borderColor: t.border,
-          overflow: "hidden",
-        }}
-      >
-        {React.Children.map(children, (child, i) => {
-          if (!child) return null;
-          const isLast = i === React.Children.count(children) - 1;
-          return (
-            <>
-              {child}
-              {!isLast && <Divider />}
-            </>
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
 // ─── main screen ─────────────────────────────────────────────────────────────
 
 export default function ProfileScreen() {
@@ -408,6 +361,7 @@ export default function ProfileScreen() {
     appLockEnabled,
     appLockTimeout,
     healthKitConnected: appleHealthConnected,
+    healthConnectConnected,
   } = useAppStore();
   const { theme, setTheme } = useAppearanceStore();
   const t = useTheme();
@@ -421,10 +375,12 @@ export default function ProfileScreen() {
   const [locationLabel, setLocationLabel] = useState(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const [isFeedbackInitializing, setIsFeedbackInitializing] = useState(false);
   const [shouldPreloadFeedback, setShouldPreloadFeedback] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
+  const [healthConnectModalVisible, setHealthConnectModalVisible] = useState(false);
   const [linkingProvider, setLinkingProvider] = useState(null);
 
   const identities = auth?.user?.identities ?? [];
@@ -697,8 +653,14 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           posthog?.capture("sign_out", {});
-          await signOut();
-          setTimeout(() => router.replace("/(auth)/welcome"), 100);
+          setIsSigningOut(true);
+          try {
+            await signOut();
+            setTimeout(() => router.replace("/(auth)/welcome"), 100);
+          } catch (err) {
+            setIsSigningOut(false);
+            Alert.alert("Sign Out Failed", "Something went wrong. Please try again.");
+          }
         },
       },
     ]);
@@ -1004,17 +966,28 @@ export default function ProfileScreen() {
         iconColor: "#A9334D",
         onPress: handleShareSummary,
       },
-      {
-        key: "apple-health",
-        label: "Connect Apple Health",
-        section: "Data & Reports",
-        icon: Heart,
-        iconColor: "#EF4444",
-        onPress: () =>
-          appleHealthConnected
-            ? router.push("/apple-health-settings")
-            : setAppleHealthModalVisible(true),
-      },
+      Platform.OS === "ios"
+        ? {
+            key: "apple-health",
+            label: "Apple Health",
+            section: "Data & Reports",
+            icon: Heart,
+            iconColor: "#EF4444",
+            onPress: () =>
+              appleHealthConnected
+                ? router.push("/apple-health-settings")
+                : setAppleHealthModalVisible(true),
+          }
+        : {
+            key: "health-connect",
+            label: "Health Connect",
+            section: "Data & Reports",
+            iconImage: require("../../../assets/images/health_connect_logo.png"),
+            onPress: () =>
+              healthConnectConnected
+                ? router.push("/health-connect-settings")
+                : setHealthConnectModalVisible(true),
+          },
 
       {
         key: "appearance",
@@ -1094,6 +1067,7 @@ export default function ProfileScreen() {
       profile,
       auth,
       appleHealthConnected,
+      healthConnectConnected,
       openFullNameSheet,
       openNicknameSheet,
       openPhotoSheet,
@@ -1215,7 +1189,11 @@ export default function ProfileScreen() {
                   marginRight: 12,
                 }}
               >
-                <item.icon size={18} color={item.iconColor} />
+                {item.iconComponent
+                  ? item.iconComponent
+                  : item.iconImage
+                  ? <Image source={item.iconImage} style={{ width: 22, height: 22 }} resizeMode="contain" />
+                  : <item.icon size={18} color={item.iconColor} />}
               </View>
 
               <View style={{ flex: 1 }}>
@@ -1556,17 +1534,31 @@ export default function ProfileScreen() {
               rightElement="chevron"
               onPress={handleShareSummary}
             />
-            <SettingRow
-              iconImage={require("../../../assets/images/icon-apple-health.png")}
-              label="Apple Health"
-              value={appleHealthConnected ? "Connected" : "Not connected"}
-              rightElement="chevron"
-              onPress={() =>
-                appleHealthConnected
-                  ? router.push("/apple-health-settings")
-                  : setAppleHealthModalVisible(true)
-              }
-            />
+            {Platform.OS === "ios" ? (
+              <SettingRow
+                iconImage={require("../../../assets/images/icon-apple-health.png")}
+                label="Apple Health"
+                value={appleHealthConnected ? "Connected" : "Not connected"}
+                rightElement="chevron"
+                onPress={() =>
+                  appleHealthConnected
+                    ? router.push("/apple-health-settings")
+                    : setAppleHealthModalVisible(true)
+                }
+              />
+            ) : (
+              <SettingRow
+                iconImage={require("../../../assets/images/health_connect_logo.png")}
+                label="Health Connect"
+                value={healthConnectConnected ? "Connected" : "Not connected"}
+                rightElement="chevron"
+                onPress={() =>
+                  healthConnectConnected
+                    ? router.push("/health-connect-settings")
+                    : setHealthConnectModalVisible(true)
+                }
+              />
+            )}
           </SectionCard>
 
           <SectionCard title="Preferences">
@@ -1788,14 +1780,14 @@ export default function ProfileScreen() {
               icon={ShieldHalf}
               iconColor="#6B7280"
               label="Privacy Policy"
-              onPress={() => comingSoon("Privacy Policy")}
+              onPress={() => router.push("/legal?type=privacy")}
               rightElement="chevron"
             />
             <SettingRow
               icon={Shield}
               iconColor="#6B7280"
               label="Terms of Service"
-              onPress={() => comingSoon("Terms of Service")}
+              onPress={() => router.push("/legal?type=terms")}
               rightElement="chevron"
             />
           </SectionCard>
@@ -1804,8 +1796,14 @@ export default function ProfileScreen() {
             <SettingRow
               icon={LogOut}
               iconColor="#DC2626"
-              label="Sign Out"
+              label={isSigningOut ? "Signing Out..." : "Sign Out"}
               onPress={handleSignOut}
+              disabled={isSigningOut}
+              rightElement={
+                isSigningOut ? (
+                  <ActivityIndicator size="small" color="#DC2626" />
+                ) : null
+              }
             />
           </SectionCard>
 
@@ -3165,6 +3163,11 @@ export default function ProfileScreen() {
         visible={appleHealthModalVisible}
         onClose={() => setAppleHealthModalVisible(false)}
         onContinue={() => setAppleHealthModalVisible(false)}
+      />
+      <HealthConnectModal
+        visible={healthConnectModalVisible}
+        onClose={() => setHealthConnectModalVisible(false)}
+        onContinue={() => setHealthConnectModalVisible(false)}
       />
 
       {shouldPreloadFeedback ? (

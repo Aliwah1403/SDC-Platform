@@ -11,6 +11,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ErrorBoundaryWrapper } from '../../__create/SharedErrorBoundary';
+import { fonts } from '@/utils/fonts';
 
 interface ParentSitemap {
   expoPages?: Array<{
@@ -298,7 +299,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     color: '#111',
     marginBottom: 16,
     textAlign: 'center',
@@ -312,7 +313,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   boldText: {
-    fontWeight: 'bold',
+    fontFamily: fonts.bold,
   },
   routesLabel: {
     color: '#666',
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   createPageTitle: {
     fontSize: 14,
     color: '#000',
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     textAlign: 'center',
   },
   createPageDescription: {
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
   createPageButtonText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
   },
 
   pagesContainer: {
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
   },
   routeName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     color: '#111',
   },
   routePath: {

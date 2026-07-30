@@ -26,6 +26,12 @@ posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
 
 const router = createBrowserRouter([
   {
+    path: "/pitch",
+    lazy: async () => ({
+      Component: (await import("./pages/Pitch/PitchPage")).default,
+    }),
+  },
+  {
     path: "/export-test",
     lazy: async () => ({
       Component: (await import("./pages/Export/ExportTestPage")).default,
@@ -59,6 +65,12 @@ const router = createBrowserRouter([
     path: "/summary/:token",
     lazy: async () => ({
       Component: (await import("./pages/Summary/SummaryPage")).default,
+    }),
+  },
+  {
+    path: "/beta",
+    lazy: async () => ({
+      Component: (await import("./pages/Beta/BetaPage")).default,
     }),
   },
   {

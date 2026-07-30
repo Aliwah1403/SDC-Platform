@@ -19,8 +19,10 @@ import {
 import { BadgeHeroGradient } from "./BadgeHeroGradient";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { Image } from "expo-image";
+import { SymbolView } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
+import { fonts } from "@/utils/fonts";
 
 const MILESTONE_ICONS = {
   days: Trophy,
@@ -32,6 +34,17 @@ const MILESTONE_ICONS = {
   repair: Wrench,
   restart: Zap,
   medications: Clock,
+};
+
+const MILESTONE_SF_SYMBOLS = {
+  days: "trophy.fill",
+  symptoms: "target",
+  hydration: "drop.fill",
+  care: "heart.fill",
+  learning: "book.fill",
+  repair: "wrench.fill",
+  restart: "bolt.fill",
+  medications: "clock.fill",
 };
 
 const MILESTONE_BADGE_IMAGES = {
@@ -171,7 +184,22 @@ export default function MilestoneModal({ visible, milestone, onClose }) {
                     { backgroundColor: `${colors.primary}18` },
                   ]}
                 >
-                  <Icon size={20} color={colors.primary} strokeWidth={2} />
+                  {MILESTONE_SF_SYMBOLS[milestone.type] ? (
+                    <SymbolView
+                      name={MILESTONE_SF_SYMBOLS[milestone.type]}
+                      size={20}
+                      tintColor={colors.primary}
+                      type="monochrome"
+                      animationSpec={
+                        milestone.unlocked
+                          ? { effect: { type: "pulse", wholeSymbol: true } }
+                          : undefined
+                      }
+                      fallback={<Icon size={20} color={colors.primary} strokeWidth={2} />}
+                    />
+                  ) : (
+                    <Icon size={20} color={colors.primary} strokeWidth={2} />
+                  )}
                 </View>
                 <View style={s.requirementText}>
                   <Text style={[s.requirementLabel, { color: t.textSecondary }]}>Requirement met</Text>
@@ -261,7 +289,7 @@ const s = StyleSheet.create({
   closeBtnX: {
     fontSize: 14,
     color: "#1A1A1A",
-    fontWeight: "600",
+    fontFamily: fonts.semibold,
   },
   // Note: dynamic colors (card bg, sheet bg, handle, text) applied via inline overrides using useTheme()
   badgeWrapper: {
@@ -295,7 +323,7 @@ const s = StyleSheet.create({
   },
   title: {
     fontSize: 26,
-    fontWeight: "800",
+    fontFamily: fonts.extrabold,
     color: "#1A1A1A",
     marginBottom: 24,
   },
@@ -318,14 +346,14 @@ const s = StyleSheet.create({
   },
   rarityLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   rarityValue: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#F0531C",
   },
   rarityBar: {
@@ -362,7 +390,7 @@ const s = StyleSheet.create({
   },
   requirementLabel: {
     fontSize: 11,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#9CA3AF",
     textTransform: "uppercase",
     letterSpacing: 0.8,
@@ -370,7 +398,7 @@ const s = StyleSheet.create({
   },
   requirementValue: {
     fontSize: 14,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#1A1A1A",
   },
 
@@ -391,12 +419,12 @@ const s = StyleSheet.create({
   },
   unlockLabel: {
     fontSize: 13,
-    fontWeight: "500",
+    fontFamily: fonts.medium,
     color: "#9CA3AF",
   },
   unlockDate: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: fonts.bold,
     color: "#1A1A1A",
   },
 
