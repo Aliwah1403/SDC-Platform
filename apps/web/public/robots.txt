@@ -21,3 +21,5 @@ Allow: /
 
 User-agent: Bingbot
 Allow: /
+
+Sitemap: https://www.hemo-scd.com/sitemap.xml

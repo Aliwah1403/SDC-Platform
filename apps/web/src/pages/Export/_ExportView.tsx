@@ -1,6 +1,7 @@
 import { Lock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatMl, mlNumberAndUnit } from "@/lib/hydration";
 import {
   FullExportDocument,
   type FullExportData,
@@ -193,6 +194,7 @@ function Card({
 function AtGlance({ data }: { data: FullExportData }) {
   const { stats, streak, healthLogs } = data;
   const goodDays = healthLogs.filter((l) => (l.pain_level ?? 11) <= 2).length;
+  const hydrationGoalMl = data.goals?.hydration ?? 2000;
 
   const items: { label: string; value: string; unit?: string; foot?: string; footGood?: boolean; footWarn?: boolean }[] = [
     {
@@ -208,11 +210,13 @@ function AtGlance({ data }: { data: FullExportData }) {
       footGood: true,
     },
     {
-      label: "Avg hydration",
-      value: stats.avgHydration != null ? stats.avgHydration.toFixed(1) : "—",
-      unit: "/10",
-      foot: stats.avgHydration != null && stats.avgHydration < 8 ? "below goal of 8" : undefined,
-      footWarn: stats.avgHydration != null && stats.avgHydration < 8,
+      label: "Avg fluid intake",
+      ...mlNumberAndUnit(stats.avgHydration),
+      foot:
+        stats.avgHydration != null && stats.avgHydration < hydrationGoalMl
+          ? `below goal of ${formatMl(hydrationGoalMl)}`
+          : undefined,
+      footWarn: stats.avgHydration != null && stats.avgHydration < hydrationGoalMl,
     },
     {
       label: "Good days",
@@ -549,7 +553,7 @@ function NotableDays({ data }: { data: FullExportData }) {
                       className="border-transparent"
                       style={{ background: "#D09F9A22", color: "#781D11" }}
                     >
-                      Hydration {l.hydration}/10
+                      Fluids {formatMl(l.hydration)}
                     </Badge>
                   )}
                   {(l.symptoms ?? []).map((s) => (

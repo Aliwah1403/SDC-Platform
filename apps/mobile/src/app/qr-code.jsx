@@ -166,7 +166,7 @@ export default function QRCodeScreen() {
             {loading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : null}
-            <Text style={{ fontFamily: fonts.semiBold, fontSize: 16, color: "#fff" }}>
+            <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#fff" }}>
               {loading ? "Generating…" : "Generate Emergency Card"}
             </Text>
           </TouchableOpacity>

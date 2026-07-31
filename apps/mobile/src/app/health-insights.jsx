@@ -11,7 +11,7 @@ import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { PressableScale } from "@/components/PressableScale";
 import { UnderstandingSCDRow } from "@/components/Insights/UnderstandingSCDRow";
-import { PatternRow, WatchingRow } from "@/components/Insights/patternRows";
+import { PatternRow, WatchingRow, LinearGauge } from "@/components/Insights/patternRows";
 import {
   RecapCard,
   CARD_GAP,
@@ -20,7 +20,6 @@ import {
   WEEKLY_GRADIENT,
   MONTHLY_GRADIENT,
 } from "@/components/HomeScreen/recapShared";
-import { generatePreviewHealthData, PREVIEW_TRIGGER_COUNTS } from "@/utils/previewHealthData";
 import {
   toDateStr,
   addDays,
@@ -36,12 +35,6 @@ import {
 
 const WEEKS_TO_SCAN = 12; // ~complete-90-day fetch window
 const PATTERNS_WINDOW_DAYS = 60;
-
-// DEV-ONLY: swaps real Supabase data for a rich generated sample so the hub
-// (weekly/monthly cards, "Your patterns") can be reviewed visually. Flip to
-// false — or delete this + the previewHealthData.js import — once done.
-const PREVIEW_MODE = true;
-const PREVIEW_DATA = PREVIEW_MODE ? generatePreviewHealthData() : null;
 
 function buildWeeklyRecaps(healthData) {
   const today = new Date();
@@ -99,12 +92,45 @@ function EmptyFirstRun({ daysLogged }) {
   );
 }
 
+// Reassurance state for "Your patterns" when no *correlational* pattern
+// (hydration/sleep/mood/weekday vs. pain) has unlocked yet — real data simply
+// hasn't crossed the thresholds. Card-less so it blends into the page rather
+// than reading as its own boxed-off element, whether it stands alone (whole
+// section empty) or sits above a pattern that HAS surfaced (e.g. a trigger).
+// The subtle illustration is a pair of muted "ghost" pattern rows — a short
+// label line above an all-inactive LinearGauge — hinting at what fills in here.
+function PatternsFormingState() {
+  const t = useTheme();
+  const GhostRow = ({ labelWidth, total }) => (
+    <View style={{ gap: 7 }}>
+      <View style={{ height: 9, width: labelWidth, borderRadius: 5, backgroundColor: t.border }} />
+      <LinearGauge filled={0} total={total} color={t.accent} ghost />
+    </View>
+  );
+  return (
+    <View>
+      <View style={{ gap: 14, marginBottom: 18 }}>
+        <GhostRow labelWidth="55%" total={7} />
+        <GhostRow labelWidth="42%" total={5} />
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <Sparkles size={16} color={t.accent} strokeWidth={2} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>
+          Still finding your patterns
+        </Text>
+      </View>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 20 }}>
+        Hemo checks your last 60 days for links between your habits and your pain. Keep logging daily — connections like hydration, sleep and mood show up here as they emerge.
+      </Text>
+    </View>
+  );
+}
+
 export default function HealthInsightsScreen() {
   const router = useRouter();
   const t = useTheme();
   const posthog = usePostHog();
-  const { data: realHealthData = [] } = useHealthDataQuery();
-  const healthData = PREVIEW_MODE ? PREVIEW_DATA : realHealthData;
+  const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
   const goalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
@@ -117,8 +143,7 @@ export default function HealthInsightsScreen() {
   const patternsStart = useMemo(() => addDays(new Date(), -(PATTERNS_WINDOW_DAYS - 1)), []);
   const patternsEnd = useMemo(() => new Date(), []);
   const patternsDays = useMemo(() => buildDayRange(healthData, patternsStart, patternsEnd), [healthData, patternsStart, patternsEnd]);
-  const { data: realTriggerCounts } = useTriggersQuery(toDateStr(patternsStart), toDateStr(patternsEnd));
-  const triggerCounts = PREVIEW_MODE ? PREVIEW_TRIGGER_COUNTS : realTriggerCounts;
+  const { data: triggerCounts } = useTriggersQuery(toDateStr(patternsStart), toDateStr(patternsEnd));
   const patterns = useMemo(
     () => computePatterns(patternsDays, { goalMl, triggerCounts }),
     [patternsDays, goalMl, triggerCounts],
@@ -126,6 +151,15 @@ export default function HealthInsightsScreen() {
   const watchlist = useMemo(
     () => computeWatchlist(patternsDays, { triggerCounts, activeIds: patterns.map((p) => p.id) }),
     [patternsDays, triggerCounts, patterns],
+  );
+
+  // A "correlational" pattern links a habit to pain (metric hydration/sleep/
+  // mood/pain); the trigger-frequency pattern (metric "trigger") is a tally,
+  // not a correlation. Until at least one correlational pattern unlocks, we
+  // keep the reassurance banner up so the section never reads as an empty gap.
+  const hasCorrelationalPattern = useMemo(
+    () => patterns.some((p) => p.metric !== "trigger"),
+    [patterns],
   );
 
   useEffect(() => {
@@ -248,6 +282,11 @@ export default function HealthInsightsScreen() {
             </Text>
             {patterns.length > 0 || watchlist.length > 0 ? (
               <View>
+                {!hasCorrelationalPattern && (
+                  <View style={{ marginBottom: 20 }}>
+                    <PatternsFormingState />
+                  </View>
+                )}
                 {patterns.map((p, i) => (
                   <PatternRow
                     key={p.id}
@@ -261,9 +300,7 @@ export default function HealthInsightsScreen() {
                 ))}
               </View>
             ) : (
-              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }}>
-                Patterns unlock with more logging — keep tracking daily and Hemo will start surfacing what's connected.
-              </Text>
+              <PatternsFormingState />
             )}
           </View>
 

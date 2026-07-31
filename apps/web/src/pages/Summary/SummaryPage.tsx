@@ -11,6 +11,7 @@ type TokenRow = {
   is_active: boolean;
   first_viewed_at: string | null;
   period_days: number | null;
+  label: string | null;
   data_snapshot: HealthSummaryData;
 };
 
@@ -24,7 +25,7 @@ export default function SummaryPage() {
     (async () => {
       const { data: row, error } = await supabase
         .from("export_tokens")
-        .select("mode, expires_at, is_active, first_viewed_at, period_days, data_snapshot")
+        .select("mode, expires_at, is_active, first_viewed_at, period_days, label, data_snapshot")
         .eq("token", token)
         .single<TokenRow>();
 
@@ -37,6 +38,7 @@ export default function SummaryPage() {
 
       const snapshot = row.data_snapshot;
       if (row.period_days) snapshot.periodDays = row.period_days;
+      if (row.label) snapshot.periodLabel = row.label;
       setData(snapshot);
       setState("ready");
     })();

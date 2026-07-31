@@ -1,28 +1,6 @@
 import PageWaitlistCTA from "@/components/PageWaitlistCTA";
 import { Badge } from "@/components/ui/badge";
-
-const faqs = [
-  {
-    question: "How does Hemo protect my data?",
-    answer:
-      "We design Hemo with privacy-first principles and limit sensitive data exposure. More detailed policy terms are provided on the Privacy page.",
-  },
-  {
-    question: "Is Hemo a replacement for emergency care?",
-    answer:
-      "No. Hemo is a support app for tracking and preparedness. In emergencies, contact local emergency services immediately.",
-  },
-  {
-    question: "When is Hemo launching?",
-    answer:
-      "Hemo is currently pre-launch. Waitlist members receive timing updates as milestones are reached.",
-  },
-  {
-    question: "Who is Hemo designed for?",
-    answer:
-      "Patients with SCD first, plus caregivers and clinicians who benefit from structured day-to-day health context.",
-  },
-];
+import { faqs } from "./faqData";
 
 const FaqPage = () => {
   return (
