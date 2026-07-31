@@ -4,6 +4,7 @@
 export const STATIC_ROUTES = [
   "/",
   "/features",
+  "/sickle-cell-tracking-app",
   // Disabled for now — re-enable alongside app/routes.ts and the mirror list
   // in scripts/generate-sitemap.mjs.
   // "/pricing",

@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   Heart,
   MessageCircle,
+  MessageSquareText,
   Bell,
   ShieldAlert,
   Pill,
@@ -310,7 +311,7 @@ export default function NotificationsScreen() {
         data={isLoading ? [] : sections}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40, flexGrow: 1 }}
         renderItem={({ item }) => {
           if (item._header) {
             return (
@@ -334,34 +335,72 @@ export default function NotificationsScreen() {
           return <NotificationRow item={item} theme={t} />;
         }}
         ListEmptyComponent={
-          <View
-            style={{
-              alignItems: "center",
-              paddingTop: 80,
-              paddingHorizontal: 32,
-            }}
-          >
-            <Text
+          !isLoading ? (
+            <View
               style={{
-                fontFamily: fonts.semibold,
-                fontSize: 16,
-                color: t.text,
-                marginBottom: 6,
+                flex: 1,
+                alignItems: "center",
+                justifyContent: "center",
+                paddingHorizontal: 40,
+                paddingBottom: 60,
               }}
             >
-              All caught up
-            </Text>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 14,
-                color: t.textSecondary,
-                textAlign: "center",
-              }}
-            >
-              Health reminders and community activity will appear here.
-            </Text>
-          </View>
+              <View style={{ marginBottom: 22 }}>
+                <MessageSquareText
+                  size={58}
+                  color={t.textSecondary}
+                  strokeWidth={1.5}
+                />
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -3,
+                    right: -5,
+                    minWidth: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    paddingHorizontal: 4,
+                    backgroundColor: t.background,
+                    borderWidth: 1.5,
+                    borderColor: t.textSecondary,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: 10,
+                      color: t.textSecondary,
+                    }}
+                  >
+                    0
+                  </Text>
+                </View>
+              </View>
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 18,
+                  color: t.text,
+                  marginBottom: 8,
+                }}
+              >
+                No notifications
+              </Text>
+              <Text
+                style={{
+                  fontFamily: fonts.regular,
+                  fontSize: 14,
+                  color: t.textSecondary,
+                  textAlign: "center",
+                  lineHeight: 21,
+                }}
+              >
+                We'll let you know when there's something to update you on.
+              </Text>
+            </View>
+          ) : null
         }
       />
     </View>

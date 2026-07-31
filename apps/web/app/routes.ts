@@ -12,6 +12,10 @@ export default [
     index("routes/home.tsx"),
     route("why-hemo", "routes/why-hemo.tsx"),
     route("features", "routes/features.tsx"),
+    route(
+      "sickle-cell-tracking-app",
+      "routes/sickle-cell-tracking-app.tsx",
+    ),
     // Disabled for now — re-enable alongside app/lib/site-routes.ts and the
     // mirror list in scripts/generate-sitemap.mjs.
     // route("pricing", "routes/pricing.tsx"),

@@ -1,9 +1,6 @@
 import { motion } from "framer-motion";
-import { ImageOff, MessageSquareQuote, Sparkles, ShieldCheck } from "lucide-react";
-
-// Swap this for a real screenshot of the shared summary page once one exists —
-// see the dashed placeholder below.
-const SUMMARY_SCREENSHOT_SRC = "";
+import { MessageSquareQuote, Sparkles, ShieldCheck } from "lucide-react";
+import SharedSummary from "@/assets/screenshots/shared-summary.png";
 
 const HIGHLIGHTS = [
   {
@@ -33,20 +30,11 @@ const BrowserPlaceholder = () => (
       <span className="size-2.5 rounded-full bg-[#F0531C]/60" />
       <span className="size-2.5 rounded-full bg-[#10B981]/60" />
     </div>
-    {SUMMARY_SCREENSHOT_SRC ? (
-      <img
-        src={SUMMARY_SCREENSHOT_SRC}
-        alt="Shared health summary"
-        className="block w-full"
-      />
-    ) : (
-      <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 border-2 border-dashed border-border/70 m-3 rounded-lg">
-        <ImageOff className="size-6 text-muted-foreground/60" />
-        <p className="px-6 text-center text-xs text-muted-foreground/70">
-          Screenshot placeholder — swap in a real capture of the shared summary page
-        </p>
-      </div>
-    )}
+    <img
+      src={SharedSummary}
+      alt="Shared health summary"
+      className="block w-full"
+    />
   </div>
 );
 

@@ -206,9 +206,11 @@ const FeaturesPage = () => {
         transition={{ duration: 0.55, delay: 0.2 }}
         className="mt-5 max-w-2xl text-md text-balance text-muted-foreground"
       >
-        Each feature is built around one principle: give people with Sickle Cell
-        Disease clearer control, better context, and faster access to support
-        when needed.
+        Hemo is an app for people with Sickle Cell Disease to log pain,
+        hydration, mood, sleep, and medications, spot patterns over time, and
+        prepare for every appointment. Each feature below is built around one
+        principle: give people with SCD clearer control, better context, and
+        faster access to support when needed.
       </motion.p>
 
       {/* ── Stats row ── */}

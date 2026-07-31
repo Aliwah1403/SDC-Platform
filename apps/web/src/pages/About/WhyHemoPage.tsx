@@ -60,9 +60,11 @@ const WhyHemoPage = () => {
         shouldn't be.
       </h1>
       <p className="mt-5 max-w-2xl text-lg text-muted-foreground">
-        Hemo exists because people living with Sickle Cell Disease deserve tools
-        designed for real life — not tools built for ideal conditions and
-        adapted after the fact.
+        Hemo is an app for people with Sickle Cell Disease to track pain,
+        hydration, mood, sleep, and medications, spot patterns over time, and
+        prepare for every appointment. It exists because people living with
+        SCD deserve tools designed for real life — not tools built for ideal
+        conditions and adapted after the fact.
       </p>
 
       {/* Mission */}

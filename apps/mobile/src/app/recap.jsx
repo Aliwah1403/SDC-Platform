@@ -60,17 +60,6 @@ import {
   computePatterns,
   buildMonthlyRecaps,
 } from "@/utils/recapEngine";
-import {
-  generatePreviewHealthData,
-  PREVIEW_TRIGGER_COUNTS,
-} from "@/utils/previewHealthData";
-
-// DEV-ONLY: mirrors the same flag in app/health-insights.jsx — swaps real
-// Supabase data for a rich generated sample so the weekly/monthly recap
-// screens can be reviewed visually. Flip to false (or delete this + the
-// previewHealthData.js import) once done; keep both files in sync.
-const PREVIEW_MODE = true;
-const PREVIEW_DATA = PREVIEW_MODE ? generatePreviewHealthData() : null;
 
 // Big-number stat — the hero of each section. Nested Text so the unit
 // baseline-aligns against the number instead of floating above it.
@@ -460,13 +449,10 @@ function MonthlyRecap({
     ? countChip(goodMoodDays, countGoodMoodDays(prevDays))
     : null;
 
-  const { data: realTriggerCounts } = useTriggersQuery(
+  const { data: triggerCounts } = useTriggersQuery(
     toDateStr(start),
     toDateStr(end),
   );
-  const triggerCounts = PREVIEW_MODE
-    ? PREVIEW_TRIGGER_COUNTS
-    : realTriggerCounts;
   const patterns = useMemo(
     () => computePatterns(days, { goalMl, triggerCounts }),
     [days, goalMl, triggerCounts],
@@ -675,8 +661,7 @@ export default function RecapScreen() {
   const posthog = usePostHog();
   const { period, from, start } = useLocalSearchParams();
   const { auth } = useAuthStore();
-  const { data: realHealthData = [] } = useHealthDataQuery();
-  const healthData = PREVIEW_MODE ? PREVIEW_DATA : realHealthData;
+  const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
   const { data: profile } = useProfileQuery();
   const { displayUnit } = useHydrationStore();

@@ -44,14 +44,14 @@ const HeroSection = () => {
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-          Hemo helps people living with Sickle Cell Disease log daily symptoms,
-          spot patterns over time, and show up to every appointment with the
-          health context their care team actually needs.
+          Hemo is an app for people with Sickle Cell Disease to log daily
+          symptoms, spot patterns over time, and show up to every appointment
+          with the health context their care team actually needs.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <WaitlistCTAButton
-            label="Join the waitlist — it's free"
+            label="Join the waitlist"
             size="lg"
             className="px-8"
           />

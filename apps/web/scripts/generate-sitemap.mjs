@@ -18,6 +18,7 @@ const OUT = join(here, "..", "dist", "client", "sitemap.xml");
 const STATIC_ROUTES = [
   "/",
   "/features",
+  "/sickle-cell-tracking-app",
   // Disabled for now — re-enable alongside app/routes.ts and app/lib/site-routes.ts.
   // "/pricing",
   // "/faq",

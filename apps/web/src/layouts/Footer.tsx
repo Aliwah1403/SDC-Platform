@@ -18,6 +18,7 @@ const footerLinks: { label: string; links: FooterLink[] }[] = [
     label: "Product",
     links: [
       { title: "Features", href: "/features" },
+      { title: "Sickle Cell Tracking App", href: "/sickle-cell-tracking-app" },
       // { title: "Pricing", href: "#pricing" },
       // { title: "Testimonials", href: "#testimonials" },
       // { title: "Integration", href: "/" },
