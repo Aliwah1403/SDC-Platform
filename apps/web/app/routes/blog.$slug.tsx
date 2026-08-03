@@ -1,6 +1,7 @@
 import { Link, useParams, type MetaFunction } from "react-router";
 
 import PageWaitlistCTA from "@/components/PageWaitlistCTA";
+import { Blogpost5 } from "@/components/blogpost5";
 import { noindexMeta, pageMeta, SITE_URL } from "../lib/meta";
 import { getPostBySlug } from "../lib/blog";
 
@@ -31,12 +32,35 @@ export const meta: MetaFunction = ({ params }) => {
     };
   }
 
+  // BreadcrumbList structured data, matching the on-page Home › Blog › post
+  // breadcrumb. Kept as a second JSON-LD block alongside the Article schema
+  // (pageMeta emits one <script type="application/ld+json"> per array item).
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${SITE_URL}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: fm.title,
+        item: `${SITE_URL}${path}`,
+      },
+    ],
+  };
+
   return pageMeta({
     title: fm.title,
     description: fm.description,
     path,
     ogType: "article",
-    jsonLd: articleSchema,
+    jsonLd: [articleSchema, breadcrumbSchema],
   });
 };
 
@@ -73,35 +97,23 @@ export default function BlogPostRoute() {
   const { Component, frontmatter: fm } = post;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <Link to="/blog" className="text-sm text-muted-foreground hover:text-primary">
-        ← All guides
-      </Link>
-
-      <article className="mt-6">
-        <h1 className="text-balance text-4xl font-bold sm:text-5xl">{fm.title}</h1>
-        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <span>By {fm.author}</span>
-          {fm.reviewer && (
-            <span>
-              · Medically reviewed by {fm.reviewer}
-              {fm.reviewerCredentials ? `, ${fm.reviewerCredentials}` : ""}
-            </span>
-          )}
-        </div>
-        <div className="mt-1 text-sm text-muted-foreground">
-          <span>Published {formatDate(fm.publishedAt)}</span>
-          {fm.updatedAt && fm.updatedAt !== fm.publishedAt && (
-            <span> · Updated {formatDate(fm.updatedAt)}</span>
-          )}
-        </div>
-
-        <div
-          className="mt-8 text-[15px] leading-relaxed text-foreground/90 [&_a]:text-primary [&_a]:underline [&_h2]:mt-10 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:mt-1 [&_ol]:mt-4 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:mt-4 [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-6"
-        >
-          <Component />
-        </div>
-      </article>
+    <div>
+      <Blogpost5
+        breadcrumbTitle={fm.title}
+        title={fm.title}
+        author={fm.author}
+        reviewer={fm.reviewer}
+        reviewerCredentials={fm.reviewerCredentials}
+        publishedLabel={`Published ${formatDate(fm.publishedAt)}`}
+        updatedLabel={
+          fm.updatedAt && fm.updatedAt !== fm.publishedAt
+            ? `Updated ${formatDate(fm.updatedAt)}`
+            : undefined
+        }
+        shareUrl={`${SITE_URL}/blog/${post.slug}`}
+      >
+        <Component />
+      </Blogpost5>
 
       <PageWaitlistCTA
         title="Track this with Hemo"

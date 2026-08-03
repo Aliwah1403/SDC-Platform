@@ -409,10 +409,7 @@ export default function HealthInsightsScreen() {
 
           <View style={{ marginBottom: 28 }}>
             <UnderstandingSCDRow
-              onPress={() => {
-                tap("understanding_scd");
-                router.push("/(tabs)/learn");
-              }}
+              onPress={(topic) => posthog?.capture("hub_section_tapped", { section: "understanding_scd", topic })}
             />
           </View>
 

@@ -15,59 +15,73 @@ import { ChevronLeft, Clock, AlertCircle } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { getEducationArticle, getRelatedArticles } from "@/utils/educationContent";
+import { TOPIC_IMAGES } from "@/utils/educationTopicImages";
+import { EducationCardBackground } from "@/components/EducationCardBackground";
 import { ScrollProgressPill } from "@/components/ScrollProgressPill";
 import { PressableScale } from "@/components/PressableScale";
 
 const CARD_WIDTH = 220;
+const CARD_HEIGHT = 170;
 
 function RelatedCard({ item, t, onPress }) {
+  const { imageUrl, fallbackColor } = TOPIC_IMAGES[item.topic] ?? {};
+
   return (
     <PressableScale
       onPress={onPress}
-      style={{
-        width: CARD_WIDTH,
-        borderRadius: 16,
-        backgroundColor: t.surface,
-        borderWidth: 1,
-        borderColor: t.border,
-        padding: 16,
-      }}
+      style={{ width: CARD_WIDTH, height: CARD_HEIGHT, borderRadius: 16, overflow: "hidden" }}
     >
-      <Text
-        style={{
-          fontFamily: fonts.semibold,
-          fontSize: 11,
-          letterSpacing: 1,
-          color: "#A9334D",
-          marginBottom: 8,
-        }}
+      <EducationCardBackground
+        imageUrl={imageUrl}
+        fallbackColor={fallbackColor}
+        style={{ flex: 1, padding: 16, justifyContent: "flex-end" }}
       >
-        {item.kicker}
-      </Text>
-      <Text
-        style={{
-          fontFamily: fonts.semibold,
-          fontSize: 16,
-          color: t.text,
-          lineHeight: 21,
-          marginBottom: 10,
-        }}
-        numberOfLines={2}
-      >
-        {item.title}
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Clock size={12} color={t.textSecondary} />
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.35)",
+          }}
+        />
         <Text
           style={{
-            fontFamily: fonts.medium,
-            fontSize: 12,
-            color: t.textSecondary,
+            fontFamily: fonts.semibold,
+            fontSize: 11,
+            letterSpacing: 1,
+            color: "#F8E9E7",
+            marginBottom: 8,
           }}
         >
-          {item.readTime} min read
+          {item.kicker}
         </Text>
-      </View>
+        <Text
+          style={{
+            fontFamily: fonts.semibold,
+            fontSize: 16,
+            color: "#FFFFFF",
+            lineHeight: 21,
+            marginBottom: 10,
+          }}
+          numberOfLines={2}
+        >
+          {item.title}
+        </Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <Clock size={12} color="rgba(255,255,255,0.8)" />
+          <Text
+            style={{
+              fontFamily: fonts.medium,
+              fontSize: 12,
+              color: "rgba(255,255,255,0.8)",
+            }}
+          >
+            {item.readTime} min read
+          </Text>
+        </View>
+      </EducationCardBackground>
     </PressableScale>
   );
 }

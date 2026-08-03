@@ -13,6 +13,7 @@ import {
 
 const NAV_ITEMS = [
   { name: "Features", link: "/features" },
+  { name: "Blog", link: "/blog" },
   { name: "About", link: "/why-hemo" },
   // { name: "Pricing", link: "/pricing" },
   { name: "Contact", link: "/contact" },

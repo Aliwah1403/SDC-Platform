@@ -1,7 +1,5 @@
-import { Link } from "react-router";
-
 import PageWaitlistCTA from "@/components/PageWaitlistCTA";
-import { Badge } from "@/components/ui/badge";
+import { Blog14 } from "@/components/blog14";
 import { pageMeta } from "../lib/meta";
 import { getAllPosts } from "../lib/blog";
 
@@ -27,41 +25,24 @@ function formatDate(iso: string): string {
 export default function BlogIndex() {
   const posts = getAllPosts();
 
-  return (
-    <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
-      <Badge variant="secondary">Blog</Badge>
-      <h1 className="mt-4 max-w-3xl text-balance text-4xl font-bold sm:text-5xl">
-        Sickle cell guides &amp; resources
-      </h1>
-      <p className="mt-4 max-w-3xl text-muted-foreground">
-        Practical, sourced guidance for living well with sickle cell disease.
-      </p>
+  const blogPosts = posts.map((post) => ({
+    slug: post.slug,
+    title: post.frontmatter.title,
+    description: post.frontmatter.description,
+    publishedAt: post.frontmatter.publishedAt,
+    author: post.frontmatter.author,
+    tags: post.frontmatter.tags,
+  }));
 
-      {posts.length === 0 ? (
-        <p className="mt-12 text-muted-foreground">
-          New guides are on the way — join the waitlist to hear when they land.
-        </p>
-      ) : (
-        <section className="mt-10 grid gap-4 sm:grid-cols-2">
-          {posts.map((post) => (
-            <Link
-              key={post.slug}
-              to={`/blog/${post.slug}`}
-              className="group rounded-2xl border bg-card p-6 transition-colors hover:border-primary/40"
-            >
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {formatDate(post.frontmatter.publishedAt)}
-              </p>
-              <h2 className="mt-2 text-lg font-semibold group-hover:text-primary">
-                {post.frontmatter.title}
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {post.frontmatter.description}
-              </p>
-            </Link>
-          ))}
-        </section>
-      )}
+  return (
+    <div>
+      <Blog14
+        heading="Sickle cell guides & resources"
+        description="Practical, sourced guidance for living well with sickle cell disease."
+        posts={blogPosts}
+        formatDate={formatDate}
+        emptyMessage="New guides are on the way — join the waitlist to hear when they land."
+      />
 
       <PageWaitlistCTA
         title="Get new guides as they publish"
