@@ -62,6 +62,97 @@ function LinkedinIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Self-contained share row: derives its own share links from `shareUrl`/
+// `title` and owns its own "copied" flag. Rendered twice (mobile row in the
+// single-column flow, desktop row inside the sticky sidebar) so each
+// placement manages its own copy-state independently — clicking "copy" on
+// one instance never desyncs or overwrites the other's UI.
+function ShareButtons({
+  shareUrl,
+  title,
+  className,
+}: {
+  shareUrl: string;
+  title: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard permission denied/unavailable — nothing to recover from.
+    }
+  };
+
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedTitle = encodeURIComponent(title);
+  const shareLinks = [
+    {
+      label: "Share on X",
+      icon: XIcon,
+      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
+    },
+    {
+      label: "Share on LinkedIn",
+      icon: LinkedinIcon,
+      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
+    },
+    {
+      label: "Share on Facebook",
+      icon: FacebookIcon,
+      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
+    },
+  ] as const;
+
+  return (
+    <div className={cn("flex flex-col gap-2", className)}>
+      <p className="font-medium text-muted-foreground">Share this article:</p>
+      <ul className="flex flex-wrap items-center gap-2">
+        {shareLinks.map(({ label, icon: Icon, href }) => (
+          <li key={label}>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="group rounded-full"
+              render={
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                />
+              }
+            >
+              <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+            </Button>
+          </li>
+        ))}
+        <li>
+          <Button
+            type="button"
+            variant="secondary"
+            size="icon"
+            className="group rounded-full"
+            onClick={handleCopyLink}
+            aria-label="Copy link"
+          >
+            {copied ? (
+              <Check className="h-4 w-4 text-primary" />
+            ) : (
+              <Copy className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
+            )}
+          </Button>
+        </li>
+      </ul>
+      {copied && <span className="text-xs text-primary">Link copied</span>}
+    </div>
+  );
+}
+
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -102,7 +193,6 @@ const Blogpost5 = ({
   const articleBodyRef = useRef<HTMLDivElement>(null);
   const [headings, setHeadings] = useState<TocHeading[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   // Build the TOC from the actual rendered MDX headings instead of the
   // block's original hardcoded section ids. Re-runs when the post changes
@@ -157,36 +247,6 @@ const Blogpost5 = ({
     window.history.replaceState(null, "", `#${id}`);
     setActiveId(id);
   };
-
-  const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard permission denied/unavailable — nothing to recover from.
-    }
-  };
-
-  const encodedUrl = encodeURIComponent(shareUrl);
-  const encodedTitle = encodeURIComponent(title);
-  const shareLinks = [
-    {
-      label: "Share on X",
-      icon: XIcon,
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-    },
-    {
-      label: "Share on LinkedIn",
-      icon: LinkedinIcon,
-      href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-    },
-    {
-      label: "Share on Facebook",
-      icon: FacebookIcon,
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    },
-  ] as const;
 
   return (
     <section className={cn("py-12 sm:py-16", className)}>
@@ -247,6 +307,16 @@ const Blogpost5 = ({
               >
                 {children}
               </div>
+
+              {/* Mobile share row: the desktop sidebar (aside below) is
+                  hidden below `lg`, but the user wants share buttons visible
+                  on mobile too — so this row renders here, after the article
+                  body, right before <PageWaitlistCTA /> in the parent route. */}
+              <ShareButtons
+                shareUrl={shareUrl}
+                title={title}
+                className="mt-10 lg:hidden"
+              />
             </div>
 
             <aside className="hidden h-fit flex-col gap-8 text-xs lg:sticky lg:top-8 lg:col-span-3 lg:col-start-10 lg:flex">
@@ -279,51 +349,7 @@ const Blogpost5 = ({
                 </div>
               )}
 
-              <div className="flex flex-col gap-2">
-                <p className="font-medium text-muted-foreground">
-                  Share this article:
-                </p>
-                <ul className="flex flex-wrap items-center gap-2">
-                  {shareLinks.map(({ label, icon: Icon, href }) => (
-                    <li key={label}>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="group rounded-full"
-                        render={
-                          <a
-                            href={href}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={label}
-                          />
-                        }
-                      >
-                        <Icon className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                      </Button>
-                    </li>
-                  ))}
-                  <li>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="group rounded-full"
-                      onClick={handleCopyLink}
-                      aria-label="Copy link"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-primary" />
-                      ) : (
-                        <Copy className="h-4 w-4 text-muted-foreground transition-colors group-hover:text-primary" />
-                      )}
-                    </Button>
-                  </li>
-                </ul>
-                {copied && (
-                  <span className="text-xs text-primary">Link copied</span>
-                )}
-              </div>
+              <ShareButtons shareUrl={shareUrl} title={title} />
             </aside>
           </div>
         </article>

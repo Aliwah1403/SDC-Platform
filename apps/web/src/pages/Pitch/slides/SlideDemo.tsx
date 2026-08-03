@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
-import HomeScreen from "@/assets/screenshots/home-screen.png";
+import HomeScreen from "@/assets/screenshots/home-screen.webp";
 
 // Drop a recorded clip here once it exists (an .mp4 download link — not the
 // .m3u8 manifest, which plain <video> can't parse without hls.js). Falls back

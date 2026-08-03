@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
-import DailyLog from "@/assets/screenshots/daily-log.png";
-import HealthTrends from "@/assets/screenshots/health-trends.png";
-import CareScreen from "@/assets/screenshots/care-screen.png";
+import DailyLog from "@/assets/screenshots/daily-log.webp";
+import HealthTrends from "@/assets/screenshots/health-trends.webp";
+import CareScreen from "@/assets/screenshots/care-screen.webp";
 
 const SOLUTIONS = [
   {

@@ -4,9 +4,9 @@ import WaitlistCTAButton from "@/components/WaitlistCTAButton";
 import { Iphone } from "@/components/ui/iphone";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
-import HomeScreen from "@/assets/screenshots/home-screen.png";
-import CareScreen from "@/assets/screenshots/care-screen.png";
-import Streaks from "@/assets/screenshots/streaks.png";
+import HomeScreen from "@/assets/screenshots/home-screen.webp";
+import CareScreen from "@/assets/screenshots/care-screen.webp";
+import Streaks from "@/assets/screenshots/streaks.webp";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
@@ -107,7 +107,7 @@ const HeroSection = () => {
               ease: [0.215, 0.61, 0.355, 1],
             }}
           >
-            <Iphone className="w-full" src={phone.src} />
+            <Iphone className="w-full" src={phone.src} loading="eager" />
           </motion.div>
         ))}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />

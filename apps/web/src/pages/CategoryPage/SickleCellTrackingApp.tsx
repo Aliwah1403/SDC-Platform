@@ -5,12 +5,12 @@ import PageWaitlistCTA from "@/components/PageWaitlistCTA";
 import { Badge } from "@/components/ui/badge";
 import { Iphone } from "@/components/ui/iphone";
 import { FAQScrollAccordion } from "@/components/faq-scroll-accordion";
-import DailyLogScreen from "@/assets/screenshots/daily-log.png";
-import HealthTrendsScreen from "@/assets/screenshots/health-trends.png";
-import InsightsScreen from "@/assets/screenshots/insights.png";
-import CareScreen from "@/assets/screenshots/care-screen.png";
-import StreaksScreen from "@/assets/screenshots/streaks.png";
-import HomeScreen from "@/assets/screenshots/home-screen.png";
+import DailyLogScreen from "@/assets/screenshots/daily-log.webp";
+import HealthTrendsScreen from "@/assets/screenshots/health-trends.webp";
+import InsightsScreen from "@/assets/screenshots/insights.webp";
+import CareScreen from "@/assets/screenshots/care-screen.webp";
+import StreaksScreen from "@/assets/screenshots/streaks.webp";
+import HomeScreen from "@/assets/screenshots/home-screen.webp";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 

@@ -20,12 +20,15 @@ export interface IphoneProps extends HTMLAttributes<HTMLDivElement> {
   src?: string
   videoSrc?: string
   alt?: string
+  /** Set "eager" for above-the-fold images (e.g. hero). Defaults to "lazy". */
+  loading?: "lazy" | "eager"
 }
 
 export function Iphone({
   src,
   videoSrc,
   alt = "",
+  loading = "lazy",
   className,
   style,
   ...props
@@ -79,6 +82,8 @@ export function Iphone({
           <img
             src={src}
             alt={alt}
+            loading={loading}
+            decoding="async"
             className="block size-full object-cover object-top"
           />
         </div>

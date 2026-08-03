@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MessageSquareQuote, Sparkles, ShieldCheck } from "lucide-react";
-import SharedSummary from "@/assets/screenshots/shared-summary.png";
+import SharedSummary from "@/assets/screenshots/shared-summary.webp";
 
 const HIGHLIGHTS = [
   {
