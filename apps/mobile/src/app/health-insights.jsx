@@ -276,6 +276,19 @@ export default function HealthInsightsScreen() {
         <View style={{ width: 36 }} />
       </View>
 
+      <TouchableOpacity
+        onPress={() => {
+          tap("insights_education");
+          router.push("/education-article?topic=hemo-insights&from=hub");
+        }}
+        style={{ alignSelf: "center", marginBottom: 16 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: t.accent }}>
+          Valuing the Insights →
+        </Text>
+      </TouchableOpacity>
+
       {isFirstRun ? (
         <EmptyFirstRun daysLogged={totalDaysLogged} />
       ) : (

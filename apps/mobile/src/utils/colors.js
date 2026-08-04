@@ -5,6 +5,7 @@ export const colors = {
   // ── Brand ──────────────────────────────────────────────────────────────────
   burgundy: "#A9334D",        // Primary accent — buttons, selected states
   darkBurgundy: "#781D11",   // Illustration color, welcome gradient
+  dustyRose: "#D09F9A",        // Gradient start point (main Hemo gradient)
   orange: "#F0531C",          // Secondary accent, primary CTA buttons
 
   // ── Neutrals ───────────────────────────────────────────────────────────────
@@ -29,4 +30,5 @@ export const colors = {
   burgundyBorder: "rgba(169,51,77,0.15)", // Burgundy-tinted border
   orangeTint: "rgba(240,83,28,0.08)",       // Subtle orange background — education category
   darkBurgundyTint: "rgba(120,29,17,0.08)", // Subtle dark burgundy background — education category
+  dustyRoseTint: "rgba(208,159,154,0.08)",  // Subtle dusty rose background — education category
 };
