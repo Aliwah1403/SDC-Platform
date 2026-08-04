@@ -1,7 +1,6 @@
 import { Link, useParams, type MetaFunction } from "react-router";
 
-import PageWaitlistCTA from "@/components/PageWaitlistCTA";
-import { Blogpost5 } from "@/components/blogpost5";
+import BlogPostPage from "@/pages/Blog/BlogPostPage";
 import { noindexMeta, pageMeta, SITE_URL } from "../lib/meta";
 import { getPostBySlug } from "../lib/blog";
 
@@ -97,28 +96,21 @@ export default function BlogPostRoute() {
   const { Component, frontmatter: fm } = post;
 
   return (
-    <div>
-      <Blogpost5
-        breadcrumbTitle={fm.title}
-        title={fm.title}
-        author={fm.author}
-        reviewer={fm.reviewer}
-        reviewerCredentials={fm.reviewerCredentials}
-        publishedLabel={`Published ${formatDate(fm.publishedAt)}`}
-        updatedLabel={
-          fm.updatedAt && fm.updatedAt !== fm.publishedAt
-            ? `Updated ${formatDate(fm.updatedAt)}`
-            : undefined
-        }
-        shareUrl={`${SITE_URL}/blog/${post.slug}`}
-      >
-        <Component />
-      </Blogpost5>
-
-      <PageWaitlistCTA
-        title="Track this with Hemo"
-        description="Join the waitlist for early access to Hemo, the sickle cell companion app that turns guidance like this into daily tracking."
-      />
-    </div>
+    <BlogPostPage
+      breadcrumbTitle={fm.title}
+      title={fm.title}
+      author={fm.author}
+      reviewer={fm.reviewer}
+      reviewerCredentials={fm.reviewerCredentials}
+      publishedLabel={`Published ${formatDate(fm.publishedAt)}`}
+      updatedLabel={
+        fm.updatedAt && fm.updatedAt !== fm.publishedAt
+          ? `Updated ${formatDate(fm.updatedAt)}`
+          : undefined
+      }
+      shareUrl={`${SITE_URL}/blog/${post.slug}`}
+    >
+      <Component />
+    </BlogPostPage>
   );
 }

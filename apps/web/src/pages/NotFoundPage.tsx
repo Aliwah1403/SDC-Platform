@@ -20,7 +20,7 @@ export default function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-x-hidden">
+    <div className="flex min-h-screen w-full flex-col overflow-x-clip">
       <Navigation />
       <main className="flex flex-1 flex-col items-center justify-center px-6 pt-16 pb-24 text-center">
         <motion.div
