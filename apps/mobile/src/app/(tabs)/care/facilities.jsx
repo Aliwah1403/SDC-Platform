@@ -747,7 +747,6 @@ export default function FacilitiesScreen() {
         results.forEach((f) => setPlaceDetails(f.id, f));
       } catch (err) {
         setApiError(err.message);
-        console.log("Places API Error: ", err?.message, err);
         setFacilities(mockFacilities); // graceful fallback
       } finally {
         setLoadingFacilities(false);

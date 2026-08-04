@@ -12,9 +12,8 @@ const STEP_MAP = {
   'step-6':  { step: 6,        name: 'biometrics' },
   'step-7':  { step: 7,        name: 'body_stats' },
   'step-8':  { step: 8,        name: 'hospital' },
-  'step-9':  { step: 9,        name: 'medications' },
-  'step-10': { step: 10,       name: 'health_data' },
-  'step-11': { step: 11,       name: 'notifications' },
+  'step-9':  { step: 9,        name: 'location_permission' },
+  'step-10': { step: 10,       name: 'medications' },
   'complete': { step: 'complete', name: 'complete' },
 };
 
@@ -49,7 +48,6 @@ export default function OnboardingLayout() {
       <Stack.Screen name="step-8" />
       <Stack.Screen name="step-9" />
       <Stack.Screen name="step-10" />
-      <Stack.Screen name="step-11" />
       <Stack.Screen name="complete" options={{ animation: 'fade' }} />
     </Stack>
     </>

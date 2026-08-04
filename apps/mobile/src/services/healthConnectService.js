@@ -113,7 +113,6 @@ export async function getHealthConnectStatus() {
   if (Platform.OS !== "android") return "unsupported";
   try {
     const status = await getSdkStatus();
-    console.log(`[HC] getSdkStatus raw=${status} (AVAILABLE=${SdkAvailabilityStatus.SDK_AVAILABLE})`);
     if (status === SdkAvailabilityStatus.SDK_AVAILABLE) return "available";
     if (status === SdkAvailabilityStatus.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED)
       return "update_required";
@@ -137,12 +136,10 @@ async function ensureInitialized() {
   // without a usable Health Connect install.
   const status = await getHealthConnectStatus();
   if (status !== "available") {
-    console.log(`[HC] ensureInitialized: provider status "${status}", bailing`);
     return false;
   }
   try {
     const result = await initialize();
-    console.log(`[HC] initialize() returned ${result}`);
     _initialized = result;
     return result;
   } catch (e) {
@@ -174,7 +171,6 @@ export async function requestHKAuthorization() {
   if (Platform.OS !== "android") return false;
   const ok = await ensureInitialized();
   if (!ok) throw new Error("Health Connect is not available on this device.");
-  console.log("[HC] requestPermission: launching native permission screen…");
   // 90s is generous for a user reading and tapping through the permission
   // screen, but still guarantees the promise settles if the native side hangs.
   let result;
@@ -188,10 +184,6 @@ export async function requestHKAuthorization() {
     console.error("[HC] requestPermission threw:", e?.message ?? e);
     throw e;
   }
-  console.log(
-    `[HC] requestPermission settled, granted ${result.length}:`,
-    result.map((p) => `${p.accessType}:${p.recordType}`).join(", ") || "(none)",
-  );
   const grantedSet = new Set(result.map((p) => `${p.accessType}:${p.recordType}`));
   return READ_PERMISSIONS.every((p) => grantedSet.has(`${p.accessType}:${p.recordType}`));
 }

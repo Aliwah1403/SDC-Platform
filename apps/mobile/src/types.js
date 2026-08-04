@@ -803,28 +803,3 @@ export const mockNotifications = [
     read: true,
   },
 ];
-
-// Mock emergency contacts
-export const mockEmergencyContacts = [
-  {
-    id: "1",
-    name: "Mom - Sarah Johnson",
-    relationship: "Mother",
-    phone: "+1 (555) 123-4567",
-    isPrimary: true,
-  },
-  {
-    id: "2",
-    name: "Dr. Smith",
-    relationship: "Primary Doctor",
-    phone: "+1 (555) 987-6543",
-    isPrimary: false,
-  },
-  {
-    id: "3",
-    name: "Emergency Services",
-    relationship: "Emergency",
-    phone: "+1 (555) 000-0000",
-    isPrimary: false,
-  },
-];
