@@ -546,6 +546,10 @@ function RootLayoutContent() {
             options={{ presentation: "card", headerShown: false }}
           />
           <Stack.Screen
+            name="education-category"
+            options={{ presentation: "card", headerShown: false }}
+          />
+          <Stack.Screen
             name="legal"
             options={{ presentation: "card", headerShown: false }}
           />

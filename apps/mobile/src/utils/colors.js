@@ -27,4 +27,6 @@ export const colors = {
   // ── Tints ──────────────────────────────────────────────────────────────────
   burgundyTint: "rgba(169,51,77,0.08)",   // Subtle burgundy background
   burgundyBorder: "rgba(169,51,77,0.15)", // Burgundy-tinted border
+  orangeTint: "rgba(240,83,28,0.08)",       // Subtle orange background — education category
+  darkBurgundyTint: "rgba(120,29,17,0.08)", // Subtle dark burgundy background — education category
 };

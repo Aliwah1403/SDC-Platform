@@ -1,12 +1,49 @@
 // Placeholder editorial content for the in-app education articles surfaced
 // from Insights ("Managing pain during a crisis →", "Why hydration matters in
-// SCD →"). This is dummy copy standing in for real, clinically-reviewed
-// content — swap it out once that content exists. Not medical advice; the
-// article screen renders its own disclaimer footer.
+// SCD →") and the Learn tab library. This is dummy copy standing in for
+// real, clinically-reviewed content — swap it out once that content exists.
+// Not medical advice; the article screen renders its own disclaimer footer.
+//
+// Topic slugs (article keys) and category slugs are a permanent public
+// contract — they're PostHog event properties and deep-link params. Never
+// rename or reuse one; only add new ones.
+
+// Library sections, Gentler Streak style — title + one-line description per
+// section, ordered by sortOrder. Tint tokens live in utils/colors.js.
+export const EDUCATION_CATEGORIES = {
+  "pain-crises": {
+    slug: "pain-crises",
+    title: "Pain & Crises",
+    description: "How to recognize, respond to, and recover from a crisis.",
+    tint: "burgundyTint",
+    sortOrder: 1,
+  },
+  "everyday-levers": {
+    slug: "everyday-levers",
+    title: "Everyday Levers",
+    description: "Small daily habits — hydration, sleep, movement — that add up.",
+    tint: "orangeTint",
+    sortOrder: 2,
+  },
+  "know-your-body": {
+    slug: "know-your-body",
+    title: "Know Your Body",
+    description: "Learn your personal patterns and what tends to set them off.",
+    tint: "darkBurgundyTint",
+    sortOrder: 3,
+  },
+};
+
+// An article counts as NEW for this many days after publishedAt.
+export const NEW_BADGE_WINDOW_DAYS = 14;
 
 export const EDUCATION_ARTICLES = {
   pain: {
     topic: "pain",
+    category: "pain-crises",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
     kicker: "PAIN & CRISES",
     title: "Managing pain during a crisis",
     readTime: 4,
@@ -43,6 +80,10 @@ export const EDUCATION_ARTICLES = {
   },
   hydration: {
     topic: "hydration",
+    category: "everyday-levers",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
     kicker: "HYDRATION",
     title: "Why hydration matters in SCD",
     readTime: 3,
@@ -75,6 +116,10 @@ export const EDUCATION_ARTICLES = {
   },
   sleep: {
     topic: "sleep",
+    category: "everyday-levers",
+    sortOrder: 2,
+    publishedAt: "2026-07-19",
+    isPremium: false,
     kicker: "REST & RECOVERY",
     title: "Sleep and sickle cell",
     readTime: 3,
@@ -101,6 +146,10 @@ export const EDUCATION_ARTICLES = {
   },
   triggers: {
     topic: "triggers",
+    category: "know-your-body",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
     kicker: "KNOW YOUR TRIGGERS",
     title: "Getting to know your triggers",
     readTime: 3,
@@ -127,6 +176,10 @@ export const EDUCATION_ARTICLES = {
   },
   movement: {
     topic: "movement",
+    category: "everyday-levers",
+    sortOrder: 3,
+    publishedAt: "2026-07-19",
+    isPremium: false,
     kicker: "MOVEMENT",
     title: "Moving safely with SCD",
     readTime: 3,
@@ -163,10 +216,38 @@ export function getEducationArticle(topic) {
   return EDUCATION_ARTICLES[topic] ?? null;
 }
 
-// All articles except the current one, in stable (object insertion) order —
-// used to populate the "Others you might like" carousel on the article
-// screen. Returns [] if topic is falsy/unknown, which just hides the
-// section since it's meant to show "the other N" articles.
+// All articles except the current one — used to populate the "Others you
+// might like" carousel on the article screen. Same-category articles sort
+// first (most relevant to what was just read), then everything else, each
+// group in stable (object insertion) order. Returns [] if topic is
+// falsy/unknown, which just hides the section since it's meant to show "the
+// other N" articles.
 export function getRelatedArticles(topic) {
-  return Object.values(EDUCATION_ARTICLES).filter((a) => a.topic !== topic);
+  const current = EDUCATION_ARTICLES[topic];
+  const others = Object.values(EDUCATION_ARTICLES).filter((a) => a.topic !== topic);
+  if (!current) return others;
+  const sameCategory = others.filter((a) => a.category === current.category);
+  const rest = others.filter((a) => a.category !== current.category);
+  return [...sameCategory, ...rest];
+}
+
+// Categories ordered for library display.
+export function getCategories() {
+  return Object.values(EDUCATION_CATEGORIES).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+// Articles within one category, ordered for library display.
+export function getArticlesByCategory(categorySlug) {
+  return Object.values(EDUCATION_ARTICLES)
+    .filter((a) => a.category === categorySlug)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+// Whether an article should show the NEW badge in the library.
+export function isNewArticle(article) {
+  if (!article?.publishedAt) return false;
+  const publishedMs = new Date(article.publishedAt).getTime();
+  if (Number.isNaN(publishedMs)) return false;
+  const ageDays = (Date.now() - publishedMs) / (1000 * 60 * 60 * 24);
+  return ageDays >= 0 && ageDays < NEW_BADGE_WINDOW_DAYS;
 }
