@@ -105,12 +105,9 @@ export async function lookupByName(drugName) {
  */
 export async function lookupByNDC(rawBarcode) {
   const candidates = buildNDCCandidates(rawBarcode);
-  console.log("[NDC] Candidates to try:", candidates);
 
   for (const ndc of candidates) {
-    console.log("[NDC] Querying openFDA for:", ndc);
     const result = await queryOpenFDA(ndc);
-    console.log("[NDC] Result for", ndc, "→", result ? result.brand_name || result.generic_name : "null");
     if (result) return parseFDAResult(result);
   }
   return null;

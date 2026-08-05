@@ -33,6 +33,14 @@ Rules:
 - Cover: pain trends, hydration, medication adherence, notable symptoms/triggers, and any other significant pattern
 - Assign tone accurately: danger = requires immediate clinical attention, warning = notable concern worth monitoring, info = neutral observation, success = positive or stable finding`;
 
+// Hydration is stored in ml. Reports and prompts use ml/L rather than the app's
+// "glasses" display preference — that preference is device-local, and a clinical
+// reader wants a clinical unit.
+function formatMl(ml: number | null | undefined): string {
+  if (ml == null) return "no data";
+  return ml >= 1000 ? `${(ml / 1000).toFixed(1)} L` : `${Math.round(ml)} ml`;
+}
+
 function buildUserPrompt(snapshot: Record<string, unknown>, periodDays: number): string {
   const profile = (snapshot.profile as Record<string, unknown>) ?? {};
   const stats = (snapshot.stats as Record<string, unknown>) ?? {};
@@ -42,13 +50,22 @@ function buildUserPrompt(snapshot: Record<string, unknown>, periodDays: number):
   const topTriggers = (snapshot.topTriggers as Array<{ name: string; count: number }>) ?? [];
   const healthLogs = (snapshot.healthLogs as Array<Record<string, unknown>>) ?? [];
   const patientNote = snapshot.patientNote as string | undefined;
+  // Recap shares cover a named calendar window ("June 2026") rather than a trailing
+  // "last N days", so name it for the model when we have one.
+  const periodLabel = snapshot.periodLabel as string | undefined;
 
   // Derive high-pain days from logs
   const highPainDays = healthLogs.filter((l) => (l.pain_level as number) >= 7).length;
   const zeroPainDays = healthLogs.filter((l) => (l.pain_level as number) === 0).length;
 
-  // Hydration compliance (goal = 8 glasses)
-  const hydrationGoalDays = healthLogs.filter((l) => (l.hydration as number) >= 8).length;
+  // Hydration is canonical millilitres (20260716 ml migration) and the goal is
+  // the user's own from metric_goals — not the "8 glasses" this used to assume,
+  // which after the migration matched any day with 8 ml or more.
+  const goals = (snapshot.goals as { hydration?: number } | undefined) ?? {};
+  const hydrationGoalMl = goals.hydration ?? 2000;
+  const hydrationGoalDays = healthLogs.filter(
+    (l) => (l.hydration as number) >= hydrationGoalMl,
+  ).length;
 
   // Build medication adherence lines
   const activeMeds = medications.filter((m) => m.is_active);
@@ -63,15 +80,15 @@ function buildUserPrompt(snapshot: Record<string, unknown>, periodDays: number):
   const triggerLines = topTriggers.slice(0, 5).map((t) => `- ${t.name}: ${t.count} occurrences`);
 
   return `Patient SCD type: ${profile.scd_type ?? "not specified"}
-Period: ${dateRange.start} to ${dateRange.end} (${periodDays} days)
+Period: ${periodLabel ? `${periodLabel} — ` : ""}${dateRange.start} to ${dateRange.end} (${periodDays} days)
 Days logged: ${stats.totalDaysLogged ?? 0} of ${periodDays}
 
 KEY STATS
 - Average pain: ${stats.avgPain != null ? `${stats.avgPain}/10` : "no data"}
 - High-pain days (≥7): ${highPainDays}
 - Zero-pain days: ${zeroPainDays}
-- Average hydration: ${stats.avgHydration != null ? `${stats.avgHydration}/10 glasses` : "no data"}
-- Hydration goal met (≥8 glasses): ${hydrationGoalDays}/${healthLogs.length} logged days
+- Average fluid intake: ${formatMl(stats.avgHydration as number | null)} per day
+- Fluid goal met (≥${formatMl(hydrationGoalMl)}): ${hydrationGoalDays}/${healthLogs.length} logged days
 - Average mood: ${stats.avgMood != null ? `${stats.avgMood}/10` : "no data"}
 - Average sleep: ${stats.avgSleep != null ? `${stats.avgSleep} hrs` : "no data"}
 - Average steps: ${stats.avgSteps != null ? Math.round(stats.avgSteps as number).toLocaleString() : "no data"}

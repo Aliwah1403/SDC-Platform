@@ -16,40 +16,36 @@ export const EDUCATION_COPY = {
 };
 
 // Fixed per-metric accent colors for evidence visuals — deliberately NOT
-// theme tokens (these are brand/metric identity, not text/surface colors),
-// matching the palette used elsewhere for hydration/sleep/mood.
+// theme tokens (these are brand/metric identity, not text/surface colors).
+// Drawn from the Hemo gradient palette (dusty rose → burgundy → dark burgundy)
+// so the whole "Your patterns" section reads as one brand family.
 export const METRIC_COLORS = {
-  hydration: "#A9334D",
-  sleep: "#6366F1",
-  mood: "#7C3AED",
+  hydration: "#A9334D", // Burgundy
+  sleep: "#781D11",     // Dark burgundy
+  mood: "#D09F9A",      // Dusty rose
 };
 
-export const MAX_EVIDENCE_DOTS = 14;
-
-// One-color, flat "receipt" for a dots-type pattern: filled dots in the
-// metric's color, hollow ones just an outline. Falls back to a compact
-// fraction once `total` would make for an absurdly long row.
-export function DotRow({ filled, total, color }) {
+// Linear sibling of ArcGaugeChart: same discrete filled-notch language, laid
+// out along a straight track instead of an arc. Each segment is one day, so
+// `filled` of `total` stays countable (as the old dots were) — active notches
+// in the metric's color, the rest muted like the arc gauge's inactive ticks.
+// `ghost` renders an all-empty placeholder gauge (a not-yet-unlocked pattern):
+// inactive segments use the more-visible border tone so the row still reads as
+// a gauge waiting to fill, rather than fading out on light backgrounds.
+export function LinearGauge({ filled, total, color, ghost = false }) {
   const t = useTheme();
-  if (total > MAX_EVIDENCE_DOTS) {
-    return (
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color }}>
-        {filled} of {total}
-      </Text>
-    );
-  }
+  if (total <= 0) return null;
+  const inactiveColor = ghost ? t.border : t.divider;
   return (
-    <View style={{ flexDirection: "row", gap: 5 }}>
+    <View style={{ flexDirection: "row", gap: 4, height: 8 }}>
       {Array.from({ length: total }).map((_, i) => (
         <View
           key={i}
           style={{
-            width: 10,
-            height: 10,
-            borderRadius: 5,
-            backgroundColor: i < filled ? color : "transparent",
-            borderWidth: i < filled ? 0 : 1,
-            borderColor: t.divider,
+            flex: 1,
+            borderRadius: 3,
+            backgroundColor: i < filled ? color : inactiveColor,
+            opacity: i < filled ? 1 : ghost ? 1 : 0.5,
           }}
         />
       ))}
@@ -125,7 +121,7 @@ export function PatternEvidence({ evidence, metric }) {
   if (!evidence) return null;
   if (evidence.type === "dots") {
     const color = METRIC_COLORS[metric] || "#A9334D";
-    return <DotRow filled={evidence.filled} total={evidence.total} color={color} />;
+    return <LinearGauge filled={evidence.filled} total={evidence.total} color={color} />;
   }
   if (evidence.type === "bars") {
     return <MiniBars items={evidence.items} />;
@@ -167,26 +163,28 @@ export function PatternRow({ pattern, isLast, onEducationPress }) {
   );
 }
 
-// Quiet-by-design row for a not-yet-unlocked pattern: no icon, no badge, no
-// color — just label + hint, so a sparse section reads as anticipation
-// rather than an empty lab report. Hub-only — the monthly recap never
-// renders this (a finished month can't be unlocked by logging more).
+// Row for a not-yet-unlocked pattern. Mirrors PatternRow's layout — label,
+// hint, then a muted "ghost" LinearGauge (all-inactive segments) in place of
+// real evidence — so a watched slot previews what will fill in here once data
+// arrives, rather than reading as a blank line. Hub-only — the monthly recap
+// never renders this (a finished month can't be unlocked by logging more).
 export function WatchingRow({ row, isLast }) {
   const t = useTheme();
   return (
     <View
       style={{
-        paddingVertical: 14,
+        paddingVertical: 16,
         borderBottomWidth: isLast ? 0 : 1,
         borderBottomColor: t.divider,
       }}
     >
-      <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, marginBottom: 3 }}>
+      <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text, lineHeight: 21, marginBottom: 4 }}>
         {row.label}
       </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, opacity: 0.7 }}>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 19, marginBottom: 12 }}>
         {row.hint}
       </Text>
+      <LinearGauge filled={0} total={7} color={t.accent} ghost />
     </View>
   );
 }

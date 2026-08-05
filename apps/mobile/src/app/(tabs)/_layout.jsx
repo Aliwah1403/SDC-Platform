@@ -4,6 +4,7 @@ import {
   TrendingUp,
   Users,
   HeartHandshake,
+  BookOpen,
 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
@@ -44,8 +45,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TrendingUp color={color} size={20} />,
         }}
       />
-      {/* Learn tab hidden — direction TBD */}
-      <Tabs.Screen name="learn" options={{ href: null }} />
+      <Tabs.Screen
+        name="learn"
+        options={{
+          title: "Learn",
+          tabBarIcon: ({ color }) => <BookOpen color={color} size={20} />,
+        }}
+      />
       <Tabs.Screen
         name="care"
         options={{

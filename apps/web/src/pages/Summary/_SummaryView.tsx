@@ -1,6 +1,7 @@
 import { Calendar as CalendarIcon, Lock, MessageSquareQuote, Pill } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { formatMl, mlNumberAndUnit } from "@/lib/hydration";
 import {
   HealthSummaryDocument,
   type HealthSummaryData,
@@ -33,6 +34,20 @@ const HEMO_GRADIENT =
   "linear-gradient(135deg, #D09F9A 0%, #A9334D 50%, #781D11 100%)";
 
 const PERIODS = [7, 30, 60] as const;
+
+// Recap shares cover a named calendar window; preset summaries cover a trailing
+// count of days. Every user-facing mention of the period goes through these so the
+// two never get described in each other's language.
+
+/** Noun phrase for the window: "June 2026" or "last 30 days". */
+function periodNoun(data: HealthSummaryData): string {
+  return data.periodLabel ?? `last ${data.periodDays} days`;
+}
+
+/** Prepositional phrase: "in June 2026" or "over 30 days". */
+function periodSpan(data: HealthSummaryData): string {
+  return data.periodLabel ? `in ${data.periodLabel}` : `over ${data.periodDays} days`;
+}
 
 // ── Masthead ──────────────────────────────────────────────────────────────────
 
@@ -100,7 +115,7 @@ function Masthead({
               : "text-[clamp(40px,6vw,64px)]",
           )}
         >
-          What Hemo noticed in {first}'s last {data.periodDays} days.
+          What Hemo noticed in {first}'s {periodNoun(data)}.
         </h1>
 
         {/* Period tabs + date range */}
@@ -285,10 +300,9 @@ function AtGlance({ data }: { data: HealthSummaryData }) {
       foot: "out of 10",
     },
     {
-      label: "Hydration",
-      value: (stats.avgHydration ?? 0).toFixed(1),
-      unit: "/10",
-      foot: "goal: 8/10",
+      label: "Avg fluid intake",
+      ...mlNumberAndUnit(stats.avgHydration),
+      foot: `goal: ${formatMl(data.goals?.hydration ?? 2000)}/day`,
     },
     ...(adherence != null
       ? [{
@@ -341,7 +355,7 @@ function AtGlance({ data }: { data: HealthSummaryData }) {
 // ── Patterns (symptoms + triggers) ───────────────────────────────────────────
 
 function PatternsSection({ data }: { data: HealthSummaryData }) {
-  const { topSymptoms, topTriggers, periodDays } = data;
+  const { topSymptoms, topTriggers } = data;
   if (topSymptoms.length === 0 && topTriggers.length === 0) return null;
 
   return (
@@ -350,7 +364,7 @@ function PatternsSection({ data }: { data: HealthSummaryData }) {
         {topSymptoms.length > 0 && (
           <ChartCard21
             title="Top symptoms"
-            description={`Most reported over ${periodDays} days`}
+            description={`Most reported ${periodSpan(data)}`}
             data={topSymptoms.map((s) => ({
               label: s.name,
               value: s.count,
@@ -362,7 +376,7 @@ function PatternsSection({ data }: { data: HealthSummaryData }) {
         {topTriggers.length > 0 && (
           <ChartCard21
             title="Top triggers"
-            description={`Most suspected over ${periodDays} days`}
+            description={`Most suspected ${periodSpan(data)}`}
             data={topTriggers.map((t) => ({
               label: t.name,
               value: t.count,
@@ -654,7 +668,10 @@ export default function SummaryView({
     data.profile?.nickname ||
     data.profile?.full_name?.split(" ")[0] ||
     "Patient";
-  const filename = `hemo-summary-${data.periodDays}d-${(
+  const periodSlug = data.periodLabel
+    ? data.periodLabel.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "")
+    : `${data.periodDays}d`;
+  const filename = `hemo-summary-${periodSlug}-${(
     data.profile?.full_name || "patient"
   )
     .replace(/\s+/g, "-")
@@ -672,7 +689,7 @@ export default function SummaryView({
             </span>
             <span className="size-0.75 rounded-full bg-[#1A1414]/30" />
             <span>
-              {data.periodDays}-day summary ·{" "}
+              {data.periodLabel ?? `${data.periodDays}-day summary`} ·{" "}
               {formatGeneratedAt(data.generatedAt)}
             </span>
           </>

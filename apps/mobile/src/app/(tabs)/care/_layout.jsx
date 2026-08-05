@@ -8,7 +8,6 @@ export default function CareLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="medications" />
       <Stack.Screen name="appointments" />
-      <Stack.Screen name="emergency" />
       <Stack.Screen name="care-team" />
       <Stack.Screen name="crisis-plan" />
       <Stack.Screen name="facilities" />

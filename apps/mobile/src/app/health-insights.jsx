@@ -11,7 +11,7 @@ import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { PressableScale } from "@/components/PressableScale";
 import { UnderstandingSCDRow } from "@/components/Insights/UnderstandingSCDRow";
-import { PatternRow, WatchingRow } from "@/components/Insights/patternRows";
+import { PatternRow, WatchingRow, LinearGauge } from "@/components/Insights/patternRows";
 import {
   RecapCard,
   CARD_GAP,
@@ -20,7 +20,6 @@ import {
   WEEKLY_GRADIENT,
   MONTHLY_GRADIENT,
 } from "@/components/HomeScreen/recapShared";
-import { generatePreviewHealthData, PREVIEW_TRIGGER_COUNTS } from "@/utils/previewHealthData";
 import {
   toDateStr,
   addDays,
@@ -36,12 +35,6 @@ import {
 
 const WEEKS_TO_SCAN = 12; // ~complete-90-day fetch window
 const PATTERNS_WINDOW_DAYS = 60;
-
-// DEV-ONLY: swaps real Supabase data for a rich generated sample so the hub
-// (weekly/monthly cards, "Your patterns") can be reviewed visually. Flip to
-// false — or delete this + the previewHealthData.js import — once done.
-const PREVIEW_MODE = true;
-const PREVIEW_DATA = PREVIEW_MODE ? generatePreviewHealthData() : null;
 
 function buildWeeklyRecaps(healthData) {
   const today = new Date();
@@ -72,23 +65,53 @@ function SectionHeader({ children }) {
   );
 }
 
+// Soft "word cloud" illustration for empty states — the kinds of insights that
+// will fill in, scattered with gentle rotations in warm brand tints. Purely
+// decorative (aria-hidden in spirit): no assets, just Text. Geist rather than a
+// script face, so it reads as a scattered cloud, not literal handwriting.
+const INSIGHT_WORDS = [
+  { text: "recaps",    top: 0,   left: 138, size: 16, rotate: "-8deg",  color: "#D09F9A" },
+  { text: "hydration", top: 34,  left: 32,  size: 19, rotate: "-11deg", color: "#A9334D" },
+  { text: "sleep",     top: 24,  left: 224, size: 17, rotate: "7deg",   color: "#F0531C" },
+  { text: "patterns",  top: 74,  left: 112, size: 21, rotate: "-3deg",  color: "#781D11" },
+  { text: "mood",      top: 120, left: 54,  size: 16, rotate: "9deg",   color: "#D09F9A" },
+  { text: "triggers",  top: 116, left: 198, size: 18, rotate: "-6deg",  color: "#A9334D" },
+  { text: "recovery",  top: 158, left: 128, size: 15, rotate: "5deg",   color: "#C58A93" },
+];
+
+function ScatteredWords() {
+  return (
+    <View style={{ width: 300, height: 190, marginBottom: 24 }}>
+      {INSIGHT_WORDS.map((w) => (
+        <Text
+          key={w.text}
+          style={{
+            position: "absolute",
+            top: w.top,
+            left: w.left,
+            fontFamily: fonts.medium,
+            fontSize: w.size,
+            color: w.color,
+            opacity: 0.5,
+            transform: [{ rotate: w.rotate }],
+          }}
+        >
+          {w.text}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+// Full-screen first-run state — shown before a user has logged enough (< 7
+// days) for any recap or pattern to exist yet. Deliberately takes over the
+// whole screen for a focused "you're just getting started" moment, rather
+// than stacking per-section empty states.
 function EmptyFirstRun({ daysLogged }) {
   const t = useTheme();
   return (
-    <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 24 }}>
-      <View
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: 32,
-          backgroundColor: t.surfaceElevated,
-          alignItems: "center",
-          justifyContent: "center",
-          marginBottom: 18,
-        }}
-      >
-        <Sparkles size={26} color={t.accent} strokeWidth={1.5} />
-      </View>
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, paddingBottom: 48 }}>
+      <ScatteredWords />
       <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text, textAlign: "center", marginBottom: 8 }}>
         Your first weekly recap arrives Monday
       </Text>
@@ -99,12 +122,87 @@ function EmptyFirstRun({ daysLogged }) {
   );
 }
 
+// Reassurance state for "Your patterns" when no *correlational* pattern
+// (hydration/sleep/mood/weekday vs. pain) has unlocked yet — real data simply
+// hasn't crossed the thresholds. Card-less so it blends into the page rather
+// than reading as its own boxed-off element, whether it stands alone (whole
+// section empty) or sits above a pattern that HAS surfaced (e.g. a trigger).
+// The subtle illustration is a pair of muted "ghost" pattern rows — a short
+// label line above an all-inactive LinearGauge — hinting at what fills in here.
+function PatternsFormingState() {
+  const t = useTheme();
+  const GhostRow = ({ labelWidth, total }) => (
+    <View style={{ gap: 7 }}>
+      <View style={{ height: 9, width: labelWidth, borderRadius: 5, backgroundColor: t.border }} />
+      <LinearGauge filled={0} total={total} color={t.accent} ghost />
+    </View>
+  );
+  return (
+    <View>
+      <View style={{ gap: 14, marginBottom: 18 }}>
+        <GhostRow labelWidth="55%" total={7} />
+        <GhostRow labelWidth="42%" total={5} />
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <Sparkles size={16} color={t.accent} strokeWidth={2} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>
+          Still finding your patterns
+        </Text>
+      </View>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 20 }}>
+        Hemo checks your last 60 days for links between your habits and your pain. Keep logging daily — connections like hydration, sleep and mood show up here as they emerge.
+      </Text>
+    </View>
+  );
+}
+
+// Empty state for the recaps row before any recap exists (new users — a recap
+// only gets built once a past week/month has logged days). Card-less like
+// PatternsFormingState; the subtle illustration is a pair of muted "ghost"
+// recap cards echoing the real ones' shape, so the row previews what's coming.
+function RecapsEmptyState() {
+  const t = useTheme();
+  return (
+    <View style={{ paddingHorizontal: 20 }}>
+      <View style={{ flexDirection: "row", gap: CARD_GAP, marginBottom: 18 }}>
+        {[0, 1].map((i) => (
+          <View
+            key={i}
+            style={{
+              width: MINI_CARD_WIDTH,
+              height: 116,
+              borderRadius: 18,
+              backgroundColor: t.divider,
+              padding: 14,
+              justifyContent: "flex-end",
+              gap: 7,
+              opacity: i === 0 ? 1 : 0.5,
+            }}
+          >
+            <View style={{ height: 7, width: "55%", borderRadius: 4, backgroundColor: t.border }} />
+            <View style={{ height: 11, width: "82%", borderRadius: 5, backgroundColor: t.border }} />
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+        <Sparkles size={16} color={t.accent} strokeWidth={2} />
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>
+          Your first recap is on its way
+        </Text>
+      </View>
+      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, lineHeight: 20 }}>
+        Keep logging daily — Hemo bundles each full week into a recap you can look back on. Monthly recaps follow once you've tracked your first month.
+      </Text>
+    </View>
+  );
+}
+
 export default function HealthInsightsScreen() {
   const router = useRouter();
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const posthog = usePostHog();
-  const { data: realHealthData = [] } = useHealthDataQuery();
-  const healthData = PREVIEW_MODE ? PREVIEW_DATA : realHealthData;
+  const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
   const goalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
 
@@ -117,8 +215,7 @@ export default function HealthInsightsScreen() {
   const patternsStart = useMemo(() => addDays(new Date(), -(PATTERNS_WINDOW_DAYS - 1)), []);
   const patternsEnd = useMemo(() => new Date(), []);
   const patternsDays = useMemo(() => buildDayRange(healthData, patternsStart, patternsEnd), [healthData, patternsStart, patternsEnd]);
-  const { data: realTriggerCounts } = useTriggersQuery(toDateStr(patternsStart), toDateStr(patternsEnd));
-  const triggerCounts = PREVIEW_MODE ? PREVIEW_TRIGGER_COUNTS : realTriggerCounts;
+  const { data: triggerCounts } = useTriggersQuery(toDateStr(patternsStart), toDateStr(patternsEnd));
   const patterns = useMemo(
     () => computePatterns(patternsDays, { goalMl, triggerCounts }),
     [patternsDays, goalMl, triggerCounts],
@@ -126,6 +223,15 @@ export default function HealthInsightsScreen() {
   const watchlist = useMemo(
     () => computeWatchlist(patternsDays, { triggerCounts, activeIds: patterns.map((p) => p.id) }),
     [patternsDays, triggerCounts, patterns],
+  );
+
+  // A "correlational" pattern links a habit to pain (metric hydration/sleep/
+  // mood/pain); the trigger-frequency pattern (metric "trigger") is a tally,
+  // not a correlation. Until at least one correlational pattern unlocks, we
+  // keep the reassurance banner up so the section never reads as an empty gap.
+  const hasCorrelationalPattern = useMemo(
+    () => patterns.some((p) => p.metric !== "trigger"),
+    [patterns],
   );
 
   useEffect(() => {
@@ -147,7 +253,7 @@ export default function HealthInsightsScreen() {
           flexDirection: "row",
           alignItems: "center",
           paddingHorizontal: 16,
-          paddingTop: 8,
+          paddingTop: insets.top + 8,
           paddingBottom: 16,
         }}
       >
@@ -170,6 +276,19 @@ export default function HealthInsightsScreen() {
         <View style={{ width: 36 }} />
       </View>
 
+      <TouchableOpacity
+        onPress={() => {
+          tap("insights_education");
+          router.push("/education-article?topic=hemo-insights&from=hub");
+        }}
+        style={{ alignSelf: "center", marginBottom: 16 }}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: t.accent }}>
+          Valuing the Insights →
+        </Text>
+      </TouchableOpacity>
+
       {isFirstRun ? (
         <EmptyFirstRun daysLogged={totalDaysLogged} />
       ) : (
@@ -177,11 +296,11 @@ export default function HealthInsightsScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         >
-          {weeklyRecaps.length > 0 && (
-            <View style={{ marginBottom: 28, marginHorizontal: -20 }}>
-              <View style={{ paddingHorizontal: 20 }}>
-                <SectionHeader>Weekly recaps</SectionHeader>
-              </View>
+          <View style={{ marginBottom: 28, marginHorizontal: -20 }}>
+            <View style={{ paddingHorizontal: 20 }}>
+              <SectionHeader>Weekly recaps</SectionHeader>
+            </View>
+            {weeklyRecaps.length > 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -206,8 +325,10 @@ export default function HealthInsightsScreen() {
                   />
                 ))}
               </ScrollView>
-            </View>
-          )}
+            ) : (
+              <RecapsEmptyState />
+            )}
+          </View>
 
           {monthlyRecaps.length > 0 && (
             <View style={{ marginBottom: 28, marginHorizontal: -20 }}>
@@ -248,6 +369,11 @@ export default function HealthInsightsScreen() {
             </Text>
             {patterns.length > 0 || watchlist.length > 0 ? (
               <View>
+                {!hasCorrelationalPattern && (
+                  <View style={{ marginBottom: 20 }}>
+                    <PatternsFormingState />
+                  </View>
+                )}
                 {patterns.map((p, i) => (
                   <PatternRow
                     key={p.id}
@@ -261,9 +387,7 @@ export default function HealthInsightsScreen() {
                 ))}
               </View>
             ) : (
-              <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, lineHeight: 21 }}>
-                Patterns unlock with more logging — keep tracking daily and Hemo will start surfacing what's connected.
-              </Text>
+              <PatternsFormingState />
             )}
           </View>
 
@@ -298,10 +422,7 @@ export default function HealthInsightsScreen() {
 
           <View style={{ marginBottom: 28 }}>
             <UnderstandingSCDRow
-              onPress={() => {
-                tap("understanding_scd");
-                router.push("/(tabs)/learn");
-              }}
+              onPress={(topic) => posthog?.capture("hub_section_tapped", { section: "understanding_scd", topic })}
             />
           </View>
 

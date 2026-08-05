@@ -221,7 +221,7 @@ export default function PostDetailScreen() {
           onPress={() => router.back()}
           style={{ backgroundColor: "#A9334D", paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24 }}
         >
-          <Text style={{ fontFamily: fonts.semiBold, fontSize: 14, color: "#fff" }}>Go back</Text>
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: "#fff" }}>Go back</Text>
         </TouchableOpacity>
       </View>
     );

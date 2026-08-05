@@ -7,6 +7,16 @@ const CORS_HEADERS = {
 
 const WEB_BASE_URL = Deno.env.get("WEB_BASE_URL") ?? "https://hemo-scd.com";
 
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+// Longest range a health_summary may cover. The presets top out at 60, but recap
+// shares pass whole calendar months, so allow a little headroom above 31.
+const MAX_SUMMARY_RANGE_DAYS = 92;
+
+// Inclusive day count — "1st to 30th" is 30 days, not 29.
+function spanInDays(start: string, end: string): number {
+  return Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
@@ -53,11 +63,39 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
     }
-    if (mode === "health_summary" && (!period_days || ![7, 30, 60].includes(period_days))) {
+    // A health_summary is described either by a trailing preset window (period_days,
+    // from the Health Summary screen) or by an explicit calendar range (recap shares,
+    // where the period is a past week or month rather than "the last N days").
+    const hasExplicitRange = mode === "health_summary" && !!date_range_start && !!date_range_end;
+
+    if (mode === "health_summary" && !hasExplicitRange && (!period_days || ![7, 30, 60].includes(period_days))) {
       return new Response(
-        JSON.stringify({ data: null, error: "period_days must be 7, 30, or 60 for health_summary" }),
+        JSON.stringify({
+          data: null,
+          error: "health_summary needs period_days of 7, 30, or 60 — or both date_range_start and date_range_end",
+        }),
         { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
+    }
+    if (hasExplicitRange) {
+      const validDates =
+        ISO_DATE.test(date_range_start) &&
+        ISO_DATE.test(date_range_end) &&
+        !Number.isNaN(Date.parse(date_range_start)) &&
+        !Number.isNaN(Date.parse(date_range_end));
+      if (!validDates) {
+        return new Response(
+          JSON.stringify({ data: null, error: "date_range_start and date_range_end must be YYYY-MM-DD dates" }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+        );
+      }
+      const span = spanInDays(date_range_start, date_range_end);
+      if (span < 1 || span > MAX_SUMMARY_RANGE_DAYS) {
+        return new Response(
+          JSON.stringify({ data: null, error: `Date range must cover 1 to ${MAX_SUMMARY_RANGE_DAYS} days` }),
+          { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+        );
+      }
     }
 
     // Service-role client to fetch all data
@@ -93,15 +131,28 @@ Deno.serve(async (req) => {
     }
 
     // Determine date range
-    const endDate: string = date_range_end ?? new Date().toISOString().split("T")[0];
+    const usesExplicitRange = mode === "full_export" || hasExplicitRange;
+    const endDate: string = usesExplicitRange
+      ? date_range_end
+      : new Date().toISOString().split("T")[0];
     let startDate: string;
-    if (mode === "full_export") {
+    if (usesExplicitRange) {
       startDate = date_range_start;
     } else {
       const d = new Date();
       d.setDate(d.getDate() - (period_days - 1));
       startDate = d.toISOString().split("T")[0];
     }
+
+    // Day count of the window actually covered. Explicit ranges derive it from the
+    // calendar span so "N of M days logged" and the AI prompt stay honest.
+    const effectivePeriodDays = mode === "health_summary"
+      ? (hasExplicitRange ? spanInDays(startDate, endDate) : period_days)
+      : null;
+
+    const periodLabel = typeof label === "string" && label.trim()
+      ? label.trim().slice(0, 60)
+      : null;
 
     // Fetch all data in parallel
     const [
@@ -111,6 +162,7 @@ Deno.serve(async (req) => {
       medicationsResult,
       medLogsResult,
       streakResult,
+      goalsResult,
     ] = await Promise.all([
       supabase
         .from("profiles")
@@ -148,6 +200,14 @@ Deno.serve(async (req) => {
         .select("current_streak, longest_streak, last_log_date, claimed_badges")
         .eq("user_id", user.id)
         .single(),
+      // The user's own targets — hydration is canonical ml (see the
+      // 20260716 ml migration). Reports previously hardcoded a goal of
+      // "8 glasses", which was wrong for anyone who'd changed it.
+      supabase
+        .from("metric_goals")
+        .select("hydration, sleep, steps")
+        .eq("user_id", user.id)
+        .single(),
     ]);
 
     // Abort on unexpected query errors; allow PGRST116 (no rows) for single() selects
@@ -166,6 +226,7 @@ Deno.serve(async (req) => {
     for (const [name, result] of [
       ["profile", profileResult],
       ["streak", streakResult],
+      ["goals", goalsResult],
     ] as [string, { error: { message: string; code?: string } | null }][]) {
       if (result.error && result.error.code !== NO_ROWS) {
         console.error(`${name} query failed:`, result.error);
@@ -179,6 +240,13 @@ Deno.serve(async (req) => {
     const medications = medicationsResult.data ?? [];
     const medLogs = medLogsResult.data ?? [];
     const streak = streakResult.data ?? {};
+    // Defaults mirror the app's own (metric_goals defaults: 2000 ml, 8 h, 10000
+    // steps) for users who never opened the goal screen and so have no row.
+    const goals = {
+      hydration: goalsResult.data?.hydration ?? 2000,
+      sleep: goalsResult.data?.sleep ?? 8,
+      steps: goalsResult.data?.steps ?? 10000,
+    };
 
     // Build medication adherence map: { medId: { taken: number, total: number } }
     const adherenceMap: Record<string, { taken: number; scheduled: number }> = {};
@@ -239,6 +307,10 @@ Deno.serve(async (req) => {
     const dataSnapshot = {
       generatedAt: new Date().toISOString(),
       dateRange: { start: startDate, end: endDate },
+      ...(mode === "health_summary" && effectivePeriodDays ? { periodDays: effectivePeriodDays } : {}),
+      // Human-readable name for the window ("June 2026", "9–15 Jun") — present only
+      // for recap shares, where "last N days" would misdescribe the period.
+      ...(mode === "health_summary" && periodLabel ? { periodLabel } : {}),
       ...(mode === "health_summary" && patient_note && typeof patient_note === "string" && patient_note.trim()
         ? { patientNote: patient_note.trim().slice(0, 300) }
         : {}),
@@ -250,6 +322,7 @@ Deno.serve(async (req) => {
         badgesEarned: Array.isArray(streak.claimed_badges) ? streak.claimed_badges.length : 0,
       },
       stats,
+      goals,
       topSymptoms,
       topTriggers,
       medications: medications.map((m) => ({
@@ -268,12 +341,12 @@ Deno.serve(async (req) => {
       .insert({
         user_id: user.id,
         mode,
-        date_range_start: mode === "full_export" ? startDate : null,
-        date_range_end: mode === "full_export" ? endDate : null,
-        period_days: mode === "health_summary" ? period_days : null,
+        date_range_start: usesExplicitRange ? startDate : null,
+        date_range_end: usesExplicitRange ? endDate : null,
+        period_days: effectivePeriodDays,
         data_snapshot: dataSnapshot,
         expires_at: expiresAt,
-        label: typeof label === "string" && label.trim() ? label.trim() : null,
+        label: periodLabel,
       })
       .select("token")
       .single();

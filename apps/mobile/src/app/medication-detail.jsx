@@ -1110,7 +1110,18 @@ export default function MedicationDetailScreen() {
           </Card>
 
           {/* Adherence */}
-          <SectionLabel title="Adherence" />
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <SectionLabel title="Adherence" />
+            <TouchableOpacity
+              onPress={() => router.push("/education-article?topic=hemo-adherence&from=medication_detail")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              style={{ marginBottom: 8 }}
+            >
+              <Text style={{ fontFamily: fonts.medium, fontSize: 12, color }}>
+                What's this? →
+              </Text>
+            </TouchableOpacity>
+          </View>
           <Card>
             {/* Period selector — full-width pill strip */}
             <View

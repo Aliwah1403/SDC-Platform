@@ -18,7 +18,7 @@ const SlideStart = () => {
         transition={{ duration: 0.6 }}
         className="relative flex flex-col items-center px-6 text-center"
       >
-        <img src="/logo-cream.png" alt="Hemo" className="h-20 w-20" />
+        <img src="/logo.png" alt="Hemo" className="h-20 w-20" />
         <h1 className="mt-8 text-6xl font-semibold tracking-[-0.03em] text-foreground sm:text-7xl">
           Hemo
         </h1>

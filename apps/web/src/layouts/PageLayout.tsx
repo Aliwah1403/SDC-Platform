@@ -19,7 +19,7 @@ const PageLayout = () => {
   }, [location.pathname, location.hash]);
 
   return (
-    <div className="flex min-h-screen w-full flex-col overflow-x-hidden">
+    <div className="flex min-h-screen w-full flex-col overflow-x-clip">
       <Navigation />
       <main className="flex-1 pt-16">
         <Outlet />

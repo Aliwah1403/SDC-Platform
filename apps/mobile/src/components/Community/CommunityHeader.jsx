@@ -7,7 +7,7 @@ import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 
-export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNotifications, onProfile, notificationCount = 0 }) {
+export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNotifications, onProfile, onLearnMore, notificationCount = 0 }) {
   const insets = useSafeAreaInsets();
   const t = useTheme();
 
@@ -161,6 +161,18 @@ export function CommunityHeader({ postCount, searchQuery, onSearchChange, onNoti
           </TouchableOpacity>
         )}
       </View>
+
+      {onLearnMore && (
+        <TouchableOpacity
+          onPress={onLearnMore}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={{ marginTop: 12 }}
+        >
+          <Text style={{ fontFamily: fonts.medium, fontSize: 12, color: "rgba(248,233,231,0.85)" }}>
+            How Hemo brings people together →
+          </Text>
+        </TouchableOpacity>
+      )}
     </LinearGradient>
   );
 }

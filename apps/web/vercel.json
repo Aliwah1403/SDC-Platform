@@ -1,3 +1,5 @@
 {
-  "rewrites": [{ "source": "/((?!assets/).*)", "destination": "/index.html" }]
+  "outputDirectory": "dist/client",
+  "cleanUrls": true,
+  "rewrites": [{ "source": "/(.*)", "destination": "/__spa-fallback.html" }]
 }

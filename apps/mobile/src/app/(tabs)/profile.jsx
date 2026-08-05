@@ -498,6 +498,17 @@ export default function ProfileScreen() {
   const initials = getInitials(profile?.nickname || fullName);
   const healthStreak = streak?.currentStreak ?? 0;
 
+  const handleToggleTimezoneAuto = (val) => {
+    if (val) {
+      updateProfile.mutate({
+        timezoneAuto: true,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+    } else {
+      updateProfile.mutate({ timezoneAuto: false });
+    }
+  };
+
   const handleToggleLocation = async (val) => {
     if (val) {
       const { status } = await Location.getForegroundPermissionsAsync();
@@ -665,9 +676,6 @@ export default function ProfileScreen() {
       },
     ]);
   };
-  const comingSoon = (feature) =>
-    Alert.alert(feature, `${feature} is coming soon.`);
-
   const openDobSheet = () => {
     const dob = profile?.dob;
     if (dob) {
@@ -948,7 +956,7 @@ export default function ProfileScreen() {
         section: "Reminders",
         icon: Bell,
         iconColor: "#F0531C",
-        onPress: () => comingSoon("Notifications"),
+        onPress: () => handleToggleNotifications(!notificationsEnabled),
       },
       {
         key: "export",
@@ -1011,7 +1019,7 @@ export default function ProfileScreen() {
         section: "Preferences",
         icon: Globe,
         iconColor: "#6B7280",
-        onPress: () => {},
+        onPress: () => handleToggleTimezoneAuto(!timezoneAuto),
       },
       {
         key: "timezone",
@@ -1027,7 +1035,7 @@ export default function ProfileScreen() {
         section: "Preferences",
         icon: Globe,
         iconColor: "#6B7280",
-        onPress: () => {},
+        onPress: () => handleToggleLocation(!locationEnabled),
       },
       {
         key: "password",
@@ -1589,16 +1597,7 @@ export default function ProfileScreen() {
               iconColor="#6B7280"
               label="Automatic Timezone"
               value={timezoneAuto}
-              onChange={(val) => {
-                if (val) {
-                  updateProfile.mutate({
-                    timezoneAuto: true,
-                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                  });
-                } else {
-                  updateProfile.mutate({ timezoneAuto: false });
-                }
-              }}
+              onChange={handleToggleTimezoneAuto}
             />
             {!timezoneAuto && (
               <SettingRow

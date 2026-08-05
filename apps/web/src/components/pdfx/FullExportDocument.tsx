@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, Image, StyleSheet, Svg, Rect, Defs, LinearGradient, Stop } from "@react-pdf/renderer";
 import { PdfxThemeProvider } from "../../lib/pdfx-theme-context";
 import { theme } from "../../lib/pdfx-theme";
+import { formatMl } from "../../lib/hydration";
 
 interface HealthLog {
   date: string;
@@ -77,6 +78,8 @@ export interface FullExportData {
   profile: Profile;
   streak: StreakInfo;
   stats: Stats;
+  /** The user's own targets. `hydration` is canonical ml. Absent on tokens created before goals were captured. */
+  goals?: { hydration?: number | null; sleep?: number | null; steps?: number | null };
   topSymptoms: TopItem[];
   topTriggers: TopItem[];
   medications: Medication[];
@@ -422,7 +425,7 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
           <View style={[styles.statsRow, { marginBottom: 0 }]}>
             <StatCard label="Days Logged" value={String(stats.totalDaysLogged)} />
             <StatCard label="Avg Pain" value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"} />
-            <StatCard label="Avg Hydration" value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"} />
+            <StatCard label="Avg Fluid Intake" value={formatMl(stats.avgHydration)} />
             <StatCard label="Avg Mood" value={stats.avgMood != null ? `${stats.avgMood}/5` : "—"} />
             <StatCard label="Best Streak" value={String(streak.longest)} />
           </View>
@@ -592,7 +595,7 @@ export function FullExportDocument({ data }: { data: FullExportData }) {
                   </Text>
                 </View>
                 <Text style={styles.logCell}>{log.mood != null ? `${log.mood}/5` : "—"}</Text>
-                <Text style={styles.logCell}>{log.hydration != null ? `${log.hydration}/10` : "—"}</Text>
+                <Text style={styles.logCell}>{formatMl(log.hydration)}</Text>
                 <Text style={[styles.logCell, { flex: 2 }]}>
                   {[...(log.symptoms ?? []), log.notes].filter(Boolean).join(", ") || "—"}
                 </Text>

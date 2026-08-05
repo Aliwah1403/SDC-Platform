@@ -79,7 +79,7 @@ export default function PitchPage() {
   const Slide = SLIDES[current];
 
   return (
-    <div className="dark h-screen w-screen overflow-hidden bg-background text-foreground">
+    <div className="h-screen w-screen overflow-hidden bg-background text-foreground">
       <div
         className="relative h-full w-full"
         onTouchStart={handleTouchStart}

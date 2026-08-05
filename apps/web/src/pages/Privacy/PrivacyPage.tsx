@@ -5,7 +5,7 @@ const PrivacyPage = () => {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Hero header */}
       <div className="text-center">
-        <p className="text-sm font-medium text-primary">Current as of May 21, 2026</p>
+        <p className="text-sm font-medium text-primary">Last updated: May 21, 2026</p>
         <h1 className="mt-3 text-5xl font-bold tracking-tight sm:text-6xl">Privacy Policy</h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
           Your privacy matters to us at Hemo. We respect your privacy regarding any information

@@ -1,12 +1,57 @@
 // Placeholder editorial content for the in-app education articles surfaced
 // from Insights ("Managing pain during a crisis →", "Why hydration matters in
-// SCD →"). This is dummy copy standing in for real, clinically-reviewed
-// content — swap it out once that content exists. Not medical advice; the
-// article screen renders its own disclaimer footer.
+// SCD →") and the Learn tab library. This is dummy copy standing in for
+// real, clinically-reviewed content — swap it out once that content exists.
+// Not medical advice; the article screen renders its own disclaimer footer.
+//
+// Topic slugs (article keys) and category slugs are a permanent public
+// contract — they're PostHog event properties and deep-link params. Never
+// rename or reuse one; only add new ones.
+
+// Library sections, Gentler Streak style — title + one-line description per
+// section, ordered by sortOrder. Tint tokens live in utils/colors.js.
+export const EDUCATION_CATEGORIES = {
+  "pain-crises": {
+    slug: "pain-crises",
+    title: "Pain & Crises",
+    description: "How to recognize, respond to, and recover from a crisis.",
+    tint: "burgundyTint",
+    sortOrder: 1,
+  },
+  "everyday-levers": {
+    slug: "everyday-levers",
+    title: "Everyday Levers",
+    description: "Small daily habits — hydration, sleep, movement — that add up.",
+    tint: "orangeTint",
+    sortOrder: 2,
+  },
+  "know-your-body": {
+    slug: "know-your-body",
+    title: "Know Your Body",
+    description: "Learn your personal patterns and what tends to set them off.",
+    tint: "darkBurgundyTint",
+    sortOrder: 3,
+  },
+  "using-hemo": {
+    slug: "using-hemo",
+    title: "Getting the Most from Hemo",
+    description: "How Hemo's features fit into managing your day-to-day care.",
+    tint: "dustyRoseTint",
+    sortOrder: 4,
+  },
+};
+
+// An article counts as NEW for this many days after publishedAt.
+export const NEW_BADGE_WINDOW_DAYS = 14;
 
 export const EDUCATION_ARTICLES = {
   pain: {
     topic: "pain",
+    category: "pain-crises",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1731512537426-3ff1c1541fee?q=80&w=1600&auto=format&fit=crop",
     kicker: "PAIN & CRISES",
     title: "Managing pain during a crisis",
     readTime: 4,
@@ -43,6 +88,11 @@ export const EDUCATION_ARTICLES = {
   },
   hydration: {
     topic: "hydration",
+    category: "everyday-levers",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1534616042650-80f5c9b61f09?q=80&w=1600&auto=format&fit=crop",
     kicker: "HYDRATION",
     title: "Why hydration matters in SCD",
     readTime: 3,
@@ -75,6 +125,11 @@ export const EDUCATION_ARTICLES = {
   },
   sleep: {
     topic: "sleep",
+    category: "everyday-levers",
+    sortOrder: 2,
+    publishedAt: "2026-07-19",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1613186187553-0efb12fa0c90?q=80&w=1600&auto=format&fit=crop",
     kicker: "REST & RECOVERY",
     title: "Sleep and sickle cell",
     readTime: 3,
@@ -101,6 +156,11 @@ export const EDUCATION_ARTICLES = {
   },
   triggers: {
     topic: "triggers",
+    category: "know-your-body",
+    sortOrder: 1,
+    publishedAt: "2026-07-19",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1625520997045-e3c7366ff76e?q=80&w=1600&auto=format&fit=crop",
     kicker: "KNOW YOUR TRIGGERS",
     title: "Getting to know your triggers",
     readTime: 3,
@@ -127,6 +187,11 @@ export const EDUCATION_ARTICLES = {
   },
   movement: {
     topic: "movement",
+    category: "everyday-levers",
+    sortOrder: 3,
+    publishedAt: "2026-07-19",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1602795187914-00e35334033b?q=80&w=1600&auto=format&fit=crop",
     kicker: "MOVEMENT",
     title: "Moving safely with SCD",
     readTime: 3,
@@ -157,16 +222,199 @@ export const EDUCATION_ARTICLES = {
       body: "Pause and rest immediately if you notice pain, dizziness, or shortness of breath during activity. Pushing through these signals is not the same as building endurance — it's a common way a gentle session turns into a harder day.",
     },
   },
+  "hemo-insights": {
+    topic: "hemo-insights",
+    category: "using-hemo",
+    sortOrder: 1,
+    publishedAt: "2026-08-04",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=1600&auto=format&fit=crop",
+    kicker: "INSIGHTS",
+    title: "Valuing the Insights",
+    readTime: 3,
+    intro:
+      "Insights turns weeks of logging into something you can actually use — not a diagnosis, but a mirror held up to your own data. Here's what it's really showing you, and how to get more out of it.",
+    sections: [
+      {
+        heading: "What Insights actually shows you",
+        body: "Every pattern in Insights is built from things you've logged yourself — pain, hydration, sleep, mood, triggers. When Hemo notices two of those move together often enough to be worth mentioning (like pain tending to be higher after short-sleep nights), it surfaces that as a pattern row, with the actual data behind it shown right there as evidence, not just a claim.",
+      },
+      {
+        heading: "Observations, not conclusions",
+        body: "A pattern row will always read like \"your data shows X\" rather than \"X causes Y.\" That's deliberate — Hemo isn't diagnosing you or telling you what to do about it. It's pointing at something real in your own history so you can decide what it means, ideally with your care team.",
+      },
+      {
+        heading: "Why some rows say \"still watching\"",
+        body: "Patterns need enough data to be meaningful — a single rough day doesn't make a trend. A row that says it's still watching just means Hemo hasn't seen enough logged days yet to say something with confidence. Keep logging consistently, even on good days, and it fills in on its own.",
+      },
+    ],
+    callout: {
+      title: "Bring it to your next appointment",
+      body: "The weekly and monthly recap is built to be shared — it's a quick way to show your care team what's actually been happening between visits, in your own words and your own data, instead of trying to remember it from memory.",
+    },
+  },
+  "hemo-wearables": {
+    topic: "hemo-wearables",
+    category: "using-hemo",
+    sortOrder: 2,
+    publishedAt: "2026-08-04",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1635863895875-5229b31105db?q=80&w=1600&auto=format&fit=crop",
+    kicker: "SMART WATCH",
+    title: "Tracking with a smart watch",
+    readTime: 3,
+    intro:
+      "Connecting Apple Health or Health Connect lets Hemo fill in the metrics you'd otherwise have to remember to log by hand — heart rate, sleep, steps — straight from your watch or phone.",
+    sections: [
+      {
+        heading: "Why connect a wearable",
+        body: "Pain, mood, and hydration are things only you can report — but heart rate, sleep duration, and step count are things your watch already tracks passively. Connecting it means those metrics show up in your trends automatically, so your logs cover more ground without more typing.",
+      },
+      {
+        heading: "What syncs and what doesn't",
+        body: "Once connected, Hemo pulls in your recent history and keeps syncing going forward. Exactly which metrics are available depends on your device and platform — not every watch reports every metric. The manual side of logging (pain, mood, symptoms, triggers) stays manual either way, since those aren't things a sensor can measure.",
+      },
+      {
+        heading: "Turning it on",
+        body: "Head to Settings → Apple Health (iOS) or Health Connect (Android) and grant the permissions when prompted. You can review exactly what's connected, and disconnect at any time, from that same screen.",
+      },
+    ],
+    callout: {
+      title: "Your data, your control",
+      body: "Wearable data syncs directly from Apple Health or Health Connect and is used only to enrich your own trends inside Hemo. You can disconnect at any time from Settings.",
+    },
+  },
+  "hemo-pain-status": {
+    topic: "hemo-pain-status",
+    category: "using-hemo",
+    sortOrder: 3,
+    publishedAt: "2026-08-04",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=1600&auto=format&fit=crop",
+    kicker: "PAIN STATUS",
+    title: "What is Pain Status",
+    readTime: 2,
+    intro:
+      "Pain status is Hemo's snapshot of how you're doing right now, built from the pain level you log each day. It's simple by design — a number and a color, so you can track it at a glance and see how it moves over time.",
+    sections: [
+      {
+        heading: "Rating your pain",
+        body: "When you log symptoms, you rate pain from 0 (no pain) to 10 (worst possible) using the pain orb — a simple, breathing visual that responds as you drag. You can add where it's located and any other symptoms alongside it, but the 0–10 score is what drives your pain status.",
+      },
+      {
+        heading: "The color scale",
+        body: "Your score maps to a color, from green (low) through yellow and orange to red and deep red (high) — the same scale used throughout Hemo's charts, so a glance at a color tells you roughly where a day landed without reading a number.",
+      },
+      {
+        heading: "How it becomes a trend",
+        body: "Each day's score feeds into your 7-day and monthly pain charts on the Track tab, so you can see whether things are trending up, down, or holding steady — and it's one of the inputs Insights uses to build pattern rows.",
+      },
+    ],
+    callout: {
+      title: "A conversation starter, not a diagnosis",
+      body: "Pain status reflects what you reported, nothing more — it's meant to make it easier to describe your pain history to your care team, not to replace their assessment.",
+    },
+  },
+  "hemo-adherence": {
+    topic: "hemo-adherence",
+    category: "using-hemo",
+    sortOrder: 4,
+    publishedAt: "2026-08-04",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1683718440904-d5c6cd202c76?q=80&w=1600&auto=format&fit=crop",
+    kicker: "ADHERENCE",
+    title: "Know Your Medication Adherence",
+    readTime: 2,
+    intro:
+      "Adherence tracking shows you, plainly, how consistently you've been taking each medication — a number that's easy to lose track of when you're managing more than one.",
+    sections: [
+      {
+        heading: "What adherence tracking shows",
+        body: "Each medication's detail page has an Adherence section with your percentage taken and doses missed, shown as a bar chart you can page through by day, week, month, six months, or year. It's built from the doses you've marked as taken, so the more consistently you log, the more accurate the picture.",
+      },
+      {
+        heading: "Setting it up",
+        body: "Add medications in the Care Hub with their name, dosage, and frequency — up to three during onboarding, and as many as you need afterward. Each one gets its own adherence history from the day you add it.",
+      },
+      {
+        heading: "Reminders that fit your routine",
+        body: "Medication reminders tie into your check-in time and notification settings, so a prompt to mark a dose taken shows up around when you'd actually expect to take it, not on a generic schedule.",
+      },
+    ],
+    callout: {
+      title: "Talk to your care team about changes",
+      body: "Adherence trends are for your own awareness and for conversations with your care team — never adjust, skip, or stop a medication based on what you see here without talking to your prescriber first.",
+    },
+  },
+  "hemo-community": {
+    topic: "hemo-community",
+    category: "using-hemo",
+    sortOrder: 5,
+    publishedAt: "2026-08-04",
+    isPremium: false,
+    photoUrl: "https://images.unsplash.com/photo-1755705152403-c37ed381282d?q=80&w=1600&auto=format&fit=crop",
+    kicker: "COMMUNITY",
+    title: "Finding Your People in Community",
+    readTime: 2,
+    intro:
+      "Sickle cell can be an isolating condition to live with — the pain is real but often invisible, and most people you meet day-to-day won't have any frame of reference for it. Community is Hemo's space to change that.",
+    sections: [
+      {
+        heading: "Why community matters in SCD",
+        body: "Connecting with others who actually live with SCD — not just people who've read about it — tends to help in ways clinical care alone can't: feeling less alone on a hard day, picking up a coping trick from someone who's tried it, or just being understood without having to explain everything from scratch.",
+      },
+      {
+        heading: "What you'll find in Community",
+        body: "Posts, polls, and comments from other Hemo users, organized into Popular, Recent, and Following feeds, plus categories you can follow for topics you care about. You can like, comment, save posts for later, and share your own experience whenever you're ready to.",
+      },
+      {
+        heading: "A respectful space",
+        body: "Community is peer support, not medical advice — what works for one person's SCD may not apply to yours, and posts here don't replace your care team. You're always in control of what you share, and you can save or hide posts to keep your feed feeling right for you.",
+      },
+    ],
+    callout: {
+      title: "You decide what to share",
+      body: "Post as much or as little as you're comfortable with — Community works whether you're actively sharing your story or just reading what others have gone through.",
+    },
+  },
 };
 
 export function getEducationArticle(topic) {
   return EDUCATION_ARTICLES[topic] ?? null;
 }
 
-// All articles except the current one, in stable (object insertion) order —
-// used to populate the "Others you might like" carousel on the article
-// screen. Returns [] if topic is falsy/unknown, which just hides the
-// section since it's meant to show "the other N" articles.
+// All articles except the current one — used to populate the "Others you
+// might like" carousel on the article screen. Same-category articles sort
+// first (most relevant to what was just read), then everything else, each
+// group in stable (object insertion) order. Returns [] if topic is
+// falsy/unknown, which just hides the section since it's meant to show "the
+// other N" articles.
 export function getRelatedArticles(topic) {
-  return Object.values(EDUCATION_ARTICLES).filter((a) => a.topic !== topic);
+  const current = EDUCATION_ARTICLES[topic];
+  const others = Object.values(EDUCATION_ARTICLES).filter((a) => a.topic !== topic);
+  if (!current) return others;
+  const sameCategory = others.filter((a) => a.category === current.category);
+  const rest = others.filter((a) => a.category !== current.category);
+  return [...sameCategory, ...rest];
+}
+
+// Categories ordered for library display.
+export function getCategories() {
+  return Object.values(EDUCATION_CATEGORIES).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+// Articles within one category, ordered for library display.
+export function getArticlesByCategory(categorySlug) {
+  return Object.values(EDUCATION_ARTICLES)
+    .filter((a) => a.category === categorySlug)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+// Whether an article should show the NEW badge in the library.
+export function isNewArticle(article) {
+  if (!article?.publishedAt) return false;
+  const publishedMs = new Date(article.publishedAt).getTime();
+  if (Number.isNaN(publishedMs)) return false;
+  const ageDays = (Date.now() - publishedMs) / (1000 * 60 * 60 * 24);
+  return ageDays >= 0 && ageDays < NEW_BADGE_WINDOW_DAYS;
 }

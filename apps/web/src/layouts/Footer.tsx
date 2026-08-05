@@ -11,6 +11,7 @@ type FooterLink = {
   title: string;
   href: string;
   icon?: ElementType<{ className?: string }>;
+  target?: "_blank";
 };
 
 const footerLinks: { label: string; links: FooterLink[] }[] = [
@@ -18,6 +19,7 @@ const footerLinks: { label: string; links: FooterLink[] }[] = [
     label: "Product",
     links: [
       { title: "Features", href: "/features" },
+      { title: "Sickle Cell Tracking App", href: "/sickle-cell-tracking-app" },
       // { title: "Pricing", href: "#pricing" },
       // { title: "Testimonials", href: "#testimonials" },
       // { title: "Integration", href: "/" },
@@ -32,15 +34,15 @@ const footerLinks: { label: string; links: FooterLink[] }[] = [
       { title: "Terms of Services", href: "/terms" },
     ],
   },
-  // {
-  //   label: "Resources",
-  //   links: [
-  //     { title: "Blog", href: "/blog" },
-  //     { title: "Changelog", href: "/changelog" },
-  //     { title: "Brand", href: "/brand" },
-  //     { title: "Help", href: "/help" },
-  //   ],
-  // },
+  {
+    label: "Resources",
+    links: [
+      { title: "Blog", href: "/blog" },
+      // { title: "Changelog", href: "/changelog" },
+      // { title: "Brand", href: "/brand" },
+      // { title: "Help", href: "/help" },
+    ],
+  },
   {
     label: "Social Links",
     links: [
@@ -48,21 +50,25 @@ const footerLinks: { label: string; links: FooterLink[] }[] = [
         title: "Instagram",
         href: "https://www.instagram.com/hemo_scd",
         icon: IconBrandInstagram,
+        target: "_blank",
       },
       {
         title: "Facebook",
         href: "https://www.facebook.com/share/14iFB26nd8n/?mibextid=wwXIfr",
         icon: IconBrandFacebook,
+        target: "_blank",
       },
       {
         title: "Reddit",
         href: "https://www.reddit.com/u/Hemo_scd/s/NzxLV3Eafi",
         icon: IconBrandReddit,
+        target: "_blank",
       },
       {
         title: "TikTok",
         href: "https://www.tiktok.com/@hemo_scd?_r=1&_t=ZS-970VFv4yGQ9",
         icon: IconBrandTiktok,
+        target: "_blank",
       },
     ],
   },
@@ -83,8 +89,7 @@ const Footer = () => {
           </p>
         </AnimatedContainer>
 
-        {/* restore md:grid-cols-4 when Resources + Social Links sections are uncommented */}
-        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-3 xl:col-span-2 xl:mt-0">
+        <div className="mt-10 grid grid-cols-2 gap-8 md:grid-cols-4 xl:col-span-2 xl:mt-0">
           {footerLinks.map((section, index) => (
             <AnimatedContainer key={section.label} delay={0.1 + index * 0.1}>
               <div className="mb-10 md:mb-0">
@@ -94,8 +99,12 @@ const Footer = () => {
                     <li key={link.title}>
                       <a
                         href={link.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        target={link.target}
+                        rel={
+                          link.target === "_blank"
+                            ? "noopener noreferrer"
+                            : undefined
+                        }
                         className="hover:text-[#A9334D] inline-flex items-center transition-all duration-300"
                       >
                         {link.icon && <link.icon className="me-1 size-4" />}

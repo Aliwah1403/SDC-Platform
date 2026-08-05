@@ -13,6 +13,7 @@ import {
 } from "@react-pdf/renderer";
 import { PdfxThemeProvider } from "../../lib/pdfx-theme-context";
 import { theme } from "../../lib/pdfx-theme";
+import { formatMl } from "../../lib/hydration";
 import { PdfAlert } from "./alert/pdfx-alert";
 
 interface Medication {
@@ -70,9 +71,13 @@ export interface HealthSummaryData {
   generatedAt: string;
   dateRange: { start: string; end: string };
   periodDays: number;
+  /** Name of the window for recap shares ("June 2026"). Absent for the trailing presets. */
+  periodLabel?: string;
   profile: Profile;
   streak: StreakInfo;
   stats: Stats;
+  /** The user's own targets. `hydration` is canonical ml. Absent on tokens created before goals were captured. */
+  goals?: { hydration?: number | null; sleep?: number | null; steps?: number | null };
   topSymptoms: TopItem[];
   topTriggers: TopItem[];
   medications: Medication[];
@@ -323,6 +328,7 @@ export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
     aiInsights,
     dateRange,
     periodDays,
+    periodLabel,
   } = data;
   const name = profile.full_name || profile.nickname || "Patient";
   const period = `${fmt(dateRange.start)} – ${fmt(dateRange.end)}`;
@@ -360,7 +366,7 @@ export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
                   marginBottom: 4,
                 }}
               >
-                {`Last ${periodDays} Days`}
+                {periodLabel ?? `Last ${periodDays} Days`}
               </Text>
               <Text
                 style={{ fontSize: 10, fontFamily: "Helvetica", color: MUTED }}
@@ -454,8 +460,8 @@ export function HealthSummaryDocument({ data }: { data: HealthSummaryData }) {
               value={stats.avgPain != null ? `${stats.avgPain}/10` : "—"}
             />
             <StatCard
-              label="Avg Hydration"
-              value={stats.avgHydration != null ? `${stats.avgHydration}/10` : "—"}
+              label="Avg Fluid Intake"
+              value={formatMl(stats.avgHydration)}
             />
             <StatCard
               label="Avg Mood"

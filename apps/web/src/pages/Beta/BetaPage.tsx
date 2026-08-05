@@ -11,8 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Iphone } from "@/components/ui/iphone";
-import HomeScreen from "@/assets/screenshots/home-screen.png";
-import HealthTrends from "@/assets/screenshots/health-trends.png";
+import HomeScreen from "@/assets/screenshots/home-screen.webp";
+import HealthTrends from "@/assets/screenshots/health-trends.webp";
 
 const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 if (!_supabaseUrl) {

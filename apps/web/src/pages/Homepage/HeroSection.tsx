@@ -4,9 +4,9 @@ import WaitlistCTAButton from "@/components/WaitlistCTAButton";
 import { Iphone } from "@/components/ui/iphone";
 import { Button } from "@/components/ui/button";
 import { SocialProofAvatars } from "@/components/ui/social-proof-avatars";
-import HomeScreen from "@/assets/screenshots/home-screen.png";
-import CareScreen from "@/assets/screenshots/care-screen.png";
-import Streaks from "@/assets/screenshots/streaks.png";
+import HomeScreen from "@/assets/screenshots/home-screen.webp";
+import CareScreen from "@/assets/screenshots/care-screen.webp";
+import Streaks from "@/assets/screenshots/streaks.webp";
 
 // Center phone animates in first, sides fan out after with a slight delay
 const PHONES = [
@@ -44,14 +44,14 @@ const HeroSection = () => {
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
-          Hemo helps people living with Sickle Cell Disease log daily symptoms,
-          spot patterns over time, and show up to every appointment with the
-          health context their care team actually needs.
+          Hemo is an app for people with Sickle Cell Disease to log daily
+          symptoms, spot patterns over time, and show up to every appointment
+          with the health context their care team actually needs.
         </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <WaitlistCTAButton
-            label="Join the waitlist — it's free"
+            label="Join the waitlist"
             size="lg"
             className="px-8"
           />
@@ -107,7 +107,7 @@ const HeroSection = () => {
               ease: [0.215, 0.61, 0.355, 1],
             }}
           >
-            <Iphone className="w-full" src={phone.src} />
+            <Iphone className="w-full" src={phone.src} loading="eager" />
           </motion.div>
         ))}
         <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />

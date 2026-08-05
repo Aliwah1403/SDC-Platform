@@ -77,7 +77,7 @@ function StatusBadge({ export: exp }) {
       >
         <Text
           style={{
-            fontFamily: fonts.semiBold,
+            fontFamily: fonts.semibold,
             fontSize: 11,
             color: t.textSecondary,
           }}
@@ -98,7 +98,7 @@ function StatusBadge({ export: exp }) {
         }}
       >
         <Text
-          style={{ fontFamily: fonts.semiBold, fontSize: 11, color: "#92400E" }}
+          style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#92400E" }}
         >
           Expired
         </Text>
@@ -115,7 +115,7 @@ function StatusBadge({ export: exp }) {
       }}
     >
       <Text
-        style={{ fontFamily: fonts.semiBold, fontSize: 11, color: "#065F46" }}
+        style={{ fontFamily: fonts.semibold, fontSize: 11, color: "#065F46" }}
       >
         Active
       </Text>
@@ -354,7 +354,7 @@ export default function HealthExportScreen() {
             <Plus size={14} color="#fff" strokeWidth={2.5} />
             <Text
               style={{
-                fontFamily: fonts.semiBold,
+                fontFamily: fonts.semibold,
                 fontSize: 13,
                 color: "#fff",
               }}
@@ -376,7 +376,7 @@ export default function HealthExportScreen() {
           {/* Date range */}
           <Text
             style={{
-              fontFamily: fonts.semiBold,
+              fontFamily: fonts.semibold,
               fontSize: 13,
               color: t.textSecondary,
               marginBottom: 10,
@@ -419,7 +419,7 @@ export default function HealthExportScreen() {
                 >
                   <Text
                     style={{
-                      fontFamily: active ? fonts.semiBold : fonts.regular,
+                      fontFamily: active ? fonts.semibold : fonts.regular,
                       fontSize: 13,
                       color: active ? "#fff" : t.text,
                     }}
@@ -434,7 +434,7 @@ export default function HealthExportScreen() {
           {/* Link expiry */}
           <Text
             style={{
-              fontFamily: fonts.semiBold,
+              fontFamily: fonts.semibold,
               fontSize: 13,
               color: t.textSecondary,
               marginBottom: 10,
@@ -477,7 +477,7 @@ export default function HealthExportScreen() {
                 >
                   <Text
                     style={{
-                      fontFamily: active ? fonts.semiBold : fonts.regular,
+                      fontFamily: active ? fonts.semibold : fonts.regular,
                       fontSize: 13,
                       color: active ? "#fff" : t.text,
                     }}
@@ -492,7 +492,7 @@ export default function HealthExportScreen() {
           {/* Optional label */}
           <Text
             style={{
-              fontFamily: fonts.semiBold,
+              fontFamily: fonts.semibold,
               fontSize: 13,
               color: t.textSecondary,
               marginBottom: 10,
@@ -568,7 +568,7 @@ export default function HealthExportScreen() {
             )}
             <Text
               style={{
-                fontFamily: fonts.semiBold,
+                fontFamily: fonts.semibold,
                 fontSize: 16,
                 color: "#fff",
               }}
@@ -627,7 +627,7 @@ export default function HealthExportScreen() {
               </View>
               <Text
                 style={{
-                  fontFamily: fonts.semiBold,
+                  fontFamily: fonts.semibold,
                   fontSize: 16,
                   color: t.text,
                   textAlign: "center",
@@ -660,7 +660,7 @@ export default function HealthExportScreen() {
               >
                 <Text
                   style={{
-                    fontFamily: fonts.semiBold,
+                    fontFamily: fonts.semibold,
                     fontSize: 14,
                     color: "#fff",
                   }}
@@ -698,7 +698,7 @@ export default function HealthExportScreen() {
                       <View style={{ flex: 1, marginRight: 8 }}>
                         {exp.label ? (
                           <>
-                            <Text style={{ fontFamily: fonts.semiBold, fontSize: 14, color: t.text }}>
+                            <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.text }}>
                               {exp.label}
                             </Text>
                             <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 1 }}>
@@ -706,7 +706,7 @@ export default function HealthExportScreen() {
                             </Text>
                           </>
                         ) : (
-                          <Text style={{ fontFamily: fonts.semiBold, fontSize: 14, color: t.text }}>
+                          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.text }}>
                             {fmt(exp.date_range_start)} – {fmt(exp.date_range_end)}
                           </Text>
                         )}
@@ -772,7 +772,7 @@ export default function HealthExportScreen() {
                 style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: t.isDark ? `${t.text}10` : "#fff", borderRadius: 12, paddingVertical: 13, borderWidth: 1, borderColor: t.isDark ? `${t.text}18` : BORDER }}
               >
                 <Copy size={16} color={BURGUNDY} strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 15, color: t.text }}>Copy</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text }}>Copy</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -788,7 +788,7 @@ export default function HealthExportScreen() {
                 style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: BURGUNDY, borderRadius: 12, paddingVertical: 13 }}
               >
                 <Share2 size={16} color="#fff" strokeWidth={2} />
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 15, color: "#fff" }}>Share</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: "#fff" }}>Share</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -823,7 +823,7 @@ export default function HealthExportScreen() {
                 <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.background, alignItems: "center", justifyContent: "center" }}>
                   <Share2 size={18} color={BURGUNDY} />
                 </View>
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 16, color: t.text }}>Share Link</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}>Share Link</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -833,7 +833,7 @@ export default function HealthExportScreen() {
                 <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: t.background, alignItems: "center", justifyContent: "center" }}>
                   <Copy size={18} color={BURGUNDY} />
                 </View>
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 16, color: t.text }}>Copy to Clipboard</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: t.text }}>Copy to Clipboard</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -843,7 +843,7 @@ export default function HealthExportScreen() {
                 <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: "#FEF2F2", alignItems: "center", justifyContent: "center" }}>
                   <Trash2 size={18} color="#DC2626" />
                 </View>
-                <Text style={{ fontFamily: fonts.semiBold, fontSize: 16, color: "#DC2626" }}>Revoke Link</Text>
+                <Text style={{ fontFamily: fonts.semibold, fontSize: 16, color: "#DC2626" }}>Revoke Link</Text>
               </TouchableOpacity>
             </>
           )}

@@ -5,7 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { PenLine } from "lucide-react-native";
+import { PenLine, Bookmark, Users, Search, Clock, Flame } from "lucide-react-native";
 import { CommunityHeader } from "@/components/Community/CommunityHeader";
 import { FeedFilter } from "@/components/Community/FeedFilter";
 import { PostCard } from "@/components/Community/PostCard";
@@ -33,13 +33,75 @@ const SKELETON_DATA = [
   { id: "sk3", _skeleton: true },
 ];
 
-const EMPTY_MESSAGES = {
-  popular: "No posts yet. Be the first to share!",
-  recent: "No posts yet.",
-  following: null, // handled separately
-  mine: "You haven't posted yet.\nTap the button below to share.",
-  saved: "No saved posts yet.\nTap the bookmark on any post to save it.",
+// Per-feed empty states — same centered icon/title/subtitle design as the
+// notifications screen, each with a fitting icon. `following` is handled
+// separately (it carries a CTA button).
+const FEED_EMPTY = {
+  popular: {
+    Icon: Flame,
+    title: "No posts yet",
+    subtitle: "Be the first to share something with the community.",
+  },
+  recent: {
+    Icon: Clock,
+    title: "No posts yet",
+    subtitle: "New posts will show up here as they're shared.",
+  },
+  mine: {
+    Icon: PenLine,
+    title: "You haven't posted yet",
+    subtitle: "Tap the compose button to share your first post.",
+  },
+  saved: {
+    Icon: Bookmark,
+    title: "No saved posts yet",
+    subtitle: "Tap the bookmark on any post to save it here.",
+  },
 };
+
+// Shared centered empty state — mirrors the notifications screen. `children`
+// slot lets a feed add a CTA (e.g. Following's "Browse communities").
+function CommunityEmptyState({ Icon, title, subtitle, children }) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 40,
+        paddingVertical: 60,
+      }}
+    >
+      <View style={{ marginBottom: 20 }}>
+        <Icon size={56} color={t.textSecondary} strokeWidth={1.5} />
+      </View>
+      <Text
+        style={{
+          fontFamily: fonts.bold,
+          fontSize: 18,
+          color: t.text,
+          marginBottom: 8,
+          textAlign: "center",
+        }}
+      >
+        {title}
+      </Text>
+      <Text
+        style={{
+          fontFamily: fonts.regular,
+          fontSize: 14,
+          color: t.textSecondary,
+          textAlign: "center",
+          lineHeight: 21,
+        }}
+      >
+        {subtitle}
+      </Text>
+      {children}
+    </View>
+  );
+}
 
 export default function CommunityFeedScreen() {
   const router = useRouter();
@@ -117,16 +179,15 @@ export default function CommunityFeedScreen() {
 
   function renderEmptyFollowing() {
     return (
-      <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-        <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: t.text, marginBottom: 8 }}>
-          No communities followed yet
-        </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", marginBottom: 20 }}>
-          Follow communities to see their posts here.
-        </Text>
+      <CommunityEmptyState
+        Icon={Users}
+        title="No communities followed yet"
+        subtitle="Follow communities to see their posts here."
+      >
         <TouchableOpacity
           onPress={() => router.push("/community/categories")}
           style={{
+            marginTop: 20,
             backgroundColor: "#A9334D",
             borderRadius: 12,
             paddingHorizontal: 24,
@@ -137,7 +198,7 @@ export default function CommunityFeedScreen() {
             Browse communities
           </Text>
         </TouchableOpacity>
-      </View>
+      </CommunityEmptyState>
     );
   }
 
@@ -151,6 +212,7 @@ export default function CommunityFeedScreen() {
         onSearchChange={setSearchQuery}
         onNotifications={() => router.push("/notifications")}
         onProfile={() => router.push("/(tabs)/profile")}
+        onLearnMore={() => router.push("/education-article?topic=hemo-community&from=community")}
         notificationCount={notificationCount}
       />
       <FeedFilter active={activeFeed} onSelect={handleFeedChange} />
@@ -159,7 +221,7 @@ export default function CommunityFeedScreen() {
         <FlatList
           data={listData}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingTop: 12, paddingBottom: 100 }}
+          contentContainerStyle={{ paddingTop: 12, paddingBottom: 100, flexGrow: 1 }}
           showsVerticalScrollIndicator={false}
           onRefresh={onRefresh}
           refreshing={false}
@@ -175,17 +237,18 @@ export default function CommunityFeedScreen() {
             !refreshing ? (
               activeFeed === "following" ? (
                 renderEmptyFollowing()
+              ) : searchQuery ? (
+                <CommunityEmptyState
+                  Icon={Search}
+                  title="No results"
+                  subtitle={`No posts match "${searchQuery}".`}
+                />
               ) : (
-                <View style={{ alignItems: "center", paddingTop: 60, paddingHorizontal: 32 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: 17, color: t.text, marginBottom: 8 }}>
-                    Nothing here yet
-                  </Text>
-                  <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center" }}>
-                    {searchQuery
-                      ? `No results for "${searchQuery}"`
-                      : EMPTY_MESSAGES[activeFeed]}
-                  </Text>
-                </View>
+                <CommunityEmptyState
+                  Icon={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).Icon}
+                  title={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).title}
+                  subtitle={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).subtitle}
+                />
               )
             ) : null
           }

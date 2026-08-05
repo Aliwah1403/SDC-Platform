@@ -14,7 +14,7 @@ const DUMMY: HealthSummaryData = {
     blood_type: "O+",
   },
   streak: { current: 7, longest: 23, badgesEarned: 5 },
-  stats: { totalDaysLogged: 24, avgPain: 3.4, avgHydration: 6.2, avgMood: 3.1, avgSleep: 7.2, avgSteps: 4800, avgHeartRate: 78 },
+  stats: { totalDaysLogged: 24, avgPain: 3.4, avgHydration: 1550, avgMood: 3.1, avgSleep: 7.2, avgSteps: 4800, avgHeartRate: 78 },
   topSymptoms: [
     { name: "Fatigue", count: 14 },
     { name: "Joint pain", count: 11 },
@@ -49,7 +49,7 @@ const DUMMY: HealthSummaryData = {
     {
       metric: "Hydration",
       headline: "Hydration is below target on your high-pain days — there's a clear pattern here",
-      detail: "On your 5 highest-pain days, average hydration was 4/10 versus 7.5/10 on low-pain days. Dehydration is one of the most controllable sickle cell crisis triggers. Aim for at least 8–10 cups daily.",
+      detail: "On your 5 highest-pain days, average fluid intake was 1.0 L versus 1.9 L on low-pain days. Dehydration is one of the most controllable sickle cell crisis triggers. Aim for at least 2 L daily.",
       tone: "warning",
     },
     {

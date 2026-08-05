@@ -36,6 +36,7 @@ import {
   MONTHLY_CARD_WIDTH,
   MONTHLY_GRADIENT,
 } from "@/components/HomeScreen/recapShared";
+import ShareRecapSheet from "@/components/HomeScreen/ShareRecapSheet";
 import {
   parseDateStr,
   toDateStr,
@@ -59,17 +60,6 @@ import {
   computePatterns,
   buildMonthlyRecaps,
 } from "@/utils/recapEngine";
-import {
-  generatePreviewHealthData,
-  PREVIEW_TRIGGER_COUNTS,
-} from "@/utils/previewHealthData";
-
-// DEV-ONLY: mirrors the same flag in app/health-insights.jsx — swaps real
-// Supabase data for a rich generated sample so the weekly/monthly recap
-// screens can be reviewed visually. Flip to false (or delete this + the
-// previewHealthData.js import) once done; keep both files in sync.
-const PREVIEW_MODE = true;
-const PREVIEW_DATA = PREVIEW_MODE ? generatePreviewHealthData() : null;
 
 // Big-number stat — the hero of each section. Nested Text so the unit
 // baseline-aligns against the number instead of floating above it.
@@ -459,13 +449,10 @@ function MonthlyRecap({
     ? countChip(goodMoodDays, countGoodMoodDays(prevDays))
     : null;
 
-  const { data: realTriggerCounts } = useTriggersQuery(
+  const { data: triggerCounts } = useTriggersQuery(
     toDateStr(start),
     toDateStr(end),
   );
-  const triggerCounts = PREVIEW_MODE
-    ? PREVIEW_TRIGGER_COUNTS
-    : realTriggerCounts;
   const patterns = useMemo(
     () => computePatterns(days, { goalMl, triggerCounts }),
     [days, goalMl, triggerCounts],
@@ -674,8 +661,7 @@ export default function RecapScreen() {
   const posthog = usePostHog();
   const { period, from, start } = useLocalSearchParams();
   const { auth } = useAuthStore();
-  const { data: realHealthData = [] } = useHealthDataQuery();
-  const healthData = PREVIEW_MODE ? PREVIEW_DATA : realHealthData;
+  const { data: healthData = [] } = useHealthDataQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
   const { data: profile } = useProfileQuery();
   const { displayUnit } = useHydrationStore();
@@ -704,13 +690,43 @@ export default function RecapScreen() {
     router.push(
       `/education-article?topic=${topic}&from=${isMonth ? "recap_month" : "recap_week"}`,
     );
-  const goToShare = () => {
+
+  const [shareSheetVisible, setShareSheetVisible] = useState(false);
+  const openShareSheet = (source) => {
     posthog?.capture("share_recap_tapped", {
       period: isMonth ? "month" : "week",
-      from: "recap_header",
+      from: source,
     });
-    router.push("/share-summary");
+    setShareSheetVisible(true);
   };
+
+  // Exact dates + label for the share sheet — same date math bigTitle below
+  // uses, so the period offered to share can never drift from the title the
+  // user is looking at. toDateStr formats in local time (unlike
+  // toISOString, which would shift the day across timezones).
+  const sharePeriod = useMemo(() => {
+    const parsed = start ? parseDateStr(start) : null;
+    const referenceDate =
+      parsed && !Number.isNaN(parsed.getTime()) ? parsed : new Date();
+    if (isMonth) {
+      const firstOfMonth = new Date(
+        referenceDate.getFullYear(),
+        referenceDate.getMonth(),
+        1,
+      );
+      const { start: mStart, end: mEnd } = monthRange(firstOfMonth);
+      return {
+        start: toDateStr(mStart),
+        end: toDateStr(mEnd),
+        label: formatMonthLabel(firstOfMonth),
+      };
+    }
+    const { start: wStart, end: wEnd } = weekRange(
+      startOfWeekMonday(referenceDate),
+    );
+    const label = `Week of ${wStart.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`;
+    return { start: toDateStr(wStart), end: toDateStr(wEnd), label };
+  }, [isMonth, start]);
 
   // Big title shown in the hero and (shortened to just this) in the compact
   // sticky nav once scrolled — same date math the recap bodies use below,
@@ -845,7 +861,10 @@ export default function RecapScreen() {
             >
               <ChevronLeft size={20} color={t.text} strokeWidth={2} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={goToShare} style={backBtnStyle}>
+            <TouchableOpacity
+              onPress={() => openShareSheet("recap_header")}
+              style={backBtnStyle}
+            >
               <Share2 size={18} color={t.text} strokeWidth={2} />
             </TouchableOpacity>
           </View>
@@ -909,7 +928,10 @@ export default function RecapScreen() {
         >
           {bigTitle}
         </Text>
-        <TouchableOpacity onPress={goToShare} style={backBtnStyle}>
+        <TouchableOpacity
+          onPress={() => openShareSheet("recap_header")}
+          style={backBtnStyle}
+        >
           <Share2 size={18} color={t.text} strokeWidth={2} />
         </TouchableOpacity>
       </Animated.View>
@@ -948,10 +970,18 @@ export default function RecapScreen() {
 
           <ShareButton
             label={isMonth ? "Share this month" : "Share this week"}
-            onPress={() => router.push("/share-summary")}
+            onPress={() => openShareSheet("recap_button")}
           />
         </MotiView>
       </Animated.ScrollView>
+
+      <ShareRecapSheet
+        isVisible={shareSheetVisible}
+        onClose={() => setShareSheetVisible(false)}
+        periodStart={sharePeriod.start}
+        periodEnd={sharePeriod.end}
+        label={sharePeriod.label}
+      />
     </View>
   );
 }

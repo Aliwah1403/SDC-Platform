@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 import { Iphone } from "@/components/ui/iphone";
-import CareScreen from "@/assets/screenshots/care-screen.png";
-import HealthTrends from "@/assets/screenshots/health-trends.png";
-import Streaks from "@/assets/screenshots/streaks.png";
-import Community from "@/assets/screenshots/community.png";
-import DailyLog from "@/assets/screenshots/daily-log.png";
-import Insights from "@/assets/screenshots/insights.png";
+import CareScreen from "@/assets/screenshots/care-screen.webp";
+import HealthTrends from "@/assets/screenshots/health-trends.webp";
+import Streaks from "@/assets/screenshots/streaks.webp";
+import Community from "@/assets/screenshots/community.webp";
+import DailyLog from "@/assets/screenshots/daily-log.webp";
+import Insights from "@/assets/screenshots/insights.webp";
 const FEATURE_STORIES = [
   {
     title: "Daily Health Log",
