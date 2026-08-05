@@ -174,6 +174,8 @@ export interface Blogpost5Props {
   updatedLabel?: string;
   /** Absolute URL of this post (SITE_URL + /blog/slug) for share/copy-link. */
   shareUrl: string;
+  /** Optional hero image URL, from frontmatter `coverImage`. */
+  coverImage?: string;
   /** Compiled MDX article body (rendered as `<Component />` by the caller). */
   children: ReactNode;
 }
@@ -188,6 +190,7 @@ const Blogpost5 = ({
   publishedLabel,
   updatedLabel,
   shareUrl,
+  coverImage,
   children,
 }: Blogpost5Props) => {
   const articleBodyRef = useRef<HTMLDivElement>(null);
@@ -298,6 +301,16 @@ const Blogpost5 = ({
             <span>{publishedLabel}</span>
             {updatedLabel && <span> · {updatedLabel}</span>}
           </div>
+
+          {coverImage && (
+            <div className="mt-8 aspect-[21/9] w-full overflow-hidden rounded-2xl">
+              <img
+                src={coverImage}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            </div>
+          )}
 
           <div className="relative mt-10 grid gap-10 lg:grid-cols-12 lg:gap-6">
             <div className="lg:col-span-8">

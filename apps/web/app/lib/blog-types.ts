@@ -10,6 +10,7 @@ export interface BlogFrontmatter {
   reviewerCredentials?: string;
   tags?: string[];
   draft?: boolean;
+  coverImage?: string;
 }
 
 export interface BlogEntry extends BlogFrontmatter {

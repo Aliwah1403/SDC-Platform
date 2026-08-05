@@ -59,6 +59,7 @@ export const meta: MetaFunction = ({ params }) => {
     description: fm.description,
     path,
     ogType: "article",
+    image: fm.coverImage,
     jsonLd: [articleSchema, breadcrumbSchema],
   });
 };
@@ -109,6 +110,7 @@ export default function BlogPostRoute() {
           : undefined
       }
       shareUrl={`${SITE_URL}/blog/${post.slug}`}
+      coverImage={fm.coverImage}
     >
       <Component />
     </BlogPostPage>

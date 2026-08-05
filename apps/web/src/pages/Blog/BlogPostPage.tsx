@@ -12,6 +12,7 @@ interface BlogPostPageProps {
   publishedLabel: string;
   updatedLabel?: string;
   shareUrl: string;
+  coverImage?: string;
   children: ReactNode;
 }
 

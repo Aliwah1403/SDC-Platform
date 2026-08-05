@@ -22,6 +22,7 @@ export default function BlogIndex() {
         publishedAt: post.frontmatter.publishedAt,
         author: post.frontmatter.author,
         tags: post.frontmatter.tags,
+        coverImage: post.frontmatter.coverImage,
       }))}
     />
   );

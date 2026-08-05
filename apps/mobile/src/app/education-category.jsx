@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
-import { EDUCATION_CATEGORIES, getArticlesByCategory } from "@/utils/educationContent";
+import { useEducationContentQuery } from "@/hooks/queries/useEducationContentQuery";
 import {
   LibraryCard,
   LIBRARY_H_PADDING,
@@ -20,7 +20,8 @@ export default function EducationCategoryScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { category: categorySlug } = useLocalSearchParams();
-  const category = EDUCATION_CATEGORIES[categorySlug];
+  const { getCategory, getArticlesByCategory } = useEducationContentQuery();
+  const category = getCategory(categorySlug);
   const articles = category ? getArticlesByCategory(category.slug) : [];
 
   return (

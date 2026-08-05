@@ -11,6 +11,8 @@ interface PageMetaInput {
   /** Route path beginning with "/", e.g. "/faq". */
   path: string;
   ogType?: "website" | "article";
+  /** Per-page social preview image, e.g. a blog post's coverImage. Falls back to OG_IMAGE. */
+  image?: string;
   /** Optional JSON-LD object(s) appended as <script type="application/ld+json">. */
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -21,9 +23,11 @@ export function pageMeta({
   description,
   path,
   ogType = "website",
+  image,
   jsonLd,
 }: PageMetaInput): MetaDescriptor[] {
   const url = `${SITE_URL}${path === "/" ? "" : path}`;
+  const ogImage = image ?? OG_IMAGE;
   const descriptors: MetaDescriptor[] = [
     { title },
     { name: "description", content: description },
@@ -32,12 +36,12 @@ export function pageMeta({
     { property: "og:description", content: description },
     { property: "og:type", content: ogType },
     { property: "og:url", content: url },
-    { property: "og:image", content: OG_IMAGE },
+    { property: "og:image", content: ogImage },
     { property: "og:site_name", content: "Hemo" },
     { name: "twitter:card", content: "summary_large_image" },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
-    { name: "twitter:image", content: OG_IMAGE },
+    { name: "twitter:image", content: ogImage },
   ];
 
   if (jsonLd) {

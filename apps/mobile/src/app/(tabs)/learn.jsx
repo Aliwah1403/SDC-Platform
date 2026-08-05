@@ -5,7 +5,7 @@ import { useRouter } from "expo-router";
 import { fonts } from "@/utils/fonts";
 import { colors } from "@/utils/colors";
 import { useTheme } from "@/hooks/useTheme";
-import { getCategories, getArticlesByCategory } from "@/utils/educationContent";
+import { useEducationContentQuery } from "@/hooks/queries/useEducationContentQuery";
 import {
   LibraryCard,
   LIBRARY_H_PADDING,
@@ -14,6 +14,7 @@ import {
 } from "@/components/EducationLibrary/LibraryCard";
 
 function CategorySection({ category, t, router }) {
+  const { getArticlesByCategory } = useEducationContentQuery();
   const articles = getArticlesByCategory(category.slug);
   if (articles.length === 0) return null;
 
@@ -102,6 +103,7 @@ export default function LearnScreen() {
   const insets = useSafeAreaInsets();
   const t = useTheme();
   const router = useRouter();
+  const { getCategories } = useEducationContentQuery();
   const categories = getCategories();
 
   return (

@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
 
 // shadcnblocks "blog14" block, adapted for Hemo: the original ships with a
 // hardcoded `posts` array and demo <img> placeholders. We render real MDX
-// posts (passed in as `posts`) instead, and swap the demo images for a
-// brand-gradient thumbnail since our frontmatter has no cover image field.
+// posts (passed in as `posts`). Frontmatter now carries an optional
+// `coverImage` URL — when set, it renders as the thumbnail; otherwise the
+// card falls back to the brand-gradient + icon treatment.
 
 export interface Blog14Post {
   slug: string;
@@ -23,6 +24,7 @@ export interface Blog14Post {
   publishedAt: string;
   author?: string;
   tags?: string[];
+  coverImage?: string;
 }
 
 interface Blog14Props {
@@ -48,11 +50,28 @@ function iconForTags(tags?: string[]): LucideIcon {
 
 function PostThumbnail({
   tags,
+  coverImage,
+  title,
   size = "default",
 }: {
   tags?: string[];
+  coverImage?: string;
+  title?: string;
   size?: "default" | "lg";
 }) {
+  if (coverImage) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg">
+        <img
+          src={coverImage}
+          alt={title ?? ""}
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+      </div>
+    );
+  }
+
   const Icon = iconForTags(tags);
   return (
     <div
@@ -111,7 +130,12 @@ const Blog14 = ({
               to={`/blog/${featured.slug}`}
               className="group grid grid-cols-1 items-center gap-8 rounded-2xl  bg-card p-4 transition-colors hover:border-primary/40 sm:p-6 md:grid-cols-2 lg:gap-12"
             >
-              <PostThumbnail tags={featured.tags} size="lg" />
+              <PostThumbnail
+                tags={featured.tags}
+                coverImage={featured.coverImage}
+                title={featured.title}
+                size="lg"
+              />
               <div className="flex flex-col items-start gap-3">
                 {featured.tags?.[0] && (
                   <Badge variant="secondary" className="capitalize">
@@ -143,7 +167,11 @@ const Blog14 = ({
                       to={`/blog/${post.slug}`}
                       className="group flex flex-col items-start gap-3 rounded-2xl  bg-card p-4 transition-colors hover:border-primary/40"
                     >
-                      <PostThumbnail tags={post.tags} />
+                      <PostThumbnail
+                        tags={post.tags}
+                        coverImage={post.coverImage}
+                        title={post.title}
+                      />
                       {post.tags?.[0] && (
                         <Badge variant="secondary" className="capitalize">
                           {post.tags[0]}

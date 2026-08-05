@@ -8,14 +8,25 @@ import { supabase } from "@/utils/auth/supabase";
 // "<topic>.jpg" (e.g. "pain.jpg"). Writes aren't open to the app; this is
 // curated editorial content, not user uploads.
 //
-// A topic with no file uploaded yet just renders `fallbackColor` — see
-// EducationCardBackground, which treats a failed image load the same way.
+// This is the fallback image source. Since Phase 2, `education_articles`
+// has its own `photo_url` column (e.g. for a Sanity/Cloudinary-hosted image)
+// that call sites check first — see LibraryCard/RelatedCard/MiniArticleCard,
+// which use `article.photoUrl ?? TOPIC_IMAGES[article.topic]?.imageUrl`.
+//
+// A topic with no file uploaded and no photo_url set just renders
+// `fallbackColor` — see EducationCardBackground, which treats a failed
+// image load the same way.
 const FALLBACK_COLORS = {
   pain: "#781D11",
   hydration: "#A9334D",
   sleep: "#4A1309",
   triggers: "#F0531C",
   movement: "#D09F9A",
+  "hemo-insights": "#A9334D",
+  "hemo-wearables": "#781D11",
+  "hemo-pain-status": "#F0531C",
+  "hemo-adherence": "#D09F9A",
+  "hemo-community": "#4A1309",
 };
 
 export const TOPIC_IMAGES = Object.fromEntries(

@@ -66,6 +66,8 @@ type ComparisonRow = {
   hemo: CellValue;
   generic: CellValue;
   paper: CellValue;
+  /** Set true to omit the row from the rendered table without deleting the data. */
+  hidden?: boolean;
 };
 
 const COMPARISON: ComparisonRow[] = [
@@ -98,6 +100,8 @@ const COMPARISON: ComparisonRow[] = [
     hemo: "Free to start; Hemo+ $7.99/mo or $59.99/yr",
     generic: "Free – $10+/mo, varies by app",
     paper: "Cost of a notebook",
+    // Pricing isn't public yet — hidden from the comparison table until it is.
+    hidden: true,
   },
 ];
 
@@ -253,7 +257,7 @@ const SickleCellTrackingApp = () => {
               </tr>
             </thead>
             <tbody>
-              {COMPARISON.map((row) => (
+              {COMPARISON.filter((row) => !row.hidden).map((row) => (
                 <tr key={row.criterion} className="border-t">
                   <td className="px-5 py-3.5 text-foreground">
                     {row.criterion}

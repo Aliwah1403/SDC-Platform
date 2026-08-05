@@ -3,18 +3,19 @@ import { useRouter } from "expo-router";
 import { Clock } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
-import { EDUCATION_ARTICLES } from "@/utils/educationContent";
+import { useEducationContentQuery } from "@/hooks/queries/useEducationContentQuery";
 import { TOPIC_IMAGES } from "@/utils/educationTopicImages";
 import { EducationCardBackground } from "@/components/EducationCardBackground";
 
-// Surfaces the real education library (educationContent.js) rather than the
-// unrelated mockArticles set — cards route straight to their article via
-// /education-article?topic=, same as the pattern-row education links.
+// Surfaces the real education library (educationContent.js / Supabase) —
+// cards route straight to their article via /education-article?topic=, same
+// as the pattern-row education links.
 const CARD_WIDTH = 160;
 const CARD_HEIGHT = 130;
 
 function MiniArticleCard({ article, onPress }) {
-  const { imageUrl, fallbackColor } = TOPIC_IMAGES[article.topic] ?? {};
+  const { fallbackColor } = TOPIC_IMAGES[article.topic] ?? {};
+  const imageUrl = article.photoUrl ?? TOPIC_IMAGES[article.topic]?.imageUrl;
 
   return (
     <TouchableOpacity
@@ -57,7 +58,8 @@ function MiniArticleCard({ article, onPress }) {
 export function UnderstandingSCDRow({ onPress }) {
   const t = useTheme();
   const router = useRouter();
-  const articles = Object.values(EDUCATION_ARTICLES);
+  const { articles: articlesByTopic } = useEducationContentQuery();
+  const articles = Object.values(articlesByTopic);
 
   return (
     <View>

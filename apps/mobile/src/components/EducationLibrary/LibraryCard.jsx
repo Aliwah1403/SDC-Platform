@@ -22,7 +22,8 @@ export const LIBRARY_CARD_WIDTH = (SCREEN_WIDTH - LIBRARY_H_PADDING * 2 - LIBRAR
 // RelatedCard and the Insights UnderstandingSCDRow, sized for a 2-column
 // grid instead of a 220-wide horizontal carousel.
 export function LibraryCard({ article, width, onPress }) {
-  const { imageUrl, fallbackColor } = TOPIC_IMAGES[article.topic] ?? {};
+  const { fallbackColor } = TOPIC_IMAGES[article.topic] ?? {};
+  const imageUrl = article.photoUrl ?? TOPIC_IMAGES[article.topic]?.imageUrl;
   const isNew = isNewArticle(article);
 
   const handlePress = () => {

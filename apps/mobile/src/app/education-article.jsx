@@ -14,7 +14,7 @@ import { usePostHog } from "posthog-react-native";
 import { ChevronLeft, Clock, AlertCircle } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
-import { getEducationArticle, getRelatedArticles } from "@/utils/educationContent";
+import { useEducationContentQuery } from "@/hooks/queries/useEducationContentQuery";
 import { TOPIC_IMAGES } from "@/utils/educationTopicImages";
 import { EducationCardBackground } from "@/components/EducationCardBackground";
 import { ScrollProgressPill } from "@/components/ScrollProgressPill";
@@ -24,7 +24,8 @@ const CARD_WIDTH = 220;
 const CARD_HEIGHT = 170;
 
 function RelatedCard({ item, t, onPress }) {
-  const { imageUrl, fallbackColor } = TOPIC_IMAGES[item.topic] ?? {};
+  const { fallbackColor } = TOPIC_IMAGES[item.topic] ?? {};
+  const imageUrl = item.photoUrl ?? TOPIC_IMAGES[item.topic]?.imageUrl;
 
   return (
     <PressableScale
@@ -86,6 +87,42 @@ function RelatedCard({ item, t, onPress }) {
   );
 }
 
+// Full-bleed photo hero at the top of the article — same
+// EducationCardBackground grammar as the library/related cards (photo, or a
+// solid fallbackColor wash when no image is set), breaking out of the
+// scroll view's horizontal padding the same way the related-articles
+// carousel already does (`marginHorizontal: -20`). The back button floats
+// over it instead of sitting in a separate header row.
+function ArticleHero({ router, insets, imageUrl, fallbackColor }) {
+  return (
+    <View style={{ marginHorizontal: -20, marginBottom: 20 }}>
+      <EducationCardBackground
+        imageUrl={imageUrl}
+        fallbackColor={fallbackColor}
+        style={{ height: 240 }}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+          style={{
+            position: "absolute",
+            top: insets.top + 10,
+            left: 20,
+            width: 38,
+            height: 38,
+            borderRadius: 19,
+            backgroundColor: "rgba(0,0,0,0.35)",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ChevronLeft size={22} color="#FFFFFF" />
+        </TouchableOpacity>
+      </EducationCardBackground>
+    </View>
+  );
+}
+
 function Header({ t, router, insets }) {
   return (
     <View
@@ -122,8 +159,11 @@ export default function EducationArticleScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const { topic, from } = useLocalSearchParams();
+  const { getEducationArticle, getRelatedArticles } = useEducationContentQuery();
   const article = getEducationArticle(topic);
   const relatedArticles = getRelatedArticles(topic);
+  const { fallbackColor } = TOPIC_IMAGES[topic] ?? {};
+  const heroImageUrl = article?.photoUrl ?? TOPIC_IMAGES[topic]?.imageUrl;
 
   useEffect(() => {
     posthog?.capture("education_article_viewed", {
@@ -217,7 +257,12 @@ export default function EducationArticleScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
-        <Header t={t} router={router} insets={insets} />
+        <ArticleHero
+          router={router}
+          insets={insets}
+          imageUrl={heroImageUrl}
+          fallbackColor={fallbackColor}
+        />
 
         <Text
           style={{
