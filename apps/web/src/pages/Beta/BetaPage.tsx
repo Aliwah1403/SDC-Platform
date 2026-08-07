@@ -32,7 +32,12 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // Apple mark — same silhouette used on the app's Apple sign-in button.
 function AppleIcon({ className }: { className?: string }) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
       <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
     </svg>
   );
@@ -100,11 +105,16 @@ const BetaPage = () => {
 
     if (!BETA_URL) {
       setStatus("error");
-      setMessage("The form is temporarily unavailable. Please try again later.");
+      setMessage(
+        "The form is temporarily unavailable. Please try again later.",
+      );
       return;
     }
 
-    posthog?.capture("beta_signup_submitted", { source: "beta-page", platform });
+    posthog?.capture("beta_signup_submitted", {
+      source: "beta-page",
+      platform,
+    });
     setStatus("submitting");
     setMessage("");
 
@@ -166,215 +176,224 @@ const BetaPage = () => {
         <div className="mx-auto flex w-full max-w-lg flex-col">
           <img src="/logo.png" alt="Hemo" className="size-14" />
 
-        <AnimatePresence mode="wait">
-          {status === "success" ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-10 w-full px-2 text-center"
-            >
+          <AnimatePresence mode="wait">
+            {status === "success" ? (
               <motion.div
-                initial={{ scale: 0.7, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.05, type: "spring", stiffness: 200, damping: 15 }}
-                className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/25"
+                key="success"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-10 w-full px-2 text-center"
               >
-                <Check className="size-8 text-primary-foreground" strokeWidth={2.5} />
-              </motion.div>
-              <h1 className="mt-6 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-                You&apos;re on the list.
-              </h1>
-              <p className="mx-auto mt-4 max-w-md text-balance text-muted-foreground">
-                We&apos;ll send your install link within a few days — keep an eye
-                on{" "}
-                <span className="font-medium text-foreground">
-                  {email.trim().toLowerCase()}
-                </span>
-                .
-              </p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-8 w-full"
-            >
-              <div className="text-center lg:text-left">
-                <h1 className="text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-                  You&apos;re one of the first.
-                </h1>
-                <p className="mt-3 text-muted-foreground">
-                  Tell us which phone you use so we can send the right install
-                  link. Two minutes, and you&apos;re in.
-                </p>
-              </div>
-
-              <form
-                onSubmit={handleSubmit}
-                className="mt-8 space-y-5 rounded-2xl border bg-white p-6 shadow-sm sm:p-8"
-              >
-                <Field>
-                  <FieldLabel htmlFor="beta-name">Name</FieldLabel>
-                  <Input
-                    id="beta-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Your name"
-                    autoComplete="name"
-                    maxLength={100}
-                    disabled={submitting}
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel htmlFor="beta-email">Email address</FieldLabel>
-                  <Input
-                    id="beta-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    autoComplete="email"
-                    disabled={submitting}
-                  />
-                </Field>
-
-                <Field>
-                  <FieldLabel>Which phone do you use?</FieldLabel>
-                  <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    value={platform}
-                    onValueChange={(value) =>
-                      setPlatform((value as Platform) || "")
-                    }
-                    spacing={2}
-                    className="w-full"
-                  >
-                    <ToggleGroupItem
-                      value="ios"
-                      disabled={submitting}
-                      aria-label="iPhone"
-                      className="h-11 flex-1 gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                      <AppleIcon className="size-4" />
-                      iPhone
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                      value="android"
-                      disabled={submitting}
-                      aria-label="Android"
-                      className="h-11 flex-1 gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                      <IconBrandAndroid className="size-4" />
-                      Android
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </Field>
-
-                <AnimatePresence initial={false}>
-                  {platform === "ios" && (
-                    <motion.p
-                      key="ios-note"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden rounded-lg  px-4 py-3 text-sm text-secondary-foreground"
-                    >
-                      You&apos;ll get a TestFlight invite link — nothing else
-                      needed.
-                    </motion.p>
-                  )}
-
-                  {platform === "android" && (
-                    <motion.div
-                      key="android-fields"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-5 overflow-hidden"
-                    >
-                      <Field>
-                        <FieldLabel htmlFor="beta-google">
-                          Google account email
-                        </FieldLabel>
-                        <Input
-                          id="beta-google"
-                          type="email"
-                          value={googleEmail}
-                          onChange={(e) => setGoogleEmail(e.target.value)}
-                          placeholder="you@gmail.com"
-                          autoComplete="email"
-                          disabled={submitting}
-                        />
-                        <p className="text-sm text-muted-foreground">
-                          Must be the exact Google account you use on the Play
-                          Store — this is how we grant you access.
-                        </p>
-                      </Field>
-
-                      <Field>
-                        <FieldLabel htmlFor="beta-model">
-                          Phone model{" "}
-                          <span className="text-muted-foreground">
-                            (optional)
-                          </span>
-                        </FieldLabel>
-                        <Input
-                          id="beta-model"
-                          value={deviceModel}
-                          onChange={(e) => setDeviceModel(e.target.value)}
-                          placeholder="e.g. Pixel 8, Samsung Galaxy S23"
-                          maxLength={100}
-                          disabled={submitting}
-                        />
-                      </Field>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <Field>
-                  <FieldLabel htmlFor="beta-wishes">
-                    What&apos;s the one thing you&apos;d want Hemo to do for you?{" "}
-                    <span className="text-muted-foreground">(optional)</span>
-                  </FieldLabel>
-                  <Textarea
-                    id="beta-wishes"
-                    value={wishes}
-                    onChange={(e) => setWishes(e.target.value)}
-                    placeholder="I read every answer — it genuinely shapes what we build next."
-                    maxLength={1000}
-                    disabled={submitting}
-                  />
-                </Field>
-
-                <Button
-                  type="submit"
-                  className="h-11 w-full"
-                  disabled={submitting}
+                <motion.div
+                  initial={{ scale: 0.7, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    delay: 0.05,
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                  }}
+                  className="mx-auto flex size-16 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/25"
                 >
-                  {submitting ? "Submitting..." : "Join the beta"}
-                  <ArrowRight className="size-4" />
-                </Button>
+                  <Check
+                    className="size-8 text-primary-foreground"
+                    strokeWidth={2.5}
+                  />
+                </motion.div>
+                <h1 className="mt-6 text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+                  You&apos;re on the list.
+                </h1>
+                <p className="mx-auto mt-4 max-w-md text-balance text-muted-foreground">
+                  We&apos;ll send your install link within a few days — keep an
+                  eye on{" "}
+                  <span className="font-medium text-foreground">
+                    {email.trim().toLowerCase()}
+                  </span>
+                  .
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 w-full"
+              >
+                <div className="text-center lg:text-left">
+                  <h1 className="text-balance text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+                    You&apos;re one of the first.
+                  </h1>
+                  <p className="mt-3 text-muted-foreground">
+                    Tell us which phone you use so we can send the right install
+                    link. Two minutes, and you&apos;re in.
+                  </p>
+                </div>
 
-                <AnimatePresence>
-                  {status === "error" && message && (
-                    <motion.p
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      className="text-center text-sm text-destructive"
+                <form
+                  onSubmit={handleSubmit}
+                  className="mt-8 space-y-5 rounded-2xl border bg-white p-6 shadow-sm sm:p-8"
+                >
+                  <Field>
+                    <FieldLabel htmlFor="beta-name">Name</FieldLabel>
+                    <Input
+                      id="beta-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your name"
+                      autoComplete="name"
+                      maxLength={100}
+                      disabled={submitting}
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="beta-email">Email address</FieldLabel>
+                    <Input
+                      id="beta-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      disabled={submitting}
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel>Which phone do you use?</FieldLabel>
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      value={platform}
+                      onValueChange={(value) =>
+                        setPlatform((value as Platform) || "")
+                      }
+                      spacing={2}
+                      className="w-full"
                     >
-                      {message}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </form>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                      <ToggleGroupItem
+                        value="ios"
+                        disabled={submitting}
+                        aria-label="iPhone"
+                        className="h-11 flex-1 gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <AppleIcon className="size-4" />
+                        iPhone
+                      </ToggleGroupItem>
+                      <ToggleGroupItem
+                        value="android"
+                        disabled={submitting}
+                        aria-label="Android"
+                        className="h-11 flex-1 gap-2 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                      >
+                        <IconBrandAndroid className="size-4" />
+                        Android
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </Field>
+
+                  <AnimatePresence initial={false}>
+                    {platform === "ios" && (
+                      <motion.p
+                        key="ios-note"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden rounded-lg  px-4 py-3 text-sm text-secondary-foreground"
+                      >
+                        You&apos;ll get a TestFlight invite link — nothing else
+                        needed.
+                      </motion.p>
+                    )}
+
+                    {platform === "android" && (
+                      <motion.div
+                        key="android-fields"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-5 overflow-hidden"
+                      >
+                        <Field>
+                          <FieldLabel htmlFor="beta-google">
+                            Google account email
+                          </FieldLabel>
+                          <Input
+                            id="beta-google"
+                            type="email"
+                            value={googleEmail}
+                            onChange={(e) => setGoogleEmail(e.target.value)}
+                            placeholder="you@gmail.com"
+                            autoComplete="email"
+                            disabled={submitting}
+                          />
+                          <p className="text-sm text-muted-foreground">
+                            Must be the exact Google account you use on the Play
+                            Store — this is how we grant you access.
+                          </p>
+                        </Field>
+
+                        <Field>
+                          <FieldLabel htmlFor="beta-model">
+                            Phone model{" "}
+                            <span className="text-muted-foreground">
+                              (optional)
+                            </span>
+                          </FieldLabel>
+                          <Input
+                            id="beta-model"
+                            value={deviceModel}
+                            onChange={(e) => setDeviceModel(e.target.value)}
+                            placeholder="e.g. Pixel 8, Samsung Galaxy S23"
+                            maxLength={100}
+                            disabled={submitting}
+                          />
+                        </Field>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <Field>
+                    <FieldLabel htmlFor="beta-wishes">
+                      What&apos;s the one thing you&apos;d want Hemo to do for
+                      you?{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </FieldLabel>
+                    <Textarea
+                      id="beta-wishes"
+                      value={wishes}
+                      onChange={(e) => setWishes(e.target.value)}
+                      placeholder="I read every answer — it genuinely shapes what we build next."
+                      maxLength={1000}
+                      disabled={submitting}
+                    />
+                  </Field>
+
+                  <Button
+                    type="submit"
+                    className="h-11 w-full"
+                    disabled={submitting}
+                  >
+                    {submitting ? "Submitting..." : "Join the beta"}
+                    <ArrowRight className="size-4" />
+                  </Button>
+
+                  <AnimatePresence>
+                    {status === "error" && message && (
+                      <motion.p
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        className="text-center text-sm text-destructive"
+                      >
+                        {message}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         <div
