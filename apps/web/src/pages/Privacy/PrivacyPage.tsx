@@ -5,7 +5,7 @@ const PrivacyPage = () => {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Hero header */}
       <div className="text-center">
-        <p className="text-sm font-medium text-primary">Last updated: May 21, 2026</p>
+        <p className="text-sm font-medium text-primary">Last updated: August 11, 2026</p>
         <h1 className="mt-3 text-5xl font-bold tracking-tight sm:text-6xl">Privacy Policy</h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
           Your privacy matters to us at Hemo. We respect your privacy regarding any information
@@ -92,6 +92,22 @@ const PrivacyPage = () => {
               info@hemo-scd.com
             </a>{" "}
             and we will respond promptly.
+          </p>
+        </Section>
+
+        <Section heading="Health and emergency feature notice">
+          <p className="text-muted-foreground">
+            Hemo is a self-management and information-organising tool. It is not a medical
+            device, healthcare provider, emergency service, or substitute for professional
+            medical advice, diagnosis, treatment, or an individual care plan agreed with your
+            healthcare team.
+          </p>
+          <p className="text-muted-foreground">
+            Information you enter, connect, generate, or share through Hemo — including health
+            logs, wearable readings, summaries, medication matches, crisis information, and
+            emergency-contact details — may be incomplete or inaccurate. Do not rely on Hemo to
+            diagnose a complication, decide when care is needed, contact emergency services, or
+            confirm that a message was delivered.
           </p>
         </Section>
 
