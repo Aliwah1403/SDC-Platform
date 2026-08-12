@@ -31,6 +31,7 @@ import {
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
 import { STAGGER_MS } from "@/utils/motion";
+import AppEmptyState from "@/components/AppEmptyState";
 import MedicationIcon, { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
@@ -646,41 +647,12 @@ export default function MedicationsScreen() {
         {/* Today's Schedule — time grouped */}
         <SectionLabel title="Today's Schedule" />
         {active.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: t.surface,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: t.border,
-              padding: 32,
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <Pill size={28} color={t.textSecondary} />
-            <Text
-              style={{
-                fontFamily: fonts.medium,
-                fontSize: 15,
-                color: t.textSecondary,
-                marginTop: 10,
-                textAlign: "center",
-              }}
-            >
-              No medications added yet
-            </Text>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 13,
-                color: t.textSecondary,
-                marginTop: 4,
-                textAlign: "center",
-              }}
-            >
-              Tap + to add your first medication
-            </Text>
-          </View>
+          <AppEmptyState
+            Icon={Pill}
+            title="No medications added yet"
+            subtitle="Tap + to add your first medication."
+            style={{ paddingTop: 42, paddingBottom: 48 }}
+          />
         ) : (
           groups.map((group, gi) => {
             const allTaken = group.meds.every((m) => m.taken);

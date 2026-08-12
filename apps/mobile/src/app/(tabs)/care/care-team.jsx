@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { ChevronLeft, Plus, Users, Search, X } from "lucide-react-native";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
+import AppEmptyState from "@/components/AppEmptyState";
 import { fonts } from "@/utils/fonts";
 import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
@@ -113,32 +114,6 @@ function ContactCard({ contact, onPress }) {
   );
 }
 
-function EmptyState() {
-  const t = useTheme();
-  return (
-    <View
-      style={{
-        backgroundColor: t.surface,
-        borderRadius: 16,
-        padding: 32,
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: t.border,
-        borderStyle: "dashed",
-        marginTop: 8,
-      }}
-    >
-      <Users size={36} color="#D09F9A" style={{ marginBottom: 12 }} />
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 6 }}>
-        No contacts yet
-      </Text>
-      <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, textAlign: "center", lineHeight: 20 }}>
-        Add emergency contacts so they can be reached quickly in a crisis.
-      </Text>
-    </View>
-  );
-}
-
 export default function CareTeamScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
@@ -239,19 +214,23 @@ export default function CareTeamScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {!isLoading && contacts.length === 0 && <EmptyState />}
+        {!isLoading && contacts.length === 0 && (
+          <AppEmptyState
+            Icon={Users}
+            title="No contacts yet"
+            subtitle="Add emergency contacts so they can be reached quickly in a crisis."
+            style={{ paddingTop: 52 }}
+          />
+        )}
 
         {/* No results state */}
         {!isLoading && contacts.length > 0 && filtered.length === 0 && (
-          <View style={{ alignItems: "center", marginTop: 32 }}>
-            <Search size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
-            <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 4 }}>
-              No results for "{query}"
-            </Text>
-            <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
-              Try searching by name, relationship, or phone
-            </Text>
-          </View>
+          <AppEmptyState
+            Icon={Search}
+            title="No results"
+            subtitle={`No contacts match "${query}". Try searching by name, relationship, or phone.`}
+            style={{ paddingTop: 52 }}
+          />
         )}
 
         {/* Flat results when searching */}
