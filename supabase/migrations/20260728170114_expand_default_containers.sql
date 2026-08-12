@@ -1,6 +1,6 @@
 -- Expand the default hydration-container set (2026-07-28). New accounts are
--- seeded with the richer set (Glass, Bottle, Mug, Carton) in
--- completeOnboarding(); this backfills the added defaults onto existing
+-- seeded with the richer set (Glass, Bottle, Mug, Boba, Carton) in
+-- completeOnboarding(); this backfills the three added defaults onto existing
 -- onboarded accounts so their quick-add carousel matches.
 --
 -- Additive and idempotent: only inserts a default the user doesn't already
@@ -22,15 +22,14 @@ select
 from profiles p
 cross join (values
   ('Mug', 350, 'mug', 1),
-  ('Carton', 1000, 'carton', 2)
+  ('Boba', 500, 'boba', 2),
+  ('Carton', 1000, 'carton', 3)
 ) as v(name, ml, icon, rn)
 where p.onboarding_complete = true
-  -- only accounts that already have containers (i.e. previously seeded); a
-  -- brand-new account gets the full set from completeOnboarding() instead.
   and exists (
     select 1 from hydration_containers hc where hc.user_id = p.user_id
   )
   and not exists (
     select 1 from hydration_containers hc
     where hc.user_id = p.user_id and hc.name = v.name
-  );
+  );;

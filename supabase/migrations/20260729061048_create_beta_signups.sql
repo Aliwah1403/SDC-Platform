@@ -22,4 +22,4 @@ create index if not exists beta_signups_email_idx on public.beta_signups (email)
 
 -- Lock the table down: only the service role (edge function) may read/write it.
 -- With RLS enabled and no policies, anon and authenticated clients are denied.
-alter table public.beta_signups enable row level security;
+alter table public.beta_signups enable row level security;;

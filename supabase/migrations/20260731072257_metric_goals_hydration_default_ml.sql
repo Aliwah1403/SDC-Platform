@@ -20,4 +20,4 @@ ALTER TABLE metric_goals
 -- goal the app writes is far above 10).
 UPDATE metric_goals
   SET hydration = 2000
-  WHERE hydration > 0 AND hydration <= 10;
+  WHERE hydration > 0 AND hydration <= 10;;
