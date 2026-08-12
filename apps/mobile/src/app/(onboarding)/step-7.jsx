@@ -11,6 +11,8 @@ import {
   View,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
@@ -70,6 +72,35 @@ export default function Step7() {
   const contactSearchRef = useRef(null);
 
   // ── Contact picker (from phone) ─────────────────────────────
+  const ensureManualContactSlot = () => {
+    setIsManual(true);
+    if (contacts.length === 0) setContacts([emptyManual()]);
+  };
+
+  const showContactsUnavailableAlert = (canOpenSettings = false) => {
+    const actions = [
+      {
+        text: "Add manually",
+        onPress: ensureManualContactSlot,
+      },
+    ];
+
+    if (canOpenSettings) {
+      actions.unshift({
+        text: "Open Settings",
+        onPress: () => Linking.openSettings(),
+      });
+    }
+
+    actions.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(
+      "Contacts unavailable",
+      "Hemo could not open your phone contacts. You can allow contacts access in Settings or add this contact manually.",
+      actions,
+    );
+  };
+
   const addPickedContact = (contact, targetIndex) => {
     const resolvedName =
       contact.name ||
@@ -90,40 +121,50 @@ export default function Step7() {
     });
   };
 
+  const openContactList = async (targetIndex) => {
+    setIsLoading(true);
+    try {
+      const permission = await Contacts.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        ensureManualContactSlot();
+        showContactsUnavailableAlert(permission.canAskAgain === false);
+        return;
+      }
+
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
+      });
+      const contactsWithPhones = data.filter(
+        (c) => c.name && c.phoneNumbers?.length > 0,
+      );
+
+      setAllContacts(contactsWithPhones);
+      setContactPickerTarget(targetIndex);
+      setContactSearch("");
+      setShowContactModal(true);
+      setTimeout(() => contactSearchRef.current?.focus(), 300);
+    } catch (error) {
+      console.warn("[contacts] Failed to load phone contacts", error);
+      ensureManualContactSlot();
+      showContactsUnavailableAlert();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handlePickContact = async (targetIndex) => {
-    if (Platform.OS === "ios") {
+    if (Platform.OS === "ios" && Contacts.presentContactPickerAsync) {
       try {
         const contact = await Contacts.presentContactPickerAsync();
         if (contact) addPickedContact(contact, targetIndex);
-      } catch {
-        /* cancelled */
+      } catch (error) {
+        console.warn("[contacts] Native contact picker failed", error);
+        await openContactList(targetIndex);
       }
-    } else {
-      setIsLoading(true);
-      try {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === "granted") {
-          const { data } = await Contacts.getContactsAsync({
-            fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-          });
-          setAllContacts(
-            data.filter((c) => c.name && c.phoneNumbers?.length > 0),
-          );
-          setContactPickerTarget(targetIndex);
-          setContactSearch("");
-          setShowContactModal(true);
-          setTimeout(() => contactSearchRef.current?.focus(), 300);
-        } else {
-          setIsManual(true);
-          if (contacts.length === 0) setContacts([emptyManual()]);
-        }
-      } catch {
-        setIsManual(true);
-        if (contacts.length === 0) setContacts([emptyManual()]);
-      } finally {
-        setIsLoading(false);
-      }
+      return;
     }
+
+    await openContactList(targetIndex);
   };
 
   const selectFromContactModal = (contact) => {

@@ -9,6 +9,7 @@ import {
   Switch,
   Platform,
   Alert,
+  Linking,
   Modal,
   FlatList,
   ActivityIndicator,
@@ -169,6 +170,30 @@ export default function AddContactScreen() {
   };
 
   // ── Contact picker ────────────────────────────────────────────────────────
+  const showContactsUnavailableAlert = (canOpenSettings = false) => {
+    const actions = [
+      {
+        text: "Add manually",
+        onPress: () => setMode("form"),
+      },
+    ];
+
+    if (canOpenSettings) {
+      actions.unshift({
+        text: "Open Settings",
+        onPress: () => Linking.openSettings(),
+      });
+    }
+
+    actions.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(
+      "Contacts unavailable",
+      "Hemo could not open your phone contacts. You can allow contacts access in Settings or add this person manually.",
+      actions,
+    );
+  };
+
   const applyPickedContact = (contact) => {
     const resolvedName =
       contact.name ||
@@ -185,41 +210,51 @@ export default function AddContactScreen() {
     setMode("form");
   };
 
+  const openContactList = async () => {
+    setIsLoadingContacts(true);
+    try {
+      const permission = await Contacts.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        showContactsUnavailableAlert(permission.canAskAgain === false);
+        return;
+      }
+
+      const { data } = await Contacts.getContactsAsync({
+        fields: [
+          Contacts.Fields.Name,
+          Contacts.Fields.PhoneNumbers,
+          Contacts.Fields.Image,
+        ],
+      });
+      const contactsWithPhones = data.filter(
+        (c) => c.name && c.phoneNumbers?.length > 0,
+      );
+
+      setAllContacts(contactsWithPhones);
+      setContactSearch("");
+      setShowContactModal(true);
+      setTimeout(() => contactSearchRef.current?.focus(), 300);
+    } catch (error) {
+      console.warn("[contacts] Failed to load phone contacts", error);
+      showContactsUnavailableAlert();
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  };
+
   const handlePickContact = async () => {
-    if (Platform.OS === "ios") {
+    if (Platform.OS === "ios" && Contacts.presentContactPickerAsync) {
       try {
         const contact = await Contacts.presentContactPickerAsync();
         if (contact) applyPickedContact(contact);
-      } catch {
-        /* cancelled */
+      } catch (error) {
+        console.warn("[contacts] Native contact picker failed", error);
+        await openContactList();
       }
-    } else {
-      setIsLoadingContacts(true);
-      try {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === "granted") {
-          const { data } = await Contacts.getContactsAsync({
-            fields: [
-              Contacts.Fields.Name,
-              Contacts.Fields.PhoneNumbers,
-              Contacts.Fields.Image,
-            ],
-          });
-          setAllContacts(
-            data.filter((c) => c.name && c.phoneNumbers?.length > 0),
-          );
-          setContactSearch("");
-          setShowContactModal(true);
-          setTimeout(() => contactSearchRef.current?.focus(), 300);
-        } else {
-          setMode("form");
-        }
-      } catch {
-        setMode("form");
-      } finally {
-        setIsLoadingContacts(false);
-      }
+      return;
     }
+
+    await openContactList();
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────
