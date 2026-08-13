@@ -22,7 +22,7 @@ import { StatusBar } from "expo-status-bar";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { X, Calendar, Clock, MapPin, User, FileText, Bell, CalendarCheck } from "lucide-react-native";
 import { useAppointmentsQuery, useAddAppointmentMutation, useUpdateAppointmentMutation } from "@/hooks/queries/useAppointmentsQuery";
-import { addToDeviceCalendar, scheduleReminders, cancelReminders } from "@/utils/appointmentUtils";
+import { addToDeviceCalendar, removeFromDeviceCalendar, scheduleReminders, cancelReminders, convertTo24h } from "@/utils/appointmentUtils";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { format } from "date-fns";
@@ -130,6 +130,12 @@ export default function AppointmentForm() {
     return `${hour}:${String(m).padStart(2, "0")} ${period}`;
   };
 
+  const formatSkippedReminder = (appointmentDate, minutes) => {
+    const triggerDate = new Date(appointmentDate.getTime() - minutes * 60 * 1000);
+    const label = REMINDER_OPTIONS.find((opt) => opt.minutes === minutes)?.label ?? `${minutes} minutes before`;
+    return `${label} (${format(triggerDate, "MMM d, h:mm a")})`;
+  };
+
   const isValid = title.trim().length > 0 && facility.trim().length > 0;
 
   const handleSave = async () => {
@@ -157,14 +163,53 @@ export default function AppointmentForm() {
       status,
     };
 
-    // Calendar sync
+    // Calendar sync. `addedToCalendar` alone is not enough: older failed syncs
+    // may have stored true with a null `calendarEventId`.
     let calendarEventId = existing?.calendarEventId ?? null;
-    if (calendarOn && !existing?.addedToCalendar) {
-      calendarEventId = await addToDeviceCalendar({ ...apptBase, id: existing?.id ?? "new" });
+    let addedToCalendar = calendarOn && !!calendarEventId;
+    let calendarSyncFailed = false;
+    const calendarFieldsChanged =
+      !!existing &&
+      (
+        existing.title !== apptBase.title ||
+        existing.doctor !== apptBase.doctor ||
+        existing.facility !== apptBase.facility ||
+        existing.date !== apptBase.date ||
+        existing.time !== apptBase.time ||
+        existing.notes !== apptBase.notes
+      );
+
+    if (calendarOn && (!calendarEventId || calendarFieldsChanged)) {
+      const previousCalendarEventId = calendarEventId;
+      const nextCalendarEventId = await addToDeviceCalendar({ ...apptBase, id: existing?.id ?? "new" });
+
+      if (nextCalendarEventId) {
+        calendarEventId = nextCalendarEventId;
+        addedToCalendar = true;
+        if (previousCalendarEventId && previousCalendarEventId !== nextCalendarEventId) {
+          await removeFromDeviceCalendar(previousCalendarEventId);
+        }
+      } else {
+        addedToCalendar = false;
+        calendarEventId = null;
+        calendarSyncFailed = true;
+      }
+    } else if (!calendarOn) {
+      if (existing?.calendarEventId) {
+        await removeFromDeviceCalendar(existing.calendarEventId);
+      }
+      calendarEventId = null;
+      addedToCalendar = false;
     }
 
     // Notifications — cancel stale reminders from a previous save before rescheduling
     const reminderOffsets = remindersOn ? [reminder1, reminder2].filter((m) => m !== null) : [];
+    const appointmentDate = new Date(`${dateStr}T${convertTo24h(timeStr)}:00`);
+    const now = new Date();
+    const skippedReminderOffsets = reminderOffsets.filter((minutes) => {
+      const triggerDate = new Date(appointmentDate.getTime() - minutes * 60 * 1000);
+      return triggerDate <= now;
+    });
     if (existing?.reminderIds?.length) await cancelReminders(existing.reminderIds);
     let reminderIds = [];
     if (remindersOn && status === "upcoming") {
@@ -184,10 +229,26 @@ export default function AppointmentForm() {
           reminder_lead_time: reminderOffsets[0],
         });
       }
-      if (remindersOn && reminderOffsets.length > 0 && reminderIds.length === 0) {
+      const remindersSkipped = remindersOn && skippedReminderOffsets.length > 0;
+      if (calendarSyncFailed || remindersSkipped) {
+        const messages = [];
+        if (calendarSyncFailed) {
+          messages.push("The appointment was saved, but Hemo could not add it to your device calendar. Check calendar permissions and try again.");
+        }
+        if (remindersSkipped) {
+          const skipped = skippedReminderOffsets
+            .map((minutes) => formatSkippedReminder(appointmentDate, minutes))
+            .join(", ");
+          const scheduledCount = Math.max(reminderOffsets.length - skippedReminderOffsets.length, 0);
+          messages.push(
+            scheduledCount > 0
+              ? `Some reminder times were already past and were skipped: ${skipped}.`
+              : `These reminder times were already past and were not scheduled: ${skipped}.`
+          );
+        }
         Alert.alert(
-          "Reminders not set",
-          "Your selected reminder times have already passed for this appointment. Open the appointment and update the reminders.",
+          calendarSyncFailed ? "Appointment saved with issues" : "Reminders not set",
+          messages.join("\n\n"),
           [{ text: "OK", onPress: navigate }]
         );
       } else {
@@ -197,12 +258,12 @@ export default function AppointmentForm() {
     const onSaveError = () => setSaving(false);
     if (existing) {
       updateAppt.mutate(
-        { id: existing.id, changes: { ...apptBase, addedToCalendar: calendarOn, calendarEventId, reminderIds, reminderOffsets } },
+        { id: existing.id, changes: { ...apptBase, addedToCalendar, calendarEventId, reminderIds, reminderOffsets } },
         { onSuccess: afterSave, onError: onSaveError },
       );
     } else {
       addAppt.mutate(
-        { ...apptBase, addedToCalendar: calendarOn, calendarEventId, reminderIds, reminderOffsets },
+        { ...apptBase, addedToCalendar, calendarEventId, reminderIds, reminderOffsets },
         { onSuccess: afterSave, onError: onSaveError },
       );
     }
@@ -914,7 +975,6 @@ export default function AppointmentForm() {
               onValueChange={setCalendarOn}
               trackColor={{ false: t.border, true: "#A9334D" }}
               thumbColor="#fff"
-              disabled={!!existing?.addedToCalendar}
             />
           </View>
         </View>

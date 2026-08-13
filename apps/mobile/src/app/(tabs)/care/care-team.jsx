@@ -12,22 +12,7 @@ import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 
-const RELATIONSHIP_COLORS = {
-  doctor:    { color: "#2563EB", bg: "#DBEAFE" },
-  nurse:     { color: "#0891B2", bg: "#CFFAFE" },
-  family:    { color: "#A9334D", bg: "#F8E9E7" },
-  friend:    { color: "#059669", bg: "#D1FAE5" },
-  caregiver: { color: "#7C3AED", bg: "#EDE9FE" },
-  parent:    { color: "#A9334D", bg: "#F8E9E7" },
-  sibling:   { color: "#F0531C", bg: "#FEF0EB" },
-  partner:   { color: "#A9334D", bg: "#FBE9ED" },
-  carer:     { color: "#7C3AED", bg: "#EDE9FE" },
-};
-
-function getAccent(relationship = "") {
-  const key = relationship.toLowerCase();
-  return RELATIONSHIP_COLORS[key] ?? { color: "#A9334D", bg: "#F8E9E7" };
-}
+const CONTACT_ACCENT = { color: "#A9334D", bg: "#F8E9E7" };
 
 function initials(name = "") {
   return name
@@ -40,7 +25,7 @@ function initials(name = "") {
 
 function ContactCard({ contact, onPress }) {
   const t = useTheme();
-  const { color, bg } = getAccent(contact.relationship);
+  const { color, bg } = CONTACT_ACCENT;
 
   return (
     <TouchableOpacity

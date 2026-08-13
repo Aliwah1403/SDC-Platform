@@ -211,7 +211,7 @@ export default function StreakRepairsScreen() {
             </View>
 
             <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 10 }}>
-              {repairProgress}/{daysTarget} days logged
+              {repairProgress}/{daysTarget} consecutive days logged
             </Text>
 
             <View
@@ -232,7 +232,7 @@ export default function StreakRepairsScreen() {
             </View>
 
             <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
-              {daysLeft} day{daysLeft !== 1 ? "s" : ""} left to earn your next repair
+              {daysLeft} consecutive day{daysLeft !== 1 ? "s" : ""} left to earn your next repair
             </Text>
           </MotiView>
 
@@ -261,6 +261,11 @@ export default function StreakRepairsScreen() {
 
             <HowItWorksRow
               icon={Gift}
+              t={t}
+              text="You start with 3 available repairs"
+            />
+            <HowItWorksRow
+              icon={Sparkles}
               t={t}
               text={`Earn 1 repair for every ${daysTarget} consecutive days logged`}
             />
