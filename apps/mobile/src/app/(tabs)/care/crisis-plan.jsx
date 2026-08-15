@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
@@ -19,6 +20,7 @@ import {
   Edit3,
   Phone,
   ChevronDown,
+  ChevronRight,
   ShieldAlert,
 } from "lucide-react-native";
 import { usePostHog } from "posthog-react-native";
@@ -34,6 +36,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import { getCountryName } from "@/utils/countryNames";
+import { countryFlagEmoji } from "@/utils/phoneNumbers";
+import AppEmptyState from "@/components/AppEmptyState";
 import emergencyNumbers from "@/data/emergencyNumbers.json";
 
 
@@ -123,6 +127,7 @@ function TierRow({ tier, onExpand }) {
   const t = useTheme();
   const styles = useMemo(() => createStyles(t), [t]);
   const [expanded, setExpanded] = useState(false);
+
   return (
     <Pressable
       onPress={() => {
@@ -132,32 +137,46 @@ function TierRow({ tier, onExpand }) {
       }}
       style={[
         styles.tierRow,
-        { borderLeftColor: tier.border, backgroundColor: tier.bg },
+        { borderColor: t.divider },
       ]}
     >
       <View style={styles.tierHeader}>
-        <View style={[styles.tierStepPill, { backgroundColor: tier.color }]}>
-          <Text style={styles.tierStepText}>STEP {tier.step}</Text>
+        <View style={[styles.tierMarker, { backgroundColor: tier.color }]}>
+          <Text style={styles.tierMarkerText}>{tier.step}</Text>
         </View>
-        <Text style={[styles.tierLabel, { color: tier.color }]}>
-          {tier.label}
-        </Text>
-        <Text style={styles.tierPainRange}>{tier.painRange}</Text>
-        <ChevronDown
-          size={15}
-          color={tier.color}
-          strokeWidth={2.5}
-          style={{
-            marginLeft: "auto",
-            transform: [{ rotate: expanded ? "180deg" : "0deg" }],
-          }}
-        />
+        <View style={styles.tierTitleBlock}>
+          <View style={styles.tierTitleRow}>
+            <Text style={styles.tierStepLabel}>Step {tier.step}</Text>
+            <View style={[styles.tierSeverityPill, { backgroundColor: tier.bg }]}>
+              <Text style={[styles.tierSeverityText, { color: tier.color }]}>
+                {tier.label}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.tierPainRange}>{tier.painRange}</Text>
+        </View>
+        <View
+          style={[
+            styles.tierChevron,
+            {
+              backgroundColor: expanded ? tier.bg : t.surfaceElevated,
+              transform: [{ rotate: expanded ? "180deg" : "0deg" }],
+            },
+          ]}
+        >
+          <ChevronDown size={16} color={tier.color} strokeWidth={2.5} />
+        </View>
       </View>
+
       {expanded && (
         <View style={styles.tierActions}>
           {tier.actions.map((action, i) => (
             <View key={i} style={styles.tierActionRow}>
-              <View style={[styles.tierDot, { backgroundColor: tier.color }]} />
+              <View style={[styles.tierActionNumber, { borderColor: tier.color }]}>
+                <Text style={[styles.tierActionNumberText, { color: tier.color }]}>
+                  {i + 1}
+                </Text>
+              </View>
               <Text style={styles.tierActionText}>{action}</Text>
             </View>
           ))}
@@ -448,13 +467,19 @@ export default function CrisisPlanScreen() {
 
           <View style={styles.infoRow}>
             <Text style={styles.infoKey}>Emergency Number</Text>
-            <Pressable onPress={() => setCountryPickerOpen(true)} hitSlop={8}>
-              <Text style={styles.infoVal}>
+            <Pressable
+              onPress={() => setCountryPickerOpen(true)}
+              hitSlop={8}
+              style={({ pressed }) => [
+                styles.infoAction,
+                pressed && { opacity: 0.7 },
+              ]}
+            >
+              <Text style={styles.infoVal} numberOfLines={2}>
                 {emergencyNumber}
                 {emergencyCountryCode ? ` (${getCountryName(emergencyCountryCode)})` : ""}
-                {"  "}
-                <Text style={styles.infoValLink}>change</Text>
               </Text>
+              <ChevronRight size={17} color="#A9334D" strokeWidth={2.4} />
             </Pressable>
           </View>
         </View>
@@ -731,51 +756,80 @@ export default function CrisisPlanScreen() {
         transparent
         onRequestClose={() => setCountryPickerOpen(false)}
       >
-        <View style={styles.pickerOverlay}>
-          <View style={[styles.pickerSheet, { paddingBottom: insets.bottom + 20 }]}>
-            <Text style={styles.sheetTitle}>Emergency Number Country</Text>
-            <Text style={styles.sheetHint}>
-              Choose the country whose ambulance number should be shown. Your
-              actual physical location (SIM/GPS) will still take priority over
-              this when detected.
-            </Text>
-            <TextInput
-              style={styles.sheetInput}
-              placeholder="Search country…"
-              placeholderTextColor={t.textTertiary}
-              value={countrySearch}
-              onChangeText={setCountrySearch}
-              autoCapitalize="words"
-            />
-            <ScrollView style={{ marginTop: 12 }} keyboardShouldPersistTaps="handled">
-              {filteredCountryOptions.map((c) => (
-                <Pressable
-                  key={c.iso}
-                  onPress={() => handleSelectCountry(c.iso)}
-                  style={({ pressed }) => [
-                    styles.pickerRow,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                >
-                  <Text style={styles.pickerRowText}>{c.name}</Text>
-                  <Text style={styles.pickerRowSub}>
-                    {emergencyNumbers[c.iso]?.ambulance}
-                  </Text>
-                </Pressable>
-              ))}
-            </ScrollView>
-            <Pressable
-              onPress={() => setCountryPickerOpen(false)}
-              style={({ pressed }) => [
-                styles.sheetSaveBtn,
-                { backgroundColor: t.surfaceElevated, marginTop: 12 },
-                pressed && { opacity: 0.85 },
-              ]}
-            >
-              <Text style={[styles.sheetSaveBtnText, { color: t.text }]}>Cancel</Text>
-            </Pressable>
+        <KeyboardAvoidingView
+          behavior="padding"
+          style={styles.pickerKeyboardView}
+        >
+          <View style={styles.pickerOverlay}>
+            <View style={[styles.pickerSheet, { paddingBottom: insets.bottom + 20 }]}>
+              <Text style={styles.sheetTitle}>Emergency Number Country</Text>
+              <Text style={styles.sheetHint}>
+                Choose the country whose ambulance number should be shown. Your
+                actual physical location (SIM/GPS) will still take priority over
+                this when detected.
+              </Text>
+              <TextInput
+                style={[styles.sheetInput, styles.pickerSearchInput]}
+                placeholder="Search country…"
+                placeholderTextColor={t.textTertiary}
+                value={countrySearch}
+                onChangeText={setCountrySearch}
+                autoCapitalize="words"
+                autoCorrect={false}
+                returnKeyType="search"
+              />
+              <ScrollView
+                style={styles.pickerList}
+                contentContainerStyle={
+                  filteredCountryOptions.length === 0
+                    ? styles.pickerListEmpty
+                    : undefined
+                }
+                keyboardShouldPersistTaps="handled"
+              >
+                {filteredCountryOptions.length > 0 ? (
+                  filteredCountryOptions.map((c) => (
+                    <Pressable
+                      key={c.iso}
+                      onPress={() => handleSelectCountry(c.iso)}
+                      style={({ pressed }) => [
+                        styles.pickerRow,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                    >
+                      <View style={styles.pickerCountryMeta}>
+                        <Text style={styles.pickerFlag}>{countryFlagEmoji(c.iso)}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.pickerRowText}>{c.name}</Text>
+                          <Text style={styles.pickerIsoText}>{c.iso}</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.pickerRowSub}>
+                        {emergencyNumbers[c.iso]?.ambulance}
+                      </Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <AppEmptyState
+                    title="Country not found"
+                    subtitle="Try another country name or country code."
+                    style={styles.pickerEmptyState}
+                  />
+                )}
+              </ScrollView>
+              <Pressable
+                onPress={() => setCountryPickerOpen(false)}
+                style={({ pressed }) => [
+                  styles.sheetSaveBtn,
+                  { backgroundColor: t.surfaceElevated, marginTop: 12 },
+                  pressed && { opacity: 0.85 },
+                ]}
+              >
+                <Text style={[styles.sheetSaveBtnText, { color: t.text }]}>Cancel</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -852,22 +906,26 @@ function createStyles(t) { return StyleSheet.create({
     color: t.textSecondary,
     flexShrink: 0,
   },
+  infoAction: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 4,
+  },
   infoVal: {
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: t.text,
     textAlign: "right",
-    flex: 1,
+    flexShrink: 1,
   },
   infoValEmpty: {
     fontFamily: fonts.regular,
     color: t.textTertiary,
     textAlign: "right",
     flex: 1,
-  },
-  infoValLink: {
-    fontFamily: fonts.semibold,
-    color: "#A9334D",
   },
   divider: {
     height: 1,
@@ -915,53 +973,93 @@ function createStyles(t) { return StyleSheet.create({
   },
   // ── Escalation tiers ───────────────────────────────────────────────
   tierRow: {
-    borderLeftWidth: 3,
-    borderRadius: 10,
+    backgroundColor: t.surface,
+    borderWidth: 1,
+    borderRadius: 16,
     padding: 14,
   },
   tierHeader: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 12,
   },
-  tierStepPill: {
-    borderRadius: 6,
-    paddingHorizontal: 7,
+  tierMarker: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  tierMarkerText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  tierTitleBlock: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4,
+  },
+  tierTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  tierStepLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 15,
+    color: t.text,
+  },
+  tierSeverityPill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  tierStepText: {
+  tierSeverityText: {
     fontFamily: fonts.bold,
     fontSize: 10,
-    color: "#FFFFFF",
-    letterSpacing: 0.5,
-  },
-  tierLabel: {
-    fontFamily: fonts.bold,
-    fontSize: 14,
+    letterSpacing: 0.6,
   },
   tierPainRange: {
     fontFamily: fonts.regular,
     fontSize: 12,
     color: t.textSecondary,
   },
+  tierChevron: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
   tierActions: {
-    marginTop: 12,
-    gap: 8,
-    paddingTop: 10,
+    marginTop: 14,
+    gap: 10,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: t.divider,
   },
   tierActionRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
+    gap: 10,
   },
-  tierDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginTop: 8,
+  tierActionNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 1,
     flexShrink: 0,
+  },
+  tierActionNumberText: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
   },
   tierActionText: {
     fontFamily: fonts.regular,
@@ -1174,6 +1272,9 @@ function createStyles(t) { return StyleSheet.create({
     color: "#FFFFFF",
   },
   // ── Country picker modal ───────────────────────────────────────────
+  pickerKeyboardView: {
+    flex: 1,
+  },
   pickerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1187,6 +1288,19 @@ function createStyles(t) { return StyleSheet.create({
     paddingTop: 20,
     maxHeight: "80%",
   },
+  pickerSearchInput: {
+    minHeight: 52,
+    paddingVertical: 14,
+    fontSize: 15,
+  },
+  pickerList: {
+    marginTop: 12,
+    maxHeight: 360,
+  },
+  pickerListEmpty: {
+    flexGrow: 1,
+    minHeight: 220,
+  },
   pickerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1195,14 +1309,40 @@ function createStyles(t) { return StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: t.divider,
   },
+  pickerCountryMeta: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingRight: 16,
+  },
+  pickerFlag: {
+    fontSize: 22,
+    width: 30,
+    textAlign: "center",
+  },
   pickerRowText: {
     fontFamily: fonts.medium,
     fontSize: 14,
     color: t.text,
   },
-  pickerRowSub: {
+  pickerIsoText: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 11,
+    color: t.textTertiary,
+    marginTop: 2,
+    letterSpacing: 0.4,
+  },
+  pickerRowSub: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
     color: t.textSecondary,
+    flexShrink: 0,
+  },
+  pickerEmptyState: {
+    paddingHorizontal: 24,
+    paddingVertical: 28,
+    justifyContent: "center",
   },
 }); }

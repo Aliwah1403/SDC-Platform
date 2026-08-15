@@ -231,7 +231,7 @@ export default function ShareRecapSheet({
     // Phase 2: run AI enrichment — non-fatal if it fails, the link still works.
     setGeneratingPhase("analysing");
     try {
-      const { error: aiError } = await supabase.functions.invoke(
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         "generate-health-summary",
         { body: { token } },
       );
@@ -241,6 +241,11 @@ export default function ShareRecapSheet({
           aiError.message,
         );
         posthog?.capture("summary_ai_failed", { source: "recap_sheet" });
+      } else if (aiData?.data?.queued) {
+        posthog?.capture("summary_ai_queued", {
+          source: "recap_sheet",
+          label,
+        });
       } else {
         posthog?.capture("summary_ai_generated", {
           source: "recap_sheet",

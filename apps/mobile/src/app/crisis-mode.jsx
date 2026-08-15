@@ -440,7 +440,7 @@ export default function CrisisModeScreen() {
           >
             <AlertTriangle size={16} color="#DC2626" strokeWidth={2.5} />
             <Text style={styles.alertBannerText}>
-              Call emergency services now, then use the button below to message your care team.
+              Call {emergencyNumber} now, then use the button below to message your care team.
             </Text>
           </MotiView>
         )}

@@ -229,7 +229,7 @@ export default function ShareSummaryScreen() {
     // Phase 2: run AI enrichment
     setGeneratingPhase("analysing");
     try {
-      const { error: aiError } = await supabase.functions.invoke(
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         "generate-health-summary",
         {
           body: { token },
@@ -238,6 +238,10 @@ export default function ShareSummaryScreen() {
       if (aiError) {
         console.warn("AI enrichment failed (non-fatal):", aiError.message);
         posthog?.capture("summary_ai_failed");
+      } else if (aiData?.data?.queued) {
+        posthog?.capture("summary_ai_queued", {
+          period_days: selectedPeriod.days,
+        });
       } else {
         posthog?.capture("summary_ai_generated", {
           period_days: selectedPeriod.days,

@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text } from "react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -7,13 +7,6 @@ import { useTheme } from "@/hooks/useTheme";
 // the monthly recap (app/recap.jsx, "Patterns spotted this month", active
 // rows only — a finished month can't be unlocked by logging more, so the
 // recap never renders WatchingRow).
-
-// Copy map for each pattern's `educationTopic` → the action-link label.
-// Single source of truth — previously hand-duplicated in both screens.
-export const EDUCATION_COPY = {
-  pain: "Managing pain during a crisis →",
-  hydration: "Why hydration matters in SCD →",
-};
 
 // Fixed per-metric accent colors for evidence visuals — deliberately NOT
 // theme tokens (these are brand/metric identity, not text/surface colors).
@@ -132,9 +125,8 @@ export function PatternEvidence({ evidence, metric }) {
   return null;
 }
 
-export function PatternRow({ pattern, isLast, onEducationPress }) {
+export function PatternRow({ pattern, isLast }) {
   const t = useTheme();
-  const educationCopy = pattern.educationTopic && EDUCATION_COPY[pattern.educationTopic];
   return (
     <View
       style={{
@@ -150,15 +142,6 @@ export function PatternRow({ pattern, isLast, onEducationPress }) {
         {pattern.body}
       </Text>
       <PatternEvidence evidence={pattern.evidence} metric={pattern.metric} />
-      {educationCopy ? (
-        <TouchableOpacity
-          onPress={() => onEducationPress?.(pattern.educationTopic)}
-          activeOpacity={0.7}
-          style={{ marginTop: 14 }}
-        >
-          <Text style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.accent }}>{educationCopy}</Text>
-        </TouchableOpacity>
-      ) : null}
     </View>
   );
 }

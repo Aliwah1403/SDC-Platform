@@ -251,7 +251,6 @@ function HighPainSupport({ onOpenCrisisPlan, onOpenCareTeam }) {
 // Step 0 — Pain Level
 function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam, relog }) {
   const t = useTheme();
-  const router = useRouter();
   const reducedMotion = useReducedMotion();
   const color = getPainColor(value);
 
@@ -260,15 +259,6 @@ function PainStep({ value, progress, onChange, onOpenCrisisPlan, onOpenCareTeam,
       <View style={{ alignItems: "center" }}>
         <Text style={[styles.stepTitle, { color: t.isDark ? t.text : "#781D11" }]}>{relog ? "How's your pain right now?" : "How's your pain today?"}</Text>
         <Text style={styles.stepSubtitle}>Rate from 0 (no pain) to 10 (worst possible)</Text>
-        <TouchableOpacity
-          onPress={() => router.push("/education-article?topic=hemo-pain-status&from=log_symptoms")}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          style={{ marginTop: 6 }}
-        >
-          <Text style={{ fontFamily: "Geist_500Medium", fontSize: 12, color: t.accent }}>
-            What is Pain Status? →
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Breathing pain orb + number, with support prompt at high pain */}

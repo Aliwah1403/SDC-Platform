@@ -179,7 +179,6 @@ export default function CommunityFeedScreen() {
         onSearchChange={setSearchQuery}
         onNotifications={() => router.push("/notifications")}
         onProfile={() => router.push("/(tabs)/profile")}
-        onLearnMore={() => router.push("/education-article?topic=hemo-community&from=community")}
         notificationCount={notificationCount}
       />
       <FeedFilter active={activeFeed} onSelect={handleFeedChange} />

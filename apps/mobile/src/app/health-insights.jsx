@@ -241,10 +241,6 @@ export default function HealthInsightsScreen() {
   const patternsLoggedCount = countLogged(patternsDays);
 
   const tap = (section) => posthog?.capture("hub_section_tapped", { section });
-  const goToPatternsEducation = (topic) => {
-    tap("patterns_education");
-    router.push(`/education-article?topic=${topic}&from=hub`);
-  };
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
@@ -275,19 +271,6 @@ export default function HealthInsightsScreen() {
         </Text>
         <View style={{ width: 36 }} />
       </View>
-
-      <TouchableOpacity
-        onPress={() => {
-          tap("insights_education");
-          router.push("/education-article?topic=hemo-insights&from=hub");
-        }}
-        style={{ alignSelf: "center", marginBottom: 16 }}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: t.accent }}>
-          Valuing the Insights →
-        </Text>
-      </TouchableOpacity>
 
       {isFirstRun ? (
         <EmptyFirstRun daysLogged={totalDaysLogged} />
@@ -379,7 +362,6 @@ export default function HealthInsightsScreen() {
                     key={p.id}
                     pattern={p}
                     isLast={i === patterns.length - 1 && watchlist.length === 0}
-                    onEducationPress={goToPatternsEducation}
                   />
                 ))}
                 {watchlist.map((w, i) => (
