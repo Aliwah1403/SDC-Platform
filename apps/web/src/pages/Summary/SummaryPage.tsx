@@ -44,6 +44,13 @@ export default function SummaryPage() {
     })();
   }, [token]);
 
+  useEffect(() => {
+    if (data) {
+      const firstName = data.profile.full_name?.split(" ")[0] || "Patient";
+      document.title = `${firstName}'s Health Summary · Hemo`;
+    }
+  }, [data]);
+
   if (state === "loading") return <LinkGateScreen variant="loading" />;
   if (state === "expired") return <LinkGateScreen variant="expired" />;
   if (state === "error" || !data) return <LinkGateScreen variant="unavailable" />;

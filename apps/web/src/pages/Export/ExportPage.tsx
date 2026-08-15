@@ -42,6 +42,13 @@ export default function ExportPage() {
   });
 
   useEffect(() => {
+    if (data) {
+      const firstName = data.data_snapshot.profile.full_name?.split(" ")[0] || "Patient";
+      document.title = `${firstName}'s Health Export · Hemo`;
+    }
+  }, [data]);
+
+  useEffect(() => {
     if (data) posthog?.capture("export_link_viewed");
   }, [!!data]);
 
