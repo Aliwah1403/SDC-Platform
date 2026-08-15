@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchPostDetail } from '@/services/supabaseQueries';
+import { fetchPostDetail } from '@/services/supabase/community';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

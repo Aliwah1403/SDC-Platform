@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabaseQueries';
+import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabase/streak';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

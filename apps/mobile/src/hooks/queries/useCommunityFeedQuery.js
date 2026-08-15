@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchCommunityFeed } from '@/services/supabaseQueries';
+import { fetchCommunityFeed } from '@/services/supabase/community';
 import { useCategoryPrefsQuery } from './useCategoryPrefsQuery';
 
 function useUserId() {

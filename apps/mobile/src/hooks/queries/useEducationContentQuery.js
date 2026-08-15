@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchEducationCategories, fetchEducationArticles } from "@/services/supabaseQueries";
+import { fetchEducationCategories, fetchEducationArticles } from "@/services/supabase/education";
 import {
   EDUCATION_CATEGORIES as BUNDLED_CATEGORIES,
   EDUCATION_ARTICLES as BUNDLED_ARTICLES,

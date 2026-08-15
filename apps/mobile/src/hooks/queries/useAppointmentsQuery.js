@@ -5,7 +5,7 @@ import {
   addAppointment,
   updateAppointment,
   deleteAppointment,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/appointments';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

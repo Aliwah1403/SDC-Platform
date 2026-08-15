@@ -6,7 +6,7 @@ import {
   fetchTriggersInRange,
   submitHealthLog,
   addHydrationQuickly,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/health';
 import { maybeSilenceHydrationReminders } from '@/utils/hydrationReminders';
 import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
 

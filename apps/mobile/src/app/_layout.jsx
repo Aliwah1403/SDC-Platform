@@ -24,7 +24,8 @@ import {
   checkExistingHKAuthorization as checkExistingHCAuthorization,
   fetchHealthKitRange as fetchHealthConnectRange,
 } from "@/services/healthConnectService";
-import { fetchProfile, updateProfile, fetchMedications } from "@/services/supabaseQueries";
+import { fetchProfile, updateProfile } from "@/services/supabase/profile";
+import { fetchMedications } from "@/services/supabase/medications";
 import { scheduleMedicationNotifications } from "@/utils/medicationNotifications";
 import { scheduleCheckInReminders } from "@/utils/checkInNotifications";
 import { scheduleHydrationReminders } from "@/utils/hydrationReminders";

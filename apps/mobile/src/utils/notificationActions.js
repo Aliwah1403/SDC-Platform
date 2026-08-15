@@ -3,7 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/utils/auth/store';
 import { useHydrationStore } from '@/store/hydrationStore';
 import { supabase } from '@/utils/auth/supabase';
-import { addHydrationQuickly, toggleMedicationTaken, fetchHydrationContainers, fetchMetricGoals } from '@/services/supabaseQueries';
+import { addHydrationQuickly } from '@/services/supabase/health';
+import { toggleMedicationTaken } from '@/services/supabase/medications';
+import { fetchHydrationContainers } from '@/services/supabase/hydration';
+import { fetchMetricGoals } from '@/services/supabase/goals';
 import { FALLBACK_CONTAINERS } from '@/constants/hydrationContainers';
 import { formatHydration, glassesFromMl } from '@/utils/hydrationUnits';
 import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
@@ -116,7 +119,7 @@ export async function registerNotificationCategories({ queryClient, userId } = {
 }
 
 // medication_logs / daily_summaries date columns are keyed by this exact
-// UTC-derived string (see supabaseQueries.js's `today()`) — matched here so
+// UTC-derived string (see the health service's `today()` behavior) — matched here so
 // same-day comparisons agree with how the rest of the app writes "today".
 function isoDateString(date) {
   return date.toISOString().split('T')[0];

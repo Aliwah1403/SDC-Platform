@@ -41,7 +41,7 @@ import {
   useUpdateEmergencyContactMutation,
   useDeleteEmergencyContactMutation,
 } from "@/hooks/queries/useEmergencyContactsQuery";
-import { uploadContactPhoto } from "@/services/supabaseQueries";
+import { uploadContactPhoto } from "@/services/supabase/emergency-contacts";
 import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";

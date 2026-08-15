@@ -48,7 +48,7 @@ import {
   searchNearbyFacilities,
   searchFacilitiesByText,
 } from "@/utils/hospitalSearch";
-import { saveFacility, unsaveFacility } from "@/services/supabaseQueries";
+import { saveFacility, unsaveFacility } from "@/services/supabase/facilities";
 import { useAuthStore } from "@/utils/auth/store";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
