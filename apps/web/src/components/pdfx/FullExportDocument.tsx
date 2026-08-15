@@ -13,6 +13,7 @@ interface HealthLog {
   triggers?: string[];
   activities?: string[];
   notes?: string | null;
+  has_notes?: boolean;
   is_repaired?: boolean;
 }
 
@@ -83,6 +84,7 @@ export interface FullExportData {
   topSymptoms: TopItem[];
   topTriggers: TopItem[];
   medications: Medication[];
+  notableDaysTotal?: number;
   healthLogs: HealthLog[];
   dailySummaries: DailySummary[];
 }

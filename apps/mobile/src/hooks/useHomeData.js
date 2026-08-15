@@ -20,14 +20,14 @@ export function useHomeData() {
   const [repairVisible, setRepairVisible] = useState(false);
   const [lostStreakVisible, setLostStreakVisible] = useState(false);
 
-  // Show repair sheet only when gap is 2-3 days AND streak was >= 3 (guarded in useMissedDay)
+  // Show repair sheet only when gap is 2-3 days and there was an active streak.
   useEffect(() => {
     if (missedDay) {
       setTimeout(() => setRepairVisible(true), 500);
     }
   }, [!!missedDay]);
 
-  // Show lost streak modal when gap > 3 days and user had a meaningful streak
+  // Show lost streak modal when gap > 3 days and user had an active streak.
   useEffect(() => {
     if (streakLost) {
       setTimeout(() => setLostStreakVisible(true), 600);

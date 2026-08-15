@@ -19,8 +19,8 @@ const HEMO = {
 };
 
 const WINE_TINT = "rgba(169,51,77,0.08)";
-const ORANGE_TINT_BG = "rgba(240,83,28,0.08)";
-const ORANGE_TINT_BORDER = "rgba(240,83,28,0.28)";
+const HEMO_RED_TINT_BG = "rgba(169,51,77,0.08)";
+const HEMO_RED_TINT_BORDER = "rgba(169,51,77,0.28)";
 
 export default function RepairStreakBottomSheet({ isVisible, onClose }) {
   const t = useTheme();
@@ -97,7 +97,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
 
   if (!missedDay) return null;
 
-  const canRepair = repairsAvailable > 0;
+  const hasRepairs = repairsAvailable > 0;
 
   return (
     <BottomSheet
@@ -161,7 +161,7 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
                     width: 30,
                     height: 30,
                     borderRadius: 15,
-                    backgroundColor: "#F0531C",
+                    backgroundColor: HEMO.wine,
                     alignItems: "center",
                     justifyContent: "center",
                     borderWidth: 2.5,
@@ -204,8 +204,8 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               </View>
 
               {/* Repairs stat */}
-              <View style={{ flex: 1, backgroundColor: canRepair ? ORANGE_TINT_BG : t.surfaceElevated, borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: canRepair ? ORANGE_TINT_BORDER : t.border }}>
-                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: canRepair ? "#F0531C" : t.textSecondary, lineHeight: 34 }}>
+              <View style={{ flex: 1, backgroundColor: hasRepairs ? HEMO_RED_TINT_BG : t.surfaceElevated, borderRadius: 16, padding: 16, alignItems: "center", borderWidth: 1, borderColor: hasRepairs ? HEMO_RED_TINT_BORDER : t.border }}>
+                <Text style={{ fontFamily: fonts.extrabold, fontSize: 30, color: hasRepairs ? HEMO.wine : t.textSecondary, lineHeight: 34 }}>
                   {repairsAvailable}
                 </Text>
                 <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 2 }}>
@@ -222,15 +222,15 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
               style={{ marginBottom: 24 }}
             >
               <Text style={{ fontFamily: fonts.regular, fontSize: 14, color: t.textSecondary, textAlign: "center", lineHeight: 21 }}>
-                {canRepair
+                {hasRepairs
                   ? `Use 1 repair to fill the gap and keep your `
                   : "You've used all your repairs. Log today to start a fresh streak."}
-                {canRepair && (
+                {hasRepairs && (
                   <Text style={{ fontFamily: fonts.bold, color: t.text }}>
                     {healthStreak} day streak
                   </Text>
                 )}
-                {canRepair && " alive."}
+                {hasRepairs && " alive."}
               </Text>
             </MotiView>
 
@@ -238,16 +238,16 @@ export default function RepairStreakBottomSheet({ isVisible, onClose }) {
             <View style={{ gap: 10 }}>
               <PressableScale
                 onPress={handleRepair}
-                disabled={isRepairing || !canRepair}
+                disabled={isRepairing || !hasRepairs}
                 style={{
-                  backgroundColor: canRepair ? "#F0531C" : t.surfaceElevated,
+                  backgroundColor: hasRepairs ? HEMO.wine : t.surfaceElevated,
                   paddingVertical: 16,
                   borderRadius: 16,
                   alignItems: "center",
                 }}
               >
-                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: canRepair ? "#fff" : t.textTertiary }}>
-                  {isRepairing ? "Repairing…" : canRepair ? "Use a Repair" : "No Repairs Left"}
+                <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: hasRepairs ? "#fff" : t.textTertiary }}>
+                  {isRepairing ? "Repairing…" : hasRepairs ? "Use a Repair" : "No Repairs Left"}
                 </Text>
               </PressableScale>
 

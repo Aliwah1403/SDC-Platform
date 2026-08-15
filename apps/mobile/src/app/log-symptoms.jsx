@@ -43,6 +43,7 @@ import { fonts } from "@/utils/fonts";
 import { PressableScale } from "@/components/PressableScale";
 import { colors } from "@/utils/colors";
 import ContainerIcon from "@/components/ContainerIcon";
+import { Sentry } from "@/utils/sentry";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { celebrationSpring } from "@/utils/motion";
 
@@ -629,7 +630,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, showSaveSuccess }) {
+function SummaryStep({ log, onSubmit, isLoading, isDisabled, hydrationDisplayUnit, relog, showSaveSuccess }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -672,7 +673,7 @@ function SummaryStep({ log, onSubmit, isLoading, hydrationDisplayUnit, relog, sh
         )}
       </ScrollView>
 
-      <PressableScale onPress={onSubmit} disabled={isLoading} style={[styles.submitBtn, isLoading && { opacity: 0.7 }]}>
+      <PressableScale onPress={onSubmit} disabled={isLoading || isDisabled} style={[styles.submitBtn, (isLoading || isDisabled) && { opacity: 0.7 }]}>
         {isLoading ? (
           <ActivityIndicator color="#fff" size="small" />
         ) : showSaveSuccess ? (
@@ -775,6 +776,7 @@ export default function LogSymptomsScreen() {
   }, [dailySummaries]);
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [saveCommitted, setSaveCommitted] = useState(false);
 
   const STEP_COUNT = 8; // steps 0-6 + summary (7)
 
@@ -847,6 +849,8 @@ export default function LogSymptomsScreen() {
   }
 
   function handleSubmit() {
+    if (submitLogMutation.isPending || saveCommitted) return;
+
     const logData = {
       painLevel,
       mood: MOOD_VALUES[moodValue - 1],
@@ -860,6 +864,7 @@ export default function LogSymptomsScreen() {
 
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
+        setSaveCommitted(true);
         const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
         posthog?.capture('symptom_log_submitted', {
           pain_level: painLevel,
@@ -904,6 +909,38 @@ export default function LogSymptomsScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setShowSaveSuccess(true);
         setTimeout(() => router.back(), 350);
+      },
+      onError: (error) => {
+        const stage = error?.saveStage ?? 'unknown';
+        const rawLogSaved = error?.rawLogSaved === true;
+
+        console.error(
+          `[LogSymptoms] Save failed at ${stage}${rawLogSaved ? ' after raw log insert' : ''}:`,
+          error?.message ?? error,
+        );
+        Sentry.captureException(error);
+        posthog?.capture('symptom_log_save_failed', {
+          stage,
+          raw_log_saved: rawLogSaved,
+        });
+
+        if (rawLogSaved) {
+          // The health_logs insert is durable. Do not let a retry create a
+          // duplicate just because a follow-up summary/streak operation failed.
+          setSaveCommitted(true);
+          resetSymptomLog();
+          Alert.alert(
+            'Log saved with a warning',
+            'Your symptom log was saved, but part of the dashboard update did not finish. Your data will refresh when you return.',
+            [{ text: 'OK', onPress: () => router.back() }],
+          );
+          return;
+        }
+
+        Alert.alert(
+          'Couldn’t save log',
+          'Your symptom log was not saved. Please check your connection and try again.',
+        );
       },
     });
   }
@@ -1037,7 +1074,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} isDisabled={saveCommitted} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} />
         )}
       </View>
 

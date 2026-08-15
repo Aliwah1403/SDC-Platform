@@ -303,8 +303,19 @@ Deno.serve(async (req) => {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([name, count]) => ({ name, count }));
+    const notableDays = healthLogs.filter(
+      (log) => Boolean(log.notes) || (log.pain_level ?? 0) >= 5,
+    );
+    const compactHealthLogs = (healthLogs.length > 0 ? healthLogs : dailySummaries).map((log) => ({
+      date: log.date,
+      pain_level: log.pain_level ?? null,
+      mood: log.mood ?? null,
+      hydration: log.hydration ?? null,
+      is_repaired: log.is_repaired ?? false,
+      has_notes: "notes" in log ? Boolean(log.notes) : false,
+    }));
 
-    const dataSnapshot = {
+    const baseSnapshot = {
       generatedAt: new Date().toISOString(),
       dateRange: { start: startDate, end: endDate },
       ...(mode === "health_summary" && effectivePeriodDays ? { periodDays: effectivePeriodDays } : {}),
@@ -323,16 +334,21 @@ Deno.serve(async (req) => {
       },
       stats,
       goals,
+      ...(mode === "full_export" ? { notableDaysTotal: notableDays.length } : {}),
       topSymptoms,
       topTriggers,
       medications: medications.map((m) => ({
         ...m,
         adherence: adherenceMap[m.id] ?? null,
       })),
-      healthLogs,
-      dailySummaries,
-      medLogs,
     };
+    const dataSnapshot = mode === "health_summary"
+      ? baseSnapshot
+      : {
+          ...baseSnapshot,
+          healthLogs: compactHealthLogs,
+          dailySummaries: [],
+        };
 
     // Write token row
     const expiresAt = new Date(Date.now() + ttlDays * 86400 * 1000).toISOString();
@@ -348,7 +364,7 @@ Deno.serve(async (req) => {
         expires_at: expiresAt,
         label: periodLabel,
       })
-      .select("token")
+      .select("id, token")
       .single();
 
     if (insertError || !tokenRow) {
@@ -357,6 +373,33 @@ Deno.serve(async (req) => {
         JSON.stringify({ data: null, error: "Failed to create export token" }),
         { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
+    }
+
+    if (mode === "full_export" && notableDays.length > 0) {
+      const { error: notableInsertError } = await supabase
+        .from("export_notable_days")
+        .insert(
+          notableDays.map((log, index) => ({
+            export_token_id: tokenRow.id,
+            sort_order: index,
+            date: log.date,
+            pain_level: log.pain_level ?? null,
+            hydration: log.hydration ?? null,
+            symptoms: log.symptoms ?? [],
+            triggers: log.triggers ?? [],
+            notes: log.notes ?? null,
+            is_repaired: log.is_repaired ?? false,
+          })),
+        );
+
+      if (notableInsertError) {
+        console.error("notable days insert error:", notableInsertError.message);
+        await supabase.from("export_tokens").delete().eq("id", tokenRow.id);
+        return new Response(
+          JSON.stringify({ data: null, error: "Failed to create export token" }),
+          { status: 500, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+        );
+      }
     }
 
     const route = mode === "full_export" ? "export" : "summary";

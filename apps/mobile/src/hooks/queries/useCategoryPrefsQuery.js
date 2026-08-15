@@ -32,7 +32,7 @@ export function useFollowCategoryMutation() {
       await queryClient.cancelQueries({ queryKey: ['category_prefs', userId] });
       const prev = queryClient.getQueryData(['category_prefs', userId]);
       queryClient.setQueryData(['category_prefs', userId], (old) => ({
-        followedCategoryIds: [...(old?.followedCategoryIds ?? []), categoryId],
+        followedCategoryIds: Array.from(new Set([...(old?.followedCategoryIds ?? []), categoryId])),
         blockedCategoryIds: (old?.blockedCategoryIds ?? []).filter((id) => id !== categoryId),
       }));
       return { prev };
@@ -42,6 +42,7 @@ export function useFollowCategoryMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['category_prefs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });
     },
   });
 }
@@ -68,6 +69,7 @@ export function useBlockCategoryMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['category_prefs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });
     },
   });
 }
@@ -94,6 +96,7 @@ export function useRemoveCategoryPrefMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['category_prefs', userId] });
+      queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });
     },
   });
 }

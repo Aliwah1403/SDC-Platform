@@ -88,6 +88,12 @@
         }
       ],
       [
+        "expo-contacts",
+        {
+          "contactsPermission": "Hemo uses your contacts so you can quickly add emergency contacts to your care team."
+        }
+      ],
+      [
         "@kingstinct/react-native-healthkit",
         {
           "healthSharePermission": "Hemo reads health data to monitor your sickle cell disease.",

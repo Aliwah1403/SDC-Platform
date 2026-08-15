@@ -280,6 +280,17 @@ export async function fetchTriggersInRange(userId, startDate, endDate) {
  */
 export async function submitHealthLog(userId, logData) {
   const todayStr = today();
+  let rawLogSaved = false;
+
+  const throwSaveError = (error, stage) => {
+    const saveError = error instanceof Error
+      ? error
+      : new Error(error?.message || 'Health log save failed');
+    saveError.saveStage = stage;
+    saveError.rawLogSaved = rawLogSaved;
+    throw saveError;
+  };
+
   const moodValue =
     logData.mood === 'excellent' ? 5
     : logData.mood === 'good' ? 4
@@ -303,7 +314,8 @@ export async function submitHealthLog(userId, logData) {
       triggers: logData.triggers ?? [],
       activities: logData.activities ?? [],
     });
-  if (logError) throw logError;
+  if (logError) throwSaveError(logError, 'health_log_insert');
+  rawLogSaved = true;
 
   // 2. Fetch all logs for today to compute aggregate
   const { data: todaysLogs, error: logsError } = await supabase
@@ -312,7 +324,7 @@ export async function submitHealthLog(userId, logData) {
     .eq('user_id', userId)
     .eq('date', todayStr)
     .order('created_at', { ascending: true });
-  if (logsError) throw logsError;
+  if (logsError) throwSaveError(logsError, 'health_logs_refresh');
 
   const maxPain = Math.max(...todaysLogs.map((l) => l.pain_level ?? 0));
   const maxHydration = Math.max(...todaysLogs.map((l) => l.hydration ?? 0));
@@ -332,7 +344,7 @@ export async function submitHealthLog(userId, logData) {
       },
       { onConflict: 'user_id,date' }
     );
-  if (summaryError) throw summaryError;
+  if (summaryError) throwSaveError(summaryError, 'daily_summary_update');
 
   // 4. Update streak
   const { data: streakRow, error: streakFetchError } = await supabase
@@ -340,7 +352,7 @@ export async function submitHealthLog(userId, logData) {
     .select('current_streak, longest_streak, last_log_date, repair_progress, days_until_next_repair, repairs_available, repairs_earned')
     .eq('user_id', userId)
     .single();
-  if (streakFetchError) throw streakFetchError;
+  if (streakFetchError) throwSaveError(streakFetchError, 'streak_fetch');
 
   const lastDate = streakRow.last_log_date;
   const alreadyLoggedToday = lastDate === todayStr;
@@ -375,7 +387,7 @@ export async function submitHealthLog(userId, logData) {
         updated_at: new Date().toISOString(),
       })
       .eq('user_id', userId);
-    if (streakUpdateError) throw streakUpdateError;
+    if (streakUpdateError) throwSaveError(streakUpdateError, 'streak_update');
 
     return { newStreak, isNewDay: true, earnedRepair };
   }
@@ -718,12 +730,27 @@ export async function acknowledgeStreakLoss(userId) {
 export async function repairStreak(userId) {
   const { data: streakRow, error: fetchError } = await supabase
     .from('streaks')
-    .select('repairs_available, repairs_used, current_streak')
+    .select('repairs_available, repairs_used, current_streak, last_log_date')
     .eq('user_id', userId)
     .single();
   if (fetchError) throw fetchError;
   if ((streakRow.repairs_available ?? 0) <= 0) {
     throw new Error('No repairs available');
+  }
+  if ((streakRow.current_streak ?? 0) < 1) {
+    throw new Error('No active streak to repair');
+  }
+
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
+  const lastLogDate = streakRow.last_log_date ? new Date(streakRow.last_log_date) : null;
+  lastLogDate?.setHours(0, 0, 0, 0);
+  const daysSinceLastLog = lastLogDate
+    ? Math.floor((todayDate - lastLogDate) / (1000 * 60 * 60 * 24))
+    : null;
+
+  if (!daysSinceLastLog || daysSinceLastLog <= 1 || daysSinceLastLog > 3) {
+    throw new Error('Streak is not within the repair window');
   }
 
   // A repair forgives the entire gap — set last_log_date to yesterday so

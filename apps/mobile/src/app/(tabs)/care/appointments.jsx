@@ -31,6 +31,7 @@ import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { fonts } from "@/utils/fonts";
+import AppEmptyState from "@/components/AppEmptyState";
 
 const TYPE_COLORS = {
   "routine":     { bg: "#F8F4F0", text: "#374151" },
@@ -214,13 +215,6 @@ export default function AppointmentsScreen() {
     </View>
   );
 
-  const EmptyState = ({ message }) => (
-    <View style={{ backgroundColor: t.surface, borderRadius: 16, padding: 24, alignItems: "center", borderWidth: 1, borderColor: t.border, borderStyle: "dashed", marginBottom: 12 }}>
-      <Calendar size={32} color="#D09F9A" style={{ marginBottom: 10 }} />
-      <Text style={{ fontSize: 14, color: t.textSecondary, textAlign: "center", fontFamily: fonts.regular }}>{message}</Text>
-    </View>
-  );
-
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <StatusBar style="light" />
@@ -270,7 +264,36 @@ export default function AppointmentsScreen() {
         {/* Upcoming */}
         <SectionHeader label="Upcoming" count={upcoming.length} />
         {upcoming.length === 0 ? (
-          <EmptyState message={"No upcoming appointments.\nTap + to log one."} />
+          <AppEmptyState
+            Icon={Calendar}
+            title="No upcoming appointments"
+            style={{ paddingTop: 52, paddingBottom: 48 }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                posthog?.capture('appointment_add_tapped');
+                router.push("/appointment-form");
+              }}
+              activeOpacity={0.85}
+              style={{
+                marginTop: 20,
+                backgroundColor: "#A9334D",
+                borderRadius: 12,
+                paddingHorizontal: 22,
+                paddingVertical: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontFamily: fonts.bold,
+                  fontSize: 14,
+                  color: "#F8E9E7",
+                }}
+              >
+                Add appointment
+              </Text>
+            </TouchableOpacity>
+          </AppEmptyState>
         ) : (
           upcoming.map((appt) => (
             <AppointmentCard

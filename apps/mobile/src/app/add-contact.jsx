@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { usePostHog } from "posthog-react-native";
 import {
   View,
@@ -9,6 +9,7 @@ import {
   Switch,
   Platform,
   Alert,
+  Linking,
   Modal,
   FlatList,
   ActivityIndicator,
@@ -45,6 +46,7 @@ import { useAuthStore } from "@/utils/auth/store";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
+import { DEFAULT_PHONE_COUNTRY, countryFlagEmoji, parsePhoneForInput } from "@/utils/phoneNumbers";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -57,6 +59,13 @@ const RELATIONSHIPS = [
 ];
 
 const C = { accent: "#A9334D" };
+const CONTACT_DETAIL_FIELDS = [
+  Contacts.ContactField.FULL_NAME,
+  Contacts.ContactField.GIVEN_NAME,
+  Contacts.ContactField.FAMILY_NAME,
+  Contacts.ContactField.PHONES,
+  Contacts.ContactField.IMAGE,
+];
 
 function getInitials(name = "") {
   return name
@@ -66,6 +75,37 @@ function getInitials(name = "") {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+async function normalizePickedContact(contact) {
+  if (!contact) return null;
+
+  const details =
+    typeof contact.getDetails === "function"
+      ? await contact.getDetails(CONTACT_DETAIL_FIELDS)
+      : contact;
+  const name =
+    details.fullName ||
+    details.name ||
+    [details.givenName ?? details.firstName, details.familyName ?? details.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    "";
+  const phones = details.phones ?? details.phoneNumbers ?? [];
+  const phoneNumbers = phones
+    .map((phone) => ({ number: phone.number }))
+    .filter((phone) => !!phone.number);
+  const imageUri =
+    typeof details.image === "string"
+      ? details.image
+      : details.image?.uri;
+
+  return {
+    ...details,
+    name,
+    phoneNumbers,
+    image: imageUri ? { uri: imageUri } : details.image,
+  };
 }
 
 export default function AddContactScreen() {
@@ -85,10 +125,15 @@ export default function AddContactScreen() {
   const styles = createStyles(t);
   const existing = contactId ? contacts.find((c) => c.id === contactId) : null;
   const isEditing = !!existing;
+  const initialPhone = parsePhoneForInput(existing?.phone ?? "");
 
   // Form state
   const [name, setName] = useState(existing?.name ?? "");
-  const [phone, setPhone] = useState(existing?.phone ?? "");
+  const [phone, setPhone] = useState(initialPhone.formattedNumber);
+  const [phoneInputValue, setPhoneInputValue] = useState(initialPhone.nationalNumber);
+  const [phoneCountryCode, setPhoneCountryCode] = useState(initialPhone.countryCode);
+  const [phoneCallingCode, setPhoneCallingCode] = useState(initialPhone.callingCode);
+  const [phoneInputKey, setPhoneInputKey] = useState(0);
   const [relationship, setRelationship] = useState(
     existing?.relationship ?? "",
   );
@@ -109,8 +154,17 @@ export default function AddContactScreen() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactSearch, setContactSearch] = useState("");
   const contactSearchRef = useRef(null);
+  const phoneInputRef = useRef(null);
 
   const [focusedField, setFocusedField] = useState(null);
+
+  useEffect(() => {
+    phoneInputRef.current?.setState?.({
+      countryCode: phoneCountryCode,
+      code: phoneCallingCode,
+      number: phoneInputValue,
+    });
+  }, [phoneCallingCode, phoneCountryCode, phoneInputValue]);
 
   // ── Photo picker ──────────────────────────────────────────────────────────
   const handlePhotoPress = () => {
@@ -169,14 +223,43 @@ export default function AddContactScreen() {
   };
 
   // ── Contact picker ────────────────────────────────────────────────────────
+  const showContactsUnavailableAlert = (canOpenSettings = false) => {
+    const actions = [
+      {
+        text: "Add manually",
+        onPress: () => setMode("form"),
+      },
+    ];
+
+    if (canOpenSettings) {
+      actions.unshift({
+        text: "Open Settings",
+        onPress: () => Linking.openSettings(),
+      });
+    }
+
+    actions.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(
+      "Contacts unavailable",
+      "Hemo could not open your phone contacts. You can allow contacts access in Settings or add this person manually.",
+      actions,
+    );
+  };
+
   const applyPickedContact = (contact) => {
     const resolvedName =
       contact.name ||
       [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
       "";
     const pickedPhone = contact.phoneNumbers?.[0]?.number || "";
+    const parsedPhone = parsePhoneForInput(pickedPhone, phoneCountryCode);
     setName(resolvedName);
-    setPhone(pickedPhone);
+    setPhone(parsedPhone.formattedNumber);
+    setPhoneInputValue(parsedPhone.nationalNumber);
+    setPhoneCountryCode(parsedPhone.countryCode);
+    setPhoneCallingCode(parsedPhone.callingCode);
+    setPhoneInputKey((key) => key + 1);
     if (contact.image?.uri) {
       setPhotoUri(contact.image.uri);
       setPhotoRemoved(false);
@@ -185,41 +268,58 @@ export default function AddContactScreen() {
     setMode("form");
   };
 
-  const handlePickContact = async () => {
-    if (Platform.OS === "ios") {
-      try {
-        const contact = await Contacts.presentContactPickerAsync();
-        if (contact) applyPickedContact(contact);
-      } catch {
-        /* cancelled */
+  const openContactList = async () => {
+    setIsLoadingContacts(true);
+    try {
+      const permission = await Contacts.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        showContactsUnavailableAlert(permission.canAskAgain === false);
+        return;
       }
-    } else {
-      setIsLoadingContacts(true);
-      try {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === "granted") {
-          const { data } = await Contacts.getContactsAsync({
-            fields: [
-              Contacts.Fields.Name,
-              Contacts.Fields.PhoneNumbers,
-              Contacts.Fields.Image,
-            ],
-          });
-          setAllContacts(
-            data.filter((c) => c.name && c.phoneNumbers?.length > 0),
-          );
-          setContactSearch("");
-          setShowContactModal(true);
-          setTimeout(() => contactSearchRef.current?.focus(), 300);
-        } else {
-          setMode("form");
-        }
-      } catch {
-        setMode("form");
-      } finally {
-        setIsLoadingContacts(false);
-      }
+
+      const data = await Contacts.Contact.getAllDetails(CONTACT_DETAIL_FIELDS);
+      const contactsWithPhones = data
+        .map((contact) => ({
+          id: contact.id,
+          name:
+            contact.fullName ||
+            [contact.givenName, contact.familyName].filter(Boolean).join(" ") ||
+            "",
+          phoneNumbers: (contact.phones ?? [])
+            .map((phone) => ({ number: phone.number }))
+            .filter((phone) => !!phone.number),
+          image: contact.image ? { uri: contact.image } : null,
+        }))
+        .filter(
+          (c) => c.name && c.phoneNumbers?.length > 0,
+        );
+
+      setAllContacts(contactsWithPhones);
+      setContactSearch("");
+      setShowContactModal(true);
+      setTimeout(() => contactSearchRef.current?.focus(), 300);
+    } catch (error) {
+      console.warn("[contacts] Failed to load phone contacts", error);
+      showContactsUnavailableAlert();
+    } finally {
+      setIsLoadingContacts(false);
     }
+  };
+
+  const handlePickContact = async () => {
+    if (Platform.OS === "ios" && Contacts.Contact?.presentPicker) {
+      try {
+        const contact = await Contacts.Contact.presentPicker();
+        const normalizedContact = await normalizePickedContact(contact);
+        if (normalizedContact) applyPickedContact(normalizedContact);
+      } catch (error) {
+        console.warn("[contacts] Native contact picker failed", error);
+        await openContactList();
+      }
+      return;
+    }
+
+    await openContactList();
   };
 
   // ── Save ──────────────────────────────────────────────────────────────────
@@ -560,11 +660,19 @@ export default function AddContactScreen() {
                 Phone Number
               </Text>
               <PhoneInput
-                defaultCode="GB"
+                ref={phoneInputRef}
+                key={`contact-phone-${phoneInputKey}-${phoneCountryCode}`}
+                defaultCode={phoneCountryCode}
                 layout="first"
                 placeholder="Phone number"
-                value={phone}
+                value={phoneInputValue}
+                flagSize={20}
+                onChangeText={setPhoneInputValue}
                 onChangeFormattedText={setPhone}
+                onChangeCountry={(country) => {
+                  setPhoneCountryCode(country.cca2 ?? DEFAULT_PHONE_COUNTRY);
+                  setPhoneCallingCode(country.callingCode?.[0] ?? phoneCallingCode);
+                }}
                 containerStyle={styles.phoneContainer}
                 textContainerStyle={styles.phoneTextContainer}
                 textInputStyle={styles.phoneTextInput}
@@ -578,8 +686,15 @@ export default function AddContactScreen() {
                 }}
                 countryPickerProps={{
                   withFilter: true,
+                  withFlag: true,
+                  withFlagButton: true,
                   withAlphaFilter: true,
                   withEmoji: true,
+                  renderFlagButton: () => (
+                    <Text style={styles.phoneFlagEmoji}>
+                      {countryFlagEmoji(phoneCountryCode)}
+                    </Text>
+                  ),
                 }}
               />
 
@@ -907,6 +1022,10 @@ function createStyles(t) {
       color: t.text,
     },
     phoneFlagBtn: { backgroundColor: "transparent" },
+    phoneFlagEmoji: {
+      fontSize: 20,
+      marginRight: 6,
+    },
     relChips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
     relChip: {
       backgroundColor: inputBg,

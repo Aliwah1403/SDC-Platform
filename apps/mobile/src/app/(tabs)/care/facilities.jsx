@@ -41,6 +41,7 @@ import {
   ExternalLink,
 } from "lucide-react-native";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import AppEmptyState from "@/components/AppEmptyState";
 import { useAppStore } from "@/store/appStore";
 import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
 import {
@@ -1031,15 +1032,11 @@ export default function FacilitiesScreen() {
                 </Text>
               </View>
             ) : (
-              <View style={styles.emptyState}>
-                <Search size={40} color={t.textTertiary} />
-                <Text style={styles.emptyStateText}>
-                  No results for "{searchQuery}"
-                </Text>
-                <Text style={styles.emptyStateSubtext}>
-                  Try a hospital name, area, or type
-                </Text>
-              </View>
+              <AppEmptyState
+                Icon={Search}
+                title="No results"
+                subtitle={`No facilities match "${searchQuery}". Try a hospital name, area, or type.`}
+              />
             )
           }
           ListHeaderComponent={
@@ -1079,12 +1076,11 @@ export default function FacilitiesScreen() {
                 </Text>
               </View>
             ) : (
-              <View style={styles.emptyState}>
-                <MapPin size={40} color={t.textTertiary} />
-                <Text style={styles.emptyStateText}>
-                  No facilities match this filter.
-                </Text>
-              </View>
+              <AppEmptyState
+                Icon={MapPin}
+                title="No facilities found"
+                subtitle="No facilities match this filter."
+              />
             )
           }
           ListFooterComponent={
@@ -1461,12 +1457,6 @@ function createStyles(t) { return StyleSheet.create({
 
   // Empty state
   emptyState: { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptyStateText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 15,
-    color: t.textSecondary,
-    textAlign: "center",
-  },
   emptyStateSubtext: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,

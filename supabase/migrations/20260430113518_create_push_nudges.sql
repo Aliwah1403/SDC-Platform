@@ -5,6 +5,4 @@ create table if not exists push_nudges (
   cutoff_date date        not null,
   created_at  timestamptz not null default now(),
   constraint push_nudges_unique unique (workflow_id, user_id, cutoff_date)
-);
-
-alter table push_nudges enable row level security;
+);;
