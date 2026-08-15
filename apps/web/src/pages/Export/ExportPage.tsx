@@ -49,5 +49,11 @@ export default function ExportPage() {
   if (error?.message === "expired") return <LinkGateScreen variant="expired" />;
   if (error || !data) return <LinkGateScreen variant="unavailable" />;
 
-  return <ExportView data={data.data_snapshot} onPdfDownload={() => posthog?.capture("export_pdf_downloaded")} />;
+  return (
+    <ExportView
+      data={data.data_snapshot}
+      token={token}
+      onPdfDownload={() => posthog?.capture("export_pdf_downloaded")}
+    />
+  );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Lock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ import { ChartCard21 } from "@/components/chart-card21";
 import { ExportPainChart } from "./_ExportPainChart";
 import { ExportHeatmap } from "./_ExportHeatmap";
 import { PageNav, PageFooter } from "../_PageShells";
+import { supabase } from "@/lib/supabase";
 
 // ── Masthead ─────────────────────────────────────────────────────────────────
 
@@ -480,14 +481,71 @@ function Medications({ data }: { data: FullExportData }) {
 
 const NOTABLE_DAYS_PAGE_SIZE = 10;
 
-function NotableDays({ data }: { data: FullExportData }) {
-  const [visibleCount, setVisibleCount] = useState(NOTABLE_DAYS_PAGE_SIZE);
-  const notable = data.healthLogs.filter(
+type NotableDay = {
+  date: string;
+  pain_level?: number | null;
+  hydration?: number | null;
+  symptoms?: string[] | null;
+  triggers?: string[] | null;
+  notes?: string | null;
+  is_repaired?: boolean | null;
+  sort_order?: number | null;
+  total_count?: number | null;
+};
+
+function NotableDays({ data, token }: { data: FullExportData; token?: string }) {
+  const fallbackNotable = data.healthLogs.filter(
     (l) => l.notes || (l.pain_level ?? 0) >= 5,
   );
-  const visibleNotable = notable.slice(0, visibleCount);
-  const hasMore = visibleCount < notable.length;
-  const nextCount = Math.min(NOTABLE_DAYS_PAGE_SIZE, notable.length - visibleCount);
+  const useBackendNotables = !!token && data.notableDaysTotal != null;
+  const [notable, setNotable] = useState<NotableDay[]>(() =>
+    useBackendNotables ? [] : fallbackNotable.slice(0, NOTABLE_DAYS_PAGE_SIZE),
+  );
+  const [totalCount, setTotalCount] = useState(
+    useBackendNotables ? (data.notableDaysTotal ?? 0) : fallbackNotable.length,
+  );
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  async function loadNotableDays(offset: number) {
+    if (!token || !supabase) return;
+    setIsLoadingMore(true);
+    setLoadError(null);
+
+    const { data: rows, error } = await supabase.rpc("get_export_notable_days", {
+      p_token: token,
+      p_limit: NOTABLE_DAYS_PAGE_SIZE,
+      p_offset: offset,
+    });
+
+    setIsLoadingMore(false);
+
+    if (error) {
+      setLoadError("Could not load more notable days.");
+      return;
+    }
+
+    const nextRows = (rows ?? []) as NotableDay[];
+    if (nextRows[0]?.total_count != null) {
+      setTotalCount(Number(nextRows[0].total_count));
+    }
+    setNotable((current) => (offset === 0 ? nextRows : [...current, ...nextRows]));
+  }
+
+  useEffect(() => {
+    if (!useBackendNotables) {
+      setNotable(fallbackNotable.slice(0, NOTABLE_DAYS_PAGE_SIZE));
+      setTotalCount(fallbackNotable.length);
+      return;
+    }
+    setNotable([]);
+    setTotalCount(data.notableDaysTotal ?? 0);
+    loadNotableDays(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, data.notableDaysTotal, useBackendNotables]);
+
+  const hasMore = notable.length < totalCount;
+  const nextCount = Math.min(NOTABLE_DAYS_PAGE_SIZE, totalCount - notable.length);
 
   const dotColor = (p?: number | null) => {
     if (p == null) return "#D1D5DB";
@@ -501,14 +559,14 @@ function NotableDays({ data }: { data: FullExportData }) {
     <Section
       eyebrow="In their own words"
       title="Notable days"
-      aside={`${notable.length} of ${data.healthLogs.length} entries`}
+      aside={`${totalCount} of ${data.stats.totalDaysLogged} entries`}
     >
       <Card className="px-6 py-5">
         <div className="space-y-0">
-          {visibleNotable.map((l, idx) => (
-            <div key={l.date} className="relative flex gap-5 pb-6 last:pb-0">
+          {notable.map((l, idx) => (
+            <div key={`${l.date}-${l.sort_order ?? idx}`} className="relative flex gap-5 pb-6 last:pb-0">
               {/* Vertical line */}
-              {idx < visibleNotable.length - 1 && (
+              {idx < notable.length - 1 && (
                 <div className="absolute left-[9px] top-5 h-full w-px bg-[#F0E4E1]" />
               )}
 
@@ -600,18 +658,24 @@ function NotableDays({ data }: { data: FullExportData }) {
           <div className="mt-5 flex flex-col items-center gap-2 border-t border-[#F0E4E1] pt-5">
             <button
               type="button"
-              onClick={() =>
-                setVisibleCount((current) =>
-                  Math.min(current + NOTABLE_DAYS_PAGE_SIZE, notable.length),
-                )
-              }
-              className="rounded-full bg-[#A9334D] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#781D11]"
+              disabled={isLoadingMore}
+              onClick={() => {
+                if (useBackendNotables) {
+                  loadNotableDays(notable.length);
+                } else {
+                  setNotable(fallbackNotable.slice(0, notable.length + NOTABLE_DAYS_PAGE_SIZE));
+                }
+              }}
+              className="rounded-full bg-[#A9334D] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#781D11] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Load more
+              {isLoadingMore ? "Loading…" : `Show ${nextCount} more`}
             </button>
             <p className="text-[12px] text-[#1A1A1A]/45">
-              Showing {visibleNotable.length} of {notable.length} notable days
+              Showing {notable.length} of {totalCount} notable days
             </p>
+            {loadError && (
+              <p className="text-[12px] text-[#DC2626]">{loadError}</p>
+            )}
           </div>
         )}
       </Card>
@@ -690,9 +754,11 @@ function PrivacyBanner() {
 
 export default function ExportView({
   data,
+  token,
   onPdfDownload,
 }: {
   data: FullExportData;
+  token?: string;
   testMode?: boolean;
   onPdfDownload?: () => void;
 }) {
@@ -728,8 +794,8 @@ export default function ExportView({
           <SymptomsTriggers data={data} />
         )}
         {data.medications.length > 0 && <Medications data={data} />}
-        {data.healthLogs.some((l) => l.notes || (l.pain_level ?? 0) >= 5) && (
-          <NotableDays data={data} />
+        {(data.notableDaysTotal ?? data.healthLogs.filter((l) => l.notes || (l.pain_level ?? 0) >= 5).length) > 0 && (
+          <NotableDays data={data} token={token} />
         )}
         <ProfileSection data={data} />
         <PrivacyBanner />

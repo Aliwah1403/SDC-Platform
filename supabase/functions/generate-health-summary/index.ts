@@ -41,14 +41,17 @@ function formatMl(ml: number | null | undefined): string {
   return ml >= 1000 ? `${(ml / 1000).toFixed(1)} L` : `${Math.round(ml)} ml`;
 }
 
-function buildUserPrompt(snapshot: Record<string, unknown>, periodDays: number): string {
+function buildUserPrompt(
+  snapshot: Record<string, unknown>,
+  periodDays: number,
+  healthLogs: Array<Record<string, unknown>>,
+): string {
   const profile = (snapshot.profile as Record<string, unknown>) ?? {};
   const stats = (snapshot.stats as Record<string, unknown>) ?? {};
   const dateRange = (snapshot.dateRange as { start: string; end: string }) ?? {};
   const medications = (snapshot.medications as Array<Record<string, unknown>>) ?? [];
   const topSymptoms = (snapshot.topSymptoms as Array<{ name: string; count: number }>) ?? [];
   const topTriggers = (snapshot.topTriggers as Array<{ name: string; count: number }>) ?? [];
-  const healthLogs = (snapshot.healthLogs as Array<Record<string, unknown>>) ?? [];
   const patientNote = snapshot.patientNote as string | undefined;
   // Recap shares cover a named calendar window ("June 2026") rather than a trailing
   // "last N days", so name it for the model when we have one.
@@ -198,7 +201,29 @@ Deno.serve(async (req) => {
     }
 
     const periodDays: number = row.period_days ?? 30;
-    const userPrompt = buildUserPrompt(snapshot, periodDays);
+    const dateRange = (snapshot.dateRange as { start?: string; end?: string } | undefined) ?? {};
+    const snapshotHealthLogs = Array.isArray(snapshot.healthLogs)
+      ? (snapshot.healthLogs as Array<Record<string, unknown>>)
+      : [];
+    let healthLogs = snapshotHealthLogs;
+
+    if (healthLogs.length === 0 && dateRange.start && dateRange.end) {
+      const { data: fetchedLogs, error: logsError } = await supabase
+        .from("health_logs")
+        .select("date, pain_level, symptoms, mood, hydration, triggers")
+        .eq("user_id", user.id)
+        .gte("date", dateRange.start)
+        .lte("date", dateRange.end)
+        .order("date", { ascending: true });
+
+      if (logsError) {
+        console.error("health_logs query failed:", logsError.message);
+      } else {
+        healthLogs = fetchedLogs ?? [];
+      }
+    }
+
+    const userPrompt = buildUserPrompt(snapshot, periodDays, healthLogs);
 
     const anthropic = createAnthropic({ apiKey: anthropicKey });
     const startTime = Date.now();
