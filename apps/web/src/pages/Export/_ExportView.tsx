@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Lock, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -477,10 +478,16 @@ function Medications({ data }: { data: FullExportData }) {
 
 // ── Notable days ──────────────────────────────────────────────────────────────
 
+const NOTABLE_DAYS_PAGE_SIZE = 10;
+
 function NotableDays({ data }: { data: FullExportData }) {
+  const [visibleCount, setVisibleCount] = useState(NOTABLE_DAYS_PAGE_SIZE);
   const notable = data.healthLogs.filter(
     (l) => l.notes || (l.pain_level ?? 0) >= 5,
   );
+  const visibleNotable = notable.slice(0, visibleCount);
+  const hasMore = visibleCount < notable.length;
+  const nextCount = Math.min(NOTABLE_DAYS_PAGE_SIZE, notable.length - visibleCount);
 
   const dotColor = (p?: number | null) => {
     if (p == null) return "#D1D5DB";
@@ -498,10 +505,10 @@ function NotableDays({ data }: { data: FullExportData }) {
     >
       <Card className="px-6 py-5">
         <div className="space-y-0">
-          {notable.map((l, idx) => (
+          {visibleNotable.map((l, idx) => (
             <div key={l.date} className="relative flex gap-5 pb-6 last:pb-0">
               {/* Vertical line */}
-              {idx < notable.length - 1 && (
+              {idx < visibleNotable.length - 1 && (
                 <div className="absolute left-[9px] top-5 h-full w-px bg-[#F0E4E1]" />
               )}
 
@@ -588,6 +595,25 @@ function NotableDays({ data }: { data: FullExportData }) {
             </div>
           ))}
         </div>
+
+        {hasMore && (
+          <div className="mt-5 flex flex-col items-center gap-2 border-t border-[#F0E4E1] pt-5">
+            <button
+              type="button"
+              onClick={() =>
+                setVisibleCount((current) =>
+                  Math.min(current + NOTABLE_DAYS_PAGE_SIZE, notable.length),
+                )
+              }
+              className="rounded-full bg-[#A9334D] px-5 py-2.5 text-[13px] font-semibold text-white transition hover:bg-[#781D11]"
+            >
+              Load more
+            </button>
+            <p className="text-[12px] text-[#1A1A1A]/45">
+              Showing {visibleNotable.length} of {notable.length} notable days
+            </p>
+          </div>
+        )}
       </Card>
     </Section>
   );
@@ -647,19 +673,13 @@ function ProfileSection({ data }: { data: FullExportData }) {
 
 // ── Privacy banner ────────────────────────────────────────────────────────────
 
-function PrivacyBanner({ data }: { data: FullExportData }) {
-  const firstName =
-    data.profile.nickname || data.profile.full_name?.split(" ")[0] || "Patient";
+function PrivacyBanner() {
   return (
     <div className="mx-auto max-w-5xl px-6 pb-6">
       <div className="flex gap-3 rounded-xl  bg-[#F8F4F0] px-5 py-4 text-[13px] text-[#1A1A1A]/70">
         <Lock className="mt-px size-3.5 shrink-0 text-[#A9334D]" />
         <p>
-          <strong className="font-semibold text-[#1A1A1A]">
-            {firstName} chose what to share.
-          </strong>{" "}
-          Full personal information visible as shared. This link can be revoked
-          at any time from the Hemo app.
+          This link can be revoked at any time from the Hemo app.
         </p>
       </div>
     </div>
@@ -712,7 +732,7 @@ export default function ExportView({
           <NotableDays data={data} />
         )}
         <ProfileSection data={data} />
-        <PrivacyBanner data={data} />
+        <PrivacyBanner />
       </main>
 
       <PageFooter

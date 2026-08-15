@@ -135,11 +135,21 @@ export default function CommunityFeedScreen() {
   const showCarousel = (activeFeed === "popular" || activeFeed === "recent") && !searchQuery;
 
   function renderEmptyFollowing() {
+    const isFollowingCommunities = followedCategoryIds.length > 0;
+
     return (
       <AppEmptyState
         Icon={Users}
-        title="No communities followed yet"
-        subtitle="Follow communities to see their posts here."
+        title={
+          isFollowingCommunities
+            ? "No posts from followed communities yet"
+            : "No communities followed yet"
+        }
+        subtitle={
+          isFollowingCommunities
+            ? "Posts from communities you follow will appear here when they're shared."
+            : "Follow communities to see their posts here."
+        }
       >
         <TouchableOpacity
           onPress={() => router.push("/community/categories")}

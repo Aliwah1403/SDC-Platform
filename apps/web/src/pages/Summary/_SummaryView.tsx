@@ -635,22 +635,13 @@ function PatientNoteSection({ note }: { note: string }) {
 
 // ── Privacy banner ────────────────────────────────────────────────────────────
 
-function PrivacyBanner({ data }: { data: HealthSummaryData }) {
-  const first =
-    data.profile?.nickname ||
-    data.profile?.full_name?.split(" ")[0] ||
-    "The patient";
-
+function PrivacyBanner() {
   return (
     <div className="mx-auto mt-7 max-w-240 px-6 max-sm:px-4">
       <div className="flex gap-3 rounded-xl px-5 py-4 text-[13px] text-[#1A1414]/70">
         <Lock className="mt-px size-3.5 shrink-0 text-[#A9334D]" />
         <p>
-          <strong className="font-semibold text-[#1A1414]">
-            {first} chose what to share.
-          </strong>{" "}
-          Full personal information visible as shared. This link can be revoked
-          at any time from the Hemo app.
+          This link can be revoked at any time from the Hemo app.
         </p>
       </div>
     </div>
@@ -705,7 +696,7 @@ export default function SummaryView({
         <MedicationsSection data={data} />
         {data.patientNote && <PatientNoteSection note={data.patientNote} />}
         {/* <ProfileSection data={data} anonymization={anonymization} /> */}
-        <PrivacyBanner data={data} />
+        <PrivacyBanner />
       </main>
 
       <PageFooter

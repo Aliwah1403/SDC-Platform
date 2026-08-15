@@ -45,11 +45,11 @@ function avatarColor(name = "") {
 }
 
 const FLAIR_OPTIONS = [
-  { id: "advice", label: "Asking for advice", color: "#3B82F6" },
-  { id: "story", label: "Sharing my story", color: "#7C3AED" },
-  { id: "vent", label: "Vent", color: "#F59E0B" },
-  { id: "win", label: "Win 🏆", color: "#10B981" },
-  { id: "info", label: "Research/Info", color: "#0D9488" },
+  { id: "advice", label: "Asking for advice" },
+  { id: "story", label: "Sharing my story" },
+  { id: "vent", label: "Vent" },
+  { id: "win", label: "Win 🏆" },
+  { id: "info", label: "Research/Info" },
 ];
 
 export default function CreatePostScreen() {
@@ -523,12 +523,12 @@ export default function CreatePostScreen() {
               backgroundColor: "#A9334D",
             }}
           >
-            <BarChart2 size={18} color={t.text} strokeWidth={1.5} />
+            <BarChart2 size={18} color={"#FFFFFF"} strokeWidth={1.5} />
             <Text
               style={{
                 fontFamily: fonts.medium,
                 fontSize: 14,
-                color: t.text,
+                color: "#FFFFFF",
                 flex: 1,
               }}
             >
@@ -632,7 +632,7 @@ export default function CreatePostScreen() {
                       paddingHorizontal: 14,
                       paddingVertical: 7,
                       borderRadius: 20,
-                      backgroundColor: isActive ? f.color : t.background,
+                      backgroundColor: isActive ? "#A9334D" : t.background,
                     }}
                   >
                     <Text
