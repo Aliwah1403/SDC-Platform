@@ -147,4 +147,12 @@ export async function completeOnboarding(userId, onboardingData) {
       ]);
     if (containersError) throw containersError;
   }
+
+  // Contact sync is secondary to completing onboarding. The server-side
+  // function authenticates the user and queues the Resend task; a provider or
+  // Trigger outage must not make the onboarding write appear to fail.
+  const { error: contactSyncError } = await supabase.functions.invoke('queue-resend-contact');
+  if (contactSyncError) {
+    console.warn('[completeOnboarding] Resend contact sync could not be queued:', contactSyncError.message);
+  }
 }

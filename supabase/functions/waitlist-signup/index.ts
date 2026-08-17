@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { enqueueResendContact } from "../_shared/trigger-resend-contact.ts";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -193,7 +194,7 @@ Deno.serve(async (req: Request) => {
   const { data: inserted, error } = await supabase
     .from("waitlist_signups")
     .insert({ email, source })
-    .select("created_at")
+    .select("id, created_at")
     .single();
 
   if (error) {
@@ -210,6 +211,12 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
+  }
+
+  try {
+    await enqueueResendContact("waitlist", String(inserted.id));
+  } catch (err) {
+    console.error("[waitlist-signup] Contact sync enqueue failed:", err);
   }
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");

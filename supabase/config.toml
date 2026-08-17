@@ -417,6 +417,9 @@ verify_jwt = true
 [functions.generate-health-summary]
 verify_jwt = true
 
+[functions.queue-resend-contact]
+verify_jwt = true
+
 [functions.generate-ed-card]
 verify_jwt = true
 
