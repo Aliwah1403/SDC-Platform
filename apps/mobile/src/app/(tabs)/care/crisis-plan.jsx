@@ -29,10 +29,13 @@ import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQ
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
 import { useUpdateProfileMutation } from "@/hooks/queries/useProfileQuery";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { MotiView, AnimatePresence } from "moti";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { enterTiming, exitTiming, easeInOutStrong } from "@/utils/motion";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import { getCountryName } from "@/utils/countryNames";
@@ -127,6 +130,7 @@ function TierRow({ tier, onExpand }) {
   const t = useTheme();
   const styles = useMemo(() => createStyles(t), [t]);
   const [expanded, setExpanded] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   return (
     <Pressable
@@ -155,33 +159,45 @@ function TierRow({ tier, onExpand }) {
           </View>
           <Text style={styles.tierPainRange}>{tier.painRange}</Text>
         </View>
-        <View
-          style={[
-            styles.tierChevron,
-            {
-              backgroundColor: expanded ? tier.bg : t.surfaceElevated,
-              transform: [{ rotate: expanded ? "180deg" : "0deg" }],
-            },
-          ]}
+        <MotiView
+          animate={{
+            backgroundColor: expanded ? tier.bg : t.surfaceElevated,
+            rotate: expanded ? "180deg" : "0deg",
+          }}
+          transition={
+            reducedMotion
+              ? { type: "timing", duration: 0 }
+              : { type: "timing", duration: 200, easing: easeInOutStrong }
+          }
+          style={styles.tierChevron}
         >
           <ChevronDown size={16} color={tier.color} strokeWidth={2.5} />
-        </View>
+        </MotiView>
       </View>
 
-      {expanded && (
-        <View style={styles.tierActions}>
-          {tier.actions.map((action, i) => (
-            <View key={i} style={styles.tierActionRow}>
-              <View style={[styles.tierActionNumber, { borderColor: tier.color }]}>
-                <Text style={[styles.tierActionNumberText, { color: tier.color }]}>
-                  {i + 1}
-                </Text>
+      <AnimatePresence>
+        {expanded && (
+          <MotiView
+            from={{ opacity: 0, translateY: -6 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            exit={{ opacity: 0, translateY: -4 }}
+            transition={enterTiming}
+            exitTransition={exitTiming}
+            style={styles.tierActions}
+          >
+            {tier.actions.map((action, i) => (
+              <View key={i} style={styles.tierActionRow}>
+                <View style={[styles.tierActionNumber, { borderColor: tier.color }]}>
+                  <Text style={[styles.tierActionNumberText, { color: tier.color }]}>
+                    {i + 1}
+                  </Text>
+                </View>
+                <Text style={styles.tierActionText}>{action}</Text>
               </View>
-              <Text style={styles.tierActionText}>{action}</Text>
-            </View>
-          ))}
-        </View>
-      )}
+            ))}
+          </MotiView>
+        )}
+      </AnimatePresence>
     </Pressable>
   );
 }

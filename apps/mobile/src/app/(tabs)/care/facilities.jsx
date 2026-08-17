@@ -1036,6 +1036,9 @@ export default function FacilitiesScreen() {
                 Icon={Search}
                 title="No results"
                 subtitle={`No facilities match "${searchQuery}". Try a hospital name, area, or type.`}
+                // Alternates with the searchLoading spinner on every keystroke —
+                // an entrance animation here would read as input lag.
+                animate={false}
               />
             )
           }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,12 @@ import {
   Image,
   ImageBackground,
 } from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withSpring,
+} from "react-native-reanimated";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Bookmark,
@@ -19,7 +25,9 @@ import {
 import { fonts } from "@/utils/fonts";
 import { CATEGORY_MAP } from "@/data/communityCategories";
 import { PollBlock } from "@/components/Community/PollBlock";
+import { PressableScale } from "@/components/PressableScale";
 import { useTheme } from "@/hooks/useTheme";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const AVATAR_COLORS = ["#A9334D", "#1A1A1A", "#781D11", "#5C2E00"];
 
@@ -75,6 +83,28 @@ export function PostCard({
   onFollowCategory,
 }) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
+
+  // Pop the heart only on the unliked -> liked edge. Guarding on the previous
+  // value is what keeps it off the initial mount — without it every already-liked
+  // post would pop as it scrolls into view.
+  const likeScale = useSharedValue(1);
+  const prevLiked = useRef(isLiked);
+
+  useEffect(() => {
+    if (isLiked && !prevLiked.current && !reducedMotion) {
+      likeScale.value = withSequence(
+        withSpring(1.18, { damping: 12, stiffness: 400 }),
+        withSpring(1, { damping: 18, stiffness: 400 }),
+      );
+    }
+    prevLiked.current = isLiked;
+  }, [isLiked, reducedMotion]);
+
+  const likeHeartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: likeScale.value }],
+  }));
+
   const handleShare = async () => {
     try {
       const author = post.isAnonymous ? "Someone" : post.author.name;
@@ -387,7 +417,7 @@ export function PostCard({
             paddingTop: 10,
           }}
         >
-          <TouchableOpacity
+          <PressableScale
             onPress={onLike}
             style={{
               flexDirection: "row",
@@ -397,12 +427,14 @@ export function PostCard({
             }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Heart
-              size={18}
-              color={isLiked ? "#A9334D" : "#9CA3AF"}
-              fill={isLiked ? "#A9334D" : "transparent"}
-              strokeWidth={2}
-            />
+            <Animated.View style={likeHeartStyle}>
+              <Heart
+                size={18}
+                color={isLiked ? "#A9334D" : "#9CA3AF"}
+                fill={isLiked ? "#A9334D" : "transparent"}
+                strokeWidth={2}
+              />
+            </Animated.View>
             <Text
               style={{
                 fontFamily: fonts.medium,
@@ -412,7 +444,7 @@ export function PostCard({
             >
               {displayLikes}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           <TouchableOpacity
             onPress={onPress}
