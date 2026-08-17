@@ -31,35 +31,16 @@ import MilestoneModal from "@/components/MilestoneModal";
 import { StreakFireIcon } from "@/utils/streakFire";
 import { useTheme } from "@/hooks/useTheme";
 import { PressableScale } from "@/components/PressableScale";
+import {
+  getAchievementsWithProgress,
+  normalizeAchievementId,
+} from "@/utils/achievements";
 
 const HEMO = {
   dark: "#781D11",
   wine: "#A9334D",
   rose: "#D09F9A",
   blush: "#F8E9E7",
-};
-
-const MILESTONE_BADGE = {
-  "days-1": require("../../assets/images/badges-3/first-step.png"),
-  "days-5": require("../../assets/images/badges-3/getting-started.png"),
-  "days-10": require("../../assets/images/badges-3/double-digits.png"),
-  "days-25": require("../../assets/images/badges-3/quarter-century.png"),
-  "days-50": require("../../assets/images/badges-3/health-champion.png"),
-  "days-100": require("../../assets/images/badges-3/century-master.png"),
-  "streak-3": require("../../assets/images/badges-3/on-track.png"),
-  "streak-7": require("../../assets/images/badges-3/habit-builder.png"),
-  "streak-14": require("../../assets/images/badges-3/fortnight-fighter.png"),
-  "streak-30": require("../../assets/images/badges-3/monthly-monster.png"),
-  "week-perfect": require("../../assets/images/badges-3/perfect-week.png"),
-  "symptoms-10": require("../../assets/images/badges-3/pattern-seeker.png"),
-  "symptoms-25": require("../../assets/images/badges-3/symptom-tracker.png"),
-  "hydration-7": require("../../assets/images/badges-3/hydration-junkie.png"),
-  "care-10": require("../../assets/images/badges-3/self-care.png"),
-  "learning-5": require("../../assets/images/badges-3/knowledge-seeker.png"),
-  "repair-1": require("../../assets/images/badges-3/back-on-track.png"),
-  "restart-1": require("../../assets/images/badges-3/resilient-restart.png"),
-  "meds-first": require("../../assets/images/badges-3/dose-one.png"),
-  "meds-streak-7": require("../../assets/images/badges-3/on-time-hero.png"),
 };
 
 export default function StreakModal() {
@@ -145,264 +126,24 @@ export default function StreakModal() {
   const careTasksCompleted = 0;
   const learningModulesCompleted = 0;
 
-  const milestones = [
-    {
-      id: "days-1",
-      name: "First Step",
-      type: "days",
-      value: 1,
-      target: 1,
-      requirement: "Log your first day",
-      description:
-        "Welcome to your health journey! Every great journey begins with a single step.",
-      rarity: "Common",
-      unlocked: daysLogged >= 1,
-      current: daysLogged,
-    },
-    {
-      id: "days-5",
-      name: "Getting Started",
-      type: "days",
-      value: 5,
-      target: 5,
-      requirement: "Log 5 days",
-      description:
-        "You're building a habit! Consistency is the key to understanding your health patterns.",
-      rarity: "Common",
-      unlocked: daysLogged >= 5,
-      current: daysLogged,
-    },
-    {
-      id: "days-10",
-      name: "Double Digits",
-      type: "days",
-      value: 10,
-      target: 10,
-      requirement: "Log 10 days",
-      description:
-        "Double digits! You're developing a strong tracking habit that will serve you well.",
-      rarity: "Uncommon",
-      unlocked: daysLogged >= 10,
-      current: daysLogged,
-    },
-    {
-      id: "days-25",
-      name: "Quarter Century",
-      type: "days",
-      value: 25,
-      target: 25,
-      requirement: "Log 25 days",
-      description:
-        "Your commitment is impressive! You're gathering valuable insights about your health.",
-      rarity: "Rare",
-      unlocked: daysLogged >= 25,
-      current: daysLogged,
-    },
-    {
-      id: "days-50",
-      name: "Health Champion",
-      type: "days",
-      value: 50,
-      target: 50,
-      requirement: "Log 50 days",
-      description:
-        "Incredible dedication! You're a true health champion with a wealth of data to guide you.",
-      rarity: "Epic",
-      unlocked: daysLogged >= 50,
-      current: daysLogged,
-    },
-    {
-      id: "days-100",
-      name: "Century Master",
-      type: "days",
-      value: 100,
-      target: 100,
-      requirement: "Log 100 days",
-      description:
-        "A hundred days of commitment! You've built an unshakeable health tracking foundation.",
-      rarity: "Legendary",
-      unlocked: daysLogged >= 100,
-      current: daysLogged,
-    },
-    {
-      id: "streak-3",
-      name: "On Track",
-      type: "streak",
-      value: 3,
-      target: 3,
-      requirement: "Maintain a 3-day streak",
-      description: "Three days in a row! You're building momentum.",
-      rarity: "Common",
-      unlocked: currentStreak >= 3,
-      current: currentStreak,
-    },
-    {
-      id: "streak-7",
-      name: "Habit Builder",
-      type: "streak",
-      value: 7,
-      target: 7,
-      requirement: "Maintain a 7-day streak",
-      description: "A full week of consistency! Your dedication is showing.",
-      rarity: "Uncommon",
-      unlocked: currentStreak >= 7,
-      current: currentStreak,
-    },
-    {
-      id: "streak-14",
-      name: "Fortnight Fighter",
-      type: "streak",
-      value: 14,
-      target: 14,
-      requirement: "Maintain a 14-day streak",
-      description:
-        "Two weeks strong! You're proving that consistency pays off.",
-      rarity: "Rare",
-      unlocked: currentStreak >= 14,
-      current: currentStreak,
-    },
-    {
-      id: "streak-30",
-      name: "Monthly Monster",
-      type: "streak",
-      value: 30,
-      target: 30,
-      requirement: "Maintain a 30-day streak",
-      description: "A full month! Your habit is now deeply ingrained.",
-      rarity: "Epic",
-      unlocked: currentStreak >= 30,
-      current: currentStreak,
-    },
-    {
-      id: "symptoms-10",
-      name: "Pattern Seeker",
-      type: "symptoms",
-      value: 10,
-      target: 10,
-      requirement: "Log 10 symptoms",
-      description: "You're starting to identify patterns in your symptoms.",
-      rarity: "Common",
-      unlocked: symptomsLogged >= 10,
-      current: symptomsLogged,
-    },
-    {
-      id: "symptoms-25",
-      name: "Symptom Tracker",
-      type: "symptoms",
-      value: 25,
-      target: 25,
-      requirement: "Log 25 symptoms",
-      description:
-        "Your symptom data is becoming more valuable with each entry.",
-      rarity: "Uncommon",
-      unlocked: symptomsLogged >= 25,
-      current: symptomsLogged,
-    },
-    {
-      id: "hydration-7",
-      name: "Hydration Junkie",
-      type: "hydration",
-      value: 7,
-      target: 7,
-      requirement: "Meet hydration goals for 7 days",
-      description: "A week of staying hydrated! Your body thanks you.",
-      rarity: "Uncommon",
-      unlocked: hydrationDays >= 7,
-      current: hydrationDays,
-    },
-    {
-      id: "care-10",
-      name: "Self-Care",
-      type: "care",
-      value: 10,
-      target: 10,
-      requirement: "Complete 10 care tasks",
-      description: "You're prioritizing self-care and it shows!",
-      rarity: "Common",
-      unlocked: careTasksCompleted >= 10,
-      current: careTasksCompleted,
-    },
-    {
-      id: "learning-5",
-      name: "Knowledge Seeker",
-      type: "learning",
-      value: 5,
-      target: 5,
-      requirement: "Complete 5 learning modules",
-      description: "You're expanding your health knowledge with every module.",
-      rarity: "Uncommon",
-      unlocked: learningModulesCompleted >= 5,
-      current: learningModulesCompleted,
-    },
-    {
-      id: "repair-1",
-      name: "Back on Track",
-      type: "repair",
-      value: 1,
-      target: 1,
-      requirement: "Use your first streak repair",
-      description:
-        "Life happens. Using a repair shows you're committed to bouncing back.",
-      rarity: "Common",
-      unlocked: repairsUsed >= 1,
-      current: repairsUsed,
-    },
-    {
-      id: "restart-1",
-      name: "Resilient Restart",
-      type: "restart",
-      value: 1,
-      target: 1,
-      requirement: "Log again after missing 3+ days",
-      description:
-        "Every restart is a win. Coming back after a gap takes real courage.",
-      rarity: "Uncommon",
-      unlocked: repairsUsed > 0,
-      current: repairsUsed > 0 ? 1 : 0,
-    },
-    {
-      id: "meds-first",
-      name: "Dose One",
-      type: "medications",
-      value: 1,
-      target: 1,
-      requirement: "Log your first medication",
-      description:
-        "Your first logged medication. Knowledge of your treatment is a superpower.",
-      rarity: "Common",
-      unlocked: (medications.length ?? 0) > 0,
-      current: (medications.length ?? 0) > 0 ? 1 : 0,
-    },
-    {
-      id: "meds-streak-7",
-      name: "On-Time Hero",
-      type: "medications",
-      value: 7,
-      target: 7,
-      requirement: "Complete 7 medication check-ins",
-      description:
-        "Seven days of staying on top of your treatment. Your future self will thank you.",
-      rarity: "Rare",
-      unlocked: careTasksCompleted >= 7,
-      current: careTasksCompleted,
-    },
-    {
-      id: "week-perfect",
-      name: "Perfect Week",
-      type: "streak",
-      value: 7,
-      target: 7,
-      requirement: "Log every day for a full week",
-      description:
-        "Seven days, zero gaps. A truly perfect week of health tracking.",
-      rarity: "Epic",
-      unlocked: completedDays >= 7,
-      current: completedDays,
-    },
-  ];
+  const milestones = getAchievementsWithProgress({
+    currentStreak,
+    daysLogged,
+    symptomsLogged,
+    hydrationDays,
+    careTasksCompleted,
+    learningModulesCompleted,
+    repairsUsed,
+    completedDays,
+    medicationsCount: medications.length,
+  }).filter((achievement) => achievement.target != null);
 
   const milestonesWithDates = milestones.map((m) => {
-    const raw = badgeUnlockDates[m.id];
+    const raw =
+      badgeUnlockDates[m.id] ??
+      Object.entries(badgeUnlockDates).find(
+        ([id]) => normalizeAchievementId(id) === m.id,
+      )?.[1];
     if (!raw) return m;
     const unlockedDate = new Date(raw).toLocaleDateString("en-US", {
       month: "long",
@@ -423,7 +164,7 @@ export default function StreakModal() {
     });
     setSelectedMilestone({
       ...milestone,
-      image: MILESTONE_BADGE[milestone.id],
+      image: milestone.image,
     });
     setMilestoneModalVisible(true);
   };
@@ -434,7 +175,7 @@ export default function StreakModal() {
       (milestone.current / milestone.target) * 100,
       100,
     );
-    const badgeSource = MILESTONE_BADGE[milestone.id] ?? null;
+    const badgeSource = milestone.image ?? null;
 
     const MilestoneIcon = {
       days: Trophy,
