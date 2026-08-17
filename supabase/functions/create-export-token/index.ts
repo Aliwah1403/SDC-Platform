@@ -12,6 +12,22 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 // shares pass whole calendar months, so allow a little headroom above 31.
 const MAX_SUMMARY_RANGE_DAYS = 92;
 
+function currentEnvironment() {
+  const explicit = Deno.env.get("HEMO_APP_ENV") ?? Deno.env.get("APP_ENV");
+  if (explicit === "staging" || explicit === "production") return explicit;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  if (supabaseUrl.includes("pqwrxhqcgwrjazsurujm")) return "staging";
+  return "production";
+}
+
+function buildPublicUrl(route: string, token: string) {
+  const url = new URL(`${WEB_BASE_URL.replace(/\/+$/g, "")}/${route}/${token}`);
+  if (currentEnvironment() === "staging") {
+    url.searchParams.set("env", "staging");
+  }
+  return url.toString();
+}
+
 // Inclusive day count — "1st to 30th" is 30 days, not 29.
 function spanInDays(start: string, end: string): number {
   return Math.round((Date.parse(end) - Date.parse(start)) / 86400000) + 1;
@@ -403,10 +419,20 @@ Deno.serve(async (req) => {
     }
 
     const route = mode === "full_export" ? "export" : "summary";
-    const url = `${WEB_BASE_URL}/${route}/${tokenRow.token}`;
+    const environment = currentEnvironment();
+    const url = buildPublicUrl(route, tokenRow.token);
 
     return new Response(
-      JSON.stringify({ data: { token: tokenRow.token, url, expiresAt }, error: null }),
+      JSON.stringify({
+        data: {
+          token: tokenRow.token,
+          route,
+          environment,
+          expiresAt,
+          url,
+        },
+        error: null,
+      }),
       { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
   } catch (err) {

@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPublicTokenSupabase } from "@/lib/supabase";
 import type { EDCardData } from "./_EmergencyCardView";
 import EmergencyCardView from "./_EmergencyCardView";
 import LinkGateScreen from "../_LinkGateScreen";
 
-async function fetchEdCardToken(token: string): Promise<EDCardData> {
-  const { data, error } = await supabase!
+async function fetchEdCardToken(token: string, tokenSupabase: SupabaseClient): Promise<EDCardData> {
+  const { data, error } = await tokenSupabase
     .from("ed_card_tokens")
     .select("card_data, expires_at, is_active")
     .eq("token", token)
@@ -22,11 +23,13 @@ async function fetchEdCardToken(token: string): Promise<EDCardData> {
 
 export default function EdCardPage() {
   const { token } = useParams<{ token: string }>();
+  const tokenSupabase = getPublicTokenSupabase();
+  const publicTokenEnv = typeof window !== "undefined" ? window.location.search : "";
 
   const { data, error, isLoading } = useQuery({
-    queryKey: ["ed-card-token", token],
-    queryFn: () => fetchEdCardToken(token!),
-    enabled: !!token && !!supabase,
+    queryKey: ["ed-card-token", token, publicTokenEnv],
+    queryFn: () => fetchEdCardToken(token!, tokenSupabase!),
+    enabled: !!token && !!tokenSupabase,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,

@@ -50,6 +50,12 @@ import {
 } from "@expo-google-fonts/geist";
 import Constants from "expo-constants";
 import SplashAnimation from "@/components/SplashAnimation";
+import { StartupReadyProvider } from "@/components/ObserveInteractive";
+import { Observe, ObserveRoot } from "expo-observe";
+
+Observe.configure({
+  integrations: { "expo-router": true },
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -75,7 +81,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   return (
     <PostHogProvider client={posthog} autocapture={false}>
       <QueryClientProvider client={queryClient}>
@@ -446,6 +452,7 @@ function RootLayoutContent() {
   }
 
   return (
+      <StartupReadyProvider ready={splashGone && !isLocked}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
@@ -584,8 +591,11 @@ function RootLayoutContent() {
         )}
         </KeyboardProvider>
       </GestureHandlerRootView>
+      </StartupReadyProvider>
   );
 }
+
+export default ObserveRoot.wrap(RootLayout);
 
 const lockStyles = StyleSheet.create({
   overlay: {

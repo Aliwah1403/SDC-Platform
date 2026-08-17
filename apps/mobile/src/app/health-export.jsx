@@ -28,14 +28,13 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/utils/auth/supabase";
+import { buildPublicShareUrl } from "@/utils/publicShareLinks";
 import { useAuthStore } from "@/utils/auth/store";
 import { usePostHog } from "posthog-react-native";
 
 const BURGUNDY = "#A9334D";
 const BORDER = "#F0E4E1";
 const BG = "#F8F4F0";
-const WEB_BASE_URL = __DEV__ ? "http://localhost:5173" : "https://hemo-scd.com";
-
 const DATE_PRESETS = [
   { label: "7 days", days: 7 },
   { label: "30 days", days: 30 },
@@ -209,7 +208,7 @@ export default function HealthExportScreen() {
       }
 
       setLabelInput("");
-      setCreatedUrl(`${WEB_BASE_URL}/export/${data.data.token}`);
+      setCreatedUrl(buildPublicShareUrl("export", data.data.token));
       posthog?.capture("export_link_created", {
         date_range: selectedDays.label,
         expires_in_days: selectedExpiry.value,
@@ -230,7 +229,7 @@ export default function HealthExportScreen() {
 
   const handleShare = async () => {
     sheetRef.current?.close();
-    const url = `${WEB_BASE_URL}/export/${selectedExport.token}`;
+    const url = buildPublicShareUrl("export", selectedExport.token);
     try {
       await Share.share({ message: url, title: "Hemo Health Export" });
       posthog?.capture("export_link_shared", { source: "bottom_sheet" });
@@ -241,7 +240,7 @@ export default function HealthExportScreen() {
 
   const handleCopyLink = async () => {
     sheetRef.current?.close();
-    const url = `${WEB_BASE_URL}/export/${selectedExport.token}`;
+    const url = buildPublicShareUrl("export", selectedExport.token);
     await Clipboard.setStringAsync(url);
     posthog?.capture("export_link_copied", { source: "bottom_sheet" });
     Alert.alert("Copied", "Export link copied to clipboard.");

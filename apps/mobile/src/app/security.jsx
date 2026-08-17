@@ -17,7 +17,6 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
 import {
   ChevronLeft,
   ChevronRight,
@@ -38,6 +37,7 @@ import {
   signOutAll,
   linkProvider,
   unlinkProvider,
+  getOAuthRedirectUrl,
 } from "@/utils/auth/supabase";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
@@ -186,7 +186,7 @@ export default function SecurityScreen() {
   const handleLink = async (providerName) => {
     setLinking(providerName);
     try {
-      const redirectTo = Linking.createURL("/");
+      const redirectTo = getOAuthRedirectUrl();
       const { data, error } = await linkProvider(providerName, redirectTo);
       if (error) {
         Alert.alert("Could not link account", error.message);

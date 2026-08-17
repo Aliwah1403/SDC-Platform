@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, RefreshCw } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/utils/auth/supabase";
+import { buildPublicShareUrl } from "@/utils/publicShareLinks";
 import { HemoQRCode } from "@/components/QRCode";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
@@ -52,10 +53,11 @@ export default function QRCodeScreen() {
     setError(null);
     try {
       const { data, error: fnError } = await supabase.functions.invoke("generate-ed-card");
-      if (fnError || !data?.data?.url) {
+      if (fnError || !data?.data?.token) {
         setError("Failed to generate card. Please try again.");
       } else {
-        const { url, expiresAt: exp } = data.data;
+        const { token, expiresAt: exp } = data.data;
+        const url = buildPublicShareUrl("ed-card", token);
         setCardUrl(url);
         setExpiresAt(exp);
         await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ url, expiresAt: exp }));

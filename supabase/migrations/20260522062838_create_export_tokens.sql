@@ -1,7 +1,7 @@
 
 CREATE TABLE export_tokens (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  token text UNIQUE NOT NULL DEFAULT encode(gen_random_bytes(24), 'hex'),
+  token text UNIQUE NOT NULL DEFAULT encode(extensions.gen_random_bytes(24), 'hex'),
   user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   mode text NOT NULL CHECK (mode IN ('full_export', 'health_summary')),
   date_range_start date,

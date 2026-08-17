@@ -19,7 +19,7 @@ import { ChartCard21 } from "@/components/chart-card21";
 import { ExportPainChart } from "./_ExportPainChart";
 import { ExportHeatmap } from "./_ExportHeatmap";
 import { PageNav, PageFooter } from "../_PageShells";
-import { supabase } from "@/lib/supabase";
+import { getPublicTokenSupabase } from "@/lib/supabase";
 
 // ── Masthead ─────────────────────────────────────────────────────────────────
 
@@ -508,11 +508,12 @@ function NotableDays({ data, token }: { data: FullExportData; token?: string }) 
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function loadNotableDays(offset: number) {
-    if (!token || !supabase) return;
+    const tokenSupabase = getPublicTokenSupabase();
+    if (!token || !tokenSupabase) return;
     setIsLoadingMore(true);
     setLoadError(null);
 
-    const { data: rows, error } = await supabase.rpc("get_export_notable_days", {
+    const { data: rows, error } = await tokenSupabase.rpc("get_export_notable_days", {
       p_token: token,
       p_limit: NOTABLE_DAYS_PAGE_SIZE,
       p_offset: offset,

@@ -8,6 +8,22 @@ const CORS_HEADERS = {
 const WEB_BASE_URL = Deno.env.get("WEB_BASE_URL") ?? "https://hemo-scd.com";
 const TTL_HOURS = 4;
 
+function currentEnvironment() {
+  const explicit = Deno.env.get("HEMO_APP_ENV") ?? Deno.env.get("APP_ENV");
+  if (explicit === "staging" || explicit === "production") return explicit;
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  if (supabaseUrl.includes("pqwrxhqcgwrjazsurujm")) return "staging";
+  return "production";
+}
+
+function buildPublicUrl(route: string, token: string) {
+  const url = new URL(`${WEB_BASE_URL.replace(/\/+$/g, "")}/${route}/${token}`);
+  if (currentEnvironment() === "staging") {
+    url.searchParams.set("env", "staging");
+  }
+  return url.toString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: CORS_HEADERS });
@@ -168,9 +184,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    const url = `${WEB_BASE_URL}/ed-card/${tokenRow.token}`;
+    const route = "ed-card";
+    const environment = currentEnvironment();
+    const url = buildPublicUrl(route, tokenRow.token);
     return new Response(
-      JSON.stringify({ data: { token: tokenRow.token, url, expiresAt }, error: null }),
+      JSON.stringify({
+        data: {
+          token: tokenRow.token,
+          route,
+          environment,
+          expiresAt,
+          url,
+        },
+        error: null,
+      }),
       { headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
   } catch (err) {

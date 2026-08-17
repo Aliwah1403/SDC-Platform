@@ -11,11 +11,20 @@
 		"preview": {
 			"distribution": "internal"
 		},
+		"staging": {
+			"distribution": "store",
+			"autoIncrement": true,
+			"env": {
+				"EXPO_NO_DOTENV": "1",
+				"HEMO_APP_ENV": "staging"
+			}
+		},
 		"production": {
 			"autoIncrement": true
 		}
 	},
 	"submit": {
+		"staging": {},
 		"production": {}
 	}
 }

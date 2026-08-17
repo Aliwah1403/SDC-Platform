@@ -29,14 +29,13 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/utils/auth/supabase";
+import { buildPublicShareUrl } from "@/utils/publicShareLinks";
 import { useAuthStore } from "@/utils/auth/store";
 import { usePostHog } from "posthog-react-native";
 
 const BURGUNDY = "#A9334D";
 const BORDER = "#F0E4E1";
 const BG = "#F8F4F0";
-const WEB_BASE_URL = __DEV__ ? "http://localhost:5173" : "https://hemo-scd.com";
-
 const PERIOD_PRESETS = [
   { label: "7 days", days: 7 },
   { label: "30 days", days: 30 },
@@ -252,7 +251,7 @@ export default function ShareSummaryScreen() {
     }
 
     setNoteInput("");
-    setCreatedUrl(`${WEB_BASE_URL}/summary/${token}`);
+    setCreatedUrl(buildPublicShareUrl("summary", token));
     setGeneratingPhase(null);
   };
 
@@ -263,7 +262,7 @@ export default function ShareSummaryScreen() {
 
   const handleShare = async () => {
     sheetRef.current?.close();
-    const url = `${WEB_BASE_URL}/summary/${selectedSummary.token}`;
+    const url = buildPublicShareUrl("summary", selectedSummary.token);
     try {
       await Share.share({ message: url, title: "Hemo Health Summary" });
       posthog?.capture("summary_link_shared", { source: "bottom_sheet" });
@@ -274,7 +273,7 @@ export default function ShareSummaryScreen() {
 
   const handleCopyLink = async () => {
     sheetRef.current?.close();
-    const url = `${WEB_BASE_URL}/summary/${selectedSummary.token}`;
+    const url = buildPublicShareUrl("summary", selectedSummary.token);
     await Clipboard.setStringAsync(url);
     posthog?.capture("summary_link_copied", { source: "bottom_sheet" });
     Alert.alert("Copied", "Summary link copied to clipboard.");

@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { useParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { usePostHog } from "@posthog/react";
-import { supabase } from "@/lib/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPublicTokenSupabase } from "@/lib/supabase";
 import type { FullExportData } from "@/components/pdfx/FullExportDocument";
 import ExportView from "./_ExportView";
 import LinkGateScreen from "../_LinkGateScreen";
@@ -13,8 +14,8 @@ type TokenRow = {
   data_snapshot: FullExportData;
 };
 
-async function fetchExportToken(token: string): Promise<TokenRow> {
-  const { data, error } = await supabase!
+async function fetchExportToken(token: string, tokenSupabase: SupabaseClient): Promise<TokenRow> {
+  const { data, error } = await tokenSupabase
     .from("export_tokens")
     .select("mode, expires_at, data_snapshot")
     .eq("token", token)
@@ -24,18 +25,20 @@ async function fetchExportToken(token: string): Promise<TokenRow> {
   if (data.mode !== "full_export") throw new Error("not_found");
   if (new Date(data.expires_at) < new Date()) throw new Error("expired");
 
-  supabase!.rpc("record_export_view", { p_token: token }).then(() => {});
+  tokenSupabase.rpc("record_export_view", { p_token: token }).then(() => {});
   return data;
 }
 
 export default function ExportPage() {
   const { token } = useParams<{ token: string }>();
   const posthog = usePostHog();
+  const tokenSupabase = getPublicTokenSupabase();
+  const publicTokenEnv = typeof window !== "undefined" ? window.location.search : "";
 
   const { data, error, isLoading } = useQuery({
-    queryKey: ["export-token", token],
-    queryFn: () => fetchExportToken(token!),
-    enabled: !!token && !!supabase,
+    queryKey: ["export-token", token, publicTokenEnv],
+    queryFn: () => fetchExportToken(token!, tokenSupabase!),
+    enabled: !!token && !!tokenSupabase,
     staleTime: Infinity,
     gcTime: Infinity,
     retry: false,
