@@ -6,10 +6,16 @@
 	"build": {
 		"development": {
 			"developmentClient": true,
-			"distribution": "internal"
+			"distribution": "internal",
+			"environment": "development",
+			"env": {
+				"EXPO_NO_DOTENV": "1",
+				"HEMO_APP_ENV": "development"
+			}
 		},
 		"preview": {
-			"distribution": "internal"
+			"distribution": "internal",
+			"environment": "preview"
 		},
 		"staging": {
 			"distribution": "store",
@@ -20,7 +26,8 @@
 			}
 		},
 		"production": {
-			"autoIncrement": true
+			"autoIncrement": true,
+			"environment": "production"
 		}
 	},
 	"submit": {

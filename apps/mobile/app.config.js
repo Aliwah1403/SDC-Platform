@@ -14,6 +14,8 @@ const SUPABASE_CONFIG = {
 };
 
 const resolveAppEnv = () => {
+  if (process.env.HEMO_APP_ENV === "development") return "development";
+  if (process.env.EAS_BUILD_PROFILE === "development") return "development";
   if (process.env.HEMO_APP_ENV === "staging") return "staging";
   if (process.env.EAS_BUILD_PROFILE === "staging") return "staging";
   return "production";
@@ -21,14 +23,29 @@ const resolveAppEnv = () => {
 
 module.exports = () => {
   const appEnv = resolveAppEnv();
-  const supabase = SUPABASE_CONFIG[appEnv];
+  // SUPABASE_CONFIG has no "development" entry (yet); guard so evaluating
+  // this file for appEnv === "development" doesn't throw at config time.
+  const supabase = SUPABASE_CONFIG[appEnv] ?? {};
+  const isDevelopment = appEnv === "development";
 
   return {
     ...appJson.expo,
+    ...(isDevelopment
+      ? {
+          name: "Hemo Dev",
+          scheme: "hemoscd-dev",
+          ios: {
+            ...appJson.expo.ios,
+            bundleIdentifier: "com.hemoscd.hemo.dev",
+          },
+        }
+      : {}),
     extra: {
       ...appJson.expo.extra,
       appEnv,
-      oauthRedirectUrl: "hemoscd://auth/callback",
+      oauthRedirectUrl: isDevelopment
+        ? "hemoscd-dev://auth/callback"
+        : "hemoscd://auth/callback",
       publicShareBaseUrl: "https://hemo-scd.com",
       supabaseUrl: supabase.url,
       supabaseAnonKey: supabase.anonKey,
