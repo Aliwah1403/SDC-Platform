@@ -18,7 +18,15 @@ const resolveAppEnv = () => {
   if (process.env.EAS_BUILD_PROFILE === "development") return "development";
   if (process.env.HEMO_APP_ENV === "staging") return "staging";
   if (process.env.EAS_BUILD_PROFILE === "staging") return "staging";
-  return "production";
+  if (process.env.HEMO_APP_ENV === "production") return "production";
+  // Inside an EAS build (any other profile, e.g. preview) production config is
+  // the right default. On a developer's machine it is not: the dev-ness marker
+  // lives in .env.local alongside the credentials, so if that file goes missing
+  // a production default would silently hand production Supabase to whatever
+  // binary connects to Metro. Default to development instead and let the
+  // runtime guard in utils/auth/supabase.js fail loudly.
+  if (process.env.EAS_BUILD_PROFILE || process.env.EAS_BUILD) return "production";
+  return "development";
 };
 
 module.exports = () => {
