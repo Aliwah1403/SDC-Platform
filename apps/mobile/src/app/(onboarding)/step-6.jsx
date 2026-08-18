@@ -63,7 +63,10 @@ export default function Step6() {
   };
 
   const handleSkip = () => {
-    posthog?.capture('onboarding_step_skipped', { step: 6 });
+    posthog?.capture('onboarding_step_skipped', {
+      step: 6,
+      step_name: 'medical_profile',
+    });
     setOnboardingStep(6);
     router.push("/(onboarding)/step-7");
   };

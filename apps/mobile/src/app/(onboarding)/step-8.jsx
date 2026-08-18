@@ -109,7 +109,10 @@ export default function Step8() {
   };
 
   const handleSkip = () => {
-    posthog?.capture('onboarding_step_skipped', { step: 8 });
+    posthog?.capture('onboarding_step_skipped', {
+      step: 8,
+      step_name: 'notification_permission',
+    });
     setOnboardingField("notificationsEnabled", false);
     goNext();
   };

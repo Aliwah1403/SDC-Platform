@@ -7,7 +7,7 @@ export const ACHIEVEMENTS = [
     type: "onboarding",
     requirement: "Complete your Hemo setup",
     rarity: "Common",
-    image: require("../assets/images/badges-3/getting-started.png"),
+    image: require("../../assets/images/badges-3/getting-started.png"),
   },
   {
     id: "days-1",
@@ -19,7 +19,7 @@ export const ACHIEVEMENTS = [
     target: 1,
     requirement: "Log your first day",
     rarity: "Common",
-    image: require("../assets/images/badges-3/first-step.png"),
+    image: require("../../assets/images/badges-3/first-step.png"),
   },
   {
     id: "days-5",
@@ -31,7 +31,7 @@ export const ACHIEVEMENTS = [
     target: 5,
     requirement: "Log 5 days",
     rarity: "Common",
-    image: require("../assets/images/badges-3/getting-started.png"),
+    image: require("../../assets/images/badges-3/getting-started.png"),
   },
   {
     id: "days-10",
@@ -43,7 +43,7 @@ export const ACHIEVEMENTS = [
     target: 10,
     requirement: "Log 10 days",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/double-digits.png"),
+    image: require("../../assets/images/badges-3/double-digits.png"),
   },
   {
     id: "days-25",
@@ -55,7 +55,7 @@ export const ACHIEVEMENTS = [
     target: 25,
     requirement: "Log 25 days",
     rarity: "Rare",
-    image: require("../assets/images/badges-3/quarter-century.png"),
+    image: require("../../assets/images/badges-3/quarter-century.png"),
   },
   {
     id: "days-50",
@@ -67,7 +67,7 @@ export const ACHIEVEMENTS = [
     target: 50,
     requirement: "Log 50 days",
     rarity: "Epic",
-    image: require("../assets/images/badges-3/health-champion.png"),
+    image: require("../../assets/images/badges-3/health-champion.png"),
   },
   {
     id: "days-100",
@@ -79,7 +79,7 @@ export const ACHIEVEMENTS = [
     target: 100,
     requirement: "Log 100 days",
     rarity: "Legendary",
-    image: require("../assets/images/badges-3/century-master.png"),
+    image: require("../../assets/images/badges-3/century-master.png"),
   },
   {
     id: "streak-3",
@@ -90,7 +90,7 @@ export const ACHIEVEMENTS = [
     target: 3,
     requirement: "Maintain a 3-day streak",
     rarity: "Common",
-    image: require("../assets/images/badges-3/on-track.png"),
+    image: require("../../assets/images/badges-3/on-track.png"),
   },
   {
     id: "streak-7",
@@ -101,7 +101,7 @@ export const ACHIEVEMENTS = [
     target: 7,
     requirement: "Maintain a 7-day streak",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/habit-builder.png"),
+    image: require("../../assets/images/badges-3/habit-builder.png"),
   },
   {
     id: "streak-14",
@@ -112,7 +112,7 @@ export const ACHIEVEMENTS = [
     target: 14,
     requirement: "Maintain a 14-day streak",
     rarity: "Rare",
-    image: require("../assets/images/badges-3/fortnight-fighter.png"),
+    image: require("../../assets/images/badges-3/fortnight-fighter.png"),
   },
   {
     id: "streak-30",
@@ -123,7 +123,7 @@ export const ACHIEVEMENTS = [
     target: 30,
     requirement: "Maintain a 30-day streak",
     rarity: "Epic",
-    image: require("../assets/images/badges-3/monthly-monster.png"),
+    image: require("../../assets/images/badges-3/monthly-monster.png"),
   },
   {
     id: "streak-60",
@@ -134,7 +134,7 @@ export const ACHIEVEMENTS = [
     target: 60,
     requirement: "Maintain a 60-day streak",
     rarity: "Legendary",
-    image: require("../assets/images/badges-3/century-master.png"),
+    image: require("../../assets/images/badges-3/century-master.png"),
   },
   {
     id: "symptoms-10",
@@ -145,7 +145,7 @@ export const ACHIEVEMENTS = [
     target: 10,
     requirement: "Log 10 symptoms",
     rarity: "Common",
-    image: require("../assets/images/badges-3/pattern-seeker.png"),
+    image: require("../../assets/images/badges-3/pattern-seeker.png"),
   },
   {
     id: "symptoms-25",
@@ -156,7 +156,7 @@ export const ACHIEVEMENTS = [
     target: 25,
     requirement: "Log 25 symptoms",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/symptom-tracker.png"),
+    image: require("../../assets/images/badges-3/symptom-tracker.png"),
   },
   {
     id: "hydration-7",
@@ -167,7 +167,7 @@ export const ACHIEVEMENTS = [
     target: 7,
     requirement: "Meet hydration goals for 7 days",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/hydration-junkie.png"),
+    image: require("../../assets/images/badges-3/hydration-junkie.png"),
   },
   {
     id: "care-10",
@@ -178,7 +178,7 @@ export const ACHIEVEMENTS = [
     target: 10,
     requirement: "Complete 10 care tasks",
     rarity: "Common",
-    image: require("../assets/images/badges-3/self-care.png"),
+    image: require("../../assets/images/badges-3/self-care.png"),
   },
   {
     id: "learning-5",
@@ -189,7 +189,7 @@ export const ACHIEVEMENTS = [
     target: 5,
     requirement: "Complete 5 learning modules",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/knowledge-seeker.png"),
+    image: require("../../assets/images/badges-3/knowledge-seeker.png"),
   },
   {
     id: "repair-1",
@@ -201,7 +201,7 @@ export const ACHIEVEMENTS = [
     target: 1,
     requirement: "Use your first streak repair",
     rarity: "Common",
-    image: require("../assets/images/badges-3/back-on-track.png"),
+    image: require("../../assets/images/badges-3/back-on-track.png"),
   },
   {
     id: "restart-1",
@@ -213,7 +213,7 @@ export const ACHIEVEMENTS = [
     target: 1,
     requirement: "Log again after missing 3+ days",
     rarity: "Uncommon",
-    image: require("../assets/images/badges-3/resilient-restart.png"),
+    image: require("../../assets/images/badges-3/resilient-restart.png"),
   },
   {
     id: "meds-first",
@@ -225,7 +225,7 @@ export const ACHIEVEMENTS = [
     target: 1,
     requirement: "Log your first medication",
     rarity: "Common",
-    image: require("../assets/images/badges-3/dose-one.png"),
+    image: require("../../assets/images/badges-3/dose-one.png"),
   },
   {
     id: "meds-streak-7",
@@ -237,7 +237,7 @@ export const ACHIEVEMENTS = [
     target: 7,
     requirement: "Complete 7 medication check-ins",
     rarity: "Rare",
-    image: require("../assets/images/badges-3/on-time-hero.png"),
+    image: require("../../assets/images/badges-3/on-time-hero.png"),
   },
   {
     id: "week-perfect",
@@ -249,7 +249,7 @@ export const ACHIEVEMENTS = [
     metric: "completedDays",
     requirement: "Log every day for a full week",
     rarity: "Epic",
-    image: require("../assets/images/badges-3/perfect-week.png"),
+    image: require("../../assets/images/badges-3/perfect-week.png"),
   },
 ];
 

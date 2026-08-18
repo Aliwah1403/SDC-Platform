@@ -60,7 +60,14 @@ export default function Step4() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 4 }); setOnboardingStep(4); router.push('/(onboarding)/step-5'); };
+  const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', {
+      step: 4,
+      step_name: 'weight',
+    });
+    setOnboardingStep(4);
+    router.push('/(onboarding)/step-5');
+  };
 
   const handleContinue = () => {
     const weightInKg =

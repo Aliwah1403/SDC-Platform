@@ -78,8 +78,9 @@ const TermsPage = () => {
             Services in any way that could harm others or disrupt the platform.
           </p>
           <p className="text-muted-foreground">
-            You must be at least 13 years of age to use Hemo. If you are under 18, you should
-            review these terms with a parent or guardian.
+            You must be at least 13 years of age to use Hemo. If you are under 18, you may
+            only use Hemo with consent from a parent or legal guardian, and you should review
+            these terms with them before using the Services.
           </p>
         </Section>
 

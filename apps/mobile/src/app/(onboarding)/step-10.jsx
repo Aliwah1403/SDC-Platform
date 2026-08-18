@@ -23,7 +23,13 @@ export default function Step10() {
 
   const goNext = () => { setOnboardingStep(10); router.push('/(onboarding)/complete'); };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 10 }); goNext(); };
+  const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', {
+      step: 10,
+      step_name: 'medications',
+    });
+    goNext();
+  };
 
   const handleContinue = () => {
     const selected = SCD_MEDICATIONS.filter((d) => selectedIds.has(d.id)).map((d) => ({

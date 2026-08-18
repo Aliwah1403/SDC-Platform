@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
 import * as Contacts from "expo-contacts";
 import PhoneInput from "react-native-phone-number-input";
+import { usePostHog } from "posthog-react-native";
 import {
   Plus,
   Trash2,
@@ -156,6 +157,7 @@ function ContactPhoneInput({ contact, index, setFocusedField, updateContact }) {
 
 export default function Step7() {
   const { setOnboardingField, setOnboardingStep } = useAppStore();
+  const posthog = usePostHog();
 
   const [contacts, setContacts] = useState([]);
   const [isManual, setIsManual] = useState(false);
@@ -302,16 +304,29 @@ export default function Step7() {
     else handlePickContact(contacts.length);
   };
 
+  const showingCards = contacts.length > 0 || isManual;
+
   // ── Save ───────────────────────────────────────────────────
-  const isValid =
+  const areContactsComplete =
     contacts.length > 0 &&
-    !!contacts[0]?.name?.trim() &&
-    !!contacts[0]?.phone?.trim();
+    contacts.every(
+      (contact) =>
+        !!contact.name?.trim() &&
+        !!contact.phone?.trim() &&
+        !!contact.relationship?.trim(),
+    );
+  const canContinue = !showingCards || areContactsComplete;
 
   const handleContinue = () => {
     const valid = contacts
-      .filter((c) => c.name?.trim() && c.phone?.trim())
+      .filter((c) => c.name?.trim() && c.phone?.trim() && c.relationship?.trim())
       .map(({ name, phone, relationship }) => ({ name, phone, relationship }));
+    if (valid.length === 0) {
+      posthog?.capture("onboarding_step_skipped", {
+        step: 7,
+        step_name: "emergency_contacts",
+      });
+    }
     setOnboardingField("emergencyContacts", valid);
     setOnboardingStep(7);
     router.push("/(onboarding)/step-8");
@@ -321,19 +336,17 @@ export default function Step7() {
     .filter((c) => c.name.toLowerCase().includes(contactSearch.toLowerCase()))
     .slice(0, 60);
 
-  const showingCards = contacts.length > 0 || isManual;
-
   return (
     <OnboardingStep
       step={7}
       title="Emergency contact"
-      subtitle="In a crisis, who should we call? At least one contact is required."
+      subtitle="Strongly recommended for crisis support. You can skip this for now and add someone later."
       illustrationIcon={Shield}
       illustrationColor="#781D11"
       onBack={() => router.back()}
       onCta={handleContinue}
-      ctaDisabled={!isValid}
-      ctaLabel="Save & Next"
+      ctaDisabled={!canContinue}
+      ctaLabel={showingCards ? "Save & Next" : "Skip for now"}
     >
       {/* ── Gate ─────────────────────────────────────────────── */}
       {!showingCards && (

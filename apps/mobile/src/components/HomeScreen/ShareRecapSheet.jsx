@@ -816,8 +816,8 @@ export default function ShareRecapSheet({
                 marginBottom: 16,
               }}
             >
-              Share this link with your doctor or care team. They'll see an
-              AI-interpreted report of your health data.
+              Share this link with your doctor or care team. Generated from your
+              logged data.
             </Text>
 
             <View

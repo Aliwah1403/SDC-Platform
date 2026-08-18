@@ -87,7 +87,10 @@ export default function Step9() {
   };
 
   const handleSkip = () => {
-    posthog?.capture('onboarding_step_skipped', { step: 9 });
+    posthog?.capture('onboarding_step_skipped', {
+      step: 9,
+      step_name: 'location_permission',
+    });
     setOnboardingField("locationEnabled", false);
     goNext();
   };

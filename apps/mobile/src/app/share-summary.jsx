@@ -583,34 +583,19 @@ export default function ShareSummaryScreen() {
             {noteInput.length}/300
           </Text>
 
-          {/* AI badge */}
-          <View
+          {/* Helper text */}
+          <Text
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              backgroundColor: t.isDark ? `${BURGUNDY}18` : "#FDF2F4",
-              borderRadius: 12,
-              padding: 14,
+              fontFamily: fonts.regular,
+              fontSize: 13,
+              color: t.textSecondary,
+              lineHeight: 20,
               marginBottom: 32,
-              borderWidth: 1,
-              borderColor: t.isDark ? `${BURGUNDY}30` : "#F5C2CC",
             }}
           >
-            <Sparkles size={16} color={BURGUNDY} strokeWidth={2} />
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 13,
-                color: t.text,
-                flex: 1,
-                lineHeight: 20,
-              }}
-            >
-              Hemo's AI will interpret your data into plain clinical language —
-              so your doctor gets context, not just numbers.
-            </Text>
-          </View>
+            Generated from your logged data, so your doctor gets context — not
+            just numbers.
+          </Text>
 
           {/* Generate button */}
           <TouchableOpacity
@@ -899,8 +884,8 @@ export default function ShareSummaryScreen() {
                 marginBottom: 16,
               }}
             >
-              Share this link with your doctor or care team. They'll see an
-              AI-interpreted report of your health data.
+              Share this link with your doctor or care team. Generated from your
+              logged data.
             </Text>
 
             <View

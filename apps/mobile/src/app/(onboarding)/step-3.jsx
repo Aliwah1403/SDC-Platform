@@ -68,7 +68,14 @@ export default function Step3() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 3 }); setOnboardingStep(3); router.push('/(onboarding)/step-4'); };
+  const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', {
+      step: 3,
+      step_name: 'height',
+    });
+    setOnboardingStep(3);
+    router.push('/(onboarding)/step-4');
+  };
 
   const handleContinue = () => {
     const heightInCm =
