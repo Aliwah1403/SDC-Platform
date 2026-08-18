@@ -23,10 +23,20 @@ const resolveAppEnv = () => {
 
 module.exports = () => {
   const appEnv = resolveAppEnv();
-  // SUPABASE_CONFIG has no "development" entry (yet); guard so evaluating
-  // this file for appEnv === "development" doesn't throw at config time.
-  const supabase = SUPABASE_CONFIG[appEnv] ?? {};
   const isDevelopment = appEnv === "development";
+  // Development is intentionally not a key in SUPABASE_CONFIG: it resolves
+  // straight from process.env below, with no fallback to the staging or
+  // production entries. If those vars are unset (e.g. on an EAS builder,
+  // which has no .env.local), this evaluates to undefined rather than
+  // throwing here — a config-time throw would break the build itself. The
+  // hard failure for a missing/misconfigured dev Supabase happens at
+  // runtime in supabase.js instead.
+  const supabase = isDevelopment
+    ? {
+        url: process.env.EXPO_PUBLIC_SUPABASE_URL,
+        anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      }
+    : SUPABASE_CONFIG[appEnv];
 
   return {
     ...appJson.expo,
