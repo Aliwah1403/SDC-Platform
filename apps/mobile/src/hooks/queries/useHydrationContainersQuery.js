@@ -6,7 +6,7 @@ import {
   updateHydrationContainer,
   removeHydrationContainer,
   setDefaultHydrationContainer,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/hydration';
 import { registerNotificationCategories } from '@/utils/notificationActions';
 
 // Re-exported for backward compatibility — every existing importer of these

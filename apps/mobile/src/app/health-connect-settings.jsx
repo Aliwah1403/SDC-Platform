@@ -164,16 +164,6 @@ export default function HealthConnectSettingsScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      <TouchableOpacity
-        onPress={() => router.push("/education-article?topic=hemo-wearables&from=wearable_settings")}
-        style={{ alignSelf: "center", marginBottom: 4 }}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-      >
-        <Text style={{ fontFamily: "Geist_500Medium", fontSize: 13, color: t.accent }}>
-          Tracking with a smart watch →
-        </Text>
-      </TouchableOpacity>
-
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

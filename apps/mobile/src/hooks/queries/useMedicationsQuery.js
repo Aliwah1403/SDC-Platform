@@ -12,8 +12,8 @@ import {
   deleteMedicationLogById,
   deleteLatestMedicationLog,
   markGroupTaken,
-  fetchDrugInfo,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/medications';
+import { fetchDrugInfo } from '@/services/supabase/drug-info';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

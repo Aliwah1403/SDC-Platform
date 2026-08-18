@@ -5,7 +5,7 @@ const TermsPage = () => {
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Hero header */}
       <div className="text-center">
-        <p className="text-sm font-medium text-primary">Last updated: May 21, 2026</p>
+        <p className="text-sm font-medium text-primary">Last updated: August 11, 2026</p>
         <h1 className="mt-3 text-5xl font-bold tracking-tight sm:text-6xl">Terms of Use</h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-muted-foreground">
           Please read these terms carefully before using Hemo or joining our waitlist.
@@ -44,9 +44,30 @@ const TermsPage = () => {
           <p className="text-muted-foreground">
             Always seek the advice of a qualified healthcare provider with any questions you
             may have regarding a medical condition. In an emergency, contact your local
-            emergency services immediately. The in-app SOS feature is a convenience tool
-            for alerting personal contacts — it is not a replacement for calling emergency
-            services.
+            emergency services immediately. Hemo does not monitor you, contact emergency
+            services, or guarantee that calls, notifications, or messages reach another person.
+            Where Hemo prepares a message, you remain responsible for reviewing and sending it
+            through your device.
+          </p>
+          <p className="text-muted-foreground">
+            Any crisis or pain plan stored in Hemo should reflect an individual plan discussed
+            and agreed with your healthcare team. Hemo does not create, prescribe, or approve a
+            treatment plan for you.
+          </p>
+        </Section>
+
+        <Section heading="Health information and generated content">
+          <p className="text-muted-foreground">
+            Health logs, educational content, patterns, scores, wearable readings, AI-assisted
+            summaries, reports, and medication-photo or barcode matches are provided for
+            informational and organisational purposes only. They may be incomplete, delayed, or
+            inaccurate and must not be treated as a diagnosis, clinical interpretation,
+            prescription, treatment recommendation, or confirmation that a medication is safe.
+          </p>
+          <p className="text-muted-foreground">
+            Review important information with a qualified healthcare professional before making
+            medical or medication decisions. If symptoms are severe, unusual, worsening, or you
+            are unsure, seek urgent medical help rather than relying on Hemo.
           </p>
         </Section>
 

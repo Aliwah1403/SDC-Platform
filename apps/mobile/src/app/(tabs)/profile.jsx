@@ -92,7 +92,7 @@ import {
   linkApple,
   unlinkProvider,
 } from "@/utils/auth/supabase";
-import { uploadAvatar } from "@/services/supabaseQueries";
+import { uploadAvatar } from "@/services/supabase/profile";
 import { WebView } from "react-native-webview";
 import { USERJOT_FEEDBACK_URL } from "@/constants/feedback";
 import AppleHealthModal from "@/components/AppleHealthModal";

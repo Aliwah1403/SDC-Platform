@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabaseQueries';
+import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabase/streak';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
@@ -48,9 +48,10 @@ export function useMissedDay() {
   if (daysSince <= 1) return null; // logged yesterday or today — streak alive
   if (daysSince > 3) return null;  // gap too large — show lost streak screen instead
 
-  // Only offer repair if the user had a streak worth saving
+  // Treat a streak as real from day 1. The first log should count, while
+  // milestone celebrations can still start at higher thresholds.
   const previousStreak = streak.previousStreak ?? 0;
-  if (previousStreak < 3) return null;
+  if (previousStreak < 1) return null;
 
   const missedDate = new Date(lastLog);
   missedDate.setDate(missedDate.getDate() + 1);
@@ -68,7 +69,7 @@ export function useMissedDay() {
 }
 
 /**
- * Detects a fully lost streak (gap > 3 days, had a meaningful streak).
+ * Detects a fully lost streak (gap > 3 days, had a streak).
  * Used to show the "You lost your streak" screen instead of the repair sheet.
  */
 export function useStreakLost() {
@@ -84,7 +85,7 @@ export function useStreakLost() {
 
   if (daysSince <= 3) return null; // still in repair window or alive
   const previousStreak = streak.previousStreak ?? 0;
-  if (previousStreak < 3) return null; // not meaningful enough to mourn
+  if (previousStreak < 1) return null;
 
   return { lostStreak: previousStreak };
 }

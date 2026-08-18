@@ -1,0 +1,1 @@
+ALTER TABLE medication_logs DROP CONSTRAINT medication_logs_medication_id_date_key;;

@@ -1,4 +1,4 @@
-import * as Calendar from "expo-calendar";
+import * as Calendar from "expo-calendar/legacy";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
 import { Sentry } from "@/utils/sentry";
@@ -58,7 +58,6 @@ export async function addToDeviceCalendar(appt) {
       startDate,
       endDate,
       notes: appt.notes || "",
-      alarms: [{ relativeOffset: -60 }, { relativeOffset: -1440 }],
     });
 
     return eventId;

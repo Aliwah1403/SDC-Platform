@@ -16,7 +16,8 @@ import { ArcGaugeChart } from "@/components/Charts/arc-gauge-chart";
 import { DatePicker } from "@/components/HomeHeader/DatePicker";
 import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { PressableScale } from "@/components/PressableScale";
-import { enterTiming, exitTiming } from "@/utils/motion";
+import { enterTiming, exitTiming, easeInOutStrong } from "@/utils/motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { MotiView, AnimatePresence } from "moti";
 import {
   ChevronLeft,
@@ -573,6 +574,7 @@ export default function MetricDetailScreen() {
     return new Date();
   });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const reducedMotion = useReducedMotion();
   const { isToday, isFuture, isSelected } = useDateNavigation();
 
   useEffect(() => {
@@ -698,12 +700,16 @@ export default function MetricDetailScreen() {
             <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary }}>
               {selectedDateLabel}
             </Text>
-            <ChevronDown
-              size={13}
-              color={t.textSecondary}
-              strokeWidth={2}
-              style={{ transform: [{ rotate: pickerOpen ? "180deg" : "0deg" }] }}
-            />
+            <MotiView
+              animate={{ rotate: pickerOpen ? "180deg" : "0deg" }}
+              transition={
+                reducedMotion
+                  ? { type: "timing", duration: 0 }
+                  : { type: "timing", duration: 200, easing: easeInOutStrong }
+              }
+            >
+              <ChevronDown size={13} color={t.textSecondary} strokeWidth={2} />
+            </MotiView>
           </View>
         </PressableScale>
 

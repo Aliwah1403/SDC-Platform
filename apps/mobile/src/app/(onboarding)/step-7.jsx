@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   FlatList,
   Modal,
@@ -11,6 +11,8 @@ import {
   View,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MotiView } from "moti";
@@ -27,6 +29,7 @@ import {
 } from "lucide-react-native";
 import OnboardingStep from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
+import { DEFAULT_PHONE_COUNTRY, countryFlagEmoji, parsePhoneForInput } from "@/utils/phoneNumbers";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -37,10 +40,20 @@ const RELATIONSHIPS = [
   "Doctor",
   "Other",
 ];
+const CONTACT_DETAIL_FIELDS = [
+  Contacts.ContactField.FULL_NAME,
+  Contacts.ContactField.GIVEN_NAME,
+  Contacts.ContactField.FAMILY_NAME,
+  Contacts.ContactField.PHONES,
+];
 
 const emptyManual = () => ({
   name: "",
   phone: "", // formatted international number (+441234567890)
+  phoneInputValue: "",
+  phoneCountryCode: DEFAULT_PHONE_COUNTRY,
+  phoneCallingCode: "44",
+  phoneInputKey: 0,
   relationship: "",
   source: "manual",
 });
@@ -53,6 +66,93 @@ const getInitials = (name = "") =>
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+async function normalizePickedContact(contact) {
+  if (!contact) return null;
+
+  const details =
+    typeof contact.getDetails === "function"
+      ? await contact.getDetails(CONTACT_DETAIL_FIELDS)
+      : contact;
+  const name =
+    details.fullName ||
+    details.name ||
+    [details.givenName ?? details.firstName, details.familyName ?? details.lastName]
+      .filter(Boolean)
+      .join(" ") ||
+    "";
+  const phones = details.phones ?? details.phoneNumbers ?? [];
+  const phoneNumbers = phones
+    .map((phone) => ({ number: phone.number }))
+    .filter((phone) => !!phone.number);
+
+  return {
+    ...details,
+    name,
+    phoneNumbers,
+  };
+}
+
+function ContactPhoneInput({ contact, index, setFocusedField, updateContact }) {
+  const phoneInputRef = useRef(null);
+  const phoneCountryCode = contact.phoneCountryCode ?? DEFAULT_PHONE_COUNTRY;
+  const phoneCallingCode = contact.phoneCallingCode ?? "44";
+  const phoneInputValue = contact.phoneInputValue ?? "";
+
+  useEffect(() => {
+    phoneInputRef.current?.setState?.({
+      countryCode: phoneCountryCode,
+      code: phoneCallingCode,
+      number: phoneInputValue,
+    });
+  }, [phoneCallingCode, phoneCountryCode, phoneInputValue]);
+
+  return (
+    <PhoneInput
+      ref={phoneInputRef}
+      key={`onboarding-phone-${index}-${contact.phoneInputKey ?? 0}-${phoneCountryCode}`}
+      defaultCode={phoneCountryCode}
+      layout="first"
+      placeholder="Phone number"
+      value={phoneInputValue}
+      flagSize={20}
+      onChangeText={(text) =>
+        updateContact(index, "phoneInputValue", text)
+      }
+      onChangeFormattedText={(text) =>
+        updateContact(index, "phone", text)
+      }
+      onChangeCountry={(country) => {
+        updateContact(index, "phoneCountryCode", country.cca2 ?? DEFAULT_PHONE_COUNTRY);
+        updateContact(index, "phoneCallingCode", country.callingCode?.[0] ?? phoneCallingCode);
+      }}
+      containerStyle={styles.phoneContainer}
+      textContainerStyle={styles.phoneTextContainer}
+      textInputStyle={styles.phoneTextInput}
+      codeTextStyle={styles.phoneCodeText}
+      flagButtonStyle={styles.phoneFlagBtn}
+      textInputProps={{
+        placeholderTextColor: "rgba(9,51,44,0.35)",
+        keyboardType: "phone-pad",
+        onFocus: () => setFocusedField(`phone-${index}`),
+        onBlur: () => setFocusedField(null),
+      }}
+      countryPickerProps={{
+        withFilter: true,
+        withFlag: true,
+        withFlagButton: true,
+        withEmoji: true,
+        withCallingCodeButton: true,
+        withAlphaFilter: true,
+        renderFlagButton: () => (
+          <Text style={styles.phoneFlagEmoji}>
+            {countryFlagEmoji(phoneCountryCode)}
+          </Text>
+        ),
+      }}
+    />
+  );
+}
 
 export default function Step7() {
   const { setOnboardingField, setOnboardingStep } = useAppStore();
@@ -70,15 +170,49 @@ export default function Step7() {
   const contactSearchRef = useRef(null);
 
   // ── Contact picker (from phone) ─────────────────────────────
+  const ensureManualContactSlot = () => {
+    setIsManual(true);
+    if (contacts.length === 0) setContacts([emptyManual()]);
+  };
+
+  const showContactsUnavailableAlert = (canOpenSettings = false) => {
+    const actions = [
+      {
+        text: "Add manually",
+        onPress: ensureManualContactSlot,
+      },
+    ];
+
+    if (canOpenSettings) {
+      actions.unshift({
+        text: "Open Settings",
+        onPress: () => Linking.openSettings(),
+      });
+    }
+
+    actions.push({ text: "Cancel", style: "cancel" });
+
+    Alert.alert(
+      "Contacts unavailable",
+      "Hemo could not open your phone contacts. You can allow contacts access in Settings or add this contact manually.",
+      actions,
+    );
+  };
+
   const addPickedContact = (contact, targetIndex) => {
     const resolvedName =
       contact.name ||
       [contact.firstName, contact.lastName].filter(Boolean).join(" ") ||
       "";
     const phone = contact.phoneNumbers?.[0]?.number || "";
+    const parsedPhone = parsePhoneForInput(phone);
     const slot = {
       name: resolvedName,
-      phone,
+      phone: parsedPhone.formattedNumber,
+      phoneInputValue: parsedPhone.nationalNumber,
+      phoneCountryCode: parsedPhone.countryCode,
+      phoneCallingCode: parsedPhone.callingCode,
+      phoneInputKey: Date.now(),
       relationship: "",
       source: "picker",
     };
@@ -90,40 +224,60 @@ export default function Step7() {
     });
   };
 
-  const handlePickContact = async (targetIndex) => {
-    if (Platform.OS === "ios") {
-      try {
-        const contact = await Contacts.presentContactPickerAsync();
-        if (contact) addPickedContact(contact, targetIndex);
-      } catch {
-        /* cancelled */
+  const openContactList = async (targetIndex) => {
+    setIsLoading(true);
+    try {
+      const permission = await Contacts.requestPermissionsAsync();
+      if (permission.status !== "granted") {
+        ensureManualContactSlot();
+        showContactsUnavailableAlert(permission.canAskAgain === false);
+        return;
       }
-    } else {
-      setIsLoading(true);
-      try {
-        const { status } = await Contacts.requestPermissionsAsync();
-        if (status === "granted") {
-          const { data } = await Contacts.getContactsAsync({
-            fields: [Contacts.Fields.Name, Contacts.Fields.PhoneNumbers],
-          });
-          setAllContacts(
-            data.filter((c) => c.name && c.phoneNumbers?.length > 0),
-          );
-          setContactPickerTarget(targetIndex);
-          setContactSearch("");
-          setShowContactModal(true);
-          setTimeout(() => contactSearchRef.current?.focus(), 300);
-        } else {
-          setIsManual(true);
-          if (contacts.length === 0) setContacts([emptyManual()]);
-        }
-      } catch {
-        setIsManual(true);
-        if (contacts.length === 0) setContacts([emptyManual()]);
-      } finally {
-        setIsLoading(false);
-      }
+
+      const data = await Contacts.Contact.getAllDetails(CONTACT_DETAIL_FIELDS);
+      const contactsWithPhones = data
+        .map((contact) => ({
+          id: contact.id,
+          name:
+            contact.fullName ||
+            [contact.givenName, contact.familyName].filter(Boolean).join(" ") ||
+            "",
+          phoneNumbers: (contact.phones ?? [])
+            .map((phone) => ({ number: phone.number }))
+            .filter((phone) => !!phone.number),
+        }))
+        .filter(
+          (c) => c.name && c.phoneNumbers?.length > 0,
+        );
+
+      setAllContacts(contactsWithPhones);
+      setContactPickerTarget(targetIndex);
+      setContactSearch("");
+      setShowContactModal(true);
+      setTimeout(() => contactSearchRef.current?.focus(), 300);
+    } catch (error) {
+      console.warn("[contacts] Failed to load phone contacts", error);
+      ensureManualContactSlot();
+      showContactsUnavailableAlert();
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handlePickContact = async (targetIndex) => {
+    if (Platform.OS === "ios" && Contacts.Contact?.presentPicker) {
+      try {
+        const contact = await Contacts.Contact.presentPicker();
+        const normalizedContact = await normalizePickedContact(contact);
+        if (normalizedContact) addPickedContact(normalizedContact, targetIndex);
+      } catch (error) {
+        console.warn("[contacts] Native contact picker failed", error);
+        await openContactList(targetIndex);
+      }
+      return;
+    }
+
+    await openContactList(targetIndex);
   };
 
   const selectFromContactModal = (contact) => {
@@ -294,30 +448,11 @@ export default function Step7() {
               </View>
 
               {/* Phone input — library handles flag + country code + number */}
-              <PhoneInput
-                defaultCode="GB"
-                layout="first"
-                placeholder="Phone number"
-                onChangeFormattedText={(text) =>
-                  updateContact(index, "phone", text)
-                }
-                containerStyle={styles.phoneContainer}
-                textContainerStyle={styles.phoneTextContainer}
-                textInputStyle={styles.phoneTextInput}
-                codeTextStyle={styles.phoneCodeText}
-                flagButtonStyle={styles.phoneFlagBtn}
-                textInputProps={{
-                  placeholderTextColor: "rgba(9,51,44,0.35)",
-                  keyboardType: "phone-pad",
-                  onFocus: () => setFocusedField(`phone-${index}`),
-                  onBlur: () => setFocusedField(null),
-                }}
-                countryPickerProps={{
-                  withFilter: true,
-                  withFlag: true,
-                  withCallingCodeButton: true,
-                  withAlphaFilter: true,
-                }}
+              <ContactPhoneInput
+                contact={contact}
+                index={index}
+                setFocusedField={setFocusedField}
+                updateContact={updateContact}
               />
             </>
           )}
@@ -610,6 +745,10 @@ const styles = StyleSheet.create({
   },
   phoneFlagBtn: {
     backgroundColor: "transparent",
+  },
+  phoneFlagEmoji: {
+    fontSize: 20,
+    marginRight: 6,
   },
   relLabel: {
     fontFamily: "Geist_500Medium",

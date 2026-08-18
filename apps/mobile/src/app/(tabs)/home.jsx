@@ -38,114 +38,11 @@ import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { useTheme } from "@/hooks/useTheme";
 import { toLocalDateStr } from "@/utils/dateUtils";
-
-const ALL_MILESTONES = [
-  {
-    id: "streak-1",
-    type: "streak",
-    count: 1,
-    name: "First Streak",
-    description: "Your first logged day — the journey starts here.",
-  },
-  {
-    id: "streak-3",
-    type: "streak",
-    count: 3,
-    name: "On Track",
-    description: "Three days in a row — momentum is building!",
-  },
-  {
-    id: "streak-7",
-    type: "streak",
-    count: 7,
-    name: "Habit Builder",
-    description: "A full week of consistency. Your dedication is showing.",
-  },
-  {
-    id: "streak-14",
-    type: "streak",
-    count: 14,
-    name: "Fortnight Fighter",
-    description: "Two weeks strong. Consistency is paying off.",
-  },
-  {
-    id: "streak-30",
-    type: "streak",
-    count: 30,
-    name: "Monthly Monster",
-    description: "A full month! Your habit is now deeply ingrained.",
-  },
-  {
-    id: "streak-60",
-    type: "streak",
-    count: 60,
-    name: "Dedicated Tracker",
-    description: "Two months of relentless tracking. Incredible.",
-  },
-  {
-    id: "days-1",
-    type: "days",
-    count: 1,
-    name: "First Step",
-    description: "Welcome to your health journey!",
-  },
-  {
-    id: "days-5",
-    type: "days",
-    count: 5,
-    name: "Getting Started",
-    description: "You're building a habit. Consistency is key.",
-  },
-  {
-    id: "days-10",
-    type: "days",
-    count: 10,
-    name: "Double Digits",
-    description: "Ten days logged. You're developing a strong tracking habit.",
-  },
-  {
-    id: "days-25",
-    type: "days",
-    count: 25,
-    name: "Quarter Century",
-    description: "25 days logged. Your commitment is impressive!",
-  },
-  {
-    id: "days-50",
-    type: "days",
-    count: 50,
-    name: "Health Champion",
-    description: "Incredible dedication. You're a true health champion.",
-  },
-  {
-    id: "days-100",
-    type: "days",
-    count: 100,
-    name: "Century Master",
-    description: "A hundred days of commitment. You're unstoppable.",
-  },
-  {
-    id: "symptoms-10",
-    type: "symptoms",
-    count: 10,
-    name: "Pattern Seeker",
-    description: "You're starting to identify patterns in your symptoms.",
-  },
-  {
-    id: "symptoms-25",
-    type: "symptoms",
-    count: 25,
-    name: "Symptom Tracker",
-    description: "Your symptom data is becoming more valuable with each entry.",
-  },
-  {
-    id: "hydration-7",
-    type: "hydration",
-    count: 7,
-    name: "Hydration Junkie",
-    description: "7 days of great hydration! Your body thanks you.",
-  },
-];
+import {
+  getEarnedAchievements,
+  normalizeAchievementId,
+  toAchievementMilestone,
+} from "@/utils/achievements";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -176,7 +73,7 @@ export default function HomeScreen() {
   const { data: metricGoals } = useMetricGoalsQuery();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
   const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
-    b != null && typeof b === "object" ? b.id : b,
+    normalizeAchievementId(b != null && typeof b === "object" ? b.id : b),
   );
   const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
   const { mutateAsync: acknowledgeStreakLoss } = useAcknowledgeStreakLossMutation();
@@ -193,6 +90,15 @@ export default function HomeScreen() {
     () => healthData.filter((d) => d.hydration >= hydrationGoalMl).length,
     [healthData, hydrationGoalMl],
   );
+  const completedDays = useMemo(() => {
+    const loggedDates = new Set(healthData.map((d) => d.date));
+    const today = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - i));
+      return toLocalDateStr(date);
+    }).filter((date) => loggedDates.has(date)).length;
+  }, [healthData]);
 
   const hasLoggedToday = (() => {
     const todayStr = toLocalDateStr(new Date());
@@ -209,26 +115,21 @@ export default function HomeScreen() {
     if (!hasLoggedToday) return;
     if (pendingMilestone) return;
 
-    const earned = ALL_MILESTONES.filter((m) => {
-      if (m.type === "streak") return healthStreak >= m.count;
-      if (m.type === "days") return totalEntries >= m.count;
-      if (m.type === "symptoms") return symptomsLogged >= m.count;
-      if (m.type === "hydration") return hydrationDays >= m.count;
-      return false;
+    const earned = getEarnedAchievements({
+      currentStreak: healthStreak,
+      daysLogged: totalEntries,
+      symptomsLogged,
+      hydrationDays,
+      completedDays,
+      medicationsCount: medications.length,
+      careTasksCompleted: 0,
+      learningModulesCompleted: 0,
+      repairsUsed: streak?.repairsUsed ?? 0,
     });
 
     const newBadge = earned.find((m) => !claimedBadges.includes(m.id));
     if (newBadge) {
-      setPendingMilestone({
-        milestoneId: newBadge.id,
-        type: newBadge.type,
-        title:
-          newBadge.type === "streak"
-            ? `${healthStreak} Day Streak!`
-            : newBadge.name,
-        subtitle: newBadge.description,
-        streakCount: newBadge.type === "streak" ? healthStreak : null,
-      });
+      setPendingMilestone(toAchievementMilestone(newBadge));
     }
   }, [
     streakLoaded,
@@ -240,6 +141,9 @@ export default function HomeScreen() {
     totalEntries,
     symptomsLogged,
     hydrationDays,
+    completedDays,
+    medications.length,
+    streak?.repairsUsed,
   ]);
 
   const alertState = useAppStore((s) => s.computedAlertState);
@@ -422,7 +326,7 @@ export default function HomeScreen() {
             });
             const existing = streak?.claimedBadges ?? [];
             const alreadyIds = existing.map((b) =>
-              b != null && typeof b === "object" ? b.id : b,
+              normalizeAchievementId(b != null && typeof b === "object" ? b.id : b),
             );
             const updated = alreadyIds.includes(pendingMilestone.milestoneId)
               ? existing

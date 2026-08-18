@@ -5,7 +5,7 @@ import { supabase } from '@/utils/auth/supabase';
 import {
   fetchCommunityNotifications,
   markAllCommunityNotificationsRead,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/community';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

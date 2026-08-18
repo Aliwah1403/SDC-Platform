@@ -1,10 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { fetchEducationCategories, fetchEducationArticles } from "@/services/supabaseQueries";
+import { fetchEducationCategories, fetchEducationArticles } from "@/services/supabase/education";
 import {
   EDUCATION_CATEGORIES as BUNDLED_CATEGORIES,
   EDUCATION_ARTICLES as BUNDLED_ARTICLES,
 } from "@/utils/educationContent";
+import { prefetchEducationImages } from "@/utils/educationImagePrefetch";
 
 // Phase 2 of EDUCATION-CONTENT-PLAN.md — Supabase becomes the source of
 // truth once content is clinically reviewed and published there; the
@@ -39,6 +40,13 @@ export function useEducationContentQuery() {
       console.warn("[education] Supabase fetch failed, falling back to bundled content", error);
     }
   }, [isError, error]);
+
+  useEffect(() => {
+    if ((data?.articles?.length ?? 0) === 0) return;
+    prefetchEducationImages(data.articles.map((article) => article.photoUrl)).catch((prefetchError) => {
+      console.warn("[education] Failed to prefetch article images", prefetchError);
+    });
+  }, [data?.articles]);
 
   const remoteReady = !isError && (data?.categories?.length ?? 0) > 0 && (data?.articles?.length ?? 0) > 0;
 

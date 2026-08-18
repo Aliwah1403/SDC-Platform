@@ -12,7 +12,7 @@ import {
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { MotiView } from "moti";
+import { MotiView, AnimatePresence } from "moti";
 import Slider from "@react-native-community/slider";
 import * as Haptics from "expo-haptics";
 import * as Location from "expo-location";
@@ -38,6 +38,8 @@ import {
   scheduleEscalationAlert,
 } from "@/utils/crisisNotifications";
 import { fonts } from "@/utils/fonts";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { enterTiming, exitTiming, easeInOutStrong } from "@/utils/motion";
 
 // ── Escalation step definitions ────────────────────────────────────────────────
 
@@ -173,6 +175,8 @@ export default function CrisisModeScreen() {
   const [painSuggestion, setPainSuggestion] = useState(null); // { newStep, pain }
 
   const [historyOpen, setHistoryOpen] = useState(false);
+
+  const reducedMotion = useReducedMotion();
 
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -440,7 +444,7 @@ export default function CrisisModeScreen() {
           >
             <AlertTriangle size={16} color="#DC2626" strokeWidth={2.5} />
             <Text style={styles.alertBannerText}>
-              Call emergency services now, then use the button below to message your care team.
+              Call {emergencyNumber} now, then use the button below to message your care team.
             </Text>
           </MotiView>
         )}
@@ -536,72 +540,84 @@ export default function CrisisModeScreen() {
           style={styles.collapseHeader}
         >
           <Text style={styles.collapseTitle}>Update pain level</Text>
-          <ChevronDown
-            size={16}
-            color="rgba(248,233,231,0.55)"
-            strokeWidth={2}
-            style={{ transform: [{ rotate: painSliderOpen ? "180deg" : "0deg" }] }}
-          />
-        </Pressable>
-        {painSliderOpen && (
           <MotiView
-            from={{ opacity: 0, translateY: -8 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 200 }}
-            style={styles.card}
+            animate={{ rotate: painSliderOpen ? "180deg" : "0deg" }}
+            transition={
+              reducedMotion
+                ? { type: "timing", duration: 0 }
+                : { type: "timing", duration: 200, easing: easeInOutStrong }
+            }
           >
-            <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>0</Text>
-              <Slider
-                style={{ flex: 1 }}
-                minimumValue={0}
-                maximumValue={10}
-                step={1}
-                value={sliderValue}
-                onValueChange={handleSliderChange}
-                minimumTrackTintColor={stepData.color}
-                maximumTrackTintColor="rgba(248,233,231,0.15)"
-                thumbTintColor={stepData.color}
-              />
-              <Text style={styles.sliderLabel}>10</Text>
-              <View style={[styles.sliderValueBadge, { backgroundColor: stepData.color }]}>
-                <Text style={styles.sliderValueText}>{sliderValue}</Text>
-              </View>
-            </View>
-            {painSuggestion ? (
-              <View style={styles.painSuggestionRow}>
-                <Text style={styles.painSuggestionText}>
-                  Pain {painSuggestion.pain} suggests{" "}
-                  <Text style={{ fontFamily: fonts.bold, color: ESCALATION_STEPS[painSuggestion.newStep].color }}>
-                    Step {painSuggestion.newStep} — {ESCALATION_STEPS[painSuggestion.newStep].label}
-                  </Text>
-                </Text>
-                <View style={styles.painSuggestionButtons}>
-                  <Pressable
-                    onPress={() => setPainSuggestion(null)}
-                    style={({ pressed }) => [styles.painSuggBtnCancel, pressed && { opacity: 0.7 }]}
-                  >
-                    <Text style={styles.painSuggBtnCancelText}>Ignore</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleConfirmPainLevel}
-                    style={({ pressed }) => [
-                      styles.painSuggBtnConfirm,
-                      { backgroundColor: ESCALATION_STEPS[painSuggestion.newStep].color },
-                      pressed && { opacity: 0.85 },
-                    ]}
-                  >
-                    <Text style={styles.painSuggBtnConfirmText}>Update step</Text>
-                  </Pressable>
+            <ChevronDown
+              size={16}
+              color="rgba(248,233,231,0.55)"
+              strokeWidth={2}
+            />
+          </MotiView>
+        </Pressable>
+        <AnimatePresence>
+          {painSliderOpen && (
+            <MotiView
+              from={{ opacity: 0, translateY: -8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              exit={{ opacity: 0, translateY: -8 }}
+              transition={enterTiming}
+              exitTransition={exitTiming}
+              style={styles.card}
+            >
+              <View style={styles.sliderRow}>
+                <Text style={styles.sliderLabel}>0</Text>
+                <Slider
+                  style={{ flex: 1 }}
+                  minimumValue={0}
+                  maximumValue={10}
+                  step={1}
+                  value={sliderValue}
+                  onValueChange={handleSliderChange}
+                  minimumTrackTintColor={stepData.color}
+                  maximumTrackTintColor="rgba(248,233,231,0.15)"
+                  thumbTintColor={stepData.color}
+                />
+                <Text style={styles.sliderLabel}>10</Text>
+                <View style={[styles.sliderValueBadge, { backgroundColor: stepData.color }]}>
+                  <Text style={styles.sliderValueText}>{sliderValue}</Text>
                 </View>
               </View>
-            ) : (
-              <Text style={styles.sliderHint}>
-                Current step matches your pain level. Drag to reassess.
-              </Text>
-            )}
-          </MotiView>
-        )}
+              {painSuggestion ? (
+                <View style={styles.painSuggestionRow}>
+                  <Text style={styles.painSuggestionText}>
+                    Pain {painSuggestion.pain} suggests{" "}
+                    <Text style={{ fontFamily: fonts.bold, color: ESCALATION_STEPS[painSuggestion.newStep].color }}>
+                      Step {painSuggestion.newStep} — {ESCALATION_STEPS[painSuggestion.newStep].label}
+                    </Text>
+                  </Text>
+                  <View style={styles.painSuggestionButtons}>
+                    <Pressable
+                      onPress={() => setPainSuggestion(null)}
+                      style={({ pressed }) => [styles.painSuggBtnCancel, pressed && { opacity: 0.7 }]}
+                    >
+                      <Text style={styles.painSuggBtnCancelText}>Ignore</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleConfirmPainLevel}
+                      style={({ pressed }) => [
+                        styles.painSuggBtnConfirm,
+                        { backgroundColor: ESCALATION_STEPS[painSuggestion.newStep].color },
+                        pressed && { opacity: 0.85 },
+                      ]}
+                    >
+                      <Text style={styles.painSuggBtnConfirmText}>Update step</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ) : (
+                <Text style={styles.sliderHint}>
+                  Current step matches your pain level. Drag to reassess.
+                </Text>
+              )}
+            </MotiView>
+          )}
+        </AnimatePresence>
 
         {/* Check-in history */}
         <Pressable
@@ -614,37 +630,49 @@ export default function CrisisModeScreen() {
               Check-in history{checkInHistory.length > 0 ? ` (${checkInHistory.length})` : ""}
             </Text>
           </View>
-          <ChevronDown
-            size={16}
-            color="rgba(248,233,231,0.55)"
-            strokeWidth={2}
-            style={{ transform: [{ rotate: historyOpen ? "180deg" : "0deg" }] }}
-          />
-        </Pressable>
-        {historyOpen && (
           <MotiView
-            from={{ opacity: 0, translateY: -8 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            transition={{ type: "timing", duration: 200 }}
-            style={styles.card}
+            animate={{ rotate: historyOpen ? "180deg" : "0deg" }}
+            transition={
+              reducedMotion
+                ? { type: "timing", duration: 0 }
+                : { type: "timing", duration: 200, easing: easeInOutStrong }
+            }
           >
-            {checkInHistory.length === 0 ? (
-              <Text style={styles.historyEmpty}>No check-ins recorded yet.</Text>
-            ) : (
-              checkInHistory.map((entry, i) => (
-                <View key={i} style={[styles.historyRow, i < checkInHistory.length - 1 && styles.historyDivider]}>
-                  <View style={[styles.historyPill, { backgroundColor: responseColor(entry.response) + "22" }]}>
-                    <Text style={[styles.historyPillText, { color: responseColor(entry.response) }]}>
-                      {responseLabel(entry.response)}
-                    </Text>
-                  </View>
-                  <Text style={styles.historyStep}>Step {entry.step}</Text>
-                  <Text style={styles.historyTime}>{formatTime(entry.timestamp)}</Text>
-                </View>
-              ))
-            )}
+            <ChevronDown
+              size={16}
+              color="rgba(248,233,231,0.55)"
+              strokeWidth={2}
+            />
           </MotiView>
-        )}
+        </Pressable>
+        <AnimatePresence>
+          {historyOpen && (
+            <MotiView
+              from={{ opacity: 0, translateY: -8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              exit={{ opacity: 0, translateY: -8 }}
+              transition={enterTiming}
+              exitTransition={exitTiming}
+              style={styles.card}
+            >
+              {checkInHistory.length === 0 ? (
+                <Text style={styles.historyEmpty}>No check-ins recorded yet.</Text>
+              ) : (
+                checkInHistory.map((entry, i) => (
+                  <View key={i} style={[styles.historyRow, i < checkInHistory.length - 1 && styles.historyDivider]}>
+                    <View style={[styles.historyPill, { backgroundColor: responseColor(entry.response) + "22" }]}>
+                      <Text style={[styles.historyPillText, { color: responseColor(entry.response) }]}>
+                        {responseLabel(entry.response)}
+                      </Text>
+                    </View>
+                    <Text style={styles.historyStep}>Step {entry.step}</Text>
+                    <Text style={styles.historyTime}>{formatTime(entry.timestamp)}</Text>
+                  </View>
+                ))
+              )}
+            </MotiView>
+          )}
+        </AnimatePresence>
 
         {/* Alert Care Team */}
         {contacts.length > 0 ? (

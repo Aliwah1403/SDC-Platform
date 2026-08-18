@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { enqueueResendContact } from "../_shared/trigger-resend-contact.ts";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -244,12 +245,20 @@ Deno.serve(async (req: Request) => {
       wishes,
       on_waitlist: onWaitlist,
     })
-    .select("created_at")
+    .select("id, created_at")
     .single();
 
   if (error) {
     console.error("[beta-signup] Insert failed:", error.code);
     return fail("Could not submit. Please try again.", 500);
+  }
+
+  if (inserted?.id) {
+    try {
+      await enqueueResendContact("beta", String(inserted.id));
+    } catch (err) {
+      console.error("[beta-signup] Contact sync enqueue failed:", err);
+    }
   }
 
   // Notify admin (mirrors waitlist-signup). Non-blocking on failure — the row is

@@ -359,6 +359,33 @@ function Card({ children }) {
   );
 }
 
+function SkeletonLine({ width = "100%", height = 12 }) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        height,
+        width,
+        borderRadius: height / 2,
+        backgroundColor: t.isDark ? "rgba(255,255,255,0.08)" : "#F0E7E5",
+      }}
+    />
+  );
+}
+
+function DrugInfoSkeleton({ rows = [84, 68, 92, 54] }) {
+  return (
+    <View style={{ padding: 16, gap: 12 }}>
+      <SkeletonLine width="34%" height={13} />
+      <View style={{ gap: 9 }}>
+        {rows.map((w, i) => (
+          <SkeletonLine key={`${w}-${i}`} width={`${w}%`} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 function Divider() {
   const t = useTheme();
   return (
@@ -573,8 +600,13 @@ export default function MedicationDetailScreen() {
   }));
 
   const med = medications.find((m) => m.id === medicationId);
-  const { data: drugInfo, isLoading: drugInfoLoading } = useDrugInfoQuery(med?.name);
+  const {
+    data: drugInfo,
+    isLoading: drugInfoLoading,
+    isFetching: drugInfoFetching,
+  } = useDrugInfoQuery(med?.name);
   const { data: logHistory = [] } = useMedicationHistoryQuery(med?.id);
+  const drugInfoPending = !!med?.name && (drugInfoLoading || (drugInfoFetching && !drugInfo?.humanizedAt));
 
   if (!med) {
     return (
@@ -1440,12 +1472,8 @@ export default function MedicationDetailScreen() {
           {/* About This Medication */}
           <SectionLabel title={drugInfo?.commonName ? `About ${drugInfo.commonName}` : "About This Medication"} />
           <Card>
-            {drugInfoLoading ? (
-              <View style={{ padding: 16, gap: 10 }}>
-                {[80, 60, 90, 50].map((w, i) => (
-                  <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: t.surfaceElevated, borderRadius: 6 }} />
-                ))}
-              </View>
+            {drugInfoPending ? (
+              <DrugInfoSkeleton rows={[82, 64, 92, 58]} />
             ) : (drugInfo?.humanizedIndications || drugInfo?.indications || drugInfo?.description || drugInfo?.humanizedMechanism || drugInfo?.mechanism) ? (
               <View style={{ padding: 16, gap: 14 }}>
                 {(drugInfo.humanizedIndications || drugInfo.indications) && (
@@ -1506,16 +1534,12 @@ export default function MedicationDetailScreen() {
           )}
 
           {/* Side Effects & Warnings */}
-          {(drugInfoLoading || drugInfo?.humanizedSideEffects || drugInfo?.sideEffects || drugInfo?.humanizedWarnings || drugInfo?.warnings) && (
+          {(drugInfoPending || drugInfo?.humanizedSideEffects || drugInfo?.sideEffects || drugInfo?.humanizedWarnings || drugInfo?.warnings) && (
             <>
               <SectionLabel title="Side Effects & Warnings" />
               <Card>
-                {drugInfoLoading ? (
-                  <View style={{ padding: 16, gap: 10 }}>
-                    {[70, 55, 80].map((w, i) => (
-                      <View key={i} style={{ height: 12, width: `${w}%`, backgroundColor: t.surfaceElevated, borderRadius: 6 }} />
-                    ))}
-                  </View>
+                {drugInfoPending ? (
+                  <DrugInfoSkeleton rows={[74, 58, 86]} />
                 ) : (
                   <View style={{ padding: 16, gap: 14 }}>
                     {(drugInfo?.humanizedSideEffects || drugInfo?.sideEffects) && (

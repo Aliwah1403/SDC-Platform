@@ -7,7 +7,7 @@ import {
   deleteEmergencyContact,
   recordContactCall,
   fetchContactCallLogs,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/emergency-contacts';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

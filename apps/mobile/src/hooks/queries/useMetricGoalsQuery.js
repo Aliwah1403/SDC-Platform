@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchMetricGoals, updateMetricGoal } from '@/services/supabaseQueries';
+import { fetchMetricGoals, updateMetricGoal } from '@/services/supabase/goals';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

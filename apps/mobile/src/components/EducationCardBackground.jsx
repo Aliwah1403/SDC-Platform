@@ -18,6 +18,7 @@ export function EducationCardBackground({ imageUrl, fallbackColor = "#781D11", s
           source={{ uri: imageUrl }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
+          cachePolicy="memory-disk"
           transition={150}
           onError={() => setFailed(true)}
         />

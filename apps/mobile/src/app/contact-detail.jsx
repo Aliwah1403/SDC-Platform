@@ -25,27 +25,16 @@ import {
   useRecordContactCallMutation,
   useContactCallLogsQuery,
 } from "@/hooks/queries/useEmergencyContactsQuery";
+import AppEmptyState from "@/components/AppEmptyState";
 import { fonts } from "@/utils/fonts";
 import { useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 
-const RELATIONSHIP_COLORS = {
-  doctor:    { color: "#2563EB", bg: "#DBEAFE", gradient: ["#DBEAFE", "#EFF6FF"] },
-  nurse:     { color: "#0891B2", bg: "#CFFAFE", gradient: ["#CFFAFE", "#ECFEFF"] },
-  family:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
-  friend:    { color: "#059669", bg: "#D1FAE5", gradient: ["#D1FAE5", "#ECFDF5"] },
-  caregiver: { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF"] },
-  parent:    { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
-  sibling:   { color: "#F0531C", bg: "#FEF0EB", gradient: ["#FEF0EB", "#FFF7F5"] },
-  partner:   { color: "#A9334D", bg: "#FBE9ED", gradient: ["#FBE9ED", "#FDF4F6"] },
-  carer:     { color: "#7C3AED", bg: "#EDE9FE", gradient: ["#EDE9FE", "#F5F3FF"] },
-  other:     { color: "#A9334D", bg: "#F8E9E7", gradient: ["#F8E9E7", "#FDF4F3"] },
+const CONTACT_ACCENT = {
+  color: "#A9334D",
+  bg: "#F8E9E7",
+  gradient: ["#F8E9E7", "#FDF4F3"],
 };
-
-function getAccent(relationship = "") {
-  const key = relationship.toLowerCase();
-  return RELATIONSHIP_COLORS[key] ?? RELATIONSHIP_COLORS.other;
-}
 
 function initials(name = "") {
   return name
@@ -207,7 +196,7 @@ export default function ContactDetailScreen() {
     );
   }
 
-  const { color, bg, gradient: lightGradient } = getAccent(contact.relationship);
+  const { color, bg, gradient: lightGradient } = CONTACT_ACCENT;
   const gradient = t.isDark
     ? [lightGradient[0] + "22", lightGradient[1] + "11", t.background]
     : [...lightGradient, t.background];
@@ -463,19 +452,16 @@ export default function ContactDetailScreen() {
 
           {/* Call History */}
           <SectionLabel title={`Call History${callLogs.length > 0 ? ` · ${callLogs.length}` : ""}`} />
-          <Card>
-            {callLogs.length === 0 ? (
-              <View style={{ padding: 24, alignItems: "center" }}>
-                <Phone size={28} color={t.textTertiary} style={{ marginBottom: 8 }} />
-                <Text style={{ fontFamily: fonts.medium, fontSize: 14, color: t.textSecondary, textAlign: "center" }}>
-                  No calls yet
-                </Text>
-                <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: t.textSecondary, marginTop: 4, textAlign: "center" }}>
-                  Calls made from this screen will appear here
-                </Text>
-              </View>
-            ) : (
-              callLogs.map((log, idx) => {
+          {callLogs.length === 0 ? (
+            <AppEmptyState
+              Icon={Phone}
+              title="No calls yet"
+              subtitle="Calls made from this screen will appear here."
+              style={{ flex: 0, paddingHorizontal: 28, paddingVertical: 36 }}
+            />
+          ) : (
+            <Card>
+              {callLogs.map((log, idx) => {
                 const date = new Date(log.calledAt);
                 const isLast = idx === callLogs.length - 1;
                 return (
@@ -545,9 +531,9 @@ export default function ContactDetailScreen() {
                     )}
                   </View>
                 );
-              })
-            )}
-          </Card>
+              })}
+            </Card>
+          )}
         </View>
       </Animated.ScrollView>
 

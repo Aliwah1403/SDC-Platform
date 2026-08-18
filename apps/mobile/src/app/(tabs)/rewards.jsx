@@ -22,7 +22,10 @@ import {
 import { useAuthStore } from "../../utils/auth/store";
 import { useStreakQuery } from "../../hooks/queries/useStreakQuery";
 import { mockBadges, mockChallenges } from "../../types";
+import { MotiView } from "moti";
 import { useTheme } from "@/hooks/useTheme";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import { celebrationSpring, STAGGER_MS } from "@/utils/motion";
 import { Card } from "@/components/Card";
 import { fonts } from "@/utils/fonts";
 
@@ -30,6 +33,7 @@ const { width } = Dimensions.get("window");
 
 export default function RewardsScreen() {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("challenges"); // challenges, badges, leaderboard
 
@@ -254,12 +258,25 @@ export default function RewardsScreen() {
     );
   };
 
-  const BadgeCard = ({ badge, size = "normal" }) => {
+  const BadgeCard = ({ badge, size = "normal", index = 0 }) => {
     const cardWidth = size === "large" ? width * 0.4 : 120;
     const isUnlocked = badge.unlockedAt !== null;
 
     return (
-      <View
+      // `opacity` lives in `animate`, not `style` — Moti's animated opacity would
+      // otherwise override the style value and reveal locked badges at full strength.
+      <MotiView
+        from={
+          reducedMotion
+            ? { opacity: 0 }
+            : { opacity: 0, scale: 0.94, translateY: 8 }
+        }
+        animate={{ opacity: isUnlocked ? 1 : 0.6, scale: 1, translateY: 0 }}
+        transition={
+          reducedMotion
+            ? { type: "timing", duration: 220 }
+            : { ...celebrationSpring, delay: Math.min(index, 7) * STAGGER_MS }
+        }
         style={{
           backgroundColor: isUnlocked ? t.background : (t.isDark ? t.surfaceElevated : "#F9FAFB"),
           borderRadius: 12,
@@ -267,7 +284,6 @@ export default function RewardsScreen() {
           marginRight: 12,
           width: cardWidth,
           alignItems: "center",
-          opacity: isUnlocked ? 1 : 0.6,
         }}
       >
         <Image
@@ -328,7 +344,7 @@ export default function RewardsScreen() {
             Locked
           </Text>
         )}
-      </View>
+      </MotiView>
     );
   };
 
@@ -697,8 +713,8 @@ export default function RewardsScreen() {
               >
                 {mockBadges
                   .filter((b) => b.unlockedAt)
-                  .map((badge) => (
-                    <BadgeCard key={badge.id} badge={badge} size="large" />
+                  .map((badge, i) => (
+                    <BadgeCard key={badge.id} badge={badge} size="large" index={i} />
                   ))}
               </ScrollView>
             </View>
@@ -722,9 +738,9 @@ export default function RewardsScreen() {
                 justifyContent: "space-between",
               }}
             >
-              {mockBadges.map((badge) => (
+              {mockBadges.map((badge, i) => (
                 <View key={badge.id} style={{ width: "48%", marginBottom: 12 }}>
-                  <BadgeCard badge={badge} />
+                  <BadgeCard badge={badge} index={i} />
                 </View>
               ))}
             </View>

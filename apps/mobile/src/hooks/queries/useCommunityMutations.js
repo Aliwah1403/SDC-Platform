@@ -13,7 +13,7 @@ import {
   addReply,
   deleteComment,
   voteOnPoll,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/community';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

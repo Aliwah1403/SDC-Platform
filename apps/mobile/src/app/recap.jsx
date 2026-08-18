@@ -29,7 +29,7 @@ import {
 import { DEFAULT_SUGGESTED_ML } from "@/utils/hydrationGoal";
 import { MetricChart } from "@/components/Charts/MetricChart";
 import { PressableScale } from "@/components/PressableScale";
-import { PatternRow, EDUCATION_COPY } from "@/components/Insights/patternRows";
+import { PatternRow } from "@/components/Insights/patternRows";
 import {
   RecapCard,
   CARD_GAP,
@@ -174,24 +174,6 @@ function DeltaRow({ text, chip }) {
   );
 }
 
-function EducationLink({ topic, onPress }) {
-  const t = useTheme();
-  if (!topic || !EDUCATION_COPY[topic]) return null;
-  return (
-    <TouchableOpacity
-      onPress={() => onPress(topic)}
-      activeOpacity={0.7}
-      style={{ marginTop: 14 }}
-    >
-      <Text
-        style={{ fontFamily: fonts.semibold, fontSize: 14, color: t.accent }}
-      >
-        {EDUCATION_COPY[topic]}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
 function ShareButton({ label, onPress }) {
   const t = useTheme();
   return (
@@ -239,7 +221,7 @@ function SectionLabel({ children }) {
 
 // ─── Weekly recap ───────────────────────────────────────────────────────────
 
-function WeeklyRecap({ healthData, goalMl, firstName, onEducationPress }) {
+function WeeklyRecap({ healthData, goalMl, firstName }) {
   const t = useTheme();
   const { start: startParam } = useLocalSearchParams();
 
@@ -268,7 +250,7 @@ function WeeklyRecap({ healthData, goalMl, firstName, onEducationPress }) {
   const hasPrevWeek = countLogged(prevDays) >= 3;
   const prevAvg = hasPrevWeek ? avgPain(prevDays) : null;
 
-  const { highlight, flag, flagEducation, quiet } = pickWeeklySignal({
+  const { highlight, flag, quiet } = pickWeeklySignal({
     days,
     prevDays,
     goalMl,
@@ -369,8 +351,6 @@ function WeeklyRecap({ healthData, goalMl, firstName, onEducationPress }) {
               )}
             </View>
           )}
-
-          <EducationLink topic={flagEducation} onPress={onEducationPress} />
         </View>
       </TintedBlock>
     </>
@@ -384,7 +364,6 @@ function MonthlyRecap({
   goalMl,
   displayUnit,
   posthog,
-  onEducationPress,
 }) {
   const t = useTheme();
   const router = useRouter();
@@ -585,7 +564,6 @@ function MonthlyRecap({
                 key={p.id}
                 pattern={p}
                 isLast={i === patterns.length - 1}
-                onEducationPress={onEducationPress}
               />
             ))}
           </View>
@@ -685,11 +663,6 @@ export default function RecapScreen() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const goToEducation = (topic) =>
-    router.push(
-      `/education-article?topic=${topic}&from=${isMonth ? "recap_month" : "recap_week"}`,
-    );
 
   const [shareSheetVisible, setShareSheetVisible] = useState(false);
   const openShareSheet = (source) => {
@@ -957,14 +930,12 @@ export default function RecapScreen() {
               goalMl={goalMl}
               displayUnit={displayUnit}
               posthog={posthog}
-              onEducationPress={goToEducation}
             />
           ) : (
             <WeeklyRecap
               healthData={healthData}
               goalMl={goalMl}
               firstName={firstName}
-              onEducationPress={goToEducation}
             />
           )}
 

@@ -4,16 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx trigger.dev@latest dev",
-    "deploy": "npx trigger.dev@latest deploy"
+    "dev": "npx trigger.dev@latest dev --profile hemo",
+    "deploy": "npx trigger.dev@latest deploy --profile hemo"
   },
   "dependencies": {
     "@sentry/node": "^10.50.0",
     "@supabase/supabase-js": "^2.101.1",
-    "@trigger.dev/sdk": "4.5.8"
+    "@trigger.dev/sdk": "4.5.11",
+    "resend": "^6.20.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@trigger.dev/build": "4.5.8",
+    "@trigger.dev/build": "4.5.11",
     "typescript": "~5.9.2"
   },
   "engines": {

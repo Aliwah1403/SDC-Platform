@@ -8,10 +8,13 @@ import {
 } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
+import { ObserveInteractive } from "@/components/ObserveInteractive";
 
 export default function TabLayout() {
   const theme = useTheme();
   return (
+    <>
+    <ObserveInteractive />
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -69,5 +72,6 @@ export default function TabLayout() {
       <Tabs.Screen name="profile" options={{ href: null }} />
       <Tabs.Screen name="rewards" options={{ href: null }} />
     </Tabs>
+    </>
   );
 }

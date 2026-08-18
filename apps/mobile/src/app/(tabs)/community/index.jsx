@@ -12,6 +12,7 @@ import { PostCard } from "@/components/Community/PostCard";
 import { PostSkeleton } from "@/components/Community/PostSkeleton";
 import { CategoriesCarousel } from "@/components/Community/CategoriesCarousel";
 import { PostActionsSheet } from "@/components/Community/PostActionsSheet";
+import AppEmptyState from "@/components/AppEmptyState";
 import { useAppStore } from "@/store/appStore";
 import { useCommunityFeedQuery } from "@/hooks/queries/useCommunityFeedQuery";
 import {
@@ -58,50 +59,6 @@ const FEED_EMPTY = {
     subtitle: "Tap the bookmark on any post to save it here.",
   },
 };
-
-// Shared centered empty state — mirrors the notifications screen. `children`
-// slot lets a feed add a CTA (e.g. Following's "Browse communities").
-function CommunityEmptyState({ Icon, title, subtitle, children }) {
-  const t = useTheme();
-  return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-        paddingHorizontal: 40,
-        paddingVertical: 60,
-      }}
-    >
-      <View style={{ marginBottom: 20 }}>
-        <Icon size={56} color={t.textSecondary} strokeWidth={1.5} />
-      </View>
-      <Text
-        style={{
-          fontFamily: fonts.bold,
-          fontSize: 18,
-          color: t.text,
-          marginBottom: 8,
-          textAlign: "center",
-        }}
-      >
-        {title}
-      </Text>
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: 14,
-          color: t.textSecondary,
-          textAlign: "center",
-          lineHeight: 21,
-        }}
-      >
-        {subtitle}
-      </Text>
-      {children}
-    </View>
-  );
-}
 
 export default function CommunityFeedScreen() {
   const router = useRouter();
@@ -178,11 +135,21 @@ export default function CommunityFeedScreen() {
   const showCarousel = (activeFeed === "popular" || activeFeed === "recent") && !searchQuery;
 
   function renderEmptyFollowing() {
+    const isFollowingCommunities = followedCategoryIds.length > 0;
+
     return (
-      <CommunityEmptyState
+      <AppEmptyState
         Icon={Users}
-        title="No communities followed yet"
-        subtitle="Follow communities to see their posts here."
+        title={
+          isFollowingCommunities
+            ? "No posts from followed communities yet"
+            : "No communities followed yet"
+        }
+        subtitle={
+          isFollowingCommunities
+            ? "Posts from communities you follow will appear here when they're shared."
+            : "Follow communities to see their posts here."
+        }
       >
         <TouchableOpacity
           onPress={() => router.push("/community/categories")}
@@ -198,7 +165,7 @@ export default function CommunityFeedScreen() {
             Browse communities
           </Text>
         </TouchableOpacity>
-      </CommunityEmptyState>
+      </AppEmptyState>
     );
   }
 
@@ -212,7 +179,6 @@ export default function CommunityFeedScreen() {
         onSearchChange={setSearchQuery}
         onNotifications={() => router.push("/notifications")}
         onProfile={() => router.push("/(tabs)/profile")}
-        onLearnMore={() => router.push("/education-article?topic=hemo-community&from=community")}
         notificationCount={notificationCount}
       />
       <FeedFilter active={activeFeed} onSelect={handleFeedChange} />
@@ -238,13 +204,13 @@ export default function CommunityFeedScreen() {
               activeFeed === "following" ? (
                 renderEmptyFollowing()
               ) : searchQuery ? (
-                <CommunityEmptyState
+                <AppEmptyState
                   Icon={Search}
                   title="No results"
                   subtitle={`No posts match "${searchQuery}".`}
                 />
               ) : (
-                <CommunityEmptyState
+                <AppEmptyState
                   Icon={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).Icon}
                   title={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).title}
                   subtitle={(FEED_EMPTY[activeFeed] ?? FEED_EMPTY.recent).subtitle}

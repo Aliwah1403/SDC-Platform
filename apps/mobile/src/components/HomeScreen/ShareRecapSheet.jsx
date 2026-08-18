@@ -27,17 +27,13 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { supabase } from "@/utils/auth/supabase";
+import { buildPublicShareUrl } from "@/utils/publicShareLinks";
 import { useAuthStore } from "@/utils/auth/store";
 import { usePostHog } from "posthog-react-native";
 
-// Same trio used by share-summary.jsx and health-export.jsx — kept local
-// rather than shared since those two screens already each define their own
-// copy of WEB_BASE_URL; this follows the existing (non-DRY, deliberate)
-// convention instead of introducing a new shared module for three constants.
 const BURGUNDY = "#A9334D";
 const BORDER = "#F0E4E1";
 const BG = "#F8F4F0";
-const WEB_BASE_URL = __DEV__ ? "http://localhost:5173" : "https://hemo-scd.com";
 
 // Same presets as the Health Summary "New" flow — this sheet only omits the
 // period picker, expiry stays a free choice.
@@ -231,7 +227,7 @@ export default function ShareRecapSheet({
     // Phase 2: run AI enrichment — non-fatal if it fails, the link still works.
     setGeneratingPhase("analysing");
     try {
-      const { error: aiError } = await supabase.functions.invoke(
+      const { data: aiData, error: aiError } = await supabase.functions.invoke(
         "generate-health-summary",
         { body: { token } },
       );
@@ -241,6 +237,11 @@ export default function ShareRecapSheet({
           aiError.message,
         );
         posthog?.capture("summary_ai_failed", { source: "recap_sheet" });
+      } else if (aiData?.data?.queued) {
+        posthog?.capture("summary_ai_queued", {
+          source: "recap_sheet",
+          label,
+        });
       } else {
         posthog?.capture("summary_ai_generated", {
           source: "recap_sheet",
@@ -255,12 +256,12 @@ export default function ShareRecapSheet({
     }
 
     setNoteInput("");
-    setCreatedUrl(`${WEB_BASE_URL}/summary/${token}`);
+    setCreatedUrl(buildPublicShareUrl("summary", token));
     setGeneratingPhase(null);
   };
 
   const handleShareExisting = async () => {
-    const url = `${WEB_BASE_URL}/summary/${existingToken.token}`;
+    const url = buildPublicShareUrl("summary", existingToken.token);
     try {
       await Share.share({ message: url, title: "Hemo Health Summary" });
       posthog?.capture("summary_link_shared", {
@@ -272,7 +273,7 @@ export default function ShareRecapSheet({
   };
 
   const handleCopyExisting = async () => {
-    const url = `${WEB_BASE_URL}/summary/${existingToken.token}`;
+    const url = buildPublicShareUrl("summary", existingToken.token);
     await Clipboard.setStringAsync(url);
     posthog?.capture("summary_link_copied", { source: "recap_sheet_existing" });
     Alert.alert("Copied", "Summary link copied to clipboard.");

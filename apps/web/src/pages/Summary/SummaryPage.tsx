@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { supabase } from "@/lib/supabase";
+import { getPublicTokenSupabase } from "@/lib/supabase";
 import type { HealthSummaryData } from "@/components/pdfx/HealthSummaryDocument";
 import SummaryView from "./_SummaryView";
 import LinkGateScreen from "../_LinkGateScreen";
@@ -21,9 +21,10 @@ export default function SummaryPage() {
   const [data, setData] = useState<HealthSummaryData | null>(null);
 
   useEffect(() => {
-    if (!token || !supabase) { setState("error"); return; }
+    const tokenSupabase = getPublicTokenSupabase();
+    if (!token || !tokenSupabase) { setState("error"); return; }
     (async () => {
-      const { data: row, error } = await supabase
+      const { data: row, error } = await tokenSupabase
         .from("export_tokens")
         .select("mode, expires_at, is_active, first_viewed_at, period_days, label, data_snapshot")
         .eq("token", token)
@@ -33,7 +34,7 @@ export default function SummaryPage() {
       if (!row.is_active || new Date(row.expires_at) < new Date()) { setState("expired"); return; }
 
       if (!row.first_viewed_at) {
-        supabase.from("export_tokens").update({ first_viewed_at: new Date().toISOString() }).eq("token", token).then(() => {});
+        tokenSupabase.from("export_tokens").update({ first_viewed_at: new Date().toISOString() }).eq("token", token).then(() => {});
       }
 
       const snapshot = row.data_snapshot;
@@ -43,6 +44,13 @@ export default function SummaryPage() {
       setState("ready");
     })();
   }, [token]);
+
+  useEffect(() => {
+    if (data) {
+      const firstName = data.profile.full_name?.split(" ")[0] || "Patient";
+      document.title = `${firstName}'s Health Summary · Hemo`;
+    }
+  }, [data]);
 
   if (state === "loading") return <LinkGateScreen variant="loading" />;
   if (state === "expired") return <LinkGateScreen variant="expired" />;

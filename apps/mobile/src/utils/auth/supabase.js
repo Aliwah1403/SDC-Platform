@@ -1,22 +1,120 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { Sentry } from '@/utils/sentry';
+
+const appExtra = Constants.expoConfig?.extra ?? {};
+
+const supabaseUrl = appExtra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = appExtra.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const oauthRedirectUrl = appExtra.oauthRedirectUrl ?? 'hemoscd://auth/callback';
+export const appEnvironment = appExtra.appEnv ?? (__DEV__ ? 'development' : 'production');
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase configuration is missing.');
+}
+
+try {
+  const host = new URL(supabaseUrl).host;
+  console.info(`[Auth] Supabase host: ${host}; appEnv: ${appEnvironment}; oauthRedirect: ${oauthRedirectUrl}`);
+} catch {
+  console.info(`[Auth] Supabase URL configured; appEnv: ${appEnvironment}; oauthRedirect: ${oauthRedirectUrl}`);
+}
+
+export const getOAuthRedirectUrl = () => {
+  if (__DEV__) return Linking.createURL('auth/callback');
+  return oauthRedirectUrl;
+};
 
 export const supabase = createClient(
-  process.env.EXPO_PUBLIC_SUPABASE_URL,
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  supabaseUrl,
+  supabaseAnonKey,
   {
     auth: {
       storage: AsyncStorage,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      flowType: 'pkce',
     },
   }
 );
+
+function getParamsFromUrl(url) {
+  const parsed = new URL(url);
+  const params = new URLSearchParams(parsed.search);
+  const hash = parsed.hash?.startsWith('#') ? parsed.hash.slice(1) : '';
+  const hashParams = new URLSearchParams(hash);
+
+  for (const [key, value] of hashParams.entries()) {
+    if (!params.has(key)) params.set(key, value);
+  }
+
+  return params;
+}
+
+function getSafeOAuthShape(url) {
+  try {
+    const params = getParamsFromUrl(url);
+    const keys = Array.from(params.keys()).filter(
+      (key) => !/token|code/i.test(key)
+    );
+    return {
+      hasCode: params.has('code'),
+      hasAccessToken: params.has('access_token'),
+      hasRefreshToken: params.has('refresh_token'),
+      hasError: params.has('error'),
+      hasErrorCode: params.has('error_code'),
+      keys,
+    };
+  } catch {
+    return { parseable: false };
+  }
+}
+
+function captureOAuthException(error, context = {}) {
+  if (error?.code === 'ERR_REQUEST_CANCELED') return;
+  Sentry.addBreadcrumb({
+    category: 'auth.oauth',
+    level: 'error',
+    data: context,
+  });
+  Sentry.captureException(error);
+}
+
+async function createOAuthSessionFromUrl(url) {
+  const params = getParamsFromUrl(url);
+  const errorCode = params.get('error_code') || params.get('error');
+  const errorDescription = params.get('error_description');
+
+  if (errorCode) {
+    const error = new Error(errorDescription || errorCode);
+    error.url = url;
+    throw error;
+  }
+
+  const code = params.get('code');
+  if (code) {
+    return supabase.auth.exchangeCodeForSession(code);
+  }
+
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) {
+    return supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+  }
+
+  const error = new Error('No auth session returned');
+  error.url = url;
+  throw error;
+}
 
 export async function signIn(email, password) {
   return supabase.auth.signInWithPassword({ email, password });
@@ -62,19 +160,37 @@ export async function unlinkProvider(identity) {
 }
 
 export async function signInWithGoogle() {
-  const redirectUrl = Linking.createURL('auth/callback');
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
-  });
-  if (error) throw error;
+  const redirectUrl = getOAuthRedirectUrl();
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+    });
+    if (error) throw error;
+    if (!data?.url) throw new Error('No OAuth URL returned');
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-  if (result.type !== 'success') throw Object.assign(new Error('OAuth cancelled'), { code: 'ERR_REQUEST_CANCELED' });
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    if (result.type !== 'success') throw Object.assign(new Error('OAuth cancelled'), { code: 'ERR_REQUEST_CANCELED' });
 
-  const code = new URL(result.url).searchParams.get('code');
-  if (!code) throw new Error('No auth code returned');
-  return supabase.auth.exchangeCodeForSession(code);
+    const sessionResult = await createOAuthSessionFromUrl(result.url);
+    if (sessionResult?.error) {
+      captureOAuthException(sessionResult.error, {
+        provider: 'google',
+        appEnvironment,
+        redirectUrl,
+        callbackShape: getSafeOAuthShape(result.url),
+      });
+    }
+    return sessionResult;
+  } catch (error) {
+    captureOAuthException(error, {
+      provider: 'google',
+      appEnvironment,
+      redirectUrl,
+      callbackShape: error?.url ? getSafeOAuthShape(error.url) : undefined,
+    });
+    throw error;
+  }
 }
 
 export async function signInWithApple() {
@@ -94,19 +210,39 @@ export async function signInWithApple() {
 }
 
 export async function linkGoogle() {
-  const redirectUrl = Linking.createURL('auth/callback');
-  const { data, error } = await supabase.auth.linkIdentity({
-    provider: 'google',
-    options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
-  });
-  if (error) throw error;
+  const redirectUrl = getOAuthRedirectUrl();
+  try {
+    const { data, error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+    });
+    if (error) throw error;
+    if (!data?.url) throw new Error('No OAuth URL returned');
 
-  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-  if (result.type !== 'success') throw Object.assign(new Error('OAuth cancelled'), { code: 'ERR_REQUEST_CANCELED' });
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    if (result.type !== 'success') throw Object.assign(new Error('OAuth cancelled'), { code: 'ERR_REQUEST_CANCELED' });
 
-  const code = new URL(result.url).searchParams.get('code');
-  if (!code) throw new Error('No auth code returned');
-  return supabase.auth.exchangeCodeForSession(code);
+    const sessionResult = await createOAuthSessionFromUrl(result.url);
+    if (sessionResult?.error) {
+      captureOAuthException(sessionResult.error, {
+        provider: 'google',
+        action: 'link',
+        appEnvironment,
+        redirectUrl,
+        callbackShape: getSafeOAuthShape(result.url),
+      });
+    }
+    return sessionResult;
+  } catch (error) {
+    captureOAuthException(error, {
+      provider: 'google',
+      action: 'link',
+      appEnvironment,
+      redirectUrl,
+      callbackShape: error?.url ? getSafeOAuthShape(error.url) : undefined,
+    });
+    throw error;
+  }
 }
 
 export async function linkApple() {

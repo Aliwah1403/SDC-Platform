@@ -37,6 +37,11 @@ function DayTooltipContent({ iso, log }: { iso: string; log: HealthLog | null })
               {log.notes}
             </p>
           )}
+          {!log.notes && log.has_notes && (
+            <p className="mt-0.5 max-w-[200px] text-background/65 leading-snug">
+              Note available in notable days
+            </p>
+          )}
           {log.is_repaired && (
             <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#F0531C]">
               Logged after the fact
@@ -132,7 +137,7 @@ export function ExportHeatmap({ logs, startISO, endISO }: HeatmapProps) {
                 }
               >
                 {c.day}
-                {c.log.notes && (
+                {(c.log.notes || c.log.has_notes) && (
                   <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-[#F0531C]" />
                 )}
               </TooltipTrigger>

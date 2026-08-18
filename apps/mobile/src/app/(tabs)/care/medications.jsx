@@ -19,7 +19,7 @@ import {
   Check,
   ChevronRight,
 } from "lucide-react-native";
-import { MotiView } from "moti";
+import { MotiView, AnimatePresence } from "moti";
 import {
   useMedicationsQuery,
   useToggleMedicationTakenMutation,
@@ -30,7 +30,16 @@ import {
 } from "@/hooks/queries/useMedicationsQuery";
 import { usePostHog } from "posthog-react-native";
 import { fonts } from "@/utils/fonts";
-import { STAGGER_MS } from "@/utils/motion";
+import {
+  STAGGER_MS,
+  enterTiming,
+  exitTiming,
+  celebrationSpring,
+  easeOutStrong,
+} from "@/utils/motion";
+import { PressableScale } from "@/components/PressableScale";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
+import AppEmptyState from "@/components/AppEmptyState";
 import MedicationIcon, { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
@@ -41,6 +50,11 @@ const C_BRAND = {
   success: "#059669",
   warning: "#DC2626",
 };
+
+// C_BRAND.success at zero alpha. Animating a colour to the keyword "transparent"
+// interpolates toward rgba(0,0,0,0), so the fade passes through dark grey; keeping
+// the hue and dropping only alpha fades cleanly.
+const C_SUCCESS_FADED = "rgba(5, 150, 105, 0)";
 
 const CATEGORY_COLORS = {
   "Disease-modifying": "#A9334D",
@@ -220,6 +234,7 @@ function GroupHeader({ group, onLogAll, allTaken }) {
 
 function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const color = CATEGORY_COLORS[medication.category] ?? C_BRAND.accent;
   return (
     <MotiView
@@ -309,26 +324,68 @@ function MedicationScheduleRow({ medication, onToggle, onPress, index }) {
         </View>
 
         {/* Taken toggle */}
-        <TouchableOpacity
+        <PressableScale
           onPress={onToggle}
           hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
           style={{
             width: 32,
             height: 32,
-            borderRadius: 16,
-            borderWidth: medication.taken ? 0 : 1.5,
-            borderColor: medication.taken ? "transparent" : t.border,
-            backgroundColor: medication.taken ? C_BRAND.success : "transparent",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          {medication.taken ? (
-            <Check size={16} color="#fff" strokeWidth={2.5} />
-          ) : (
-            <Plus size={16} color={t.textSecondary} strokeWidth={2} />
-          )}
-        </TouchableOpacity>
+          <MotiView
+            animate={{
+              borderWidth: medication.taken ? 0 : 1.5,
+              backgroundColor: medication.taken
+                ? C_BRAND.success
+                : C_SUCCESS_FADED,
+            }}
+            transition={{ type: "timing", duration: 180, easing: easeOutStrong }}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              borderColor: t.border,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {/* Both icons are absolutely positioned so they crossfade in place.
+                Without this they would briefly share the flow and shift layout,
+                and gating on exitBeforeEnter would delay the check by a full
+                exit duration — too slow for a tap confirmation. */}
+            <AnimatePresence>
+              {medication.taken ? (
+                <MotiView
+                  key="check"
+                  from={
+                    reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.4 }
+                  }
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={reducedMotion ? enterTiming : celebrationSpring}
+                  exitTransition={exitTiming}
+                  style={{ position: "absolute" }}
+                >
+                  <Check size={16} color="#fff" strokeWidth={2.5} />
+                </MotiView>
+              ) : (
+                <MotiView
+                  key="plus"
+                  from={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={enterTiming}
+                  exitTransition={exitTiming}
+                  style={{ position: "absolute" }}
+                >
+                  <Plus size={16} color={t.textSecondary} strokeWidth={2} />
+                </MotiView>
+              )}
+            </AnimatePresence>
+          </MotiView>
+        </PressableScale>
       </TouchableOpacity>
     </MotiView>
   );
@@ -433,6 +490,7 @@ function MedicationGridCard({ medication, onPress }) {
 
 export default function MedicationsScreen() {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -621,10 +679,15 @@ export default function MedicationsScreen() {
               overflow: "hidden",
             }}
           >
-            <View
+            <MotiView
+              animate={{ width: `${progressPct * 100}%` }}
+              transition={
+                reducedMotion
+                  ? { type: "timing", duration: 0 }
+                  : { type: "timing", duration: 220, easing: easeOutStrong }
+              }
               style={{
                 height: "100%",
-                width: `${progressPct * 100}%`,
                 backgroundColor:
                   progressPct === 1 ? C_BRAND.success : C_BRAND.accent,
                 borderRadius: 3,
@@ -646,41 +709,12 @@ export default function MedicationsScreen() {
         {/* Today's Schedule — time grouped */}
         <SectionLabel title="Today's Schedule" />
         {active.length === 0 ? (
-          <View
-            style={{
-              backgroundColor: t.surface,
-              borderRadius: 14,
-              borderWidth: 1,
-              borderColor: t.border,
-              padding: 32,
-              alignItems: "center",
-              marginBottom: 24,
-            }}
-          >
-            <Pill size={28} color={t.textSecondary} />
-            <Text
-              style={{
-                fontFamily: fonts.medium,
-                fontSize: 15,
-                color: t.textSecondary,
-                marginTop: 10,
-                textAlign: "center",
-              }}
-            >
-              No medications added yet
-            </Text>
-            <Text
-              style={{
-                fontFamily: fonts.regular,
-                fontSize: 13,
-                color: t.textSecondary,
-                marginTop: 4,
-                textAlign: "center",
-              }}
-            >
-              Tap + to add your first medication
-            </Text>
-          </View>
+          <AppEmptyState
+            Icon={Pill}
+            title="No medications added yet"
+            subtitle="Tap + to add your first medication."
+            style={{ paddingTop: 42, paddingBottom: 48 }}
+          />
         ) : (
           groups.map((group, gi) => {
             const allTaken = group.meds.every((m) => m.taken);

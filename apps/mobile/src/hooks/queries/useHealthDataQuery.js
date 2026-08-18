@@ -6,7 +6,7 @@ import {
   fetchTriggersInRange,
   submitHealthLog,
   addHydrationQuickly,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/health';
 import { maybeSilenceHydrationReminders } from '@/utils/hydrationReminders';
 import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
 
@@ -57,7 +57,7 @@ export function useSubmitLogMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (logData) => submitHealthLog(userId, logData),
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });
       queryClient.invalidateQueries({ queryKey: ['healthLogs', userId] });
       queryClient.invalidateQueries({ queryKey: ['streak', userId] });

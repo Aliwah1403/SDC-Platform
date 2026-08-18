@@ -4,7 +4,7 @@ import {
   fetchProfile,
   updateProfile,
   completeOnboarding,
-} from '@/services/supabaseQueries';
+} from '@/services/supabase/profile';
 
 function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);

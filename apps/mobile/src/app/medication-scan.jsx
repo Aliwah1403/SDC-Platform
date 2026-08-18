@@ -246,7 +246,7 @@ function BarcodeCamera({ onResult, flash, onScanOverlay }) {
       {/* Dark radial vignette */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <LinearGradient
-          colors={["transparent", `${C.darkBurg}CC`]}
+          colors={["transparent", "rgba(0,0,0,0.58)"]}
           style={StyleSheet.absoluteFill}
         />
       </View>
@@ -656,8 +656,8 @@ export default function MedicationScanScreen() {
 
         {/* Floating header */}
         <LinearGradient
-          colors={[`${C.darkBurg}CC`, "transparent"]}
-          style={[styles.floatingHeader, { paddingTop: insets.top + 8 }]}
+          colors={["rgba(0,0,0,0.56)", "transparent"]}
+          style={[styles.floatingHeader, { height: insets.top + 72, paddingTop: insets.top + 8 }]}
           pointerEvents="box-none"
         >
           <TouchableOpacity
@@ -740,7 +740,7 @@ function createStyles(t) {
       alignItems: "center",
       justifyContent: "space-between",
       paddingHorizontal: 16,
-      paddingBottom: 20,
+      paddingBottom: 0,
       zIndex: 10,
     },
     floatingTitle: {
@@ -842,20 +842,24 @@ function createStyles(t) {
     scanOverlay: {
       ...StyleSheet.absoluteFillObject,
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: "flex-start",
+      paddingTop: 152,
     },
     scanWindow: {
       width: 248,
       height: 160,
       position: "relative",
-      marginBottom: 48,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: "rgba(248,233,231,0.42)",
+      backgroundColor: "rgba(0,0,0,0.12)",
     },
     scanCorner: {
       position: "absolute",
-      width: 28,
-      height: 28,
-      borderColor: "rgba(248,233,231,0.8)",
-      borderWidth: 2.5,
+      width: 36,
+      height: 36,
+      borderColor: "#F8E9E7",
+      borderWidth: 3.5,
     },
     cornerTL: {
       top: 0,
@@ -887,17 +891,17 @@ function createStyles(t) {
     },
     instructionPill: {
       position: "absolute",
-      bottom: 72,
+      bottom: 60,
       alignSelf: "center",
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
-      backgroundColor: "rgba(120,29,17,0.7)",
+      backgroundColor: "rgba(0,0,0,0.62)",
       borderRadius: 100,
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderWidth: 1,
-      borderColor: "rgba(248,233,231,0.12)",
+      borderColor: "rgba(248,233,231,0.22)",
     },
     instructionText: {
       fontFamily: fonts.regular,
@@ -1182,7 +1186,7 @@ function createStyles(t) {
       lineHeight: 18,
     },
     addButton: {
-      backgroundColor: C.orange,
+      backgroundColor: C.accent,
       borderRadius: 12,
       paddingVertical: 14,
       alignItems: "center",

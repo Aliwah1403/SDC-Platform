@@ -67,10 +67,13 @@ function computeContext(healthData, healthStreak, currentUser, goalMl, displayUn
   }
 
   // Priority 4: active tracking streak
-  if (healthStreak >= 3) {
+  if (healthStreak >= 1) {
     return {
       headline: `${healthStreak}-day tracking streak`,
-      body: "Consistent logging gives you the clearest picture of your health.",
+      body:
+        healthStreak === 1
+          ? "Your first logged day counts. Keep going tomorrow to build momentum."
+          : "Consistent logging gives you the clearest picture of your health.",
       severity: "positive",
     };
   }

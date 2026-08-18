@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
-import { fetchSavedFacilities } from '@/services/supabaseQueries';
+import { fetchSavedFacilities } from '@/services/supabase/facilities';
 
 export function useSavedFacilitiesQuery() {
   const userId = useAuthStore((s) => s.auth?.user?.id);

@@ -3,7 +3,6 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  ImageBackground,
   Dimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -11,6 +10,7 @@ import { Clock } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { mockArticles } from "@/types";
 import { fonts } from "@/utils/fonts";
+import { EducationCardBackground } from "@/components/EducationCardBackground";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 32;
@@ -106,19 +106,13 @@ function ArticleCard({ article, onPress }) {
       activeOpacity={0.9}
       style={{ width: SCREEN_WIDTH, paddingHorizontal: 16 }}
     >
-      {article.imageUrl ? (
-        <ImageBackground
-          source={{ uri: article.imageUrl }}
-          style={cardStyle}
-          imageStyle={{ borderRadius: 20 }}
-        >
-          {content}
-        </ImageBackground>
-      ) : (
-        <View style={[cardStyle, { backgroundColor: article.fallbackColor ?? "#781D11" }]}>
-          {content}
-        </View>
-      )}
+      <EducationCardBackground
+        imageUrl={article.imageUrl}
+        fallbackColor={article.fallbackColor ?? "#781D11"}
+        style={cardStyle}
+      >
+        {content}
+      </EducationCardBackground>
     </TouchableOpacity>
   );
 }

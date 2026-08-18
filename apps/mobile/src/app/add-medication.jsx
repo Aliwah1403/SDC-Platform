@@ -45,7 +45,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { SCD_MEDICATIONS, SCD_CATEGORIES } from "@/utils/scdDrugs";
 import MedicationIcon, { normalizeDoseForm, MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useDrugSearch } from "@/hooks/useDrugSearch";
-import { fetchDoseForm } from "@/services/supabaseQueries";
+import { fetchDoseForm } from "@/services/supabase/drug-info";
 import { Sentry } from "@/utils/sentry";
 import {
   scheduleMedicationNotifications,

@@ -1,6 +1,7 @@
 import { Stack, usePathname } from 'expo-router';
 import { useEffect } from 'react';
 import { usePostHog } from 'posthog-react-native';
+import { ObserveInteractive } from '@/components/ObserveInteractive';
 
 const STEP_MAP = {
   'step-1':  { step: 1,        name: 'nickname' },
@@ -35,6 +36,7 @@ function OnboardingTracker() {
 export default function OnboardingLayout() {
   return (
     <>
+    <ObserveInteractive />
     <OnboardingTracker />
     <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
       <Stack.Screen name="step-1" />

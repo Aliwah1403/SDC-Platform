@@ -1,11 +1,15 @@
-import { View, Text, ScrollView } from "react-native";
+import { Alert, View, Text, ScrollView } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { MotiView } from "moti";
 import { X, Wrench, Shield, Sparkles, Gift } from "lucide-react-native";
 import { StreakFireIcon } from "@/utils/streakFire";
-import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
+import {
+  useMissedDay,
+  useStreakQuery,
+  useStreakRepairMutation,
+} from "@/hooks/queries/useStreakQuery";
 import { useTheme } from "@/hooks/useTheme";
 import { fonts } from "@/utils/fonts";
 import { PressableScale } from "@/components/PressableScale";
@@ -74,6 +78,8 @@ export default function StreakRepairsScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { data: streak } = useStreakQuery();
+  const missedDay = useMissedDay();
+  const repairMutation = useStreakRepairMutation();
 
   const daysTarget = streak?.daysUntilNextRepair ?? 30;
   const repairProgress = streak?.repairProgress ?? 0;
@@ -83,6 +89,26 @@ export default function StreakRepairsScreen() {
 
   const progressPercentage = Math.min((repairProgress / daysTarget) * 100, 100);
   const daysLeft = Math.max(daysTarget - repairProgress, 0);
+  const canRepairStreak = !!missedDay && repairsAvailable > 0;
+
+  function handleRepairStreak() {
+    if (!canRepairStreak || repairMutation.isPending) return;
+
+    repairMutation.mutate(undefined, {
+      onSuccess: () => {
+        Alert.alert(
+          "Streak repaired",
+          "Your streak has been restored. Log today to keep it moving.",
+        );
+      },
+      onError: (error) => {
+        Alert.alert(
+          "Could not repair streak",
+          error?.message ?? "Try again in a moment.",
+        );
+      },
+    });
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.background }} edges={["bottom", "left", "right"]}>
@@ -189,6 +215,64 @@ export default function StreakRepairsScreen() {
 
           <View style={{ height: 1, backgroundColor: t.divider, marginVertical: 28 }} />
 
+          {canRepairStreak ? (
+            <>
+              <MotiView
+                from={{ opacity: 0, translateY: 10 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                transition={{ ...enterTiming, delay: STAGGER_MS }}
+                style={{
+                  backgroundColor: t.surface,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: t.border,
+                  padding: 18,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 14 }}>
+                  <View
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: 21,
+                      backgroundColor: WINE_TINT,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Wrench size={21} color={HEMO.wine} strokeWidth={1.9} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: fonts.bold, fontSize: 16, color: t.text }}>
+                      Repair your streak
+                    </Text>
+                    <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary, marginTop: 3, lineHeight: 18 }}>
+                      Missed {missedDay.formattedDate}. Use 1 repair to keep your streak alive.
+                    </Text>
+                  </View>
+                </View>
+
+                <PressableScale
+                  onPress={handleRepairStreak}
+                  disabled={repairMutation.isPending}
+                  style={{
+                    backgroundColor: HEMO.wine,
+                    borderRadius: 14,
+                    paddingVertical: 14,
+                    alignItems: "center",
+                    opacity: repairMutation.isPending ? 0.7 : 1,
+                  }}
+                >
+                  <Text style={{ fontFamily: fonts.bold, fontSize: 15, color: "#fff" }}>
+                    {repairMutation.isPending ? "Repairing…" : "Use 1 Repair"}
+                  </Text>
+                </PressableScale>
+              </MotiView>
+
+              <View style={{ height: 1, backgroundColor: t.divider, marginVertical: 28 }} />
+            </>
+          ) : null}
+
           {/* Next repair progress */}
           <MotiView
             from={{ opacity: 0, translateY: 10 }}
@@ -211,7 +295,7 @@ export default function StreakRepairsScreen() {
             </View>
 
             <Text style={{ fontFamily: fonts.semibold, fontSize: 15, color: t.text, marginBottom: 10 }}>
-              {repairProgress}/{daysTarget} days logged
+              {repairProgress}/{daysTarget} consecutive days logged
             </Text>
 
             <View
@@ -232,7 +316,7 @@ export default function StreakRepairsScreen() {
             </View>
 
             <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>
-              {daysLeft} day{daysLeft !== 1 ? "s" : ""} left to earn your next repair
+              {daysLeft} consecutive day{daysLeft !== 1 ? "s" : ""} left to earn your next repair
             </Text>
           </MotiView>
 
@@ -261,6 +345,11 @@ export default function StreakRepairsScreen() {
 
             <HowItWorksRow
               icon={Gift}
+              t={t}
+              text="You start with 3 available repairs"
+            />
+            <HowItWorksRow
+              icon={Sparkles}
               t={t}
               text={`Earn 1 repair for every ${daysTarget} consecutive days logged`}
             />

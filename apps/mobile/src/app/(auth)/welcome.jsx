@@ -1,11 +1,11 @@
 import { router } from "expo-router";
 import { MotiView } from "moti";
 import {
-  Dimensions,
   Image,
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,12 +13,11 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useTheme } from "@/hooks/useTheme";
 import HemoLogo from "../../../assets/images/icon.png";
 
-const { width: W, height: H } = Dimensions.get("window");
-
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const dark = theme.isDark;
+  const { width: W, height: H } = useWindowDimensions();
 
   return (
     <View
@@ -31,15 +30,20 @@ export default function WelcomeScreen() {
             {/* Secondary orb — offset left, deeper tone */}
             <RadialGradient
               id="orb2"
-              cx={W * 0.3}
-              cy={H * 0.2}
-              r={W * 0.55}
+              cx={W * 0.18}
+              cy={H * 0.18}
+              r={W * 0.95}
               gradientUnits="userSpaceOnUse"
             >
               <Stop
                 offset="0%"
-                stopColor={dark ? "#781D11" : "#C4A8A4"}
-                stopOpacity={dark ? 0.55 : 0.35}
+                stopColor={dark ? "#781D11" : "#D8B5B0"}
+                stopOpacity={dark ? 0.34 : 0.18}
+              />
+              <Stop
+                offset="58%"
+                stopColor={dark ? "#4E150E" : "#EBD0CC"}
+                stopOpacity={dark ? 0.12 : 0.1}
               />
               <Stop
                 offset="100%"
@@ -51,25 +55,25 @@ export default function WelcomeScreen() {
             {/* Primary orb — warm center, centered horizontally */}
             <RadialGradient
               id="orb1"
-              cx={W * 0.52}
-              cy={H * 0.29}
-              r={W * 0.72}
+              cx={W * 0.5}
+              cy={H * 0.22}
+              r={W * 1.08}
               gradientUnits="userSpaceOnUse"
             >
               <Stop
                 offset="0%"
                 stopColor="#F0531C"
-                stopOpacity={dark ? 0.82 : 0.5}
+                stopOpacity={dark ? 0.55 : 0.22}
               />
               <Stop
-                offset="28%"
+                offset="34%"
                 stopColor="#A9334D"
-                stopOpacity={dark ? 0.65 : 0.45}
+                stopOpacity={dark ? 0.32 : 0.16}
               />
               <Stop
-                offset="55%"
-                stopColor={dark ? "#781D11" : "#D09F9A"}
-                stopOpacity={dark ? 0.35 : 0.25}
+                offset="68%"
+                stopColor={dark ? "#781D11" : "#E8C8C4"}
+                stopOpacity={dark ? 0.14 : 0.08}
               />
               <Stop
                 offset="100%"
@@ -81,15 +85,15 @@ export default function WelcomeScreen() {
             {/* Accent orb — small, right side, adds dimension */}
             <RadialGradient
               id="orb3"
-              cx={W * 0.78}
-              cy={H * 0.15}
-              r={W * 0.3}
+              cx={W * 0.92}
+              cy={H * 0.08}
+              r={W * 0.6}
               gradientUnits="userSpaceOnUse"
             >
               <Stop
                 offset="0%"
-                stopColor={dark ? "#A9334D" : "#D09F9A"}
-                stopOpacity={dark ? 0.3 : 0.2}
+                stopColor={dark ? "#A9334D" : "#E2BCB7"}
+                stopOpacity={dark ? 0.18 : 0.1}
               />
               <Stop
                 offset="100%"
@@ -131,12 +135,11 @@ export default function WelcomeScreen() {
           style={styles.headingCluster}
         >
           {dark ? (
-              <Image
-                source={HemoLogo}
-                style={styles.iconImg}
-                resizeMode="contain"
-              />
-          
+            <Image
+              source={HemoLogo}
+              style={styles.iconImg}
+              resizeMode="contain"
+            />
           ) : (
             <Image
               source={HemoLogo}
