@@ -14,21 +14,56 @@ const SUPABASE_CONFIG = {
 };
 
 const resolveAppEnv = () => {
+  if (process.env.HEMO_APP_ENV === "development") return "development";
+  if (process.env.EAS_BUILD_PROFILE === "development") return "development";
   if (process.env.HEMO_APP_ENV === "staging") return "staging";
   if (process.env.EAS_BUILD_PROFILE === "staging") return "staging";
-  return "production";
+  if (process.env.HEMO_APP_ENV === "production") return "production";
+  // Inside an EAS build (any other profile, e.g. preview) production config is
+  // the right default. On a developer's machine it is not: the dev-ness marker
+  // lives in .env.local alongside the credentials, so if that file goes missing
+  // a production default would silently hand production Supabase to whatever
+  // binary connects to Metro. Default to development instead and let the
+  // runtime guard in utils/auth/supabase.js fail loudly.
+  if (process.env.EAS_BUILD_PROFILE || process.env.EAS_BUILD) return "production";
+  return "development";
 };
 
 module.exports = () => {
   const appEnv = resolveAppEnv();
-  const supabase = SUPABASE_CONFIG[appEnv];
+  const isDevelopment = appEnv === "development";
+  // Development is intentionally not a key in SUPABASE_CONFIG: it resolves
+  // straight from process.env below, with no fallback to the staging or
+  // production entries. If those vars are unset (e.g. on an EAS builder,
+  // which has no .env.local), this evaluates to undefined rather than
+  // throwing here — a config-time throw would break the build itself. The
+  // hard failure for a missing/misconfigured dev Supabase happens at
+  // runtime in supabase.js instead.
+  const supabase = isDevelopment
+    ? {
+        url: process.env.EXPO_PUBLIC_SUPABASE_URL,
+        anonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      }
+    : SUPABASE_CONFIG[appEnv];
 
   return {
     ...appJson.expo,
+    ...(isDevelopment
+      ? {
+          name: "Hemo Dev",
+          scheme: "hemoscd-dev",
+          ios: {
+            ...appJson.expo.ios,
+            bundleIdentifier: "com.hemoscd.hemo.dev",
+          },
+        }
+      : {}),
     extra: {
       ...appJson.expo.extra,
       appEnv,
-      oauthRedirectUrl: "hemoscd://auth/callback",
+      oauthRedirectUrl: isDevelopment
+        ? "hemoscd-dev://auth/callback"
+        : "hemoscd://auth/callback",
       publicShareBaseUrl: "https://hemo-scd.com",
       supabaseUrl: supabase.url,
       supabaseAnonKey: supabase.anonKey,

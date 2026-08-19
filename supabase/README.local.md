@@ -35,21 +35,29 @@ supabase stop
 
 ## Mobile app
 
-Copy `apps/mobile/.env.example` to the ignored `apps/mobile/.env.local`. A physical device must use the Mac's current LAN IP, not `localhost`:
+A physical device cannot reach the local stack on `localhost`, so `apps/mobile/.env.local` carries the Mac's current LAN IP. With the stack running, generate or refresh it in one command:
+
+```sh
+cd apps/mobile
+npm run dev:ip
+npx expo start -c
+```
+
+`dev:ip` reads the LAN IP from `en0` (falling back to `en1`), rewrites the host in `EXPO_PUBLIC_SUPABASE_URL` while keeping the existing port, and creates the file — pulling the publishable key from `supabase status` — if it does not exist yet. It also ensures `HEMO_APP_ENV=development` is set.
+
+The resulting file:
 
 ```env
+HEMO_APP_ENV=development
 EXPO_PUBLIC_SUPABASE_URL=http://<MAC_LAN_IP>:54321
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<LOCAL_PUBLISHABLE_KEY_FROM_SUPABASE_STATUS>
 ```
 
-Then restart Expo so the variables are inlined:
+The `-c` matters: `EXPO_PUBLIC_*` values are inlined into the bundle, so a plain restart keeps serving the old address.
 
-```sh
-cd apps/mobile
-npx expo start -c
-```
+The phone and Mac must be on the same network, and some guest/corporate networks block device-to-device traffic outright. **The only on-device symptom of a stale IP is an opaque `fetch failed: The request timed out`** — if you see that, run `npm run dev:ip` before debugging anything else.
 
-The phone and Mac must be on the same network. If requests stop working after changing networks, update the LAN IP in `.env.local`.
+`HEMO_APP_ENV=development` is what makes `app.config.js` resolve the development identity (`Hemo Dev`, `com.hemoscd.hemo.dev`) and read Supabase from this file. Without any signal a local `expo start` still defaults to `development`, so a missing `.env.local` fails loudly at startup rather than silently falling back to hosted Supabase.
 
 ## Website
 

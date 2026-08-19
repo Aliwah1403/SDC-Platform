@@ -36,3 +36,10 @@ app-example
 
 caches/
 public/
+
+# Env files
+# .easignore takes priority over .gitignore for EAS uploads. Without this,
+# .env and .env.local (both gitignored) were being uploaded to EAS build
+# servers on every build, including the production Supabase URL and the
+# local LAN Supabase URL.
+.env*

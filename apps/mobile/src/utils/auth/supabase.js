@@ -9,13 +9,52 @@ import { Sentry } from '@/utils/sentry';
 
 const appExtra = Constants.expoConfig?.extra ?? {};
 
-const supabaseUrl = appExtra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = appExtra.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-const oauthRedirectUrl = appExtra.oauthRedirectUrl ?? 'hemoscd://auth/callback';
 export const appEnvironment = appExtra.appEnv ?? (__DEV__ ? 'development' : 'production');
 
+// Development must never fall back to a hosted (staging/production)
+// project: in dev, process.env wins over the config-derived extra.* value.
+// Every other env keeps the original precedence (extra.* first).
+const supabaseUrl =
+  appEnvironment === 'development'
+    ? process.env.EXPO_PUBLIC_SUPABASE_URL ?? appExtra.supabaseUrl
+    : appExtra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey =
+  appEnvironment === 'development'
+    ? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? appExtra.supabaseAnonKey
+    : appExtra.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const oauthRedirectUrl = appExtra.oauthRedirectUrl ?? 'hemoscd://auth/callback';
+
 if (!supabaseUrl || !supabaseAnonKey) {
+  if (appEnvironment === 'development') {
+    throw new Error(
+      'Development Supabase configuration is missing. Set EXPO_PUBLIC_SUPABASE_URL and ' +
+        'EXPO_PUBLIC_SUPABASE_ANON_KEY in apps/mobile/.env.local (see supabase/README.local.md) — ' +
+        'development does not fall back to staging or production.'
+    );
+  }
   throw new Error('Supabase configuration is missing.');
+}
+
+const HOSTED_SUPABASE_HOSTS = new Set([
+  'uphhntnjzfsckeuxjhco.supabase.co', // production
+  'pqwrxhqcgwrjazsurujm.supabase.co', // staging
+]);
+
+if (appEnvironment === 'development') {
+  const resolvedHost = (() => {
+    try {
+      return new URL(supabaseUrl).host;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  if (resolvedHost && HOSTED_SUPABASE_HOSTS.has(resolvedHost)) {
+    throw new Error(
+      `A development build must not point at a hosted Supabase project (resolved host: ${resolvedHost}). ` +
+        'Point EXPO_PUBLIC_SUPABASE_URL in apps/mobile/.env.local at your local Supabase instance instead.'
+    );
+  }
 }
 
 try {
