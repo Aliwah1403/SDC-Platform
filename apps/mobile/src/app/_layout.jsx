@@ -13,7 +13,7 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppState, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, findNodeHandle, Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
@@ -69,6 +69,15 @@ Notifications.setNotificationHandler({
 });
 
 const MIN_SPLASH_MS = 2000;
+
+function dismissKeyboardOnOutsideTouch(event) {
+  const focusedInput = TextInput.State?.currentlyFocusedInput?.();
+  if (!focusedInput) return;
+
+  const focusedHandle = findNodeHandle(focusedInput);
+  const touchedHandle = event.nativeEvent.target;
+  if (focusedHandle !== touchedHandle) Keyboard.dismiss();
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -453,7 +462,10 @@ function RootLayoutContent() {
 
   return (
       <StartupReadyProvider ready={splashGone && !isLocked}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView
+        style={{ flex: 1 }}
+        onTouchStartCapture={dismissKeyboardOnOutsideTouch}
+      >
         <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />

@@ -60,6 +60,7 @@ export default function StreakModal() {
     name: auth?.user?.user_metadata?.full_name ?? profile?.nickname ?? "You",
   };
   const healthStreak = streak?.currentStreak ?? 0;
+  const repairsAvailable = streak?.repairsAvailable ?? 0;
   const repairsUsed = streak?.repairsUsed ?? 0;
   const badgeUnlockDates = streak?.badgeUnlockDates ?? {};
   const [selectedMilestone, setSelectedMilestone] = useState(null);
@@ -547,7 +548,7 @@ export default function StreakModal() {
                     color: "#92400E",
                   }}
                 >
-                  3 repairs available
+                  {repairsAvailable} repair{repairsAvailable !== 1 ? "s" : ""} available
                 </Text>
               </View>
             </View>

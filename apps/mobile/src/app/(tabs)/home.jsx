@@ -58,6 +58,7 @@ export default function HomeScreen() {
     hasLoggedData,
     repairVisible,
     setRepairVisible,
+    repairReceipt,
     lostStreakVisible,
     setLostStreakVisible,
     streakLost,
@@ -295,12 +296,15 @@ export default function HomeScreen() {
       >
         <RepairStreakBottomSheet
           isVisible={repairVisible}
+          receipt={repairReceipt}
           onClose={() => setRepairVisible(false)}
         />
 
         <LostStreakModal
           visible={lostStreakVisible}
           lostStreak={streakLost?.lostStreak ?? 0}
+          missedDays={streakLost?.missedDays ?? 0}
+          repairsAvailable={streakLost?.repairsAvailable ?? 0}
           onStartFresh={async () => {
             try {
               await acknowledgeStreakLoss();

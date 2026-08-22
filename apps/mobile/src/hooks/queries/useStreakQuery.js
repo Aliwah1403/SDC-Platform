@@ -6,6 +6,21 @@ function useUserId() {
   return useAuthStore((s) => s.auth?.user?.id);
 }
 
+function getStreakGap(streak) {
+  if (!streak?.lastLogDate) return null;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const lastLog = new Date(streak.lastLogDate);
+  lastLog.setHours(0, 0, 0, 0);
+
+  const daysSinceLastLog = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
+  const missedDays = Math.max(daysSinceLastLog - 1, 0);
+
+  return { today, lastLog, daysSinceLastLog, missedDays };
+}
+
 export function useStreakQuery() {
   const userId = useUserId();
   return useQuery({
@@ -13,14 +28,10 @@ export function useStreakQuery() {
     queryFn: () => fetchStreak(userId),
     enabled: !!userId,
     select: (data) => {
-      if (!data?.lastLogDate) return data;
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const lastLog = new Date(data.lastLogDate);
-      lastLog.setHours(0, 0, 0, 0);
-      const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
+      const gap = getStreakGap(data);
+      if (!gap) return data;
       // Streak is still alive if logged today or yesterday
-      if (daysSince <= 1) return data;
+      if (gap.daysSinceLastLog <= 1) return data;
       // Broken streak — zero out currentStreak but preserve previousStreak for display
       // (submitHealthLog will reset to 1 on the next real log)
       return { ...data, currentStreak: 0, previousStreak: data.currentStreak };
@@ -35,36 +46,42 @@ export function useStreakQuery() {
 export function useMissedDay() {
   const { data: streak } = useStreakQuery();
 
-  if (!streak?.lastLogDate) return null;
+  const gap = getStreakGap(streak);
+  if (!gap) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const lastLog = new Date(streak.lastLogDate);
-  lastLog.setHours(0, 0, 0, 0);
-
-  const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
-
-  if (daysSince <= 1) return null; // logged yesterday or today — streak alive
-  if (daysSince > 3) return null;  // gap too large — show lost streak screen instead
+  if (gap.daysSinceLastLog <= 1) return null; // logged yesterday or today — streak alive
 
   // Treat a streak as real from day 1. The first log should count, while
   // milestone celebrations can still start at higher thresholds.
   const previousStreak = streak.previousStreak ?? 0;
   if (previousStreak < 1) return null;
 
-  const missedDate = new Date(lastLog);
+  const repairsAvailable = streak.repairsAvailable ?? 0;
+  if (gap.missedDays > repairsAvailable) return null;
+
+  const missedDate = new Date(gap.lastLog);
   missedDate.setDate(missedDate.getDate() + 1);
+
+  const lastMissedDate = new Date(gap.today);
+  lastMissedDate.setDate(lastMissedDate.getDate() - 1);
+
+  const formatDate = (date) =>
+    date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
 
   return {
     date: missedDate,
     dateString: missedDate.toISOString().split('T')[0],
-    formattedDate: missedDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    }),
-    daysAgo: daysSince - 1,
+    formattedDate: formatDate(missedDate),
+    lastMissedDate,
+    lastMissedDateString: lastMissedDate.toISOString().split('T')[0],
+    formattedLastMissedDate: formatDate(lastMissedDate),
+    missedDays: gap.missedDays,
+    repairsRequired: gap.missedDays,
+    daysAgo: gap.daysSinceLastLog - 1,
   };
 }
 
@@ -75,19 +92,21 @@ export function useMissedDay() {
 export function useStreakLost() {
   const { data: streak } = useStreakQuery();
 
-  if (!streak?.lastLogDate) return null;
+  const gap = getStreakGap(streak);
+  if (!gap) return null;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const lastLog = new Date(streak.lastLogDate);
-  lastLog.setHours(0, 0, 0, 0);
-  const daysSince = Math.floor((today - lastLog) / (1000 * 60 * 60 * 24));
-
-  if (daysSince <= 3) return null; // still in repair window or alive
+  if (gap.daysSinceLastLog <= 1) return null; // still alive
   const previousStreak = streak.previousStreak ?? 0;
   if (previousStreak < 1) return null;
 
-  return { lostStreak: previousStreak };
+  const repairsAvailable = streak.repairsAvailable ?? 0;
+  if (gap.missedDays <= repairsAvailable) return null;
+
+  return {
+    lostStreak: previousStreak,
+    missedDays: gap.missedDays,
+    repairsAvailable,
+  };
 }
 
 export function useAcknowledgeStreakLossMutation() {

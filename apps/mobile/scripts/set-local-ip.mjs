@@ -16,14 +16,20 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ENV_PATH = join(dirname(dirname(fileURLToPath(import.meta.url))), ".env.local");
+const MOBILE_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const REPO_ROOT = dirname(dirname(MOBILE_ROOT));
+const ENV_PATH = join(MOBILE_ROOT, ".env.local");
 const DEFAULT_PORT = "54321";
 const URL_KEY = "EXPO_PUBLIC_SUPABASE_URL";
 const KEY_KEY = "EXPO_PUBLIC_SUPABASE_ANON_KEY";
 
-const run = (cmd, args) => {
+const run = (cmd, args, options = {}) => {
   try {
-    return execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return execFileSync(cmd, args, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      ...options,
+    }).trim();
   } catch {
     return "";
   }
@@ -34,16 +40,40 @@ const die = (msg) => {
   process.exit(1);
 };
 
-// en0 is Wi-Fi on most Macs; en1 covers Ethernet/Thunderbolt setups.
-const lanIp = ["en0", "en1"].map((i) => run("ipconfig", ["getifaddr", i])).find(Boolean);
+const getDefaultInterface = () => {
+  const route = run("route", ["-n", "get", "default"]);
+  return route.match(/interface:\s*(\S+)/)?.[1] ?? "";
+};
+
+const getIpFromIfconfig = (iface) => {
+  if (!iface) return "";
+  const details = run("ifconfig", [iface]);
+  return details.match(/\binet\s+(\d+\.\d+\.\d+\.\d+)\b/)?.[1] ?? "";
+};
+
+const getFirstNonLoopbackIp = () => {
+  const details = run("ifconfig", []);
+  const match = details.match(/\binet\s+(?!127\.)(\d+\.\d+\.\d+\.\d+)\b/);
+  return match?.[1] ?? "";
+};
+
+// en0 is Wi-Fi on most Macs; en1 covers Ethernet/Thunderbolt setups. Some
+// networks/VPNs expose a different active interface, so also check the default
+// route and finally fall back to the first non-loopback address from ifconfig.
+const defaultInterface = getDefaultInterface();
+const interfaceCandidates = ["en0", "en1", defaultInterface].filter(Boolean);
+const lanIp =
+  interfaceCandidates
+    .flatMap((i) => [run("ipconfig", ["getifaddr", i]), getIpFromIfconfig(i)])
+    .find(Boolean) || getFirstNonLoopbackIp();
 if (!lanIp) {
-  die("No LAN IP on en0 or en1 — are you connected to a network?");
+  die("No LAN IP found — are you connected to a network?");
 }
 
 // The publishable key only changes if the local stack is recreated, so a
 // failure to read it is not fatal when .env.local already has one.
 const readLocalKey = () => {
-  const raw = run("supabase", ["status", "-o", "json"]);
+  const raw = run("supabase", ["status", "-o", "json"], { cwd: REPO_ROOT });
   if (!raw) return "";
   try {
     const status = JSON.parse(raw);
