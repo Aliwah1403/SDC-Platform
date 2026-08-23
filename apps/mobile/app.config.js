@@ -14,10 +14,14 @@ const SUPABASE_CONFIG = {
 };
 
 const resolveAppEnv = () => {
-  if (process.env.HEMO_APP_ENV === "development") return "development";
+  // EAS resolves app.config.js on the developer machine before upload. A
+  // local .env.local may contain HEMO_APP_ENV=development, so the selected
+  // build profile must win or a staging build is incorrectly branded as dev.
   if (process.env.EAS_BUILD_PROFILE === "development") return "development";
-  if (process.env.HEMO_APP_ENV === "staging") return "staging";
   if (process.env.EAS_BUILD_PROFILE === "staging") return "staging";
+  if (process.env.EAS_BUILD_PROFILE === "production") return "production";
+  if (process.env.HEMO_APP_ENV === "development") return "development";
+  if (process.env.HEMO_APP_ENV === "staging") return "staging";
   if (process.env.HEMO_APP_ENV === "production") return "production";
   // Inside an EAS build (any other profile, e.g. preview) production config is
   // the right default. On a developer's machine it is not: the dev-ness marker
