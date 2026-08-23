@@ -32,6 +32,7 @@ import { useMedicationsQuery, useToggleMedicationTakenMutation, useDeleteMedicat
 import { cancelMedicationNotifications, cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
 import { fonts } from "@/utils/fonts";
 import { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
+import { getExtraMedicationLogs, resolveMedicationDoseLogs } from "@/utils/medicationDoseSlots";
 
 const C = {
   accent: "#A9334D",
@@ -142,11 +143,12 @@ function isAsNeeded(f) {
 function nextDoseLabel(med) {
   if (isAsNeeded(med.frequency)) return null;
   const times = getMedTimes(med);
-  const first = times[0];
-  if (!first) return null;
-  const takenCount = med.logs?.length ?? (med.taken ? 1 : 0);
-  const nextTime = times[takenCount];
-  return nextTime ? `Today at ${nextTime}` : `Tomorrow at ${first}`;
+  if (times.length === 0) return null;
+  const doseLogs = resolveMedicationDoseLogs(med.logs, times);
+  const nextIndex = doseLogs.findIndex((log) => !log);
+  return nextIndex >= 0
+    ? `Today at ${times[nextIndex]}`
+    : `Tomorrow at ${times[0]}`;
 }
 
 function formatLogTime(isoString) {
@@ -640,7 +642,8 @@ export default function MedicationDetailScreen() {
   const color = CATEGORY_COLORS[med.category] ?? C.accent;
   const times = getMedTimes(med);
   // Logs beyond the scheduled dose count are "extra" (unscheduled doses)
-  const extraLogs = (med.logs ?? []).slice(Math.max(times.length, 1));
+  const doseLogs = resolveMedicationDoseLogs(med.logs, times);
+  const extraLogs = getExtraMedicationLogs(med.logs, times);
 
   const logDates = useMemo(
     () => new Set(logHistory.map((l) => l.date)),
@@ -695,16 +698,16 @@ export default function MedicationDetailScreen() {
   const handleMarkTaken = (doseIndex = 0) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (times.length > 1) {
-      const isDoseTaken = (med.logs?.length ?? 0) > doseIndex;
+      const targetLog = doseLogs[doseIndex];
+      const isDoseTaken = Boolean(targetLog);
       if (isDoseTaken) {
-        const targetLog = (med.logs ?? [])[doseIndex];
         if (targetLog) {
           deleteLogById.mutate({ medId: med.id, logId: targetLog.id });
         } else {
           deleteLatestLog.mutate(med.id);
         }
       } else {
-        addLog.mutate(med.id);
+        addLog.mutate({ medId: med.id, scheduledTime: times[doseIndex] ?? null });
         cancelAfterRemindersForTime(med.id, times[doseIndex]).catch(console.error);
       }
     } else {
@@ -717,7 +720,7 @@ export default function MedicationDetailScreen() {
 
   const handleAddLog = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    addLog.mutate(med.id);
+    addLog.mutate({ medId: med.id });
   };
 
   const handleDelete = () => {
@@ -1066,8 +1069,8 @@ export default function MedicationDetailScreen() {
           <Card>
             {times.length > 0 ? (
               times.map((tm, idx) => {
-                const isDoseTaken = (med.logs?.length ?? 0) > idx;
-                const log = med.logs?.[idx];
+                const log = doseLogs[idx];
+                const isDoseTaken = Boolean(log);
                 const takenTime = isDoseTaken && log?.takenAt
                   ? formatLogTime(log.takenAt)
                   : null;

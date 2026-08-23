@@ -40,18 +40,22 @@ export const reEngagementNudge = schedules.task({
     const lapsedIds = allUserIds.filter((id) => !recentUserSet.has(id));
     if (lapsedIds.length === 0) return { nudged: 0 };
 
-    // Get last log date for each lapsed user to compute exact day count
-    // (one row per user, reduced at the DB level)
+    // Get log dates for lapsed users and reduce them in memory. PostgREST
+    // deliberately rejects aggregate expressions in a select string, so
+    // `date.max()` is not portable across hosted Supabase projects.
     const { data: lastLogs, error: lastLogError } = await supabase
       .from("health_logs")
-      .select("user_id, last_date:date.max()")
-      .in("user_id", lapsedIds);
+      .select("user_id, date")
+      .in("user_id", lapsedIds)
+      .order("date", { ascending: false });
     if (lastLogError) throw lastLogError;
 
     const lastLogByUser = new Map<string, string>();
     for (const row of lastLogs ?? []) {
-      if (row.last_date) {
-        lastLogByUser.set(row.user_id as string, row.last_date as string);
+      const userId = row.user_id as string;
+      // Rows are newest-first, so retain the first date found per user.
+      if (row.date && !lastLogByUser.has(userId)) {
+        lastLogByUser.set(userId, row.date as string);
       }
     }
 

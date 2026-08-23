@@ -27,12 +27,13 @@ export const medicationAdherenceDrop = schedules.task({
     const allUserIds = (tokenRows ?? []).map((r) => r.user_id as string);
     if (allUserIds.length === 0) return { nudged: 0 };
 
-    // Get active medications per user (not archived)
+    // `is_active` is the medication lifecycle field in the canonical schema.
+    // `archived_at` was never added to the hosted staging database.
     const { data: medications, error: medError } = await supabase
       .from("medications")
       .select("id, user_id")
       .in("user_id", allUserIds)
-      .is("archived_at", null);
+      .eq("is_active", true);
     if (medError) throw medError;
 
     // Group by user

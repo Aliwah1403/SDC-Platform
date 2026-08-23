@@ -33,6 +33,15 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const webhookSecret = Deno.env.get("COMMUNITY_PUSH_WEBHOOK_SECRET");
+    if (!webhookSecret) {
+      console.error("[send-community-push] COMMUNITY_PUSH_WEBHOOK_SECRET not configured");
+      return new Response("Server misconfigured", { status: 500 });
+    }
+    if (req.headers.get("x-community-push-secret") !== webhookSecret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
     const novuApiKey = Deno.env.get("NOVU_API_KEY");
     if (!novuApiKey) {
       console.error("[send-community-push] NOVU_API_KEY not configured");

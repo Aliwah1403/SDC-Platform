@@ -52,6 +52,7 @@ import Constants from "expo-constants";
 import SplashAnimation from "@/components/SplashAnimation";
 import { StartupReadyProvider } from "@/components/ObserveInteractive";
 import { Observe, ObserveRoot } from "expo-observe";
+import AppUpdateModal from "@/components/AppUpdateModal";
 
 Observe.configure({
   integrations: { "expo-router": true },
@@ -601,6 +602,8 @@ function RootLayoutContent() {
             </Pressable>
           </View>
         )}
+
+        <AppUpdateModal ready={splashGone && !isLocked} />
         </KeyboardProvider>
       </GestureHandlerRootView>
       </StartupReadyProvider>

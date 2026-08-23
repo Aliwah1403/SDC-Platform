@@ -102,8 +102,9 @@ export function useAddMedicationLogMutation() {
   const queryKey = ['medications', userId];
 
   return useMutation({
-    mutationFn: (medId) => addMedicationLog(userId, medId),
-    onMutate: async (medId) => {
+    mutationFn: ({ medId, scheduledTime = null }) =>
+      addMedicationLog(userId, medId, scheduledTime),
+    onMutate: async ({ medId, scheduledTime = null }) => {
       await queryClient.cancelQueries({ queryKey });
       const prev = queryClient.getQueryData(queryKey);
       const now = new Date().toISOString();
@@ -113,18 +114,21 @@ export function useAddMedicationLogMutation() {
             ? {
                 ...m,
                 taken: true,
-                logs: [...(m.logs ?? []), { id: `temp-${now}`, takenAt: now }],
+                logs: [
+                  ...(m.logs ?? []),
+                  { id: `temp-${now}`, takenAt: now, scheduledTime },
+                ],
               }
             : m
         )
       );
       return { prev };
     },
-    onError: (_err, _medId, ctx) => {
+    onError: (_err, _variables, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
       Alert.alert('Couldn\'t log dose', 'Something went wrong. Please try again.');
     },
-    onSettled: (_data, _err, medId) => {
+    onSettled: (_data, _err, { medId }) => {
       queryClient.invalidateQueries({ queryKey });
       queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
     },
@@ -215,24 +219,38 @@ export function useMarkGroupTakenMutation() {
   const queryKey = ['medications', userId];
 
   return useMutation({
-    mutationFn: (medIds) => markGroupTaken(userId, medIds),
-    onMutate: async (medIds) => {
+    mutationFn: (doses) => markGroupTaken(userId, doses),
+    onMutate: async (doses) => {
       await queryClient.cancelQueries({ queryKey });
       const prev = queryClient.getQueryData(queryKey);
       const now = new Date().toISOString();
       queryClient.setQueryData(queryKey, (old) =>
-        (old || []).map((m) =>
-          medIds.includes(m.id) ? { ...m, taken: true, takenAt: now } : m
-        )
+        (old || []).map((m) => {
+          const matchingDoses = doses.filter((dose) => dose.medicationId === m.id);
+          if (matchingDoses.length === 0) return m;
+          return {
+            ...m,
+            taken: true,
+            takenAt: now,
+            logs: [
+              ...(m.logs ?? []),
+              ...matchingDoses.map((dose, index) => ({
+                id: `temp-${now}-${index}`,
+                takenAt: now,
+                scheduledTime: dose.scheduledTime ?? null,
+              })),
+            ],
+          };
+        })
       );
       return { prev };
     },
-    onError: (_err, _ids, ctx) => {
+    onError: (_err, _doses, ctx) => {
       queryClient.setQueryData(queryKey, ctx.prev);
     },
-    onSettled: (_data, _err, medIds) => {
+    onSettled: (_data, _err, doses) => {
       queryClient.invalidateQueries({ queryKey });
-      (medIds ?? []).forEach((id) =>
+      [...new Set((doses ?? []).map((dose) => dose.medicationId))].forEach((id) =>
         queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, id] })
       );
     },

@@ -6,6 +6,24 @@ import { Sentry } from "../lib/sentry";
 const WORKFLOW_ID = "hemo-weekly-summary";
 const LOOKBACK_DAYS = 7;
 
+type HydrationUnit = "glasses" | "ml" | "L" | "floz";
+
+function formatHydrationForNotification(ml: number | null, unit: HydrationUnit) {
+  if (ml == null) return { value: null, unitLabel: unit === "ml" ? "ml" : unit === "L" ? "L" : unit === "floz" ? "fl oz" : "glasses" };
+
+  switch (unit) {
+    case "ml":
+      return { value: Math.round(ml), unitLabel: "ml" };
+    case "L":
+      return { value: Math.round((ml / 1000) * 10) / 10, unitLabel: "L" };
+    case "floz":
+      return { value: Math.round(ml / 29.5735), unitLabel: "fl oz" };
+    case "glasses":
+    default:
+      return { value: Math.round((ml / 250) * 10) / 10, unitLabel: "glasses" };
+  }
+}
+
 export const weeklyHealthSummary = schedules.task({
   id: "weekly-health-summary",
   // Every Sunday at 18:00 UTC
@@ -51,12 +69,18 @@ export const weeklyHealthSummary = schedules.task({
 
     const { data: profiles, error: profileError } = await supabase
       .from("profiles")
-      .select("user_id, nickname")
+      .select("user_id, nickname, hydration_display_unit")
       .in("user_id", activeUserIds);
     if (profileError) throw profileError;
 
-    const nicknameMap = new Map(
-      (profiles ?? []).map((p) => [p.user_id, p.nickname as string | null])
+    const profileMap = new Map(
+      (profiles ?? []).map((p) => [
+        p.user_id as string,
+        {
+          nickname: p.nickname as string | null,
+          hydrationDisplayUnit: (p.hydration_display_unit as HydrationUnit | null) ?? "glasses",
+        },
+      ])
     );
 
     let nudged = 0;
@@ -96,12 +120,18 @@ export const weeklyHealthSummary = schedules.task({
           : null;
 
       try {
+        const profile = profileMap.get(userId);
+        const hydration = formatHydrationForNotification(
+          avgHydration,
+          profile?.hydrationDisplayUnit ?? "glasses"
+        );
         await triggerNovu(WORKFLOW_ID, userId, {
-          nickname: nicknameMap.get(userId) ?? "there",
+          nickname: profile?.nickname ?? "there",
           streak,
           logsThisWeek: rows.length,
           avgPain,
-          avgHydration,
+          avgHydration: hydration.value,
+          hydrationUnit: hydration.unitLabel,
         });
         nudged++;
       } catch (err) {
