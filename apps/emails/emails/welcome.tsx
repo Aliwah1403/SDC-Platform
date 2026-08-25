@@ -29,17 +29,17 @@ export default function Welcome({ firstName }: WelcomeProps) {
       </Text>
       <Section style={{ padding: "4px 0 28px", textAlign: "center" }}>
         <Img
-          alt="Hemo home screen showing daily health tracking and insights"
-          height={505}
-          src="https://www.hemo-scd.com/screenshots/home-screen.jpeg"
+          alt="Three Hemo app screens showing care, daily health tracking, and streaks"
+          height={402}
+          src="https://res.cloudinary.com/dzycxaapd/image/upload/v1787652850/Hemo-Welcome-Mail-Shot_lg11v8.png"
           style={{
-            borderRadius: 24,
+            borderRadius: 16,
             display: "block",
             margin: "0 auto",
-            maxWidth: 260,
-            width: 260,
+            maxWidth: 536,
+            width: "100%",
           }}
-          width={260}
+          width={536}
         />
       </Section>
       <Text

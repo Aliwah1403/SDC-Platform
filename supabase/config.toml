@@ -405,6 +405,9 @@ verify_jwt = false
 [functions.waitlist-welcome]
 verify_jwt = false
 
+[functions.registered-webhook]
+verify_jwt = false
+
 [functions.waitlist-signup]
 verify_jwt = false
 
