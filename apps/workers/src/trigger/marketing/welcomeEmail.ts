@@ -86,7 +86,7 @@ export const welcomeEmail = schemaTask({
         "Idempotency-Key": `welcome-email/${userId}`,
       },
       body: JSON.stringify({
-        from: "The Hemo Team <thehemoteam@info.hemo-scd.com>",
+        from: "Hemo <hello@info.hemo-scd.com>",
         to: [email],
         template: {
           id: "welcome",

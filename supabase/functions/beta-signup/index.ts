@@ -325,7 +325,7 @@ Deno.serve(async (req: Request) => {
     await sendEmail(
       resendApiKey,
       {
-        from: "The Hemo Team <thehemoteam@info.hemo-scd.com>",
+        from: "Hemo <hello@info.hemo-scd.com>",
         to: [adminEmail],
         subject: `New beta signup: ${email} (${platformLabel})`,
         html: adminHtml,

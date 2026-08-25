@@ -105,7 +105,7 @@ async function sendFarewellEmail(user: {
         "Idempotency-Key": `account-deleted/${user.id}`,
       },
       body: JSON.stringify({
-        from: "The Hemo Team <thehemoteam@info.hemo-scd.com>",
+        from: "Hemo <hello@info.hemo-scd.com>",
         to: [user.email],
         subject: "We’re sorry to see you go",
         html: `
