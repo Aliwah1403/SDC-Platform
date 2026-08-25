@@ -22,7 +22,7 @@ const CONTACT_EMAIL = "info@hemo-scd.com";
 const LEGAL_CONTENT = {
   privacy: {
     title: "Privacy Policy",
-    effectiveDate: "Current as of May 21, 2026",
+    effectiveDate: "Current as of August 11, 2026",
     intro:
       "Your privacy matters to us at Hemo. We respect your privacy regarding any information we may collect from you across our website and app.",
     sections: [
@@ -32,8 +32,8 @@ const LEGAL_CONTENT = {
         ],
         bullets: [
           "Visit our website at hemo-scd.com",
-          "Join our waitlist to receive early access and launch updates",
-          "Download and use the Hemo mobile app once it is available",
+          "Join our waitlist or beta",
+          "Download and use the Hemo mobile app",
           "Contact us or engage with us in other related ways",
         ],
       },
@@ -47,37 +47,54 @@ const LEGAL_CONTENT = {
       {
         heading: "What information do we collect?",
         paragraphs: [
-          "At this stage, Hemo is pre-launch. The only personal information we collect is your email address when you join our waitlist. We do not collect health data, location, payment details, or any other personal information through this website.",
-          "Once the app is live, we will collect information you voluntarily provide — such as account details, health log entries, and care preferences — to deliver app functionality. This notice will be updated with full detail before that time.",
+          "Hemo collects information you choose to provide when you use our website, join our waitlist or beta, create an account, or use the Hemo mobile app. This may include your name, email address, authentication details, profile information, sickle cell type, date of birth, care preferences, and app settings.",
+          "If you use Hemo's health and care features, we may collect the information you enter or connect in the app, such as symptom logs, pain scores, hydration, mood, sleep, notes, medications, appointments, emergency contacts, crisis-plan details, care-team information, shared health summaries, and related files or images you upload.",
+          "We also collect limited technical and usage information needed to operate and improve Hemo, including device and app information, analytics events, crash or error reports, beta signup details, support or feedback messages, and communication preferences.",
         ],
       },
       {
         heading: "How do we use your information?",
-        paragraphs: ["Your email address is used solely to:"],
+        paragraphs: [
+          "We use your information to provide and improve Hemo, including to create and secure your account, save and display the information you choose to add, personalise app features and settings, respond to support requests, send requested updates, maintain safety and security, and understand how the app is working during beta testing.",
+          "Your email address may also be used to:",
+        ],
         bullets: [
-          "Notify you when Hemo launches",
-          "Share relevant pre-launch updates and early access information",
+          "Send requested account, support, or service communications",
+          "Share relevant Hemo updates when you have chosen to receive them",
         ],
         paragraphsAfter: [
-          "We do not use your email for advertising, profiling, or any purpose beyond the above.",
+          "We do not sell your personal information or use it for unrelated advertising.",
         ],
       },
       {
         heading: "Do we share your information?",
         paragraphs: [
-          "We do not sell, trade, or share your personal information with third parties. Your email address is stored securely and is only accessible to the Hemo team.",
+          "We do not sell or trade your personal information. We may share information only where needed to operate the Services, comply with law, protect Hemo and its users, or as part of a business transfer. We do not make your health information public unless you choose to share it through an Hemo feature.",
         ],
       },
       {
         heading: "How long do we keep your information?",
         paragraphs: [
-          "We keep your email address on the waitlist until you request removal or until the waitlist is closed at launch. You can ask us to delete your information at any time.",
+          "We keep your information for as long as your account is active or as needed to provide the Services. You can request deletion of your account and associated data in the app or by contacting us. Some information may be retained where required by law or to resolve security, fraud, or legal issues.",
         ],
       },
       {
         heading: "Your rights",
         paragraphs: [
-          `Depending on your location, you may have the right to access, correct, or delete your personal data. To exercise any of these rights — including removing yourself from the waitlist — contact us at ${CONTACT_EMAIL} and we will respond promptly.`,
+          `Depending on your location, you may have the right to access, correct, delete, or receive a copy of your personal data. To exercise these rights, including removing yourself from the waitlist, contact us at ${CONTACT_EMAIL}.`,
+        ],
+      },
+      {
+        heading: "Children and minors",
+        paragraphs: [
+          "Hemo may be used by people under 18 only with consent from a parent or legal guardian. If you are a parent or guardian and believe a minor has provided information without your consent, contact us so we can review and respond.",
+        ],
+      },
+      {
+        heading: "Health and emergency feature notice",
+        paragraphs: [
+          "Hemo is a self-management and information-organising tool. It is not a medical device, healthcare provider, emergency service, or substitute for professional medical advice, diagnosis, treatment, or an individual care plan agreed with your healthcare team.",
+          "Information you enter, connect, generate, or share through Hemo — including health logs, wearable readings, summaries, medication matches, crisis information, and emergency-contact details — may be incomplete or inaccurate. Do not rely on Hemo to diagnose a complication, decide when care is needed, contact emergency services, or confirm that a message was delivered.",
         ],
       },
       {
@@ -90,13 +107,13 @@ const LEGAL_CONTENT = {
   },
   terms: {
     title: "Terms of Use",
-    effectiveDate: "Current as of May 21, 2026",
+    effectiveDate: "Current as of August 11, 2026",
     intro:
-      "Please read these terms carefully before using Hemo or joining our waitlist. By accessing our website or services, you agree to be bound by these terms.",
+      "Please read these terms carefully before using Hemo. By accessing our website or services, you agree to be bound by these terms.",
     sections: [
       {
         paragraphs: [
-          "These Terms of Use govern your access to and use of the Hemo website and, once available, the Hemo mobile application ('Services'), operated by Hemo SCD ('we', 'us', or 'our'). By using our Services, you confirm that you accept these terms.",
+          "These Terms of Use govern your access to and use of the Hemo website and mobile application ('Services'), operated by Hemo SCD ('we', 'us', or 'our'). By using our Services, you confirm that you accept these terms.",
         ],
       },
       {
@@ -110,14 +127,22 @@ const LEGAL_CONTENT = {
         heading: "Not a medical service",
         paragraphs: [
           "Hemo is a health tracking and management tool. It is not a medical device, a diagnostic tool, or a substitute for professional medical advice, diagnosis, or treatment. Nothing within Hemo should be interpreted as clinical guidance.",
-          "Always seek the advice of a qualified healthcare provider with any questions you may have regarding a medical condition. In an emergency, contact your local emergency services immediately. The in-app SOS feature is a convenience tool for alerting personal contacts — it is not a replacement for calling emergency services.",
+          "Always seek the advice of a qualified healthcare provider with any questions you may have regarding a medical condition. In an emergency, contact your local emergency services immediately. Hemo does not monitor you, contact emergency services, or guarantee that calls, notifications, or messages reach another person. Where Hemo prepares a message, you remain responsible for reviewing and sending it through your device.",
+          "Any crisis or pain plan stored in Hemo should reflect an individual plan discussed and agreed with your healthcare team. Hemo does not create, prescribe, or approve a treatment plan for you.",
+        ],
+      },
+      {
+        heading: "Health information and generated content",
+        paragraphs: [
+          "Health logs, educational content, patterns, scores, wearable readings, summaries, reports, and medication-photo or barcode matches are provided for informational and organisational purposes only. They may be incomplete, delayed, or inaccurate and must not be treated as a diagnosis, clinical interpretation, prescription, treatment recommendation, or confirmation that a medication is safe.",
+          "Review important information with a qualified healthcare professional before making medical or medication decisions. If symptoms are severe, unusual, worsening, or you are unsure, seek urgent medical help rather than relying on Hemo.",
         ],
       },
       {
         heading: "Use of service",
         paragraphs: [
           "You may use Hemo for personal, non-commercial health tracking purposes only. You agree not to misuse the Services, attempt to gain unauthorised access, or use the Services in any way that could harm others or disrupt the platform.",
-          "You must be at least 13 years of age to use Hemo. If you are under 18, you should review these terms with a parent or guardian.",
+          "You must be at least 13 years of age to use Hemo. If you are under 18, you may only use Hemo with consent from a parent or legal guardian, and you should review these terms with them before using the Services.",
         ],
       },
       {
@@ -129,7 +154,7 @@ const LEGAL_CONTENT = {
       {
         heading: "Account responsibilities",
         paragraphs: [
-          "Once the app is live, you are responsible for maintaining the security of your account credentials and for all activity that occurs under your account. You agree to notify us immediately of any unauthorised access or breach of security.",
+          "You are responsible for maintaining the security of your account credentials and for all activity that occurs under your account. You agree to notify us immediately of any unauthorised access or breach of security.",
         ],
       },
       {
@@ -141,7 +166,7 @@ const LEGAL_CONTENT = {
       {
         heading: "Availability and changes",
         paragraphs: [
-          "Hemo is currently pre-launch. Features, pricing, and availability may change before and after release. We reserve the right to modify or discontinue any part of the Services at any time. We will make reasonable efforts to communicate significant changes to waitlist members.",
+          "Features, pricing, and availability may change. We reserve the right to modify or discontinue any part of the Services at any time. We will make reasonable efforts to communicate significant changes to affected users.",
         ],
       },
       {
