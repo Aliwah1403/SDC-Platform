@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   fetchAppointments,
   addAppointment,
@@ -14,7 +15,7 @@ function useUserId() {
 export function useAppointmentsQuery() {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['appointments', userId],
+    queryKey: queryKeys.appointments(userId),
     queryFn: () => fetchAppointments(userId),
     enabled: !!userId,
   });
@@ -26,7 +27,7 @@ export function useAddAppointmentMutation() {
   return useMutation({
     mutationFn: (appt) => addAppointment(userId, appt),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.appointments(userId) });
     },
   });
 }
@@ -37,7 +38,7 @@ export function useUpdateAppointmentMutation() {
   return useMutation({
     mutationFn: ({ id, changes }) => updateAppointment(userId, id, changes),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.appointments(userId) });
     },
   });
 }
@@ -48,7 +49,7 @@ export function useDeleteAppointmentMutation() {
   return useMutation({
     mutationFn: (id) => deleteAppointment(userId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['appointments', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.appointments(userId) });
     },
   });
 }

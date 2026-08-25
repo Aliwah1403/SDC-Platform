@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import { fetchCommunityFeed } from '@/services/supabase/community';
 import { useCategoryPrefsQuery } from './useCategoryPrefsQuery';
 
@@ -20,7 +21,7 @@ export function useCommunityFeedQuery(filter = 'popular') {
   const blockedCategoryIds = prefs?.blockedCategoryIds ?? [];
 
   return useQuery({
-    queryKey: ['community_feed', userId, filter, followedCategoryIds, blockedCategoryIds],
+    queryKey: queryKeys.community.feed(userId, filter, { followedCategoryIds, blockedCategoryIds }),
     queryFn: () =>
       fetchCommunityFeed({ userId, filter, followedCategoryIds, blockedCategoryIds }),
     enabled: !!userId,
@@ -37,7 +38,7 @@ export function useCategoryFeedQuery(categoryId) {
   const userId = useUserId();
 
   return useQuery({
-    queryKey: ['community_feed', userId, 'category', categoryId],
+    queryKey: queryKeys.community.feed(userId, 'category', { categoryId }),
     queryFn: () =>
       fetchCommunityFeed({ userId, filter: 'category', categoryId }),
     enabled: !!userId && !!categoryId,

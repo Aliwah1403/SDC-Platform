@@ -76,6 +76,7 @@ import {
   useUpdateProfileMutation,
 } from "@/hooks/queries/useProfileQuery";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/hooks/queryKeys";
 import { useStreakQuery } from "@/hooks/queries/useStreakQuery";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -716,7 +717,7 @@ export default function ProfileScreen() {
     setUploadingAvatar(true);
     try {
       await uploadAvatar(userId, uri);
-      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
     } catch {
       Alert.alert(
         "Upload failed",

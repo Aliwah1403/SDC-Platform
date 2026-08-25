@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   fetchHydrationContainers,
   addHydrationContainer,
@@ -28,7 +29,7 @@ function useUserId() {
 export function useHydrationContainersQuery() {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['hydrationContainers', userId],
+    queryKey: queryKeys.hydrationContainers(userId),
     queryFn: () => fetchHydrationContainers(userId),
     enabled: !!userId,
   });
@@ -45,7 +46,7 @@ function useInvalidateHydrationContainers() {
     // Awaited so the active query's cache is fresh by the time we read the
     // default container back out of it below — invalidateQueries' promise
     // resolves once the resulting refetch settles.
-    await queryClient.invalidateQueries({ queryKey: ['hydrationContainers', userId] });
+    await queryClient.invalidateQueries({ queryKey: queryKeys.hydrationContainers(userId) });
     registerNotificationCategories({ queryClient, userId }).catch((err) => {
       console.error('[HydrationContainers] Failed to re-register notification categories:', err);
     });

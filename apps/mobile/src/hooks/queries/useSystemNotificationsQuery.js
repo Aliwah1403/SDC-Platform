@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import { supabase } from '@/utils/auth/supabase';
 import {
   fetchSystemNotifications,
@@ -16,7 +17,7 @@ export function useSystemNotificationsQuery() {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['system_notifications', userId],
+    queryKey: queryKeys.systemNotifications(userId),
     queryFn: () => fetchSystemNotifications(userId),
     enabled: !!userId,
     staleTime: 1000 * 60,
@@ -36,7 +37,7 @@ export function useSystemNotificationsQuery() {
           filter: `user_id=eq.${userId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['system_notifications', userId] });
+          queryClient.invalidateQueries({ queryKey: queryKeys.systemNotifications(userId) });
         },
       )
       .subscribe();
@@ -55,18 +56,18 @@ export function useMarkAllSystemReadMutation() {
   return useMutation({
     mutationFn: () => markAllSystemNotificationsRead(userId),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['system_notifications', userId] });
-      const prev = queryClient.getQueryData(['system_notifications', userId]);
-      queryClient.setQueryData(['system_notifications', userId], (old) =>
+      await queryClient.cancelQueries({ queryKey: queryKeys.systemNotifications(userId) });
+      const prev = queryClient.getQueryData(queryKeys.systemNotifications(userId));
+      queryClient.setQueryData(queryKeys.systemNotifications(userId), (old) =>
         Array.isArray(old) ? old.map((n) => ({ ...n, read: true })) : old,
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      queryClient.setQueryData(['system_notifications', userId], ctx.prev);
+      queryClient.setQueryData(queryKeys.systemNotifications(userId), ctx.prev);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['system_notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.systemNotifications(userId) });
     },
   });
 }

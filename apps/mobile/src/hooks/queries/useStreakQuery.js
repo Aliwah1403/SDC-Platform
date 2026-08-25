@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import { fetchStreak, repairStreak, acknowledgeStreakLoss, updateClaimedBadges } from '@/services/supabase/streak';
 
 function useUserId() {
@@ -24,7 +25,7 @@ function getStreakGap(streak) {
 export function useStreakQuery() {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['streak', userId],
+    queryKey: queryKeys.streak(userId),
     queryFn: () => fetchStreak(userId),
     enabled: !!userId,
     select: (data) => {
@@ -115,7 +116,7 @@ export function useAcknowledgeStreakLossMutation() {
   return useMutation({
     mutationFn: () => acknowledgeStreakLoss(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.streak(userId) });
     },
   });
 }
@@ -126,7 +127,7 @@ export function useStreakRepairMutation() {
   return useMutation({
     mutationFn: () => repairStreak(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.streak(userId) });
     },
   });
 }
@@ -137,19 +138,19 @@ export function useClaimBadgeMutation() {
   return useMutation({
     mutationFn: (badges) => updateClaimedBadges(userId, badges),
     onMutate: async (badges) => {
-      const previous = queryClient.getQueryData(['streak', userId]);
-      queryClient.setQueryData(['streak', userId], (old) => ({
+      const previous = queryClient.getQueryData(queryKeys.streak(userId));
+      queryClient.setQueryData(queryKeys.streak(userId), (old) => ({
         ...old,
         claimedBadges: badges,
       }));
-      await queryClient.cancelQueries({ queryKey: ['streak', userId] });
+      await queryClient.cancelQueries({ queryKey: queryKeys.streak(userId) });
       return { previous };
     },
     onError: (_err, _vars, context) => {
-      queryClient.setQueryData(['streak', userId], context.previous);
+      queryClient.setQueryData(queryKeys.streak(userId), context.previous);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.streak(userId) });
     },
   });
 }

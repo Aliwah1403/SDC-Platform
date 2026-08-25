@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import { fetchPostDetail } from '@/services/supabase/community';
 
 function useUserId() {
@@ -12,7 +13,7 @@ function useUserId() {
 export function usePostDetailQuery(postId) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['post_detail', postId, userId],
+    queryKey: queryKeys.community.post(postId, userId),
     queryFn: () => fetchPostDetail(postId, userId),
     enabled: !!userId && !!postId,
     staleTime: 1000 * 60, // 1 minute

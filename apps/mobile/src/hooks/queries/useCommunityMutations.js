@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   createCommunityPost,
   deleteCommunityPost,
@@ -28,7 +29,7 @@ export function useCreatePostMutation() {
     mutationFn: (post) => createCommunityPost({ userId, ...post }),
     onSuccess: () => {
       // Invalidate all feed variants so the new post appears
-      queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.root(userId) });
     },
   });
 }
@@ -42,9 +43,9 @@ export function useDeletePostMutation() {
       return deleteCommunityPost(postId, userId);
     },
     onMutate: async (postId) => {
-      await queryClient.cancelQueries({ queryKey: ['community_feed', userId] });
-      const previousFeed = queryClient.getQueriesData({ queryKey: ['community_feed', userId] });
-      queryClient.setQueriesData({ queryKey: ['community_feed', userId] }, (old) =>
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.root(userId) });
+      const previousFeed = queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) });
+      queryClient.setQueriesData({ queryKey: queryKeys.community.root(userId) }, (old) =>
         Array.isArray(old) ? old.filter((p) => p.id !== postId) : old,
       );
       return { previousFeed };
@@ -57,7 +58,7 @@ export function useDeletePostMutation() {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['community_feed', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.root(userId) });
     },
   });
 }
@@ -90,20 +91,31 @@ export function useLikeMutation() {
       isLiked ? unlikePost(userId, postId) : likePost(userId, postId),
 
     onMutate: async ({ postId, isLiked }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.root(userId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.post(postId, userId) });
+      const previousFeed = queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) });
+      const previousPost = queryClient.getQueryData(queryKeys.community.post(postId, userId));
       const newLiked = !isLiked;
       // Optimistically update all cached queries that contain this post
-      queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
+      queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) }).forEach(([key]) => {
         updateLikeInCache(key, postId, newLiked);
       });
-      updateLikeInCache(['post_detail', postId, userId], postId, newLiked);
+      updateLikeInCache(queryKeys.community.post(postId, userId), postId, newLiked);
+      return { previousFeed, previousPost };
     },
 
-    onError: (_err, { postId, isLiked }) => {
-      // Revert optimistic update
-      queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
-        updateLikeInCache(key, postId, isLiked);
+    onError: (_err, _variables, context) => {
+      context?.previousFeed?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
       });
-      updateLikeInCache(['post_detail', postId, userId], postId, isLiked);
+      if (context?.previousPost !== undefined) {
+        queryClient.setQueryData(queryKeys.community.post(_variables.postId, userId), context.previousPost);
+      }
+    },
+
+    onSettled: (_data, _error, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.root(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.post(postId, userId) });
     },
   });
 }
@@ -130,23 +142,30 @@ export function useSaveMutation() {
       isSaved ? unsavePost(userId, postId) : savePost(userId, postId),
 
     onMutate: async ({ postId, isSaved }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.root(userId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.post(postId, userId) });
+      const previousFeed = queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) });
+      const previousPost = queryClient.getQueryData(queryKeys.community.post(postId, userId));
       const newSaved = !isSaved;
-      queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
+      queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) }).forEach(([key]) => {
         updateSaveInCache(key, postId, newSaved);
       });
-      updateSaveInCache(['post_detail', postId, userId], postId, newSaved);
+      updateSaveInCache(queryKeys.community.post(postId, userId), postId, newSaved);
+      return { previousFeed, previousPost };
     },
 
-    onError: (_err, { postId, isSaved }) => {
-      queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
-        updateSaveInCache(key, postId, isSaved);
+    onError: (_err, variables, context) => {
+      context?.previousFeed?.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
       });
-      updateSaveInCache(['post_detail', postId, userId], postId, isSaved);
+      if (context?.previousPost !== undefined) {
+        queryClient.setQueryData(queryKeys.community.post(variables.postId, userId), context.previousPost);
+      }
     },
 
-    onSettled: () => {
-      // Invalidate saved feed so it stays accurate
-      queryClient.invalidateQueries({ queryKey: ['community_feed', userId, 'saved'] });
+    onSettled: (_data, _error, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.root(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.post(postId, userId) });
     },
   });
 }
@@ -178,9 +197,9 @@ export function useAddCommentMutation() {
     mutationFn: ({ postId, content }) => addComment(userId, postId, content),
     onSuccess: (_data, { postId }) => {
       // Partial key match so any userId variation still hits the right query
-      queryClient.invalidateQueries({ queryKey: ['post_detail', postId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.postRoot(postId) });
       // Bump comment_count in feed caches
-      queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
+      queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) }).forEach(([key]) => {
         queryClient.setQueryData(key, (old) =>
           Array.isArray(old)
             ? old.map((p) =>
@@ -200,7 +219,7 @@ export function useAddReplyMutation() {
     mutationFn: ({ postId, parentCommentId, replyingToName, content }) =>
       addReply(userId, postId, parentCommentId, replyingToName, content),
     onSuccess: (_data, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: ['post_detail', postId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.postRoot(postId) });
     },
   });
 }
@@ -212,9 +231,9 @@ export function useDeleteCommentMutation() {
     mutationFn: ({ commentId }) => deleteComment(commentId),
     onSuccess: (_data, { postId }) => {
       if (postId) {
-        queryClient.invalidateQueries({ queryKey: ['post_detail', postId, userId] });
+        queryClient.invalidateQueries({ queryKey: queryKeys.community.post(postId, userId) });
         // Decrement commentCount in all feed caches so PostCards stay in sync
-        queryClient.getQueriesData({ queryKey: ['community_feed', userId] }).forEach(([key]) => {
+        queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) }).forEach(([key]) => {
           queryClient.setQueryData(key, (old) =>
             Array.isArray(old)
               ? old.map((p) =>
@@ -236,6 +255,10 @@ export function useVoteMutation() {
   return useMutation({
     mutationFn: ({ postId, optionId }) => voteOnPoll(userId, postId, optionId),
     onMutate: async ({ postId, optionId, previousOptionId }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.root(userId) });
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.post(postId, userId) });
+      const previousFeed = queryClient.getQueriesData({ queryKey: queryKeys.community.root(userId) });
+      const previousPost = queryClient.getQueryData(queryKeys.community.post(postId, userId));
       const applyVote = (poll) => ({
         ...poll,
         votedOptionId: optionId,
@@ -251,22 +274,29 @@ export function useVoteMutation() {
       });
 
       // Update post detail cache
-      queryClient.setQueryData(['post_detail', postId, userId], (old) => {
+      queryClient.setQueryData(queryKeys.community.post(postId, userId), (old) => {
         if (!old?.poll) return old;
         return { ...old, poll: applyVote(old.poll) };
       });
 
       // Update all feed caches so the PostCard reflects the vote immediately
-      queryClient.setQueriesData({ queryKey: ['community_feed', userId] }, (old) => {
+      queryClient.setQueriesData({ queryKey: queryKeys.community.root(userId) }, (old) => {
         if (!Array.isArray(old)) return old;
         return old.map((p) => {
           if (p.id !== postId || !p.poll) return p;
           return { ...p, poll: applyVote(p.poll) };
         });
       });
+      return { previousFeed, previousPost };
+    },
+    onError: (_error, { postId }, context) => {
+      context?.previousFeed?.forEach(([key, data]) => queryClient.setQueryData(key, data));
+      if (context?.previousPost !== undefined) {
+        queryClient.setQueryData(queryKeys.community.post(postId, userId), context.previousPost);
+      }
     },
     onSettled: (_data, _err, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: ['post_detail', postId, userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.post(postId, userId) });
     },
   });
 }

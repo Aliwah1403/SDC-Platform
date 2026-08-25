@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   fetchDailySummaries,
   fetchHealthLogs,
@@ -21,7 +22,7 @@ function useUserId() {
 export function useHealthDataQuery(startDate) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['dailySummaries', userId, startDate ?? null],
+    queryKey: queryKeys.dailySummaries(userId, startDate),
     queryFn: () => fetchDailySummaries(userId, startDate),
     enabled: !!userId,
   });
@@ -33,7 +34,7 @@ export function useHealthDataQuery(startDate) {
 export function useHealthLogsQuery(date) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['healthLogs', userId, date],
+    queryKey: queryKeys.healthLogs(userId, date),
     queryFn: () => fetchHealthLogs(userId, date),
     enabled: !!userId && !!date,
   });
@@ -46,7 +47,7 @@ export function useHealthLogsQuery(date) {
 export function useTriggersQuery(startDate, endDate) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['triggers', userId, startDate ?? null, endDate ?? null],
+    queryKey: queryKeys.triggers(userId, startDate ?? null, endDate ?? null),
     queryFn: () => fetchTriggersInRange(userId, startDate, endDate),
     enabled: !!userId && !!startDate,
   });
@@ -58,9 +59,9 @@ export function useSubmitLogMutation() {
   return useMutation({
     mutationFn: (logData) => submitHealthLog(userId, logData),
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });
-      queryClient.invalidateQueries({ queryKey: ['healthLogs', userId] });
-      queryClient.invalidateQueries({ queryKey: ['streak', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dailySummariesRoot(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.healthLogsRoot(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.streak(userId) });
     },
   });
 }
@@ -73,7 +74,7 @@ export function useSubmitLogMutation() {
 export function useAddHydrationMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['dailySummaries', userId, null];
+  const queryKey = queryKeys.dailySummaries(userId);
 
   return useMutation({
     mutationFn: (addedMl) => addHydrationQuickly(userId, addedMl),
@@ -101,11 +102,11 @@ export function useAddHydrationMutation() {
     onSuccess: (result) => {
       // Goal-aware silencing (Step 10 decision 3) — best-effort, uses the
       // BASE goal from the metric-goals cache (never the heat-bumped goal).
-      const baseGoalMl = queryClient.getQueryData(['metricGoals', userId])?.hydration ?? DEFAULT_SUGGESTED_ML;
+      const baseGoalMl = queryClient.getQueryData(queryKeys.metricGoals(userId))?.hydration ?? DEFAULT_SUGGESTED_ML;
       maybeSilenceHydrationReminders(result?.hydration, baseGoalMl);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['dailySummaries', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dailySummariesRoot(userId) });
     },
   });
 }

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import { supabase } from '@/utils/auth/supabase';
 import {
   fetchCommunityNotifications,
@@ -59,7 +60,7 @@ export function useCommunityNotificationsQuery() {
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['community_notifications', userId],
+    queryKey: queryKeys.community.notifications(userId),
     queryFn: () => fetchCommunityNotifications(userId),
     enabled: !!userId,
     staleTime: 1000 * 60, // 1 minute
@@ -71,7 +72,7 @@ export function useCommunityNotificationsQuery() {
     if (!userId) return;
 
     const invalidate = () => {
-      queryClient.invalidateQueries({ queryKey: ['community_notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.notifications(userId) });
     };
 
     acquireNotificationChannel(userId, invalidate);
@@ -90,19 +91,19 @@ export function useMarkAllReadMutation() {
   return useMutation({
     mutationFn: () => markAllCommunityNotificationsRead(userId),
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: ['community_notifications', userId] });
-      const prev = queryClient.getQueryData(['community_notifications', userId]);
+      await queryClient.cancelQueries({ queryKey: queryKeys.community.notifications(userId) });
+      const prev = queryClient.getQueryData(queryKeys.community.notifications(userId));
       // Optimistically mark all as read
-      queryClient.setQueryData(['community_notifications', userId], (old) =>
+      queryClient.setQueryData(queryKeys.community.notifications(userId), (old) =>
         Array.isArray(old) ? old.map((n) => ({ ...n, read: true })) : old,
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      queryClient.setQueryData(['community_notifications', userId], ctx.prev);
+      queryClient.setQueryData(queryKeys.community.notifications(userId), ctx.prev);
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['community_notifications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.community.notifications(userId) });
     },
   });
 }

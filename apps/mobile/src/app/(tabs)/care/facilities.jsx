@@ -51,6 +51,7 @@ import {
 import { saveFacility, unsaveFacility } from "@/services/supabase/facilities";
 import { useAuthStore } from "@/utils/auth/store";
 import { useQueryClient } from "@tanstack/react-query";
+import { queryKeys } from "@/hooks/queryKeys";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
 import { useTheme } from "@/hooks/useTheme";
 
@@ -683,11 +684,11 @@ export default function FacilitiesScreen() {
       if (!userId) return;
       if (alreadySaved) {
         unsaveFacility(userId, facility.id)
-          .then(() => queryClient.invalidateQueries({ queryKey: ['savedFacilities', userId] }))
+          .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.savedFacilities(userId) }))
           .catch(() => toggleSavedFacility(facility));
       } else {
         saveFacility(userId, facility)
-          .then(() => queryClient.invalidateQueries({ queryKey: ['savedFacilities', userId] }))
+          .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.savedFacilities(userId) }))
           .catch(() => toggleSavedFacility(facility));
       }
     },

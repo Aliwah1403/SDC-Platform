@@ -7,7 +7,11 @@
     "postinstall": "patch-package",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "dev:ip": "node scripts/set-local-ip.mjs"
+    "dev:ip": "node scripts/set-local-ip.mjs",
+    "build:dev:ios": "eas build --profile development --platform ios",
+    "build:staging:ios": "eas build --profile staging --platform ios",
+    "submit:staging:ios": "eas submit --profile staging --platform ios",
+    "build-and-submit:staging:ios": "eas build --profile staging --platform ios --auto-submit"
   },
   "dependencies": {
     "@expo-google-fonts/dev": "0.4.7",

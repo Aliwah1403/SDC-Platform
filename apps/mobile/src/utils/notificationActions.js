@@ -12,6 +12,7 @@ import { formatHydration, glassesFromMl } from '@/utils/hydrationUnits';
 import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
 import { posthog } from '@/utils/analytics';
 import { HYDRATION_CATEGORY, maybeSilenceHydrationReminders } from '@/utils/hydrationReminders';
+import { queryKeys } from '@/hooks/queryKeys';
 
 export { HYDRATION_CATEGORY };
 export const MEDICATION_CATEGORY = 'medication';
@@ -60,7 +61,7 @@ async function getDefaultContainer(queryClient, userId) {
   if (!queryClient || !userId) return fallback;
   try {
     const containers = await queryClient.ensureQueryData({
-      queryKey: ['hydrationContainers', userId],
+      queryKey: queryKeys.hydrationContainers(userId),
       queryFn: () => fetchHydrationContainers(userId),
     });
     const list = containers?.length ? containers : FALLBACK_CONTAINERS;
@@ -75,7 +76,7 @@ async function getBaseGoalMl(queryClient, userId) {
   if (!queryClient || !userId) return DEFAULT_SUGGESTED_ML;
   try {
     const goals = await queryClient.ensureQueryData({
-      queryKey: ['metricGoals', userId],
+      queryKey: queryKeys.metricGoals(userId),
       queryFn: () => fetchMetricGoals(userId),
     });
     return goals?.hydration ?? DEFAULT_SUGGESTED_ML;
@@ -148,7 +149,7 @@ async function handleHydrationLogAction({ userId, queryClient }) {
   const container = await getDefaultContainer(queryClient, userId);
   const baseGoalMl = await getBaseGoalMl(queryClient, userId);
   const result = await addHydrationQuickly(userId, container.ml);
-  queryClient?.invalidateQueries({ queryKey: ['dailySummaries', userId] });
+  queryClient?.invalidateQueries({ queryKey: queryKeys.dailySummaries(userId) });
   posthog.capture('hydration_logged', {
     amount_glasses: Math.round(glassesFromMl(container.ml)),
     amount_ml: container.ml,
@@ -167,7 +168,7 @@ async function handleMedicationTakenAction({ userId, medicationId, scheduledTime
   const alreadyTaken = await isMedicationTakenToday(medicationId, scheduledTime, todayStr);
   if (alreadyTaken) return;
   await addMedicationLog(userId, medicationId, scheduledTime);
-  queryClient?.invalidateQueries({ queryKey: ['medications', userId] });
+  queryClient?.invalidateQueries({ queryKey: queryKeys.medications(userId) });
   posthog.capture('medication_marked_taken', { source: 'notification_action' });
 }
 

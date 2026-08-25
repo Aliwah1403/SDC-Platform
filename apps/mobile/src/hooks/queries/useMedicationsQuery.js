@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Alert } from 'react-native';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   fetchMedications,
   fetchMedicationHistory,
@@ -22,7 +23,7 @@ function useUserId() {
 export function useMedicationsQuery() {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['medications', userId],
+    queryKey: queryKeys.medications(userId),
     queryFn: () => fetchMedications(userId),
     enabled: !!userId,
   });
@@ -34,7 +35,7 @@ export function useAddMedicationMutation() {
   return useMutation({
     mutationFn: (med) => addMedication(userId, med),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['medications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medications(userId) });
     },
   });
 }
@@ -45,7 +46,7 @@ export function useUpdateMedicationMutation() {
   return useMutation({
     mutationFn: ({ id, updates }) => updateMedication(userId, id, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['medications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medications(userId) });
     },
   });
 }
@@ -56,7 +57,7 @@ export function useDeleteMedicationMutation() {
   return useMutation({
     mutationFn: (id) => deleteMedication(userId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['medications', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medications(userId) });
     },
   });
 }
@@ -67,7 +68,7 @@ export function useDeleteMedicationMutation() {
 export function useToggleMedicationTakenMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['medications', userId];
+  const queryKey = queryKeys.medications(userId);
 
   return useMutation({
     mutationFn: (medId) => toggleMedicationTaken(userId, medId),
@@ -88,7 +89,7 @@ export function useToggleMedicationTakenMutation() {
     },
     onSettled: (_data, _err, medId) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medicationHistory(userId, medId) });
     },
   });
 }
@@ -99,7 +100,7 @@ export function useToggleMedicationTakenMutation() {
 export function useAddMedicationLogMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['medications', userId];
+  const queryKey = queryKeys.medications(userId);
 
   return useMutation({
     mutationFn: ({ medId, scheduledTime = null }) =>
@@ -130,7 +131,7 @@ export function useAddMedicationLogMutation() {
     },
     onSettled: (_data, _err, { medId }) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medicationHistory(userId, medId) });
     },
   });
 }
@@ -138,7 +139,7 @@ export function useAddMedicationLogMutation() {
 export function useDeleteLatestMedicationLogMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['medications', userId];
+  const queryKey = queryKeys.medications(userId);
 
   return useMutation({
     mutationFn: (medId) => deleteLatestMedicationLog(userId, medId),
@@ -159,7 +160,7 @@ export function useDeleteLatestMedicationLogMutation() {
     },
     onSettled: (_data, _err, medId) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medicationHistory(userId, medId) });
     },
   });
 }
@@ -167,7 +168,7 @@ export function useDeleteLatestMedicationLogMutation() {
 export function useDeleteMedicationLogByIdMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['medications', userId];
+  const queryKey = queryKeys.medications(userId);
 
   return useMutation({
     mutationFn: ({ logId }) => deleteMedicationLogById(logId),
@@ -188,7 +189,7 @@ export function useDeleteMedicationLogByIdMutation() {
     },
     onSettled: (_data, _err, { medId }) => {
       queryClient.invalidateQueries({ queryKey });
-      queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, medId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.medicationHistory(userId, medId) });
     },
   });
 }
@@ -196,7 +197,7 @@ export function useDeleteMedicationLogByIdMutation() {
 export function useMedicationHistoryQuery(medicationId) {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['medicationHistory', userId, medicationId],
+    queryKey: queryKeys.medicationHistory(userId, medicationId),
     queryFn: () => fetchMedicationHistory(userId, medicationId),
     enabled: !!userId && !!medicationId,
     staleTime: 5 * 60 * 1000,
@@ -205,7 +206,7 @@ export function useMedicationHistoryQuery(medicationId) {
 
 export function useDrugInfoQuery(drugName) {
   return useQuery({
-    queryKey: ['drugInfo', drugName?.toLowerCase()],
+    queryKey: queryKeys.drugInfo(drugName),
     queryFn: () => fetchDrugInfo(drugName),
     enabled: !!drugName,
     staleTime: 24 * 60 * 60 * 1000,
@@ -216,7 +217,7 @@ export function useDrugInfoQuery(drugName) {
 export function useMarkGroupTakenMutation() {
   const userId = useUserId();
   const queryClient = useQueryClient();
-  const queryKey = ['medications', userId];
+  const queryKey = queryKeys.medications(userId);
 
   return useMutation({
     mutationFn: (doses) => markGroupTaken(userId, doses),
@@ -251,7 +252,7 @@ export function useMarkGroupTakenMutation() {
     onSettled: (_data, _err, doses) => {
       queryClient.invalidateQueries({ queryKey });
       [...new Set((doses ?? []).map((dose) => dose.medicationId))].forEach((id) =>
-        queryClient.invalidateQueries({ queryKey: ['medicationHistory', userId, id] })
+        queryClient.invalidateQueries({ queryKey: queryKeys.medicationHistory(userId, id) })
       );
     },
   });

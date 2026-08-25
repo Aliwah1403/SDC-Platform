@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/utils/auth/store';
+import { queryKeys } from '@/hooks/queryKeys';
 import {
   fetchProfile,
   updateProfile,
@@ -13,7 +14,7 @@ function useUserId() {
 export function useProfileQuery() {
   const userId = useUserId();
   return useQuery({
-    queryKey: ['profile', userId],
+    queryKey: queryKeys.profile(userId),
     queryFn: () => fetchProfile(userId),
     enabled: !!userId,
   });
@@ -25,7 +26,7 @@ export function useUpdateProfileMutation() {
   return useMutation({
     mutationFn: (fields) => updateProfile(userId, fields),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
     },
   });
 }
@@ -36,7 +37,7 @@ export function useCompleteOnboardingMutation() {
   return useMutation({
     mutationFn: (onboardingData) => completeOnboarding(userId, onboardingData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.profile(userId) });
     },
   });
 }

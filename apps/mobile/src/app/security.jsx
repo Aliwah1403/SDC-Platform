@@ -179,6 +179,7 @@ export default function SecurityScreen() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [linking, setLinking] = useState(null); // 'google' | 'apple' | null
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   const provider = getProvider(user);
   const emailUser = isEmailUser(user);
@@ -311,10 +312,40 @@ export default function SecurityScreen() {
     );
   };
 
+  const deleteAccount = async () => {
+    setDeletingAccount(true);
+    try {
+      const { error } = await supabase.functions.invoke("delete-account", {
+        method: "POST",
+      });
+      if (error) throw error;
+
+      // The server invalidates all refresh sessions as part of the Auth-user
+      // deletion. Clear this device's persisted session immediately as well.
+      await supabase.auth.signOut({ scope: "local" });
+      Alert.alert(
+        "Account deleted",
+        "Your account and associated health data have been permanently deleted.",
+        [{ text: "OK", onPress: () => router.replace("/") }],
+      );
+    } catch (error) {
+      console.error("[Security] Account deletion failed:", error);
+      Alert.alert(
+        "Could not delete account",
+        "We couldn't delete your account right now. Please try again.",
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  };
+
   const handleDeleteAccount = () => {
+    if (deletingAccount) return;
     Alert.alert(
       "Delete account?",
       "This will permanently delete your Hemo account and all health data. This cannot be undone.",
+      // TODO: Re-enable once in-app account export is available.
+      // "Before deleting your account, export a copy of your health data.",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -323,29 +354,13 @@ export default function SecurityScreen() {
           onPress: () => {
             Alert.alert(
               "Are you absolutely sure?",
-              `Type DELETE to confirm you want to permanently remove ${user?.email ?? "your account"}.`,
+              `This will permanently remove ${user?.email ?? "your account"} and all associated health data. This cannot be undone.`,
               [
                 { text: "Cancel", style: "cancel" },
                 {
                   text: "Delete my account",
                   style: "destructive",
-                  onPress: () => {
-                    // Account deletion requires a server-side call (Edge Function).
-                    // For now: notify user and sign out.
-                    Alert.alert(
-                      "Request submitted",
-                      "Your account deletion request has been submitted. You'll receive a confirmation email within 24 hours.",
-                      [
-                        {
-                          text: "OK",
-                          onPress: async () => {
-                            await signOutAll();
-                            router.replace("/");
-                          },
-                        },
-                      ],
-                    );
-                  },
+                  onPress: deleteAccount,
                 },
               ],
             );
@@ -388,9 +403,7 @@ export default function SecurityScreen() {
           <ChevronLeft size={22} color={t.text} />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text
-            style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}
-          >
+          <Text style={{ fontFamily: fonts.bold, fontSize: 18, color: t.text }}>
             Password & Security
           </Text>
         </View>
@@ -570,192 +583,194 @@ export default function SecurityScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={closePasswordSheet}
         />
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <View
-          style={{
-            backgroundColor: t.surface,
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            paddingBottom: insets.bottom + 12,
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          {/* Sheet header */}
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              paddingHorizontal: 20,
-              paddingTop: 16,
-              paddingBottom: 12,
-              borderBottomWidth: 1,
-              borderBottomColor: t.border,
+              backgroundColor: t.surface,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingBottom: insets.bottom + 12,
             }}
           >
-            <Pressable onPress={closePasswordSheet} hitSlop={12}>
-              <Text
-                style={{
-                  fontFamily: fonts.regular,
-                  fontSize: 16,
-                  color: t.textSecondary,
-                }}
-              >
-                Cancel
-              </Text>
-            </Pressable>
-            <Text
+            {/* Sheet header */}
+            <View
               style={{
-                fontFamily: fonts.semibold,
-                fontSize: 16,
-                color: t.text,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                paddingTop: 16,
+                paddingBottom: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: t.border,
               }}
             >
-              Change Password
-            </Text>
-            <Pressable
-              onPress={handleChangePassword}
-              disabled={saving}
-              hitSlop={12}
-            >
-              {saving ? (
-                <ActivityIndicator size="small" color="#A9334D" />
-              ) : (
+              <Pressable onPress={closePasswordSheet} hitSlop={12}>
                 <Text
                   style={{
-                    fontFamily: fonts.semibold,
+                    fontFamily: fonts.regular,
                     fontSize: 16,
-                    color: "#A9334D",
+                    color: t.textSecondary,
                   }}
                 >
-                  Save
+                  Cancel
                 </Text>
-              )}
-            </Pressable>
-          </View>
-
-          {/* Fields */}
-          <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
-            {/* New password */}
-            <View>
+              </Pressable>
               <Text
                 style={{
-                  fontFamily: fonts.medium,
-                  fontSize: 13,
-                  color: t.textSecondary,
-                  marginBottom: 6,
+                  fontFamily: fonts.semibold,
+                  fontSize: 16,
+                  color: t.text,
                 }}
               >
-                New Password
+                Change Password
               </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor: t.border,
-                  borderRadius: 12,
-                  backgroundColor: t.background,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                }}
+              <Pressable
+                onPress={handleChangePassword}
+                disabled={saving}
+                hitSlop={12}
               >
-                <TextInput
-                  value={newPassword}
-                  onChangeText={setNewPassword}
-                  placeholder="At least 8 characters"
-                  placeholderTextColor={t.textTertiary}
-                  secureTextEntry={!showNew}
-                  autoFocus
-                  style={{
-                    flex: 1,
-                    fontFamily: fonts.regular,
-                    fontSize: 16,
-                    color: t.text,
-                    padding: 0,
-                  }}
-                />
-                <Pressable onPress={() => setShowNew((v) => !v)} hitSlop={8}>
-                  {showNew ? (
-                    <EyeOff size={18} color={t.textSecondary} />
-                  ) : (
-                    <Eye size={18} color={t.textSecondary} />
-                  )}
-                </Pressable>
-              </View>
-            </View>
-
-            {/* Confirm password */}
-            <View style={{ paddingBottom: 8 }}>
-              <Text
-                style={{
-                  fontFamily: fonts.medium,
-                  fontSize: 13,
-                  color: t.textSecondary,
-                  marginBottom: 6,
-                }}
-              >
-                Confirm Password
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderWidth: 1,
-                  borderColor:
-                    confirmPassword.length > 0 &&
-                    confirmPassword !== newPassword
-                      ? "#DC2626"
-                      : t.border,
-                  borderRadius: 12,
-                  backgroundColor: t.background,
-                  paddingHorizontal: 14,
-                  paddingVertical: 12,
-                }}
-              >
-                <TextInput
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  placeholder="Re-enter new password"
-                  placeholderTextColor={t.textTertiary}
-                  secureTextEntry={!showConfirm}
-                  returnKeyType="done"
-                  onSubmitEditing={handleChangePassword}
-                  style={{
-                    flex: 1,
-                    fontFamily: fonts.regular,
-                    fontSize: 16,
-                    color: t.text,
-                    padding: 0,
-                  }}
-                />
-                <Pressable
-                  onPress={() => setShowConfirm((v) => !v)}
-                  hitSlop={8}
-                >
-                  {showConfirm ? (
-                    <EyeOff size={18} color={t.textSecondary} />
-                  ) : (
-                    <Eye size={18} color={t.textSecondary} />
-                  )}
-                </Pressable>
-              </View>
-              {confirmPassword.length > 0 &&
-                confirmPassword !== newPassword && (
+                {saving ? (
+                  <ActivityIndicator size="small" color="#A9334D" />
+                ) : (
                   <Text
                     style={{
-                      fontFamily: fonts.regular,
-                      fontSize: 12,
-                      color: "#DC2626",
-                      marginTop: 4,
-                      marginLeft: 2,
+                      fontFamily: fonts.semibold,
+                      fontSize: 16,
+                      color: "#A9334D",
                     }}
                   >
-                    Passwords don't match
+                    Save
                   </Text>
                 )}
+              </Pressable>
+            </View>
+
+            {/* Fields */}
+            <View style={{ paddingHorizontal: 20, paddingTop: 16, gap: 12 }}>
+              {/* New password */}
+              <View>
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 13,
+                    color: t.textSecondary,
+                    marginBottom: 6,
+                  }}
+                >
+                  New Password
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor: t.border,
+                    borderRadius: 12,
+                    backgroundColor: t.background,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <TextInput
+                    value={newPassword}
+                    onChangeText={setNewPassword}
+                    placeholder="At least 8 characters"
+                    placeholderTextColor={t.textTertiary}
+                    secureTextEntry={!showNew}
+                    autoFocus
+                    style={{
+                      flex: 1,
+                      fontFamily: fonts.regular,
+                      fontSize: 16,
+                      color: t.text,
+                      padding: 0,
+                    }}
+                  />
+                  <Pressable onPress={() => setShowNew((v) => !v)} hitSlop={8}>
+                    {showNew ? (
+                      <EyeOff size={18} color={t.textSecondary} />
+                    ) : (
+                      <Eye size={18} color={t.textSecondary} />
+                    )}
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Confirm password */}
+              <View style={{ paddingBottom: 8 }}>
+                <Text
+                  style={{
+                    fontFamily: fonts.medium,
+                    fontSize: 13,
+                    color: t.textSecondary,
+                    marginBottom: 6,
+                  }}
+                >
+                  Confirm Password
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderWidth: 1,
+                    borderColor:
+                      confirmPassword.length > 0 &&
+                      confirmPassword !== newPassword
+                        ? "#DC2626"
+                        : t.border,
+                    borderRadius: 12,
+                    backgroundColor: t.background,
+                    paddingHorizontal: 14,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <TextInput
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    placeholder="Re-enter new password"
+                    placeholderTextColor={t.textTertiary}
+                    secureTextEntry={!showConfirm}
+                    returnKeyType="done"
+                    onSubmitEditing={handleChangePassword}
+                    style={{
+                      flex: 1,
+                      fontFamily: fonts.regular,
+                      fontSize: 16,
+                      color: t.text,
+                      padding: 0,
+                    }}
+                  />
+                  <Pressable
+                    onPress={() => setShowConfirm((v) => !v)}
+                    hitSlop={8}
+                  >
+                    {showConfirm ? (
+                      <EyeOff size={18} color={t.textSecondary} />
+                    ) : (
+                      <Eye size={18} color={t.textSecondary} />
+                    )}
+                  </Pressable>
+                </View>
+                {confirmPassword.length > 0 &&
+                  confirmPassword !== newPassword && (
+                    <Text
+                      style={{
+                        fontFamily: fonts.regular,
+                        fontSize: 12,
+                        color: "#DC2626",
+                        marginTop: 4,
+                        marginLeft: 2,
+                      }}
+                    >
+                      Passwords don't match
+                    </Text>
+                  )}
+              </View>
             </View>
           </View>
-        </View>
         </KeyboardAvoidingView>
       </Modal>
     </View>
