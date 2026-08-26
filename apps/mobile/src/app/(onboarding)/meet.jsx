@@ -3,12 +3,15 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { MotiView } from 'moti';
 import { useAppStore } from '@/store/appStore';
+import { useTheme } from '@/hooks/useTheme';
 
 const AUTO_ADVANCE_MS = 2800;
 
 export default function Meet() {
   const { onboardingData } = useAppStore();
   const name = onboardingData.nickname || 'there';
+  const t = useTheme();
+  const styles = getStyles(t);
 
   useEffect(() => {
     const t = setTimeout(() => router.replace('/(onboarding)/step-2'), AUTO_ADVANCE_MS);
@@ -48,10 +51,10 @@ export default function Meet() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F4F0',
+    backgroundColor: t.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -63,14 +66,14 @@ const styles = StyleSheet.create({
   intro: {
     fontFamily: 'Geist_400Regular',
     fontSize: 22,
-    color: 'rgba(9,51,44,0.45)',
+    color: t.textSecondary,
     letterSpacing: -0.3,
     marginBottom: 2,
   },
   name: {
     fontFamily: 'Geist_700Bold',
     fontSize: 56,
-    color: '#1A1A1A',
+    color: t.text,
     letterSpacing: -2.5,
     lineHeight: 64,
     marginBottom: 18,
@@ -79,6 +82,6 @@ const styles = StyleSheet.create({
     height: 3,
     width: 52,
     borderRadius: 2,
-    backgroundColor: '#A9334D',
+    backgroundColor: t.accent,
   },
 });

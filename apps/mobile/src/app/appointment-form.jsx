@@ -524,7 +524,7 @@ export default function AppointmentForm() {
           {facilitySuggestions.length > 0 && (
             <FlatList
               data={facilitySuggestions}
-              keyExtractor={(f) => f.placeId ?? f.name}
+              keyExtractor={(f) => f.id ?? f.name}
               scrollEnabled={facilitySuggestions.length > 4}
               style={{
                 position: "absolute",

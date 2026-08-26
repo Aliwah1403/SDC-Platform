@@ -378,6 +378,11 @@ const BetaPage = () => {
                     <ArrowRight className="size-4" />
                   </Button>
 
+                  <p className="text-center text-xs leading-5 text-muted-foreground">
+                    If the beta tester is under 18, a parent or legal guardian
+                    must consent to their participation.
+                  </p>
+
                   <AnimatePresence>
                     {status === "error" && message && (
                       <motion.p

@@ -47,6 +47,10 @@ const NATIVE_ALIASES = {
     __dirname,
     './polyfills/native/texinput.native.jsx'
   ),
+  './Libraries/Components/ScrollView/ScrollView': path.resolve(
+    __dirname,
+    './polyfills/native/scrollview.native.jsx'
+  ),
 };
 const SHARED_ALIASES = {
   'expo-image': path.resolve(__dirname, './polyfills/shared/expo-image.tsx'),

@@ -44,6 +44,7 @@ import MedicationIcon, { MED_TYPE_IMAGES } from "@/components/MedicationIcon";
 import { useTheme } from "@/hooks/useTheme";
 import { getGradientColors } from "@/utils/homeHelpers";
 import { cancelAfterRemindersForTime } from "@/utils/medicationNotifications";
+import { resolveMedicationDoseLogs } from "@/utils/medicationDoseSlots";
 
 const C_BRAND = {
   accent: "#A9334D",
@@ -113,6 +114,7 @@ function buildGroups(meds) {
         : m.time
           ? [m.time]
           : ["8:00 AM"];
+    const doseLogs = resolveMedicationDoseLogs(m.logs, allTimes);
     for (let i = 0; i < allTimes.length; i++) {
       const t = allTimes[i];
       const key = getGroupKey(t);
@@ -121,7 +123,8 @@ function buildGroups(meds) {
         _displayTime: t,
         _doseIndex: i,
         _totalDoses: allTimes.length,
-        taken: (m.logs?.length ?? 0) > i,
+        _doseLog: doseLogs[i],
+        taken: Boolean(doseLogs[i]),
       });
     }
   }
@@ -718,9 +721,12 @@ export default function MedicationsScreen() {
         ) : (
           groups.map((group, gi) => {
             const allTaken = group.meds.every((m) => m.taken);
-            const untakenIds = group.meds
+            const untakenDoses = group.meds
               .filter((m) => !m.taken)
-              .map((m) => m.id);
+              .map((m) => ({
+                medicationId: m.id,
+                scheduledTime: m._displayTime ?? m.time ?? null,
+              }));
             return (
               <View
                 key={group.key}
@@ -737,7 +743,7 @@ export default function MedicationsScreen() {
                   group={group}
                   allTaken={allTaken}
                   onLogAll={() => {
-                    markGroupTaken.mutate(untakenIds);
+                    markGroupTaken.mutate(untakenDoses);
                     group.meds
                       .filter((m) => !m.taken)
                       .forEach((m) =>
@@ -754,14 +760,17 @@ export default function MedicationsScreen() {
                       onToggle={() => {
                         if ((med._totalDoses ?? 1) > 1) {
                           if (med.taken) {
-                            const targetLog = (med.logs ?? [])[med._doseIndex ?? 0];
+                            const targetLog = med._doseLog;
                             if (targetLog) {
                               deleteLogById.mutate({ medId: med.id, logId: targetLog.id });
                             } else {
                               deleteLatestLog.mutate(med.id);
                             }
                           } else {
-                            addMedLog.mutate(med.id);
+                            addMedLog.mutate({
+                              medId: med.id,
+                              scheduledTime: med._displayTime ?? med.time ?? null,
+                            });
                             cancelAfterRemindersForTime(med.id, med._displayTime).catch(console.error);
                           }
                         } else {

@@ -46,11 +46,11 @@ const FAQ_SECTIONS = [
       {
         id: "faq-4",
         title: "Can I repair a missed streak day?",
-        body: "Yes. If you miss a day, Hemo gives you streak repairs you can use to fill in the gap. Repairs are earned by completing milestones.",
+        body: "Yes. Repairs automatically protect your streak when you miss logging days. Each missed day consumes one repair, and your streak ends only if the missed days exceed your available repairs.",
         steps: [
-          'Tap "Repair Streak" from the Home screen when a missed day is detected.',
-          "Select the day you want to fill in.",
-          "Confirm to use one repair — your streak will be restored.",
+          "Come back to Hemo after missing a day.",
+          "If you have enough repairs, Hemo applies them for you.",
+          "You’ll see a short note letting you know your streak is safe.",
         ],
       },
     ],
@@ -234,7 +234,7 @@ const TIPS_SECTIONS = [
       {
         id: "tip-9",
         title: "Earn Streak Repairs by Hitting Milestones",
-        body: "Completing health milestones (like a 7-day streak) earns you repairs. Save them for emergencies so a missed day doesn't reset all your progress.",
+        body: "Completing health milestones earns repairs. Save them for emergencies: one repair protects one missed logging day.",
         steps: [],
       },
       {

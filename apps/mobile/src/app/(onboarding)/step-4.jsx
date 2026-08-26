@@ -7,6 +7,7 @@ import { Picker } from '@react-native-picker/picker';
 import { PenLine, Weight } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
+import { useTheme } from '@/hooks/useTheme';
 
 const KG_MIN = 20;
 const KG_MAX = 250;
@@ -23,7 +24,7 @@ const lbItems = Array.from({ length: LB_MAX - LB_MIN + 1 }, (_, i) => {
   return { label: `${val} lb`, value: val };
 });
 
-function SegmentedControl({ options, selected, onSelect }) {
+function SegmentedControl({ options, selected, onSelect, styles }) {
   return (
     <View style={styles.segmented}>
       {options.map((opt) => (
@@ -48,6 +49,8 @@ export default function Step4() {
   const [editing, setEditing] = useState(false);
   const [kgValue, setKgValue] = useState(70);
   const [lbValue, setLbValue] = useState(154);
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const displayValue = unit === 'Metric' ? `${kgValue} kg` : `${lbValue} lb`;
 
@@ -60,7 +63,14 @@ export default function Step4() {
     setUnit(newUnit);
   };
 
-  const handleSkip = () => { posthog?.capture('onboarding_step_skipped', { step: 4 }); setOnboardingStep(4); router.push('/(onboarding)/step-5'); };
+  const handleSkip = () => {
+    posthog?.capture('onboarding_step_skipped', {
+      step: 4,
+      step_name: 'weight',
+    });
+    setOnboardingStep(4);
+    router.push('/(onboarding)/step-5');
+  };
 
   const handleContinue = () => {
     const weightInKg =
@@ -93,6 +103,7 @@ export default function Step4() {
           options={['Metric', 'Imperial']}
           selected={unit}
           onSelect={handleUnitSwitch}
+          styles={styles}
         />
 
         <Pressable style={styles.valueCard} onPress={() => setEditing((e) => !e)}>
@@ -100,7 +111,7 @@ export default function Step4() {
           {!editing && (
             <View style={styles.tapHintRow}>
               <Text style={styles.tapHintText}>Tap to change</Text>
-              <PenLine size={14} color="rgba(9,51,44,0.35)" strokeWidth={1.8} />
+              <PenLine size={14} color={t.textSecondary} strokeWidth={1.8} />
             </View>
           )}
         </Pressable>
@@ -118,7 +129,7 @@ export default function Step4() {
                 unit === 'Metric' ? setKgValue(val) : setLbValue(val)
               }
               style={{ height: 216 }}
-              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: '#1A1A1A' }}
+              itemStyle={{ fontFamily: 'Geist_500Medium', fontSize: 20, color: t.text }}
             >
               {(unit === 'Metric' ? kgItems : lbItems).map((item) => (
                 <Picker.Item key={item.value} label={item.label} value={item.value} />
@@ -135,13 +146,13 @@ export default function Step4() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   content: {
     gap: 12,
   },
   segmented: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(9,51,44,0.07)',
+    backgroundColor: t.isDark ? 'rgba(248,233,231,0.10)' : 'rgba(9,51,44,0.07)',
     borderRadius: 12,
     padding: 3,
   },
@@ -152,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   segmentBtnActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.surfaceElevated,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -162,25 +173,25 @@ const styles = StyleSheet.create({
   segmentText: {
     fontFamily: 'Geist_500Medium',
     fontSize: 15,
-    color: 'rgba(9,51,44,0.5)',
+    color: t.textSecondary,
   },
   segmentTextActive: {
-    color: '#1A1A1A',
+    color: t.text,
     fontFamily: 'Geist_600SemiBold',
   },
   valueCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.surface,
     borderRadius: 20,
     paddingVertical: 36,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
+    borderColor: t.border,
     gap: 10,
   },
   valueText: {
     fontFamily: 'Geist_800ExtraBold',
     fontSize: 60,
-    color: '#1A1A1A',
+    color: t.text,
     letterSpacing: -2,
   },
   tapHintRow: {
@@ -191,19 +202,19 @@ const styles = StyleSheet.create({
   tapHintText: {
     fontFamily: 'Geist_400Regular',
     fontSize: 14,
-    color: 'rgba(9,51,44,0.35)',
+    color: t.textSecondary,
   },
   pickerWrapper: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.08)',
+    borderColor: t.border,
     overflow: 'hidden',
   },
   privacyNote: {
     fontFamily: 'Geist_400Regular',
     fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
+    color: t.textSecondary,
     textAlign: 'center',
     lineHeight: 17,
     marginTop: 4,

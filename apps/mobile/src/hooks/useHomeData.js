@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useHealthDataQuery } from "@/hooks/queries/useHealthDataQuery";
-import { useStreakQuery, useMissedDay, useStreakLost } from "@/hooks/queries/useStreakQuery";
+import {
+  useStreakQuery,
+  useMissedDay,
+  useStreakLost,
+  useStreakRepairMutation,
+} from "@/hooks/queries/useStreakQuery";
 import { useAppStore } from "@/store/appStore";
 import { toLocalDateStr } from "@/utils/dateUtils";
 import { useWeatherData } from "@/hooks/useWeatherData";
@@ -14,18 +19,58 @@ export function useHomeData() {
   const { data: streak } = useStreakQuery();
   const missedDay = useMissedDay();
   const streakLost = useStreakLost();
+  const repairMutation = useStreakRepairMutation();
   const { healthKitData } = useAppStore();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [repairVisible, setRepairVisible] = useState(false);
+  const [repairReceipt, setRepairReceipt] = useState(null);
   const [lostStreakVisible, setLostStreakVisible] = useState(false);
+  const autoRepairKeyRef = useRef(null);
 
-  // Show repair sheet only when gap is 2-3 days and there was an active streak.
+  // Automatically protect a streak when the missed days can be covered by the
+  // user's repair balance. The bottom sheet is a receipt, not a manual gate.
   useEffect(() => {
-    if (missedDay) {
-      setTimeout(() => setRepairVisible(true), 500);
+    if (!missedDay || repairMutation.isPending) return;
+
+    const repairKey = `${missedDay.dateString}:${missedDay.repairsRequired}`;
+    if (autoRepairKeyRef.current === repairKey) return;
+
+    autoRepairKeyRef.current = repairKey;
+    const previousStreak = streak?.previousStreak ?? streak?.currentStreak ?? 0;
+    const repairsBefore = streak?.repairsAvailable ?? 0;
+
+    repairMutation.mutate(undefined, {
+      onSuccess: (data) => {
+        const repairsUsed = data?.repairsUsed ?? missedDay.repairsRequired;
+        setRepairReceipt({
+          restoredStreak: data?.restoredStreak ?? previousStreak,
+          repairsUsed,
+          repairsBefore,
+          repairsRemaining: data?.repairsRemaining ?? Math.max(0, repairsBefore - repairsUsed),
+          missedDays: missedDay.missedDays,
+        });
+        setTimeout(() => setRepairVisible(true), 500);
+      },
+      onError: () => {
+        autoRepairKeyRef.current = null;
+      },
+    });
+  }, [
+    !!missedDay,
+    missedDay?.dateString,
+    missedDay?.repairsRequired,
+    repairMutation.isPending,
+    streak?.previousStreak,
+    streak?.currentStreak,
+    streak?.repairsAvailable,
+  ]);
+
+  useEffect(() => {
+    if (!repairVisible) {
+      setRepairReceipt(null);
     }
-  }, [!!missedDay]);
+  }, [repairVisible]);
 
   // Show lost streak modal when gap > 3 days and user had an active streak.
   useEffect(() => {
@@ -59,6 +104,7 @@ export function useHomeData() {
     hasLoggedData,
     repairVisible,
     setRepairVisible,
+    repairReceipt,
     missedDay,
     lostStreakVisible,
     setLostStreakVisible,

@@ -33,7 +33,66 @@ import { useHydrationStore } from "@/store/hydrationStore";
 import { useHydrationContainersQuery, FALLBACK_CONTAINERS, containerIconKey } from "@/hooks/queries/useHydrationContainersQuery";
 import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl, getActivityBumpMl, combineBumpMl, describeBumpReason } from "@/utils/hydrationGoal";
 import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
-import { ChevronLeft, X, Check } from "lucide-react-native";
+import {
+  Accessibility,
+  Activity,
+  AlignVerticalJustifyCenter,
+  Armchair,
+  ArrowDownToLine,
+  BatteryLow,
+  BatteryWarning,
+  BetweenHorizontalStart,
+  BicepsFlexed,
+  BedDouble,
+  Bone,
+  Brain,
+  BrainCircuit,
+  BriefcaseBusiness,
+  CalendarDays,
+  ChevronLeft,
+  Check,
+  CircleAlert,
+  CircleCheck,
+  CircleDashed,
+  CircleDot,
+  CloudLightning,
+  CloudRain,
+  Cloudy,
+  CornerDownRight,
+  Droplet,
+  DropletOff,
+  Droplets,
+  Eye,
+  Footprints,
+  Focus,
+  HandHeart,
+  Hand,
+  HeartPulse,
+  House,
+  Leaf,
+  MessageCircle,
+  MoveHorizontal,
+  Palette,
+  PersonStanding,
+  Pill,
+  Plane,
+  RotateCcw,
+  ScanFace,
+  Smile,
+  Snowflake,
+  Sun,
+  Thermometer,
+  ThermometerSnowflake,
+  ThermometerSun,
+  Users,
+  Utensils,
+  Wallet,
+  Watch,
+  Wind,
+  Waves,
+  X,
+  Zap,
+} from "lucide-react-native";
 import { CheckboxChip } from "@/components/LogSymptoms/CheckboxChip";
 import { MoodAmbientBackground } from "@/components/LogSymptoms/MoodAmbientBackground";
 import { PainOrb } from "@/components/LogSymptoms/PainOrb";
@@ -108,36 +167,86 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const TOTAL_STEPS = 8; // 0-7, with 7 = summary
 
-const BODY_LOCATIONS = [
-  "Head", "Neck", "Chest", "Back", "Arms",
-  "Hands", "Abdomen", "Legs", "Feet", "Joints", "Muscles",
+const BODY_LOCATION_GROUPS = [
+  { label: "Head & neck", options: [{ label: "Head", icon: Brain }, { label: "Face", icon: ScanFace }, { label: "Eyes", icon: Eye }, { label: "Jaw", icon: Smile }, { label: "Neck", icon: PersonStanding }] },
+  { label: "Chest & torso", options: [{ label: "Chest", icon: HeartPulse }, { label: "Ribs", icon: Bone }, { label: "Back", icon: AlignVerticalJustifyCenter }, { label: "Lower back", icon: BetweenHorizontalStart }, { label: "Abdomen", icon: CircleDot }, { label: "Side", icon: MoveHorizontal }] },
+  { label: "Arms & hands", options: [{ label: "Shoulder", icon: Accessibility }, { label: "Upper arm", icon: BicepsFlexed }, { label: "Elbow", icon: CornerDownRight }, { label: "Forearm", icon: Armchair }, { label: "Wrist", icon: Watch }, { label: "Hands", icon: Hand }, { label: "Fingers", icon: Hand }] },
+  { label: "Legs & feet", options: [{ label: "Hip", icon: Accessibility }, { label: "Thigh", icon: PersonStanding }, { label: "Knee", icon: CircleDot }, { label: "Lower leg", icon: PersonStanding }, { label: "Ankle", icon: Footprints }, { label: "Feet", icon: Footprints }, { label: "Toes", icon: Footprints }] },
+  { label: "Other areas", options: [{ label: "Joints", icon: Bone }, { label: "Muscles", icon: BicepsFlexed }, { label: "All over", icon: Focus }] },
 ];
 
-const SCD_SYMPTOMS = [
-  "Fatigue", "Shortness of breath", "Jaundice", "Dizziness",
-  "Headache", "Nausea", "Fever", "Swelling", "Vision changes", "Chest tightness",
+const SYMPTOM_GROUPS = [
+  { label: "Energy & general", options: [{ label: "Fatigue", icon: BatteryLow }, { label: "Weakness", icon: BatteryWarning }, { label: "Fever", icon: Thermometer }, { label: "Chills", icon: Snowflake }, { label: "Feeling unwell", icon: CircleAlert }] },
+  { label: "Breathing & chest", options: [{ label: "Shortness of breath", icon: Wind }, { label: "Chest tightness", icon: HeartPulse }, { label: "Fast heartbeat", icon: HeartPulse }, { label: "Cough", icon: MessageCircle }] },
+  { label: "Head & senses", options: [{ label: "Headache", icon: Brain }, { label: "Dizziness", icon: RotateCcw }, { label: "Faintness", icon: CircleAlert }, { label: "Vision changes", icon: Eye }, { label: "Light sensitivity", icon: Sun }] },
+  { label: "Stomach & appetite", options: [{ label: "Nausea", icon: Waves }, { label: "Vomiting", icon: ArrowDownToLine }, { label: "Loss of appetite", icon: Utensils }, { label: "Stomach upset", icon: CircleDot }, { label: "Constipation", icon: CircleDashed }, { label: "Diarrhea", icon: Droplets }] },
+  { label: "Skin & swelling", options: [{ label: "Jaundice", icon: Sun }, { label: "Swelling", icon: CircleDot }, { label: "Pale skin", icon: Palette }, { label: "Itching", icon: Hand }, { label: "Cold hands or feet", icon: Snowflake }] },
+  { label: "Urinary & other", options: [{ label: "Dark urine", icon: Droplet }, { label: "Less urine than usual", icon: DropletOff }, { label: "Trouble sleeping", icon: BedDouble }, { label: "Brain fog", icon: Cloudy }] },
 ];
 
 const MOOD_VALUES = ["terrible", "poor", "fair", "good", "excellent"];
 const MOOD_LABELS = ["Very Unpleasant", "Unpleasant", "Neutral", "Pleasant", "Very Pleasant"];
 const MOOD_EMOJIS = ["😢", "😞", "😐", "🙂", "😄"];
 
-const MOOD_FACTORS = [
-  { emoji: "😴", label: "Sleep" },
-  { emoji: "💧", label: "Hydration" },
-  { emoji: "😰", label: "Stress" },
-  { emoji: "🏃", label: "Activity" },
-  { emoji: "👥", label: "Social time" },
-  { emoji: "🥶", label: "Cold weather" },
-  { emoji: "🍽️", label: "Diet" },
-  { emoji: "💊", label: "Medication" },
-  { emoji: "💼", label: "Work / School" },
+const MOOD_FACTOR_GROUPS = [
+  {
+    label: "Body & health",
+    options: [
+      { label: "Sleep", icon: BedDouble }, { label: "Hydration", icon: Droplets }, { label: "Diet", icon: Utensils }, { label: "Medication", icon: Pill }, { label: "Pain", icon: CircleAlert }, { label: "Energy", icon: Zap },
+    ],
+  },
+  {
+    label: "Mind & emotions",
+    options: [
+      { label: "Stress", icon: CloudLightning }, { label: "Anxiety", icon: BrainCircuit }, { label: "Mental health", icon: Brain }, { label: "Time to relax", icon: Leaf }, { label: "Feeling productive", icon: CircleCheck },
+    ],
+  },
+  {
+    label: "Daily life",
+    options: [
+      { label: "Activity", icon: Activity }, { label: "Work / School", icon: BriefcaseBusiness }, { label: "Home life", icon: House }, { label: "Money", icon: Wallet }, { label: "Plans or routine", icon: CalendarDays },
+    ],
+  },
+  {
+    label: "People & environment",
+    options: [
+      { label: "Social time", icon: Users }, { label: "Support from others", icon: HandHeart }, { label: "Cold weather", icon: ThermometerSnowflake }, { label: "Hot weather", icon: ThermometerSun }, { label: "Rain or weather", icon: CloudRain }, { label: "Travel", icon: Plane },
+    ],
+  },
 ];
 
 function getMoodWhyCopy(moodValue) {
   if (moodValue >= 4) return { title: "What made today feel good?", subtitle: "Tap what helped — or skip" };
   if (moodValue <= 2) return { title: "What weighed on you today?", subtitle: "Tap what contributed — or skip" };
   return { title: "What shaped your day?", subtitle: "Tap what contributed — or skip" };
+}
+
+function SelectionGroupHeading({ label, first = false }) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        width: "100%",
+        borderTopWidth: first ? 0 : 1,
+        borderTopColor: t.isDark ? "rgba(255,255,255,0.14)" : "rgba(120,29,17,0.14)",
+        marginTop: first ? 0 : 24,
+        paddingTop: first ? 0 : 22,
+        paddingBottom: 12,
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: "Geist_700Bold",
+          fontSize: 12,
+          letterSpacing: 1.1,
+          color: t.isDark ? "rgba(255,255,255,0.72)" : "#8A4B56",
+          textTransform: "uppercase",
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
 }
 
 // Pain orb color interpolation
@@ -390,18 +499,26 @@ function MoodWhyStep({ moodValue, selected, onToggle, onSkip }) {
       <Text style={styles.stepSubtitle}>{subtitle}</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
+        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 28, paddingBottom: 32 }}
       >
-        {MOOD_FACTORS.map(({ emoji, label }) => (
-          <CheckboxChip
-            key={label}
-            label={`${emoji} ${label}`}
-            checked={selected.includes(label)}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onToggle(label);
-            }}
-          />
+        {MOOD_FACTOR_GROUPS.map((group, groupIndex) => (
+          <View key={group.label} style={{ width: "100%" }}>
+            <SelectionGroupHeading label={group.label} first={groupIndex === 0} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {group.options.map(({ label, icon }) => (
+                <CheckboxChip
+                  key={label}
+                  icon={icon}
+                  label={label}
+                  checked={selected.includes(label)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onToggle(label);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
         ))}
       </ScrollView>
       <TouchableOpacity onPress={onSkip} style={{ alignItems: "center", marginTop: 16 }}>
@@ -422,18 +539,26 @@ function LocationsStep({ selected, onToggle }) {
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if no pain</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
+        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 28, paddingBottom: 32 }}
       >
-        {BODY_LOCATIONS.map((loc) => (
-          <CheckboxChip
-            key={loc}
-            label={loc}
-            checked={selected.includes(loc)}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onToggle(loc);
-            }}
-          />
+        {BODY_LOCATION_GROUPS.map((group, groupIndex) => (
+          <View key={group.label} style={{ width: "100%" }}>
+            <SelectionGroupHeading label={group.label} first={groupIndex === 0} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {group.options.map(({ label: loc, icon }) => (
+                <CheckboxChip
+                  key={loc}
+                  icon={icon}
+                  label={loc}
+                  checked={selected.includes(loc)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onToggle(loc);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
         ))}
       </ScrollView>
     </View>
@@ -449,18 +574,26 @@ function SymptomsStep({ selected, onToggle, relog }) {
       <Text style={styles.stepSubtitle}>Select all that apply — or skip if none</Text>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 10, paddingTop: 24, paddingBottom: 16 }}
+        contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 12, paddingTop: 28, paddingBottom: 32 }}
       >
-        {SCD_SYMPTOMS.map((sym) => (
-          <CheckboxChip
-            key={sym}
-            label={sym}
-            checked={selected.includes(sym)}
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              onToggle(sym);
-            }}
-          />
+        {SYMPTOM_GROUPS.map((group, groupIndex) => (
+          <View key={group.label} style={{ width: "100%" }}>
+            <SelectionGroupHeading label={group.label} first={groupIndex === 0} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+              {group.options.map(({ label: sym, icon }) => (
+                <CheckboxChip
+                  key={sym}
+                  icon={icon}
+                  label={sym}
+                  checked={selected.includes(sym)}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onToggle(sym);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
         ))}
       </ScrollView>
     </View>

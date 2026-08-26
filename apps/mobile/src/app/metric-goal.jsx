@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { X, Droplets, Moon, Activity, TriangleAlert, Check, HeartPulse, ShieldCheck, Pencil, ChevronUp, Plus } from "lucide-react-native";
 import { useMetricGoalsQuery, useSetGoalMutation } from "@/hooks/queries/useMetricGoalsQuery";
-import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
+import { useProfileQuery, useUpdateProfileMutation } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { useTodaySteps } from "@/hooks/useTodaySteps";
 import { useHydrationStore } from "@/store/hydrationStore";
@@ -751,10 +751,19 @@ function RemindersSection({ t }) {
 function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
   const t = useTheme();
   const { data: profile } = useProfileQuery();
+  const updateProfile = useUpdateProfileMutation();
   const locationEnabled = profile?.locationEnabled ?? false;
   const { weather } = useWeatherData(locationEnabled);
   const stepsToday = useTodaySteps();
   const { displayUnit, setDisplayUnit } = useHydrationStore();
+
+  const handleDisplayUnitChange = (nextUnit) => {
+    setDisplayUnit(nextUnit);
+    // Scheduled server notifications cannot read device-local AsyncStorage.
+    // Persist the display preference so the weekly nudge can use the same
+    // unit the person selected in the app.
+    updateProfile.mutate({ hydrationDisplayUnit: nextUnit });
+  };
 
   const suggestion = useMemo(
     () => getHydrationSuggestion({ weightKg: profile?.weight ?? null, tempC: weather?.temp ?? null, stepsToday, baseGoalMl: value }),
@@ -902,7 +911,7 @@ function HydrationGoalBody({ value, onSliderChange, meta, onSave, insets }) {
 
       {/* Display unit */}
       <MotiView from={{ opacity: 0, translateY: 10 }} animate={{ opacity: 1, translateY: 0 }} transition={{ ...enterTiming, delay: STAGGER_MS * 6 }}>
-        <DisplayUnitRow displayUnit={displayUnit} onChange={setDisplayUnit} t={t} />
+        <DisplayUnitRow displayUnit={displayUnit} onChange={handleDisplayUnitChange} t={t} />
       </MotiView>
 
       <SectionDivider t={t} />

@@ -17,6 +17,7 @@ import { useAuthStore } from '@/utils/auth/store';
 import { useCompleteOnboardingMutation } from '@/hooks/queries/useProfileQuery';
 import { scheduleCheckInReminders } from '@/utils/checkInNotifications';
 import { usePostHog } from 'posthog-react-native';
+import { useTheme } from '@/hooks/useTheme';
 
 const HEMO_RED = '#B53652';
 const ICON = require('../../../assets/images/icon.png');
@@ -35,6 +36,8 @@ export default function OnboardingComplete() {
   const { auth } = useAuthStore();
   const completeOnboardingMutation = useCompleteOnboardingMutation();
   const posthog = usePostHog();
+  const t = useTheme();
+  const styles = getStyles(t);
   const firstName = onboardingData.nickname || auth?.user?.user_metadata?.full_name?.split(' ')[0] || 'there';
 
   const fill = useRef(new Animated.Value(0)).current;
@@ -213,10 +216,10 @@ export default function OnboardingComplete() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#FBF7F5',
+    backgroundColor: t.background,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -252,7 +255,7 @@ const styles = StyleSheet.create({
     fontSize: 34,
     lineHeight: 40,
     letterSpacing: -1.4,
-    color: '#201B1B',
+    color: t.text,
     textAlign: 'center',
   },
   subtitle: {
@@ -260,7 +263,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Geist_400Regular',
     fontSize: 16,
     lineHeight: 24,
-    color: '#796A6B',
+    color: t.textSecondary,
     textAlign: 'center',
   },
   iconSpace: {
@@ -299,7 +302,7 @@ const styles = StyleSheet.create({
     minHeight: 22,
     fontFamily: 'Geist_500Medium',
     fontSize: 14,
-    color: '#967D81',
+    color: t.textSecondary,
     textAlign: 'center',
   },
   instructionOnFill: {
@@ -345,6 +348,6 @@ const styles = StyleSheet.create({
     bottom: 26,
     fontFamily: 'Geist_400Regular',
     fontSize: 12,
-    color: '#B7A7A8',
+    color: t.textTertiary,
   },
 });

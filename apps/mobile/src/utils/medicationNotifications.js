@@ -92,7 +92,7 @@ export async function scheduleMedicationNotifications(med, { trackAnalytics = tr
         content: {
           title: `Time for ${med.name}`,
           body: med.dosage ? `Take your ${med.dosage} dose` : "Take your dose",
-          data: { type: "medication", medicationId: med.id },
+          data: { type: "medication", medicationId: med.id, scheduledTime: timeStr },
           sound: true,
           categoryIdentifier: MEDICATION_CATEGORY,
         },
@@ -117,7 +117,7 @@ export async function scheduleMedicationNotifications(med, { trackAnalytics = tr
           content: {
             title: `${med.name} in ${r.offsetMinutes} min`,
             body: `A gentle reminder: your dose is soon.`,
-            data: { type: "medication", medicationId: med.id },
+            data: { type: "medication", medicationId: med.id, scheduledTime: timeStr },
             sound: true,
             categoryIdentifier: MEDICATION_CATEGORY,
           },
@@ -138,7 +138,7 @@ export async function scheduleMedicationNotifications(med, { trackAnalytics = tr
           content: {
             title: `Did you take ${med.name}?`,
             body: `Just checking in on your ${timeStr} dose.`,
-            data: { type: "medication", medicationId: med.id },
+            data: { type: "medication", medicationId: med.id, scheduledTime: timeStr },
             sound: true,
             categoryIdentifier: MEDICATION_CATEGORY,
           },

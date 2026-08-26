@@ -7,8 +7,9 @@ import * as Notifications from "expo-notifications";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TOTAL_STEPS } from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
+import { useTheme } from "@/hooks/useTheme";
 
-function PhoneMockup({ name }) {
+function PhoneMockup({ name, styles }) {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.94, translateY: 12 }}
@@ -80,6 +81,8 @@ export default function Step8() {
   const posthog = usePostHog();
   const { setOnboardingField, setOnboardingStep, onboardingData } = useAppStore();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const styles = getStyles(t);
   const name = onboardingData.nickname || "you";
 
   const goNext = () => { setOnboardingStep(8); router.push("/(onboarding)/step-9"); };
@@ -109,7 +112,10 @@ export default function Step8() {
   };
 
   const handleSkip = () => {
-    posthog?.capture('onboarding_step_skipped', { step: 8 });
+    posthog?.capture('onboarding_step_skipped', {
+      step: 8,
+      step_name: 'notification_permission',
+    });
     setOnboardingField("notificationsEnabled", false);
     goNext();
   };
@@ -125,7 +131,7 @@ export default function Step8() {
           ]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
+          <ArrowLeft size={20} color={t.text} strokeWidth={2} />
         </Pressable>
         <View style={styles.dotsRow}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -149,7 +155,7 @@ export default function Step8() {
 
       {/* Middle: phone + heading, vertically centered */}
       <View style={styles.middle}>
-        <PhoneMockup name={name} />
+        <PhoneMockup name={name} styles={styles} />
 
         <MotiView
           from={{ opacity: 0, translateY: 16 }}
@@ -185,8 +191,8 @@ export default function Step8() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8F4F0" },
+const getStyles = (t) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: t.background },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -199,7 +205,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(9,51,44,0.08)",
+    backgroundColor: t.isDark ? "rgba(248,233,231,0.10)" : "rgba(9,51,44,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -211,17 +217,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   dot: { height: 6, borderRadius: 3 },
-  dotCurrent: { width: 22, backgroundColor: "#A9334D" },
-  dotPast: { width: 6, backgroundColor: "#A9334D", opacity: 0.4 },
-  dotFuture: { width: 6, backgroundColor: "rgba(9,51,44,0.14)" },
+  dotCurrent: { width: 22, backgroundColor: t.accent },
+  dotPast: { width: 6, backgroundColor: t.accent, opacity: 0.4 },
+  dotFuture: { width: 6, backgroundColor: t.isDark ? "rgba(248,233,231,0.18)" : "rgba(9,51,44,0.14)" },
   skipBtn: { width: 44, alignItems: "flex-end" },
-  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: "rgba(9,51,44,0.4)" },
+  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: t.textSecondary },
   middle: { flex: 1, paddingHorizontal: 24, justifyContent: "center", gap: 36 },
   headingBlock: { gap: 10, alignItems: "center" },
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 30,
-    color: "#1A1A1A",
+    color: t.text,
     letterSpacing: -0.9,
     lineHeight: 36,
     textAlign: "center",
@@ -229,29 +235,29 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     lineHeight: 22,
     textAlign: "center",
   },
   bottomArea: { paddingHorizontal: 24, paddingTop: 12, gap: 14, alignItems: "center" },
   ctaBtn: {
     width: "100%",
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
   },
   ctaBtnText: { fontFamily: "Geist_700Bold", fontSize: 17, color: "#FFFFFF", letterSpacing: 0.2 },
-  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: "rgba(9,51,44,0.4)" },
+  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: t.textSecondary },
 
   // Phone mockup
   phoneMockup: {
     alignSelf: "center",
     width: "100%",
-    backgroundColor: "rgba(9,51,44,0.035)",
+    backgroundColor: t.isDark ? "rgba(248,233,231,0.06)" : "rgba(9,51,44,0.035)",
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.07)",
+    borderColor: t.border,
     padding: 16,
     gap: 10,
     shadowColor: "#000",
@@ -261,16 +267,16 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   statusBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
-  statusTime: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "rgba(9,51,44,0.55)" },
+  statusTime: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: t.textSecondary },
   statusIcons: { flexDirection: "row", alignItems: "flex-end", gap: 3 },
-  signalBar: { width: 3, backgroundColor: "rgba(9,51,44,0.45)", borderRadius: 1 },
-  battery: { width: 20, height: 10, borderRadius: 2.5, borderWidth: 1.5, borderColor: "rgba(9,51,44,0.4)", justifyContent: "center", paddingHorizontal: 2, marginLeft: 4 },
-  batteryFill: { height: 5, width: "75%", backgroundColor: "rgba(9,51,44,0.4)", borderRadius: 1 },
+  signalBar: { width: 3, backgroundColor: t.textSecondary, borderRadius: 1 },
+  battery: { width: 20, height: 10, borderRadius: 2.5, borderWidth: 1.5, borderColor: t.textSecondary, justifyContent: "center", paddingHorizontal: 2, marginLeft: 4 },
+  batteryFill: { height: 5, width: "75%", backgroundColor: t.textSecondary, borderRadius: 1 },
   mockNotifCard: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "rgba(255,255,255,0.96)",
+    backgroundColor: t.surfaceElevated,
     borderRadius: 14,
     padding: 12,
     shadowColor: "#000",
@@ -279,13 +285,13 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  mockNotifAppIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: "#A9334D", alignItems: "center", justifyContent: "center" },
+  mockNotifAppIcon: { width: 30, height: 30, borderRadius: 8, backgroundColor: t.accent, alignItems: "center", justifyContent: "center" },
   mockNotifTopRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
-  mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: "rgba(9,51,44,0.45)" },
-  mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: "rgba(9,51,44,0.3)" },
-  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: "#1A1A1A" },
-  mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: "rgba(9,51,44,0.5)", marginTop: 1 },
+  mockNotifApp: { fontFamily: "Geist_600SemiBold", fontSize: 11, color: t.textSecondary },
+  mockNotifTime: { fontFamily: "Geist_400Regular", fontSize: 11, color: t.textSecondary },
+  mockNotifTitle: { fontFamily: "Geist_600SemiBold", fontSize: 13, color: t.text },
+  mockNotifBody: { fontFamily: "Geist_400Regular", fontSize: 12, color: t.textSecondary, marginTop: 1 },
   appGrid: { gap: 8, paddingTop: 4 },
   appRow: { flexDirection: "row", gap: 8, justifyContent: "space-between" },
-  appIcon: { flex: 1, height: 70, width: 70, borderRadius: 12, backgroundColor: "rgba(9,51,44,0.07)" },
+  appIcon: { flex: 1, height: 70, width: 70, borderRadius: 12, backgroundColor: t.isDark ? "rgba(248,233,231,0.10)" : "rgba(9,51,44,0.07)" },
 });

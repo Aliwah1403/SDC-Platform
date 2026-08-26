@@ -26,9 +26,10 @@ export async function fetchStreak(userId) {
   return { ...camel, badgeUnlockDates };
 }
 /**
- * Use a repair to fill in a missed day:
- * - Inserts a repaired daily_summary for the missed date
- * - Decrements repairs_available, increments repairs_used
+ * Use repairs to cover missed days:
+ * - 1 missed day consumes 1 repair
+ * - Repairs preserve the streak count, but do not add logged days
+ * - If missed days exceed repairs_available, the streak cannot be repaired
  */
 export async function acknowledgeStreakLoss(userId) {
   const { error } = await supabase
@@ -59,14 +60,19 @@ export async function repairStreak(userId) {
   const daysSinceLastLog = lastLogDate
     ? Math.floor((todayDate - lastLogDate) / (1000 * 60 * 60 * 24))
     : null;
+  const missedDays = daysSinceLastLog ? Math.max(daysSinceLastLog - 1, 0) : 0;
 
-  if (!daysSinceLastLog || daysSinceLastLog <= 1 || daysSinceLastLog > 3) {
-    throw new Error('Streak is not within the repair window');
+  if (!daysSinceLastLog || daysSinceLastLog <= 1 || missedDays < 1) {
+    throw new Error('No missed days to repair');
   }
 
-  // A repair forgives the entire gap — set last_log_date to yesterday so
+  if (missedDays > (streakRow.repairs_available ?? 0)) {
+    throw new Error('Not enough repairs available');
+  }
+
+  // Repairs forgive the entire gap — set last_log_date to yesterday so
   // the streak appears alive again. The current_streak value is preserved
-  // (the repair restores it, not extends it). When the user logs today,
+  // (repairs restore it, not extend it). When the user logs today,
   // submitHealthLog sees last_log_date = yesterday → isConsecutive = true
   // → streak increments normally.
   const yesterday = new Date();
@@ -76,15 +82,19 @@ export async function repairStreak(userId) {
   const { error: updateError } = await supabase
     .from('streaks')
     .update({
-      repairs_available: (streakRow.repairs_available ?? 0) - 1,
-      repairs_used: (streakRow.repairs_used ?? 0) + 1,
+      repairs_available: (streakRow.repairs_available ?? 0) - missedDays,
+      repairs_used: (streakRow.repairs_used ?? 0) + missedDays,
       last_log_date: yesterdayStr,
       updated_at: new Date().toISOString(),
     })
     .eq('user_id', userId);
   if (updateError) throw updateError;
 
-  return { restoredStreak: streakRow.current_streak ?? 0 };
+  return {
+    restoredStreak: streakRow.current_streak ?? 0,
+    repairsUsed: missedDays,
+    repairsRemaining: (streakRow.repairs_available ?? 0) - missedDays,
+  };
 }
 
 export async function updateClaimedBadges(userId, badges) {

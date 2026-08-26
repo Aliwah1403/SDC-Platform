@@ -290,35 +290,42 @@ Deno.serve(async (req: Request) => {
     ];
     const rowsHtml = rows
       .map(
-        ([k, v]) =>
-          `<p style="margin:0 0 6px;font-size:14px;color:#6c757d;line-height:22px;font-family:Arial,Helvetica,sans-serif;"><strong style="color:#020304;">${k}:</strong> ${esc(v)}</p>`,
+        ([k, v], index) =>
+          `<tr><td style="padding:14px 0;${index < rows.length - 1 ? "border-bottom:1px solid #eaeaea;" : ""}">` +
+          `<p style="margin:0;color:#666666;font-size:12px;font-weight:700;letter-spacing:0.04em;line-height:16px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;">${k}</p>` +
+          `<p style="margin:4px 0 0;color:#020304;font-size:16px;line-height:24px;font-family:Arial,Helvetica,sans-serif;">${esc(v)}</p>` +
+          `</td></tr>`,
       )
       .join("");
 
     const adminHtml =
-      `<!DOCTYPE html><html><body style="background-color:#ffffff;margin:0;padding:0;">` +
-      `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;"><tr><td align="center" style="padding:24px;">` +
-      `<table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;">` +
-      `<tr><td align="center" style="padding-bottom:16px;"><img src="https://di867tnz6fwga.cloudfront.net/brand-kits/0b06e40e-c16e-4eb6-ae76-6209b4ec6cdf/primary/f336d4b2-3732-4539-9bf2-f7c844495736.png" alt="Hemo SCD" width="157" height="58" style="display:block;border:0;" /></td></tr>` +
-      `<tr><td style="padding:0 8px;">` +
-      `<p style="text-align:center;font-size:20px;font-weight:700;color:#020304;font-family:Arial,Helvetica,sans-serif;margin:0 0 16px;">New Beta Signup</p>` +
-      `<p style="font-size:16px;color:#020304;line-height:24px;font-family:Arial,Helvetica,sans-serif;margin:0 0 8px;">Hello Admin,</p>` +
-      `<p style="font-size:16px;color:#020304;line-height:24px;font-family:Arial,Helvetica,sans-serif;margin:0 0 24px;">Someone just signed up for the Hemo beta. Here are their details:</p>` +
-      `<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f8f9fa;border:1px solid #e9ecef;border-radius:8px;"><tr><td style="padding:24px;">` +
-      `<p style="font-size:18px;font-weight:700;color:#020304;font-family:Arial,Helvetica,sans-serif;margin:0 0 16px;">Signup Details</p>` +
-      rowsHtml +
-      `</td></tr></table>` +
-      `<hr style="border:none;border-top:1px solid #e9ecef;margin:32px 0;" />` +
-      `<p style="text-align:center;font-size:12px;color:#6c757d;line-height:20px;font-family:Arial,Helvetica,sans-serif;margin:0;">You&#39;re receiving this as a Hemo admin.<br/>UAE, Dubai &bull; <a href="https://hemo-scd.com" style="color:#a9334d;text-decoration:underline;">hemo-scd.com</a><br/>&copy; 2026 Hemo SCD. All rights reserved.</p>` +
+      `<!DOCTYPE html><html lang="en"><body style="background-color:#ffffff;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;">` +
+      `<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="background-color:#ffffff;"><tr><td align="center" style="padding:0;">` +
+      `<table width="600" cellpadding="0" cellspacing="0" border="0" role="presentation" style="max-width:600px;width:100%;background-color:#ffffff;">` +
+      `<tr><td align="center" style="padding:20px 16px 32px;"><img src="https://di867tnz6fwga.cloudfront.net/brand-kits/0b06e40e-c16e-4eb6-ae76-6209b4ec6cdf/primary/f336d4b2-3732-4539-9bf2-f7c844495736.png" alt="Hemo SCD Logo" width="200" height="80" style="display:block;border:0;max-width:200px;width:200px;height:auto;" /></td></tr>` +
+      `<tr><td style="padding:0 32px;color:#020304;font-size:16px;line-height:24px;">` +
+      `<h1 style="color:#020304;font-size:26px;font-weight:700;line-height:32px;margin:0 0 16px;font-family:Arial,Helvetica,sans-serif;">Someone joined the beta</h1>` +
+      `<p style="margin:0 0 16px;color:#020304;font-size:16px;line-height:24px;font-family:Arial,Helvetica,sans-serif;">A new person has signed up to try Hemo. Their responses are below so you can follow up with the right context.</p>` +
+      `<table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation" style="border-top:1px solid #eaeaea;border-bottom:1px solid #eaeaea;">${rowsHtml}</table>` +
+      `<p style="margin:20px 0 0;color:#666666;font-size:16px;line-height:24px;font-family:Arial,Helvetica,sans-serif;">Keep their feedback close as you prepare the next beta conversation.</p>` +
+      `</td></tr>` +
+      `<tr><td style="border-top:1px solid #eaeaea;margin-top:32px;padding:24px 32px 32px;text-align:center;">` +
+      `<img src="https://resend-attachments.s3.amazonaws.com/7e243de0-f0c8-456b-b2ac-9dc2135bd2de" alt="Hemo fingerprint icon" width="65" height="65" style="display:block;border:0;margin:0 auto;" />` +
+      `<p style="color:#666666;font-size:12px;line-height:16px;margin:16px 0 8px;font-family:Arial,Helvetica,sans-serif;">You’re receiving this because you signed up for Hemo. We’re here to support your daily health journey.</p>` +
+      `<p style="color:#666666;font-size:12px;line-height:16px;margin:16px 0 8px;font-family:Arial,Helvetica,sans-serif;">UAE, Dubai · <a href="https://hemo-scd.com" style="color:#A9334D;text-decoration:underline;">hemo-scd.com</a> · <a href="https://hemo-scd.com" style="color:#A9334D;text-decoration:underline;">Unsubscribe</a></p>` +
+      `<p style="color:#666666;font-size:12px;line-height:16px;margin:0;font-family:Arial,Helvetica,sans-serif;">© 2026 Hemo SCD. All rights reserved.</p>` +
       `</td></tr></table></td></tr></table></body></html>`;
 
     const adminText =
-      "New Beta Signup\n\n" + rows.map(([k, v]) => `${k}: ${v}`).join("\n");
+      "Someone joined the beta\n\n" +
+      "A new person has signed up to try Hemo. Their responses are below so you can follow up with the right context.\n\n" +
+      rows.map(([k, v]) => `${k}: ${v}`).join("\n") +
+      "\n\nKeep their feedback close as you prepare the next beta conversation.";
 
     await sendEmail(
       resendApiKey,
       {
-        from: "The Hemo Team <thehemoteam@info.hemo-scd.com>",
+        from: "Hemo <hello@info.hemo-scd.com>",
         to: [adminEmail],
         subject: `New beta signup: ${email} (${platformLabel})`,
         html: adminHtml,

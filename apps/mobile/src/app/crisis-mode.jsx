@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import { usePostHog } from "posthog-react-native";
 import {
   Alert,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,6 +30,8 @@ import {
 import { useAppStore } from "@/store/appStore";
 import { useEmergencyContactsQuery } from "@/hooks/queries/useEmergencyContactsQuery";
 import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
+import { selectPreferredEmergencyDepartment } from "@/services/supabase/facilities";
+import { callCareLocation, careLocationMapActionLabel, openDirections, openExternalMapSearch } from "@/utils/careLocationActions";
 import { useEmergencyNumber } from "@/hooks/useEmergencyNumber";
 import {
   scheduleCrisisCheckIns,
@@ -161,7 +162,8 @@ export default function CrisisModeScreen() {
   // SOS button uses: the explicitly-flagged primary, else the first contact.
   const primaryContact = contacts.find((c) => c.isPrimary) || contacts[0] || null;
   const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
-  const preferredHospital = savedFacilities[0] ?? null;
+  const preferredHospital = selectPreferredEmergencyDepartment(savedFacilities);
+  const preferredHospitalMapAction = careLocationMapActionLabel(preferredHospital);
   const { number: emergencyNumber } = useEmergencyNumber();
 
   const elapsed = useElapsedTimer(crisisMode.startedAt);
@@ -363,11 +365,28 @@ export default function CrisisModeScreen() {
 
   const handleNavigateToHospital = useCallback(() => {
     if (!preferredHospital) return;
-    const q = encodeURIComponent(preferredHospital.address ?? preferredHospital.name);
-    const iosUrl = `maps://?q=${q}`;
-    const fallback = `https://maps.google.com/?q=${q}`;
-    Linking.canOpenURL(iosUrl).then((can) => Linking.openURL(can ? iosUrl : fallback)).catch(() => {});
+    posthog?.capture('care_location_directions_tapped', {
+      role: preferredHospital.role,
+      source_kind: preferredHospital.sourceKind,
+      entry_point: 'crisis_mode',
+    });
+    openDirections(preferredHospital);
   }, [preferredHospital]);
+
+  const handleCallEmergencyServices = useCallback(() => {
+    posthog?.capture('crisis_emergency_services_called', {
+      crisis_step: crisisMode.currentStep,
+    });
+    callCareLocation(emergencyNumber);
+  }, [crisisMode.currentStep, emergencyNumber, posthog]);
+
+  const handleFindAnotherEmergencyDepartment = useCallback(() => {
+    posthog?.capture('external_unverified_search_opened', {
+      query_type: 'emergency_department',
+      entry_point: 'crisis_mode',
+    });
+    openExternalMapSearch('emergency department');
+  }, [posthog]);
 
   const stepData = ESCALATION_STEPS[crisisMode.currentStep] ?? ESCALATION_STEPS[1];
   const alreadyAlerted = crisisMode.alertsSent.length > 0;
@@ -433,6 +452,70 @@ export default function CrisisModeScreen() {
             {stepData.description.replace("{NUMBER}", emergencyNumber)}
           </Text>
         </MotiView>
+
+        {/* Emergency navigation stays concise and ahead of the wider crisis workflow. */}
+        <View style={styles.emergencyCareCard}>
+          <Pressable
+            onPress={handleCallEmergencyServices}
+            accessibilityRole="button"
+            accessibilityLabel={`Call emergency services on ${emergencyNumber}`}
+            style={({ pressed }) => [styles.emergencyCallButton, pressed && { opacity: 0.85 }]}
+          >
+            <Phone size={20} color="#FFFFFF" strokeWidth={2.5} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.emergencyCallTitle}>Call emergency services</Text>
+              <Text style={styles.emergencyCallNumber}>{emergencyNumber}</Text>
+            </View>
+          </Pressable>
+
+          {preferredHospital ? (
+            <View style={styles.preferredEDBlock}>
+              <Text style={styles.medInfoTitle}>Preferred emergency department</Text>
+              <Text style={styles.preferredEDName}>{preferredHospital.name}</Text>
+              {preferredHospital.address ? <Text style={styles.navSubtitle}>{preferredHospital.address}</Text> : null}
+              <View style={styles.preferredEDActions}>
+                {preferredHospital.phone ? (
+                  <Pressable
+                    onPress={() => {
+                      posthog?.capture('care_location_call_tapped', {
+                        role: preferredHospital.role,
+                        source_kind: preferredHospital.sourceKind,
+                        entry_point: 'crisis_mode',
+                      });
+                      callCareLocation(preferredHospital.phone);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Call ${preferredHospital.name}`}
+                    style={({ pressed }) => [styles.preferredEDAction, pressed && { opacity: 0.75 }]}
+                  >
+                    <Phone size={16} color="#F8E9E7" strokeWidth={2.5} />
+                    <Text style={styles.preferredEDActionText}>Call</Text>
+                  </Pressable>
+                ) : null}
+                {preferredHospitalMapAction ? <Pressable
+                  onPress={handleNavigateToHospital}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${preferredHospitalMapAction} to ${preferredHospital.name}`}
+                  style={({ pressed }) => [styles.preferredEDAction, pressed && { opacity: 0.75 }]}
+                >
+                  <MapPin size={16} color="#F8E9E7" strokeWidth={2.5} />
+                  <Text style={styles.preferredEDActionText}>{preferredHospitalMapAction}</Text>
+                </Pressable> : null}
+              </View>
+            </View>
+          ) : (
+            <Text style={styles.noPreferredEDText}>No preferred emergency department is saved.</Text>
+          )}
+
+          <Pressable
+            onPress={handleFindAnotherEmergencyDepartment}
+            accessibilityRole="link"
+            style={({ pressed }) => [styles.externalEmergencySearch, pressed && { opacity: 0.75 }]}
+          >
+            <Text style={styles.navTitle}>Find another emergency department in Maps</Text>
+            <Text style={styles.navSubtitle}>Results are provided by your maps app and are not verified by Hemo for SCD care.</Text>
+          </Pressable>
+        </View>
 
         {/* Step 3 auto-alert banner */}
         {crisisMode.currentStep === 3 && (
@@ -703,50 +786,21 @@ export default function CrisisModeScreen() {
           </View>
         )}
 
-        {/* Medical info + hospital navigation */}
-        {(crisisPlan.bloodType || crisisPlan.allergies.length > 0 || preferredHospital) && (
+        {/* Medical information for clinical staff */}
+        {(crisisPlan.bloodType || crisisPlan.allergies.length > 0) && (
           <View style={styles.medInfoCard}>
-            {(crisisPlan.bloodType || crisisPlan.allergies.length > 0) && (
-              <>
-                <Text style={styles.medInfoTitle}>Show this to medical staff</Text>
-                {crisisPlan.bloodType && (
-                  <Text style={styles.medInfoLine}>
-                    Blood type:{" "}
-                    <Text style={styles.medInfoValue}>{crisisPlan.bloodType}</Text>
-                  </Text>
-                )}
-                {crisisPlan.allergies.length > 0 && (
-                  <Text style={styles.medInfoLine}>
-                    Allergies:{" "}
-                    <Text style={styles.medInfoValue}>{crisisPlan.allergies.join(", ")}</Text>
-                  </Text>
-                )}
-              </>
+            <Text style={styles.medInfoTitle}>Show this to medical staff</Text>
+            {crisisPlan.bloodType && (
+              <Text style={styles.medInfoLine}>
+                Blood type:{" "}
+                <Text style={styles.medInfoValue}>{crisisPlan.bloodType}</Text>
+              </Text>
             )}
-            {preferredHospital && (
-              <>
-                {(crisisPlan.bloodType || crisisPlan.allergies.length > 0) && (
-                  <View style={styles.medInfoDivider} />
-                )}
-                <Pressable
-                  onPress={handleNavigateToHospital}
-                  style={({ pressed }) => [styles.navRow, pressed && { opacity: 0.75 }]}
-                >
-                  <MapPin size={15} color="#A9334D" strokeWidth={2.5} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.navTitle}>Navigate to {preferredHospital.name}</Text>
-                    {preferredHospital.address ? (
-                      <Text style={styles.navSubtitle}>{preferredHospital.address}</Text>
-                    ) : null}
-                  </View>
-                  <ChevronDown
-                    size={14}
-                    color="#A9334D"
-                    strokeWidth={2.5}
-                    style={{ transform: [{ rotate: "-90deg" }] }}
-                  />
-                </Pressable>
-              </>
+            {crisisPlan.allergies.length > 0 && (
+              <Text style={styles.medInfoLine}>
+                Allergies:{" "}
+                <Text style={styles.medInfoValue}>{crisisPlan.allergies.join(", ")}</Text>
+              </Text>
             )}
           </View>
         )}
@@ -859,6 +913,83 @@ const styles = StyleSheet.create({
     color: "#1A1A1A",
     flex: 1,
     lineHeight: 19,
+  },
+  // ── Emergency services and care location ────────────────────────────────────
+  emergencyCareCard: {
+    backgroundColor: "rgba(248,233,231,0.08)",
+    borderRadius: 18,
+    padding: 14,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(248,233,231,0.14)",
+  },
+  emergencyCallButton: {
+    minHeight: 58,
+    borderRadius: 15,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#DC2626",
+  },
+  emergencyCallTitle: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  emergencyCallNumber: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: "rgba(255,255,255,0.82)",
+    marginTop: 1,
+  },
+  preferredEDBlock: {
+    gap: 6,
+    paddingHorizontal: 4,
+  },
+  preferredEDName: {
+    fontFamily: fonts.bold,
+    fontSize: 16,
+    color: "#F8E9E7",
+  },
+  preferredEDActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 5,
+  },
+  preferredEDAction: {
+    minHeight: 44,
+    flexGrow: 1,
+    flexBasis: 130,
+    borderRadius: 13,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    backgroundColor: "rgba(248,233,231,0.12)",
+  },
+  preferredEDActionText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13,
+    color: "#F8E9E7",
+  },
+  noPreferredEDText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: "rgba(248,233,231,0.65)",
+    paddingHorizontal: 4,
+  },
+  externalEmergencySearch: {
+    minHeight: 48,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(248,233,231,0.12)",
+    paddingHorizontal: 4,
+    paddingTop: 12,
+    justifyContent: "center",
   },
   // ── Generic card ───────────────────────────────────────────────────
   card: {

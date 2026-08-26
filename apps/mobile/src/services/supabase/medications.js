@@ -19,7 +19,7 @@ export async function fetchMedications(userId) {
       .order('created_at', { ascending: true }),
     supabase
       .from('medication_logs')
-      .select('id, medication_id, taken_at')
+      .select('id, medication_id, taken_at, scheduled_time')
       .eq('user_id', userId)
       .eq('date', todayStr)
       .order('taken_at', { ascending: true }),
@@ -32,7 +32,11 @@ export async function fetchMedications(userId) {
   const logsMap = new Map();
   for (const log of logsResult.data || []) {
     if (!logsMap.has(log.medication_id)) logsMap.set(log.medication_id, []);
-    logsMap.get(log.medication_id).push({ id: log.id, takenAt: log.taken_at });
+    logsMap.get(log.medication_id).push({
+      id: log.id,
+      takenAt: log.taken_at,
+      scheduledTime: log.scheduled_time,
+    });
   }
 
   return (medsResult.data || []).map((med) => {
@@ -132,10 +136,16 @@ export async function toggleMedicationTaken(userId, medId) {
   }
 }
 
-export async function addMedicationLog(userId, medId) {
+export async function addMedicationLog(userId, medId, scheduledTime = null) {
   const { error } = await supabase
     .from('medication_logs')
-    .insert({ medication_id: medId, user_id: userId, date: today(), taken_at: new Date().toISOString() });
+    .insert({
+      medication_id: medId,
+      user_id: userId,
+      date: today(),
+      taken_at: new Date().toISOString(),
+      scheduled_time: scheduledTime,
+    });
   if (error) throw error;
 }
 
@@ -166,14 +176,15 @@ export async function deleteLatestMedicationLog(userId, medId) {
   if (error) throw error;
 }
 
-export async function markGroupTaken(userId, medIds) {
+export async function markGroupTaken(userId, doses) {
   const todayStr = today();
   const now = new Date().toISOString();
-  const rows = medIds.map((id) => ({
-    medication_id: id,
+  const rows = doses.map(({ medicationId, scheduledTime = null }) => ({
+    medication_id: medicationId,
     user_id: userId,
     date: todayStr,
     taken_at: now,
+    scheduled_time: scheduledTime,
   }));
   const { error } = await supabase
     .from('medication_logs')

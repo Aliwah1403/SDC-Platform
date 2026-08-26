@@ -23,7 +23,7 @@ const INACTIVE_COLOR = "#C4A8A4";
 const fadedActive = transparentize(ACTIVE_COLOR, 0.88);
 const fadedInactive = transparentize(INACTIVE_COLOR, 0.88);
 
-export function CheckboxChip({ label, checked, onPress }) {
+export function CheckboxChip({ icon: Icon, label, checked, onPress }) {
   const rContainerStyle = useAnimatedStyle(
     () => ({
       paddingRight: checked ? 10 : 20,
@@ -43,6 +43,7 @@ export function CheckboxChip({ label, checked, onPress }) {
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
       <Animated.View layout={SPRING} style={[styles.container, rContainerStyle]}>
+        {Icon && <Icon size={16} color={checked ? ACTIVE_COLOR : INACTIVE_COLOR} strokeWidth={2} />}
         <Animated.Text style={[styles.label, rTextStyle]}>{label}</Animated.Text>
         {checked && (
           <Animated.View
@@ -65,6 +66,7 @@ const styles = {
     borderRadius: 36,
     borderWidth: 1.5,
     flexDirection: "row",
+    gap: 8,
     justifyContent: "center",
     paddingLeft: 20,
     paddingVertical: 10,

@@ -1,0 +1,21 @@
+{
+  "name": "@hemo/emails",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "email dev --dir emails --port 3000",
+    "build": "email build --dir emails",
+    "export": "email export --dir emails --outDir out --pretty --plainText"
+  },
+  "dependencies": {
+    "@react-email/ui": "^6.9.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-email": "^6.9.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^5.9.3"
+  }
+}

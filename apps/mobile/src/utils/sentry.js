@@ -2,6 +2,8 @@
 // once per app session. The global guard prevents duplicate registration on reload.
 // After rebuilding the dev client with the @sentry/react-native/expo plugin,
 // native crash reporting becomes active automatically.
+import Constants from 'expo-constants';
+
 if (global.__sentry_module === undefined) {
   try {
     global.__sentry_module = require('@sentry/react-native');
@@ -11,6 +13,8 @@ if (global.__sentry_module === undefined) {
 }
 
 const _sentry = global.__sentry_module || null;
+const appExtra = Constants.expoConfig?.extra ?? {};
+const sentryEnvironment = appExtra.appEnv ?? (__DEV__ ? 'development' : 'production');
 
 const SENSITIVE_KEYS = new Set([
   'painLevel', 'mood', 'bodyLocations', 'symptoms', 'hydration',
@@ -87,7 +91,7 @@ export function initSentry() {
   _sentry?.init({
     dsn: 'https://ae0449aff1dfcd3fed7b16250ab580b6@o4511273190096896.ingest.us.sentry.io/4511273193308160',
     tracesSampleRate: 0.2,
-    environment: __DEV__ ? 'development' : 'production',
+    environment: sentryEnvironment,
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
   });

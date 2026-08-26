@@ -6,6 +6,7 @@ import {
   EDUCATION_ARTICLES as BUNDLED_ARTICLES,
 } from "@/utils/educationContent";
 import { prefetchEducationImages } from "@/utils/educationImagePrefetch";
+import { queryKeys } from "@/hooks/queryKeys";
 
 // Phase 2 of EDUCATION-CONTENT-PLAN.md — Supabase becomes the source of
 // truth once content is clinically reviewed and published there; the
@@ -31,7 +32,7 @@ async function fetchEducationContent() {
 
 export function useEducationContentQuery() {
   const { data, isError, error } = useQuery({
-    queryKey: ["education-content"],
+    queryKey: queryKeys.education("public"),
     queryFn: fetchEducationContent,
   });
 

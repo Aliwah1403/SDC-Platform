@@ -578,6 +578,29 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
 
   if (!level) return null;
 
+  // Info-level alerts surface exactly one, low-priority signal. The trigger
+  // reasons are intentionally terse for chips and debugging, so they must not
+  // be wrapped in another generic sentence — that produced copy such as
+  // “Your 5.8h — below your usual is different from your usual.”
+  const infoMessage = (trigger) => {
+    if (!trigger) return "We noticed a small change in your health data.";
+
+    switch (trigger.type) {
+      case "sleep":
+        return trigger.reason.includes("unusually long")
+          ? `You slept ${trigger.value} hours, which is longer than usual and may be worth keeping an eye on.`
+          : `You slept ${trigger.value} hours, below your usual.`;
+      case "steps":
+        return trigger.reason.startsWith("down")
+          ? `Your activity is ${trigger.reason}.`
+          : `You logged ${trigger.value.toLocaleString()} steps today, which is lower than usual.`;
+      case "symptom":
+        return `You logged ${trigger.reason} today.`;
+      default:
+        return "We noticed a small change from your usual health pattern.";
+    }
+  };
+
   // ── Safe copy per level ─────────────────────────────────────────────────────
 
   const COPY = {
@@ -598,7 +621,7 @@ export function checkAlerts(todayMetrics = {}, recentSymptoms = [], baselines = 
       callToAction: "Check in",
     },
     info: {
-      message:      `Your ${triggers[0]?.reason ?? "reading"} is different from your usual.`,
+      message:      infoMessage(triggers[0]),
       callToAction: null,
     },
   };

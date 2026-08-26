@@ -6,6 +6,7 @@ import { MotiView } from 'moti';
 import { ArrowRight } from 'lucide-react-native';
 import { useAppStore } from '@/store/appStore';
 import { TOTAL_STEPS } from '@/components/OnboardingStep';
+import { useTheme } from '@/hooks/useTheme';
 
 const FULL_QUESTION = 'What would you\nlike us to call you?';
 const CHAR_DELAY = 42;
@@ -14,6 +15,8 @@ const INPUT_APPEAR_DELAY = 550;
 export default function Step1() {
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const styles = getStyles(t);
   const inputRef = useRef(null);
 
   const [displayed, setDisplayed] = useState('');
@@ -62,7 +65,7 @@ export default function Step1() {
             style={[
               styles.dot,
               i === 0
-                ? [styles.dotCurrent, { backgroundColor: '#A9334D' }]
+                ? [styles.dotCurrent, { backgroundColor: t.accent }]
                 : styles.dotFuture,
             ]}
           />
@@ -97,7 +100,7 @@ export default function Step1() {
               onSubmitEditing={canProceed ? handleNext : undefined}
             />
             <MotiView
-              animate={{ backgroundColor: focused ? '#A9334D' : 'rgba(9,51,44,0.2)' }}
+              animate={{ backgroundColor: focused ? t.accent : t.isDark ? 'rgba(248,233,231,0.22)' : 'rgba(9,51,44,0.2)' }}
               transition={{ type: 'timing', duration: 200 }}
               style={styles.underline}
             />
@@ -112,7 +115,7 @@ export default function Step1() {
           <Pressable
             style={({ pressed }) => [
               styles.nextPill,
-              { backgroundColor: canProceed ? '#A9334D' : 'rgba(9,51,44,0.2)' },
+              { backgroundColor: canProceed ? t.accent : t.isDark ? 'rgba(248,233,231,0.16)' : 'rgba(9,51,44,0.2)' },
               pressed && canProceed && { opacity: 0.85 },
             ]}
             onPress={handleNext}
@@ -127,10 +130,10 @@ export default function Step1() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F4F0',
+    backgroundColor: t.background,
   },
   topBar: {
     flexDirection: 'row',
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
   },
   dotFuture: {
     width: 6,
-    backgroundColor: 'rgba(9,51,44,0.14)',
+    backgroundColor: t.isDark ? 'rgba(248,233,231,0.18)' : 'rgba(9,51,44,0.14)',
   },
   content: {
     flex: 1,
@@ -162,13 +165,13 @@ const styles = StyleSheet.create({
   question: {
     fontFamily: 'Geist_700Bold',
     fontSize: 36,
-    color: '#1A1A1A',
+    color: t.text,
     letterSpacing: -1.2,
     lineHeight: 44,
     marginBottom: 36,
   },
   cursor: {
-    color: '#A9334D',
+    color: t.accent,
     fontFamily: 'Geist_400Regular',
   },
   inputArea: {
@@ -177,7 +180,7 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'Geist_500Medium',
     fontSize: 28,
-    color: '#1A1A1A',
+    color: t.text,
     padding: 0,
     margin: 0,
     letterSpacing: -0.5,
@@ -194,8 +197,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(9,51,44,0.07)',
-    backgroundColor: '#F8F4F0',
+    borderTopColor: t.divider,
+    backgroundColor: t.background,
   },
   navPlaceholder: {
     width: 44,

@@ -4,7 +4,7 @@ import { useAuthStore } from '@/utils/auth/store';
 import { useHydrationStore } from '@/store/hydrationStore';
 import { supabase } from '@/utils/auth/supabase';
 import { addHydrationQuickly } from '@/services/supabase/health';
-import { toggleMedicationTaken } from '@/services/supabase/medications';
+import { addMedicationLog } from '@/services/supabase/medications';
 import { fetchHydrationContainers } from '@/services/supabase/hydration';
 import { fetchMetricGoals } from '@/services/supabase/goals';
 import { FALLBACK_CONTAINERS } from '@/constants/hydrationContainers';
@@ -12,6 +12,7 @@ import { formatHydration, glassesFromMl } from '@/utils/hydrationUnits';
 import { DEFAULT_SUGGESTED_ML } from '@/utils/hydrationGoal';
 import { posthog } from '@/utils/analytics';
 import { HYDRATION_CATEGORY, maybeSilenceHydrationReminders } from '@/utils/hydrationReminders';
+import { queryKeys } from '@/hooks/queryKeys';
 
 export { HYDRATION_CATEGORY };
 export const MEDICATION_CATEGORY = 'medication';
@@ -60,7 +61,7 @@ async function getDefaultContainer(queryClient, userId) {
   if (!queryClient || !userId) return fallback;
   try {
     const containers = await queryClient.ensureQueryData({
-      queryKey: ['hydrationContainers', userId],
+      queryKey: queryKeys.hydrationContainers(userId),
       queryFn: () => fetchHydrationContainers(userId),
     });
     const list = containers?.length ? containers : FALLBACK_CONTAINERS;
@@ -75,7 +76,7 @@ async function getBaseGoalMl(queryClient, userId) {
   if (!queryClient || !userId) return DEFAULT_SUGGESTED_ML;
   try {
     const goals = await queryClient.ensureQueryData({
-      queryKey: ['metricGoals', userId],
+      queryKey: queryKeys.metricGoals(userId),
       queryFn: () => fetchMetricGoals(userId),
     });
     return goals?.hydration ?? DEFAULT_SUGGESTED_ML;
@@ -125,13 +126,18 @@ function isoDateString(date) {
   return date.toISOString().split('T')[0];
 }
 
-async function isMedicationTakenToday(medicationId, todayStr) {
-  const { data, error } = await supabase
+async function isMedicationTakenToday(medicationId, scheduledTime, todayStr) {
+  let query = supabase
     .from('medication_logs')
     .select('id')
     .eq('medication_id', medicationId)
-    .eq('date', todayStr)
-    .maybeSingle();
+    .eq('date', todayStr);
+
+  query = scheduledTime
+    ? query.eq('scheduled_time', scheduledTime)
+    : query.is('scheduled_time', null);
+
+  const { data, error } = await query.maybeSingle();
   if (error) {
     console.error('[NotificationActions] Failed to check medication taken status:', error);
     return false;
@@ -143,7 +149,7 @@ async function handleHydrationLogAction({ userId, queryClient }) {
   const container = await getDefaultContainer(queryClient, userId);
   const baseGoalMl = await getBaseGoalMl(queryClient, userId);
   const result = await addHydrationQuickly(userId, container.ml);
-  queryClient?.invalidateQueries({ queryKey: ['dailySummaries', userId] });
+  queryClient?.invalidateQueries({ queryKey: queryKeys.dailySummaries(userId) });
   posthog.capture('hydration_logged', {
     amount_glasses: Math.round(glassesFromMl(container.ml)),
     amount_ml: container.ml,
@@ -154,17 +160,15 @@ async function handleHydrationLogAction({ userId, queryClient }) {
   await maybeSilenceHydrationReminders(result.hydration, baseGoalMl);
 }
 
-async function handleMedicationTakenAction({ userId, medicationId, queryClient, todayStr }) {
+async function handleMedicationTakenAction({ userId, medicationId, scheduledTime, queryClient, todayStr }) {
   if (!medicationId) return;
-  // toggleMedicationTaken is a genuine toggle (used as one by the in-app
-  // checkbox) — but this action's button reads "Mark as taken", not "Toggle
-  // taken", so a stray extra tap (or a delayed delivery after the user
-  // already marked it from the app) must never flip it back off. Guard with
-  // an idempotent pre-check instead of calling the toggle unconditionally.
-  const alreadyTaken = await isMedicationTakenToday(medicationId, todayStr);
+  // The action is idempotent per scheduled dose. A medication can have several
+  // daily reminders, so checking only medication_id would incorrectly block a
+  // later dose after an earlier one was logged.
+  const alreadyTaken = await isMedicationTakenToday(medicationId, scheduledTime, todayStr);
   if (alreadyTaken) return;
-  await toggleMedicationTaken(userId, medicationId);
-  queryClient?.invalidateQueries({ queryKey: ['medications', userId] });
+  await addMedicationLog(userId, medicationId, scheduledTime);
+  queryClient?.invalidateQueries({ queryKey: queryKeys.medications(userId) });
   posthog.capture('medication_marked_taken', { source: 'notification_action' });
 }
 
@@ -215,7 +219,13 @@ export async function processNotificationResponse(response, { queryClient } = {}
     if (response.actionIdentifier === HYDRATION_LOG_ACTION) {
       await handleHydrationLogAction({ userId, queryClient });
     } else if (response.actionIdentifier === MEDICATION_TAKEN_ACTION) {
-      await handleMedicationTakenAction({ userId, medicationId: data.medicationId, queryClient, todayStr });
+      await handleMedicationTakenAction({
+        userId,
+        medicationId: data.medicationId,
+        scheduledTime: data.scheduledTime ?? null,
+        queryClient,
+        todayStr,
+      });
     }
     await markProcessed(identifier);
   } catch (err) {

@@ -7,7 +7,14 @@ import { fonts } from "@/utils/fonts";
 import { usePostHog } from "posthog-react-native";
 import { useTheme } from "@/hooks/useTheme";
 
-export default function LostStreakModal({ visible, lostStreak = 0, onStartFresh, onClose }) {
+export default function LostStreakModal({
+  visible,
+  lostStreak = 0,
+  missedDays = 0,
+  repairsAvailable = 0,
+  onStartFresh,
+  onClose,
+}) {
   const t = useTheme();
   const posthog = usePostHog();
   const flameScale = useRef(new Animated.Value(0.8)).current;
@@ -16,6 +23,8 @@ export default function LostStreakModal({ visible, lostStreak = 0, onStartFresh,
     if (visible) {
       posthog?.capture('streak_lost', {
         streak_days: lostStreak,
+        missed_days: missedDays,
+        repairs_available: repairsAvailable,
         last_active_date: (() => { const d = new Date(); d.setDate(d.getDate() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
       });
       Animated.spring(flameScale, {
@@ -27,7 +36,10 @@ export default function LostStreakModal({ visible, lostStreak = 0, onStartFresh,
     } else {
       flameScale.setValue(0.8);
     }
-  }, [visible]);
+  }, [visible, lostStreak, missedDays, repairsAvailable, posthog, flameScale]);
+
+  const missedDaysLabel = `${missedDays} missed day${missedDays !== 1 ? "s" : ""}`;
+  const repairsLabel = `${repairsAvailable} repair${repairsAvailable !== 1 ? "s" : ""}`;
 
   return (
     <Modal
@@ -135,7 +147,9 @@ export default function LostStreakModal({ visible, lostStreak = 0, onStartFresh,
             }}
           >
             You had a strong {lostStreak}-day run — that's real progress.{"\n"}
-            Every comeback starts with one log.
+            {missedDays > 0
+              ? `You missed ${missedDaysLabel}, but only had ${repairsLabel} available.`
+              : "Every comeback starts with one log."}
           </Text>
 
           {/* Start Fresh CTA */}

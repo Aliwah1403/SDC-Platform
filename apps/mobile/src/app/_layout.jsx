@@ -2,7 +2,15 @@ import { useAuth } from "@/utils/auth/useAuth";
 import { useAuthStore } from "@/utils/auth/store";
 import { useTheme } from "@/hooks/useTheme";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import { logQueryError } from "@/utils/queryErrors";
 import { PostHogProvider } from "posthog-react-native";
 import { posthog, registerSuperProperties } from "@/utils/analytics";
 import { initSentry, Sentry } from "@/utils/sentry";
@@ -13,7 +21,7 @@ import * as SplashScreen from "expo-splash-screen";
 import * as Notifications from "expo-notifications";
 import * as LocalAuthentication from "expo-local-authentication";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { AppState, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { AppState, findNodeHandle, Keyboard, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/store/appStore";
 import { registerPushToken } from "@/services/novuService";
@@ -40,6 +48,7 @@ import '@/utils/backgroundNotificationRefresh';
 import { registerNotificationRefreshTask } from "@/utils/backgroundNotificationRefresh";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import { Fingerprint } from "lucide-react-native";
 import {
   useFonts,
   Geist_400Regular,
@@ -49,15 +58,17 @@ import {
   Geist_800ExtraBold,
 } from "@expo-google-fonts/geist";
 import Constants from "expo-constants";
-import SplashAnimation from "@/components/SplashAnimation";
 import { StartupReadyProvider } from "@/components/ObserveInteractive";
 import { Observe, ObserveRoot } from "expo-observe";
+import AppUpdateModal from "@/components/AppUpdateModal";
+import AnimatedSplash from "@/components/AnimatedSplash";
 
 Observe.configure({
   integrations: { "expo-router": true },
 });
 
 SplashScreen.preventAutoHideAsync();
+SplashScreen.setOptions({ duration: 280, fade: true });
 
 // Required for notifications to display when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -68,13 +79,26 @@ Notifications.setNotificationHandler({
   }),
 });
 
-const MIN_SPLASH_MS = 2000;
+function dismissKeyboardOnOutsideTouch(event) {
+  const focusedInput = TextInput.State?.currentlyFocusedInput?.();
+  if (!focusedInput) return;
+
+  const focusedHandle = findNodeHandle(focusedInput);
+  const touchedHandle = event.nativeEvent.target;
+  if (focusedHandle !== touchedHandle) Keyboard.dismiss();
+}
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => logQueryError('query', error),
+  }),
+  mutationCache: new MutationCache({
+    onError: (error) => logQueryError('mutation', error),
+  }),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5,
-      cacheTime: 1000 * 60 * 30,
+      gcTime: 1000 * 60 * 30,
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -109,13 +133,16 @@ function RootLayoutContent() {
   const userId = useAuthStore((s) => s.auth?.user?.id);
   const hydrationDisplayUnit = useHydrationStore((s) => s.displayUnit);
   const { data: hydrationContainersData } = useHydrationContainersQuery();
-  const [splashExiting, setSplashExiting] = useState(false);
   const [splashGone, setSplashGone] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [appLockSettingsReady, setAppLockSettingsReady] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Unlock Hemo");
   const backgroundedAt = useRef(null);
   const isAuthenticating = useRef(false);
-  const startTime = useRef(Date.now());
+  // Face ID must never open until the native lock surface is visible. Otherwise
+  // iOS uses the previous Hemo screen as the biometric prompt's backdrop.
+  const authenticateAfterLockMount = useRef(false);
   const sessionStartRef = useRef(Date.now());
   const lastHKFetchAt = useRef(Date.now());
 
@@ -155,11 +182,14 @@ function RootLayoutContent() {
         if (timeout !== null) setAppLockTimeout(parsedTimeout);
         // Lock immediately on cold start when appLock is on and timeout is 0 (lock immediately)
         if (enabled === 'true' && parsedTimeout === 0) {
+          authenticateAfterLockMount.current = true;
           setIsLocked(true);
-          authenticateToUnlock();
         }
       })
-      .catch((err) => console.error('[AppLock] Failed to load lock settings:', err));
+      .catch((err) => console.error('[AppLock] Failed to load lock settings:', err))
+      // Do not render a route before knowing whether the saved lock is enabled.
+      // This avoids a brief flash of health data on a locked cold start.
+      .finally(() => setAppLockSettingsReady(true));
   }, []);
 
   // Detect available biometric type to label the unlock button correctly
@@ -196,8 +226,8 @@ function RootLayoutContent() {
         if (!isAuthenticating.current && appLockEnabled && wasBackgrounded) {
           const elapsedMinutes = (Date.now() - wasBackgrounded) / 1000 / 60;
           if (appLockTimeout === 0 || elapsedMinutes >= appLockTimeout) {
+            authenticateAfterLockMount.current = true;
             setIsLocked(true);
-            authenticateToUnlock();
           }
         }
 
@@ -438,22 +468,31 @@ function RootLayoutContent() {
   }, [router]);
 
   useEffect(() => {
-    if (isReady && (fontsLoaded || fontError)) {
+    if (isReady && (fontsLoaded || fontError) && appLockSettingsReady) {
       SplashScreen.hideAsync();
-      const elapsed = Date.now() - startTime.current;
-      const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
-      const timer = setTimeout(() => setSplashExiting(true), remaining);
-      return () => clearTimeout(timer);
+      setSplashGone(true);
     }
-  }, [isReady, fontsLoaded, fontError]);
+  }, [isReady, fontsLoaded, fontError, appLockSettingsReady]);
 
-  if (!isReady || (!fontsLoaded && !fontError)) {
-    return <SplashAnimation />;
+  // App lock owns the cold-start brand moment — it has its own mark, gradient
+  // and copy. Don't stack the launch animation on top of it; mark it spent so
+  // anything gated behind it (AppUpdateModal) still runs after unlocking.
+  useEffect(() => {
+    if (splashGone && isLocked) setSplashDone(true);
+  }, [splashGone, isLocked]);
+
+  const showLaunchSplash = splashGone && !splashDone && !isLocked;
+
+  if (!isReady || (!fontsLoaded && !fontError) || !appLockSettingsReady) {
+    return null;
   }
 
   return (
       <StartupReadyProvider ready={splashGone && !isLocked}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+      <GestureHandlerRootView
+        style={{ flex: 1 }}
+        onTouchStartCapture={dismissKeyboardOnOutsideTouch}
+      >
         <KeyboardProvider>
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />
@@ -565,30 +604,81 @@ function RootLayoutContent() {
 
         <StatusBar style={theme.isDark ? "light" : "dark"} />
 
-        {/* Splash overlay — fades out once ready */}
-        {!splashGone && (
-          <SplashAnimation
-            exiting={splashExiting}
-            onExitComplete={() => setSplashGone(true)}
-          />
+        {/*
+          A native Modal is deliberately used instead of an absolute overlay.
+          Router screens live in a native screen stack, which can otherwise
+          paint over a sibling View while the Face ID sheet is shown.
+        */}
+        {isLocked && (
+          <Modal
+            visible
+            transparent={false}
+            animationType="none"
+            presentationStyle="fullScreen"
+            statusBarTranslucent
+            onRequestClose={() => {}}
+            onShow={() => {
+              if (!authenticateAfterLockMount.current) return;
+              authenticateAfterLockMount.current = false;
+              requestAnimationFrame(authenticateToUnlock);
+            }}
+          >
+            <LinearGradient
+              colors={['#211819', '#171617', '#101010']}
+              locations={[0, 0.52, 1]}
+              style={lockStyles.overlay}
+            >
+              <View pointerEvents="none" style={lockStyles.ambientOrbTop} />
+              <View pointerEvents="none" style={lockStyles.ambientOrbBottom} />
+
+              <View style={lockStyles.lockContent}>
+                <View style={lockStyles.markHalo}>
+                  <View style={lockStyles.markSurface}>
+                    <Image
+                      source={require('../../assets/images/splash-icon.png')}
+                      style={lockStyles.brandMark}
+                      contentFit="contain"
+                    />
+                  </View>
+                </View>
+                <Text style={lockStyles.eyebrow}>Private space</Text>
+                <Text style={lockStyles.appName}>Welcome back</Text>
+                <Text style={lockStyles.tagline}>Unlock Hemo to continue</Text>
+              </View>
+
+              <View style={lockStyles.lockFooter}>
+                <Pressable
+                  style={({ pressed }) => [lockStyles.unlockBtn, pressed && { opacity: 0.88 }]}
+                  onPress={authenticateToUnlock}
+                >
+                  <Fingerprint size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text style={lockStyles.unlockBtnText}>{biometricLabel}</Text>
+                </Pressable>
+                <Text style={lockStyles.passcodeHint}>Protected with your device passcode</Text>
+              </View>
+            </LinearGradient>
+          </Modal>
         )}
 
-        {/* App Lock overlay — rendered above everything */}
-        {isLocked && (
-          <View style={lockStyles.overlay}>
-            <View style={lockStyles.iconCircle}>
-              <Text style={lockStyles.lockEmoji}>🔒</Text>
-            </View>
-            <Text style={lockStyles.appName}>Hemo</Text>
-            <Text style={lockStyles.tagline}>Your sickle cell companion</Text>
-            <Pressable
-              style={({ pressed }) => [lockStyles.unlockBtn, pressed && { opacity: 0.85 }]}
-              onPress={authenticateToUnlock}
-            >
-              <Text style={lockStyles.unlockBtnText}>{biometricLabel}</Text>
-            </Pressable>
-          </View>
+        {/*
+          Same reasoning as the lock surface above: a native Modal, not an
+          absolute sibling View, because router screens can paint over a
+          sibling while they mount. Transparent so the app is revealed as the
+          layer dissolves rather than being cut to.
+        */}
+        {showLaunchSplash && (
+          <Modal
+            visible
+            transparent
+            animationType="none"
+            statusBarTranslucent
+            onRequestClose={() => {}}
+          >
+            <AnimatedSplash onDone={() => setSplashDone(true)} />
+          </Modal>
         )}
+
+        <AppUpdateModal ready={splashDone && !isLocked} />
         </KeyboardProvider>
       </GestureHandlerRootView>
       </StartupReadyProvider>
@@ -599,49 +689,108 @@ export default ObserveRoot.wrap(RootLayout);
 
 const lockStyles = StyleSheet.create({
   overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#1A1A1A',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flex: 1,
     zIndex: 9999,
-    paddingHorizontal: 32,
+    paddingHorizontal: 28,
+    paddingTop: 56,
+    paddingBottom: 42,
   },
-  iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(248,233,231,0.1)',
+  ambientOrbTop: {
+    position: 'absolute',
+    width: 360,
+    height: 360,
+    borderRadius: 180,
+    backgroundColor: 'rgba(169, 51, 77, 0.16)',
+    top: -175,
+    right: -130,
+  },
+  ambientOrbBottom: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: 'rgba(120, 29, 17, 0.18)',
+    bottom: -170,
+    left: -130,
+  },
+  lockContent: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    paddingBottom: 44,
   },
-  lockEmoji: {
-    fontSize: 40,
+  markHalo: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: 'rgba(169, 51, 77, 0.17)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 30,
+  },
+  markSurface: {
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    backgroundColor: 'rgba(248, 233, 231, 0.96)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.55)',
+  },
+  brandMark: {
+    width: 50,
+    height: 50,
+  },
+  eyebrow: {
+    fontFamily: 'Geist_700Bold',
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    color: '#D09F9A',
+    marginBottom: 12,
   },
   appName: {
     fontFamily: 'Geist_700Bold',
-    fontSize: 32,
+    fontSize: 30,
+    lineHeight: 36,
     color: '#F8E9E7',
-    letterSpacing: -1,
-    marginBottom: 6,
+    letterSpacing: -0.7,
+    marginBottom: 10,
   },
   tagline: {
     fontFamily: 'Geist_400Regular',
-    fontSize: 14,
-    color: 'rgba(248,233,231,0.45)',
-    marginBottom: 56,
+    fontSize: 16,
+    lineHeight: 23,
+    color: 'rgba(248,233,231,0.62)',
+    textAlign: 'center',
+  },
+  lockFooter: {
+    width: '100%',
+    alignItems: 'center',
   },
   unlockBtn: {
-    backgroundColor: '#F0531C',
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
+    backgroundColor: '#A9334D',
+    borderRadius: 16,
+    minHeight: 56,
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
   },
   unlockBtnText: {
     fontFamily: 'Geist_700Bold',
-    fontSize: 16,
+    fontSize: 17,
     color: '#ffffff',
-    letterSpacing: 0.2,
+    letterSpacing: -0.15,
+  },
+  passcodeHint: {
+    fontFamily: 'Geist_400Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    color: 'rgba(248,233,231,0.42)',
+    marginTop: 16,
   },
 });

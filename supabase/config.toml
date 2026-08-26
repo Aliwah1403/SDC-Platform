@@ -397,12 +397,15 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.send-community-push]
-verify_jwt = true
+verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
 
 [functions.waitlist-welcome]
+verify_jwt = false
+
+[functions.registered-webhook]
 verify_jwt = false
 
 [functions.waitlist-signup]
@@ -420,6 +423,9 @@ verify_jwt = true
 [functions.queue-resend-contact]
 verify_jwt = true
 
+[functions.delete-account]
+verify_jwt = true
+
 [functions.generate-ed-card]
 verify_jwt = true
 
@@ -428,6 +434,9 @@ verify_jwt = false
 
 [functions.beta-signup]
 verify_jwt = false
+
+[functions.resolve-care-location-link]
+verify_jwt = true
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"

@@ -22,6 +22,7 @@ import {
   ChevronDown,
   ChevronRight,
   ShieldAlert,
+  MapPin,
 } from "lucide-react-native";
 import { usePostHog } from "posthog-react-native";
 import { useAppStore } from "@/store/appStore";
@@ -42,6 +43,8 @@ import { getCountryName } from "@/utils/countryNames";
 import { countryFlagEmoji } from "@/utils/phoneNumbers";
 import AppEmptyState from "@/components/AppEmptyState";
 import emergencyNumbers from "@/data/emergencyNumbers.json";
+import { selectPreferredEmergencyDepartment } from "@/services/supabase/facilities";
+import { callCareLocation, careLocationMapActionLabel, openDirections } from "@/utils/careLocationActions";
 
 
 const SCD_TYPE_LABELS = {
@@ -217,7 +220,8 @@ export default function CrisisPlanScreen() {
   const updateCrisisPlan = useAppStore((s) => s.updateCrisisPlan);
   // const scdType = useAppStore((s) => s.onboardingData?.scdType);
   const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
-  const preferredHospital = savedFacilities[0] ?? null;
+  const preferredHospital = selectPreferredEmergencyDepartment(savedFacilities);
+  const preferredHospitalMapAction = careLocationMapActionLabel(preferredHospital);
 
   const { data: contacts = [] } = useEmergencyContactsQuery();
   const { data: medications = [] } = useMedicationsQuery();
@@ -613,7 +617,12 @@ export default function CrisisPlanScreen() {
                 <Pressable
                   onPress={() => {
                     posthog?.capture('crisis_hospital_called', {});
-                    Linking.openURL(`tel:${preferredHospital.phone}`);
+                    posthog?.capture('care_location_call_tapped', {
+                      role: preferredHospital.role,
+                      source_kind: preferredHospital.sourceKind,
+                      entry_point: 'crisis_plan',
+                    });
+                    callCareLocation(preferredHospital.phone);
                   }}
                   style={({ pressed }) => [
                     styles.callPillLarge,
@@ -626,15 +635,44 @@ export default function CrisisPlanScreen() {
                   </Text>
                 </Pressable>
               ) : null}
+              {preferredHospitalMapAction ? <Pressable
+                onPress={() => {
+                  posthog?.capture('care_location_directions_tapped', {
+                    role: preferredHospital.role,
+                    source_kind: preferredHospital.sourceKind,
+                    entry_point: 'crisis_plan',
+                  });
+                  openDirections(preferredHospital);
+                }}
+                style={({ pressed }) => [
+                  styles.callPillLarge,
+                  pressed && { opacity: 0.8 },
+                ]}
+              >
+                <MapPin size={13} color="#A9334D" strokeWidth={2.5} />
+                <Text style={styles.callPillLargeText}>{preferredHospitalMapAction}</Text>
+              </Pressable> : null}
+              <Pressable
+                onPress={() => router.push({
+                  pathname: "/(tabs)/care/care-location-form",
+                  params: { role: "preferred_ed" },
+                })}
+                style={({ pressed }) => [styles.emptyState, pressed && { opacity: 0.8 }]}
+              >
+                <Text style={styles.emptyStateLink}>Change preferred emergency department →</Text>
+              </Pressable>
             </View>
           ) : (
             <Pressable
-              onPress={() => router.push("/(tabs)/care/facilities")}
+              onPress={() => router.push({
+                pathname: "/(tabs)/care/care-location-form",
+                params: { role: "preferred_ed" },
+              })}
               style={styles.emptyState}
             >
-              <Text style={styles.emptyStateText}>No hospital saved</Text>
+              <Text style={styles.emptyStateText}>No preferred emergency department set</Text>
               <Text style={styles.emptyStateLink}>
-                Find nearby facilities →
+                Choose a care location →
               </Text>
             </Pressable>
           )}

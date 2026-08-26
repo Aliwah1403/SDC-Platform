@@ -1,10 +1,22 @@
 {
   "version": 1,
   "skills": {
+    "animate-expo": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/animate-expo/SKILL.md",
+      "computedHash": "c9eaf6603b97ca61b05c7561e1045b2f58b6d84cdf8d67565bff23a9ff94ce8a"
+    },
     "app-icon": {
       "source": "code-with-beto/skills",
       "sourceType": "github",
       "computedHash": "dc551a26318622c831286711961a4cab90e134bf3378083d9cfe1e52bb466524"
+    },
+    "write-swift": {
+      "source": "emilkowalski/skills",
+      "sourceType": "github",
+      "skillPath": "skills/write-swift/SKILL.md",
+      "computedHash": "ccbb74cac81765fcf2912ceba8d188fddbd75393ecb808aa1a4f6f58d9c2c828"
     }
   }
 }

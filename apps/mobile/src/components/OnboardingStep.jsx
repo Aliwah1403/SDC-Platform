@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import Svg, { Circle, Ellipse } from "react-native-svg";
+import { useTheme } from "@/hooks/useTheme";
 
 export const TOTAL_STEPS = 10;
 
@@ -50,9 +51,11 @@ export default function OnboardingStep({
   children,
 }) {
   const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const isCtaDisabled = ctaDisabled || loading;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: t.background }]}>
       {/* Top bar: centered progress dots + optional skip */}
       <View style={styles.topBar}>
         <View style={styles.dotsCenter}>
@@ -71,7 +74,7 @@ export default function OnboardingStep({
                       ]
                     : isPast
                       ? [styles.dotPast, { backgroundColor: illustrationColor }]
-                      : styles.dotFuture,
+                    : [styles.dotFuture, { backgroundColor: t.isDark ? "rgba(248,233,231,0.18)" : "rgba(9,51,44,0.14)" }],
                 ]}
               />
             );
@@ -79,7 +82,7 @@ export default function OnboardingStep({
         </View>
         {skippable && onSkip && (
           <Pressable onPress={onSkip} hitSlop={10} style={styles.skipBtn}>
-            <Text style={styles.skipText}>Skip</Text>
+            <Text style={[styles.skipText, { color: t.textSecondary }]}>Skip</Text>
           </Pressable>
         )}
       </View>
@@ -182,8 +185,8 @@ export default function OnboardingStep({
             }}
             style={styles.headingBlock}
           >
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            <Text style={[styles.title, { color: t.text }]}>{title}</Text>
+            {subtitle ? <Text style={[styles.subtitle, { color: t.textSecondary }]}>{subtitle}</Text> : null}
           </MotiView>
 
           {/* Content */}
@@ -203,17 +206,18 @@ export default function OnboardingStep({
       </KeyboardAvoidingView>
 
       {/* Bottom navigation — fixed outside scroll */}
-      <View style={[styles.bottomNav, { paddingBottom: insets.bottom + 14 }]}>
+      <View style={[styles.bottomNav, { paddingBottom: insets.bottom + 14, borderTopColor: t.divider, backgroundColor: t.background }]}>
         <View style={styles.navLeft}>
           {onBack ? (
             <Pressable
               style={({ pressed }) => [
                 styles.backCircle,
+                { backgroundColor: t.isDark ? t.surfaceElevated : "rgba(9,51,44,0.08)" },
                 pressed && { opacity: 0.6 },
               ]}
               onPress={onBack}
             >
-              <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
+              <ArrowLeft size={20} color={t.text} strokeWidth={2} />
             </Pressable>
           ) : (
             <View style={styles.navPlaceholder} />
@@ -225,19 +229,21 @@ export default function OnboardingStep({
             style={({ pressed }) => [
               styles.nextPill,
               {
-                backgroundColor: ctaDisabled ? "rgba(9,51,44,0.2)" : "#A9334D",
+                backgroundColor: isCtaDisabled ? t.surfaceElevated : t.accent,
+                borderWidth: isCtaDisabled ? 1 : 0,
+                borderColor: isCtaDisabled ? t.border : "transparent",
               },
-              pressed && !ctaDisabled && { opacity: 0.85 },
+              pressed && !isCtaDisabled && { opacity: 0.85 },
             ]}
             onPress={onCta}
-            disabled={ctaDisabled || loading}
+            disabled={isCtaDisabled}
           >
             {loading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <>
-                <Text style={styles.nextPillText}>{ctaLabel}</Text>
-                <ArrowRight size={15} color="#FFFFFF" strokeWidth={2.5} />
+                <Text style={[styles.nextPillText, isCtaDisabled && { color: t.textSecondary }]}>{ctaLabel}</Text>
+                <ArrowRight size={15} color={isCtaDisabled ? t.textSecondary : "#FFFFFF"} strokeWidth={2.5} />
               </>
             )}
           </Pressable>
@@ -250,7 +256,6 @@ export default function OnboardingStep({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F4F0",
   },
   topBar: {
     flexDirection: "row",
@@ -285,12 +290,10 @@ const styles = StyleSheet.create({
   },
   dotFuture: {
     width: 6,
-    backgroundColor: "rgba(9,51,44,0.14)",
   },
   skipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: "rgba(9,51,44,0.4)",
   },
   scrollContent: {
     paddingHorizontal: 24,
@@ -325,7 +328,6 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 28,
-    color: "#1A1A1A",
     letterSpacing: -0.9,
     lineHeight: 34,
     marginBottom: 6,
@@ -333,7 +335,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "rgba(9,51,44,0.55)",
     lineHeight: 22,
   },
   bottomNav: {
@@ -343,8 +344,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "rgba(9,51,44,0.07)",
-    backgroundColor: "#F8F4F0",
   },
   navLeft: {
     width: 44,
@@ -360,7 +359,6 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(9,51,44,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
