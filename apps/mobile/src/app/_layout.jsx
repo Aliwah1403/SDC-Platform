@@ -61,6 +61,7 @@ import Constants from "expo-constants";
 import { StartupReadyProvider } from "@/components/ObserveInteractive";
 import { Observe, ObserveRoot } from "expo-observe";
 import AppUpdateModal from "@/components/AppUpdateModal";
+import AnimatedSplash from "@/components/AnimatedSplash";
 
 Observe.configure({
   integrations: { "expo-router": true },
@@ -133,6 +134,7 @@ function RootLayoutContent() {
   const hydrationDisplayUnit = useHydrationStore((s) => s.displayUnit);
   const { data: hydrationContainersData } = useHydrationContainersQuery();
   const [splashGone, setSplashGone] = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [appLockSettingsReady, setAppLockSettingsReady] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Unlock Hemo");
@@ -472,6 +474,15 @@ function RootLayoutContent() {
     }
   }, [isReady, fontsLoaded, fontError, appLockSettingsReady]);
 
+  // App lock owns the cold-start brand moment — it has its own mark, gradient
+  // and copy. Don't stack the launch animation on top of it; mark it spent so
+  // anything gated behind it (AppUpdateModal) still runs after unlocking.
+  useEffect(() => {
+    if (splashGone && isLocked) setSplashDone(true);
+  }, [splashGone, isLocked]);
+
+  const showLaunchSplash = splashGone && !splashDone && !isLocked;
+
   if (!isReady || (!fontsLoaded && !fontError) || !appLockSettingsReady) {
     return null;
   }
@@ -649,7 +660,25 @@ function RootLayoutContent() {
           </Modal>
         )}
 
-        <AppUpdateModal ready={splashGone && !isLocked} />
+        {/*
+          Same reasoning as the lock surface above: a native Modal, not an
+          absolute sibling View, because router screens can paint over a
+          sibling while they mount. Transparent so the app is revealed as the
+          layer dissolves rather than being cut to.
+        */}
+        {showLaunchSplash && (
+          <Modal
+            visible
+            transparent
+            animationType="none"
+            statusBarTranslucent
+            onRequestClose={() => {}}
+          >
+            <AnimatedSplash onDone={() => setSplashDone(true)} />
+          </Modal>
+        )}
+
+        <AppUpdateModal ready={splashDone && !isLocked} />
         </KeyboardProvider>
       </GestureHandlerRootView>
       </StartupReadyProvider>

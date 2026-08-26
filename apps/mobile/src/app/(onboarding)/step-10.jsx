@@ -7,11 +7,14 @@ import { Check, Pill } from 'lucide-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
 import { SCD_MEDICATIONS, SCD_CATEGORIES as CATEGORIES } from '@/utils/scdDrugs';
+import { useTheme } from '@/hooks/useTheme';
 
 export default function Step10() {
   const posthog = usePostHog();
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const toggleDrug = (id) => {
     setSelectedIds((prev) => {
@@ -129,13 +132,13 @@ export default function Step10() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   container: {
     gap: 20,
   },
   badge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#A9334D',
+    backgroundColor: t.accent,
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 5,
@@ -151,7 +154,7 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontFamily: 'Geist_600SemiBold',
     fontSize: 12,
-    color: 'rgba(9,51,44,0.5)',
+    color: t.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -164,17 +167,17 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   chip: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.surface,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
+    borderColor: t.border,
     paddingVertical: 12,
     paddingHorizontal: 14,
     gap: 3,
   },
   chipSelected: {
-    backgroundColor: '#A9334D',
-    borderColor: '#A9334D',
+    backgroundColor: t.accent,
+    borderColor: t.accent,
   },
   chipTop: {
     flexDirection: 'row',
@@ -194,7 +197,7 @@ const styles = StyleSheet.create({
   chipName: {
     fontFamily: 'Geist_500Medium',
     fontSize: 13,
-    color: '#1A1A1A',
+    color: t.text,
     flexShrink: 1,
   },
   chipNameSelected: {
@@ -204,7 +207,7 @@ const styles = StyleSheet.create({
   chipSubtitle: {
     fontFamily: 'Geist_400Regular',
     fontSize: 11,
-    color: 'rgba(9,51,44,0.45)',
+    color: t.textSecondary,
   },
   chipSubtitleSelected: {
     color: 'rgba(255,255,255,0.7)',
@@ -212,7 +215,7 @@ const styles = StyleSheet.create({
   hint: {
     fontFamily: 'Geist_400Regular',
     fontSize: 12,
-    color: 'rgba(9,51,44,0.4)',
+    color: t.textSecondary,
     textAlign: 'center',
     lineHeight: 17,
   },

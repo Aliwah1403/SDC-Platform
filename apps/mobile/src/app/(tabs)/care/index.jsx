@@ -326,8 +326,8 @@ export default function CareMenuScreen() {
         <MotiView from={{ opacity: 0, translateY: 16 }} animate={{ opacity: 1, translateY: 0 }} transition={{ type: "timing", duration: 220, delay: 4 * STAGGER_MS }}>
           <CareNavCard
             icon={<MapPin size={26} color="#F0531C" strokeWidth={2} />}
-            title="Clinics & Hospitals"
-            subtitle={savedFacilities.length > 0 ? `${savedFacilities.length} saved nearby` : "Find nearby facilities"}
+            title="Care locations"
+            subtitle={savedFacilities.length > 0 ? `${savedFacilities.length} saved` : "Set your emergency department and clinic"}
             badge={
               savedFacilities.length > 0 ? (
                 <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#FEF0EB", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4, gap: 4 }}>

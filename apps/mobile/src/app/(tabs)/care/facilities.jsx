@@ -1,1576 +1,194 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-} from "react";
+import React, { useEffect, useRef } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
+import { ChevronLeft, ChevronRight, ExternalLink, Map, MapPin, Navigation, Phone, Plus } from 'lucide-react-native';
+import CareLocationsMap from '@/components/CareLocations/CareLocationsMap';
+import { useSavedFacilitiesQuery } from '@/hooks/queries/useSavedFacilitiesQuery';
+import { useCareLocationMutations } from '@/hooks/mutations/useCareLocationMutations';
+import { useTheme } from '@/hooks/useTheme';
+import { fonts } from '@/utils/fonts';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Linking,
-  Platform,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  Animated,
-} from "react-native";
-import { StatusBar } from "expo-status-bar";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import * as Location from "expo-location";
-import MapView, { Marker } from "react-native-maps";
-import {
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  Phone,
-  Navigation,
-  Clock,
-  Heart,
-  Star,
-  X,
-  List,
-  Map,
-  Search,
-  Check,
-  Plus,
-  ExternalLink,
-} from "lucide-react-native";
-import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import AppEmptyState from "@/components/AppEmptyState";
-import { useAppStore } from "@/store/appStore";
-import { mockFacilities, FACILITY_TYPES } from "@/data/mockFacilities";
-import {
-  searchNearbyFacilities,
-  searchFacilitiesByText,
-} from "@/utils/hospitalSearch";
-import { saveFacility, unsaveFacility } from "@/services/supabase/facilities";
-import { useAuthStore } from "@/utils/auth/store";
-import { useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/hooks/queryKeys";
-import { useSavedFacilitiesQuery } from "@/hooks/queries/useSavedFacilitiesQuery";
-import { useTheme } from "@/hooks/useTheme";
+  CARE_LOCATION_ROLE_LABELS,
+  CARE_LOCATION_ROLES,
+  selectPreferredEmergencyDepartment,
+  selectRegularClinic,
+} from '@/services/supabase/facilities';
+import { callCareLocation, careLocationMapActionLabel, openDirections, openExternalMapSearch } from '@/utils/careLocationActions';
 
-const CACHE_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-// ── Haversine distance in miles ──────────────────────────────────────────────
-function distanceMiles(lat1, lng1, lat2, lng2) {
-  const R = 3958.8;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-// ── Type config ───────────────────────────────────────────────────────────────
-const TYPE_CONFIG = {
-  [FACILITY_TYPES.HOSPITAL]: { color: "#DC2626", bg: "#FEE2E2" },
-  [FACILITY_TYPES.URGENT_CARE]: { color: "#A9334D", bg: "#F8E9E7" },
-  [FACILITY_TYPES.CLINIC]: { color: "#059669", bg: "#D1FAE5" },
-  [FACILITY_TYPES.SCD_SPECIALIST]: { color: "#1A1A1A", bg: "#F8E9E7" },
+const ROLE_TONES = {
+  preferred_ed: { color: '#DC2626', background: '#FEE2E2' },
+  regular_scd_clinic: { color: '#A9334D', background: '#F8E9E7' },
+  pharmacy: { color: '#059669', background: '#D1FAE5' },
+  transfusion_centre: { color: '#7C3AED', background: '#EDE9FE' },
+  other: { color: '#6B7280', background: '#F3F4F6' },
 };
 
-const FILTERS = [
-  "All",
-  "Saved",
-  FACILITY_TYPES.HOSPITAL,
-  FACILITY_TYPES.URGENT_CARE,
-  FACILITY_TYPES.CLINIC,
-  FACILITY_TYPES.SCD_SPECIALIST,
-];
-
-// ── Search result card ────────────────────────────────────────────────────────
-function SearchResultCard({ facility, userLocation, isSaved, onAdd, onPress }) {
-  const t = useTheme();
-  const styles = useMemo(() => createStyles(t), [t]);
-  const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
-  const distance = userLocation
-    ? distanceMiles(
-        userLocation.lat,
-        userLocation.lng,
-        facility.lat,
-        facility.lng,
-      ).toFixed(1)
-    : null;
-
+function QuietAction({ icon: Icon, label, onPress, disabled = false, tint }) {
   return (
-    <TouchableOpacity
-      style={styles.searchCard}
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      style={({ pressed }) => ({
+        flex: 1, minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+        gap: 7, opacity: pressed ? 0.6 : 1,
+      })}
     >
-      <View style={{ flex: 1 }}>
-        <Text style={styles.cardName} numberOfLines={1}>
-          {facility.name}
-        </Text>
-        <View
+      <Icon size={16} color={disabled ? tint.muted : tint.action} />
+      <Text style={{ color: disabled ? tint.muted : tint.action, fontFamily: fonts.semibold, fontSize: 13.5 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function PrimaryLocationCard({ t, title, emptyText, location, tone, onAdd, onEdit, onCall, onDirections }) {
+  const canCall = !!(location?.phone || location?.careTeamPhone);
+  const mapActionLabel = careLocationMapActionLabel(location);
+  const tint = { action: t.text, muted: t.textTertiary };
+
+  return (
+    <View style={{ backgroundColor: t.surface, borderRadius: 18, borderWidth: 1, borderColor: t.border, overflow: 'hidden' }}>
+      <Pressable
+        onPress={location ? onEdit : onAdd}
+        accessibilityRole="button"
+        accessibilityLabel={location ? `${title}, ${location.name}` : `${title}, ${emptyText}`}
+        style={({ pressed }) => ({ padding: 16, gap: 7, opacity: pressed ? 0.7 : 1 })}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+          <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: tone.color }} />
+          <Text selectable style={{ flex: 1, color: tone.color, fontFamily: fonts.semibold, fontSize: 12.5 }}>{title}</Text>
+          {location ? <ChevronRight size={18} color={t.textSecondary} /> : <Plus size={18} color={t.textSecondary} />}
+        </View>
+        <Text
+          selectable
+          numberOfLines={2}
           style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            marginBottom: 6,
+            color: location ? t.text : t.textSecondary,
+            fontFamily: location ? fonts.semibold : fonts.regular,
+            fontSize: 16, lineHeight: 21,
           }}
         >
-          <View style={[styles.typeBadge, { backgroundColor: cfg.bg }]}>
-            <Text style={[styles.typeBadgeText, { color: cfg.color }]}>
-              {facility.type}
-            </Text>
-          </View>
-          {distance && (
-            <View style={styles.metaChip}>
-              <Navigation size={11} color="#A9334D" />
-              <Text style={styles.metaChipText}>{distance} mi</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.detailText} numberOfLines={1}>
-          {facility.address}
+          {location?.name || emptyText}
         </Text>
-      </View>
-
-      <TouchableOpacity
-        onPress={() => !isSaved && onAdd(facility)}
-        style={[styles.addBtn, isSaved && styles.addBtnSaved]}
-        activeOpacity={isSaved ? 1 : 0.7}
-      >
-        {isSaved ? (
-          <>
-            <Check size={14} color="#059669" strokeWidth={2.5} />
-            <Text style={[styles.addBtnText, { color: "#059669" }]}>Saved</Text>
-          </>
-        ) : (
-          <>
-            <Plus size={14} color="#A9334D" strokeWidth={2.5} />
-            <Text style={[styles.addBtnText, { color: "#A9334D" }]}>Add</Text>
-          </>
-        )}
-      </TouchableOpacity>
-    </TouchableOpacity>
-  );
-}
-
-// ── Facility card (list view) ─────────────────────────────────────────────────
-function FacilityCard({
-  facility,
-  userLocation,
-  isFavourite,
-  onToggleFavourite,
-  onPress,
-}) {
-  const t = useTheme();
-  const styles = useMemo(() => createStyles(t), [t]);
-  const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
-  const distance = userLocation
-    ? distanceMiles(
-        userLocation.lat,
-        userLocation.lng,
-        facility.lat,
-        facility.lng,
-      ).toFixed(1)
-    : null;
-
-  const handleCall = () => Linking.openURL(`tel:${facility.phone}`);
-  const handleDirections = () => {
-    const scheme = Platform.OS === "ios" ? "maps:" : "geo:";
-    const query = encodeURIComponent(facility.address);
-    Linking.openURL(
-      `${scheme}?q=${query}&daddr=${facility.lat},${facility.lng}`,
-    );
-  };
-
-  return (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={onPress}
-      activeOpacity={0.92}
-    >
-      {/* Top row */}
-      <View style={styles.cardHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.cardName}>{facility.name}</Text>
-          <View style={[styles.typeBadge, { backgroundColor: cfg.bg }]}>
-            <Text style={[styles.typeBadgeText, { color: cfg.color }]}>
-              {facility.scdSpecialist &&
-              facility.type !== FACILITY_TYPES.SCD_SPECIALIST
-                ? `${facility.type} · SCD`
-                : facility.type}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => onToggleFavourite(facility)}
-          style={styles.heartBtn}
-          hitSlop={10}
-        >
-          <Heart
-            size={22}
-            color={isFavourite ? "#A9334D" : "#C4C4C4"}
-            fill={isFavourite ? "#A9334D" : "transparent"}
-            strokeWidth={2}
-          />
-        </TouchableOpacity>
-      </View>
-
-      {/* Details */}
-      <View style={styles.cardDetails}>
-        <View style={styles.detailRow}>
-          <MapPin size={15} color={t.textSecondary} />
-          <Text style={styles.detailText}>{facility.address}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Phone size={15} color={t.textSecondary} />
-          <Text style={styles.detailText}>{facility.phone}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Clock size={15} color={t.textSecondary} />
-          <Text style={styles.detailText}>{facility.hours}</Text>
-        </View>
-      </View>
-
-      {/* Distance + rating */}
-      {(distance || facility.rating) && (
-        <View style={styles.metaRow}>
-          {distance && (
-            <View style={styles.metaChip}>
-              <Navigation size={12} color="#A9334D" />
-              <Text style={styles.metaChipText}>{distance} mi away</Text>
-            </View>
-          )}
-          {facility.rating && (
-            <View style={styles.metaChip}>
-              <Star size={12} color="#F59E0B" fill="#F59E0B" />
-              <Text style={styles.metaChipText}>{facility.rating}</Text>
-            </View>
-          )}
-        </View>
-      )}
-
-      {/* Action buttons */}
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnOutlined]}
-          onPress={handleDirections}
-        >
-          <Navigation size={16} color="#A9334D" />
-          <Text style={[styles.actionBtnText, { color: "#A9334D" }]}>
-            Directions
+        {location?.address ? (
+          <Text selectable numberOfLines={1} style={{ color: t.textSecondary, fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 17 }}>
+            {location.address}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnFilled]}
-          onPress={handleCall}
-        >
-          <Phone size={16} color="#FFFFFF" />
-          <Text style={[styles.actionBtnText, { color: "#FFFFFF" }]}>
-            Call Now
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-}
+        ) : null}
+      </Pressable>
 
-// ── Facility map marker ───────────────────────────────────────────────────────
-function FacilityMarker({ facility, isSelected, showLabel }) {
-  const t = useTheme();
-  const styles = useMemo(() => createStyles(t), [t]);
-  const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
-  const pulseScale = useRef(new Animated.Value(1)).current;
-  const pulseOpacity = useRef(new Animated.Value(0.6)).current;
-  const loopRef = useRef(null);
-
-  useEffect(() => {
-    if (isSelected) {
-      loopRef.current = Animated.loop(
-        Animated.parallel([
-          Animated.sequence([
-            Animated.timing(pulseScale, { toValue: 2.4, duration: 900, useNativeDriver: true }),
-            Animated.timing(pulseScale, { toValue: 1, duration: 0, useNativeDriver: true }),
-          ]),
-          Animated.sequence([
-            Animated.timing(pulseOpacity, { toValue: 0, duration: 900, useNativeDriver: true }),
-            Animated.timing(pulseOpacity, { toValue: 0.6, duration: 0, useNativeDriver: true }),
-          ]),
-        ])
-      );
-      loopRef.current.start();
-    } else {
-      loopRef.current?.stop();
-      pulseScale.setValue(1);
-      pulseOpacity.setValue(0.6);
-    }
-    return () => loopRef.current?.stop();
-  }, [isSelected]);
-
-  const size = isSelected ? 38 : 30;
-  const iconSize = isSelected ? 17 : 13;
-  const Icon = facility.scdSpecialist ? Star : facility.type === FACILITY_TYPES.HOSPITAL ? Plus : Heart;
-
-  return (
-    <View style={{ alignItems: "center" }}>
-      {/* Pulse ring */}
-      {isSelected && (
-        <Animated.View
-          style={{
-            position: "absolute",
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            backgroundColor: cfg.color,
-            transform: [{ scale: pulseScale }],
-            opacity: pulseOpacity,
-          }}
-        />
-      )}
-
-      {/* Pin body */}
-      <View
-        style={[
-          styles.markerPin,
-          {
-            backgroundColor: cfg.color,
-            width: size,
-            height: size,
-            borderRadius: isSelected ? size / 2 : 10,
-          },
-          isSelected && styles.markerPinSelected,
-        ]}
-      >
-        <Icon size={iconSize} color="#FFFFFF" fill={facility.scdSpecialist ? "#FFFFFF" : "none"} strokeWidth={2.5} />
-      </View>
-
-      {/* Bottom pointer */}
-      <View style={[styles.markerPointer, { borderTopColor: cfg.color }]} />
-
-      {/* Name label */}
-      {(showLabel || isSelected) && (
-        <View style={[styles.markerLabel, isSelected && { backgroundColor: cfg.color }]}>
-          <Text
-            style={[styles.markerLabelText, isSelected && { color: "#fff" }]}
-            numberOfLines={1}
-          >
-            {facility.name}
-          </Text>
+      {location ? (
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: t.divider }}>
+          <QuietAction icon={Phone} label="Call" onPress={onCall} disabled={!canCall} tint={tint} />
+          <View style={{ width: 1, backgroundColor: t.divider }} />
+          <QuietAction icon={Navigation} label={mapActionLabel || 'Directions unavailable'} onPress={onDirections} disabled={!mapActionLabel} tint={tint} />
         </View>
-      )}
-    </View>
-  );
-}
-
-// ── Sheet helpers ─────────────────────────────────────────────────────────────
-const DAYS_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-function todayAbbr() {
-  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date().getDay()];
-}
-
-// ── Facility sheet content (map view bottom sheet) ───────────────────────────
-function FacilitySheetContent({
-  facility,
-  userLocation,
-  isFavourite,
-  onToggleFavourite,
-  onNavigateToDetail,
-}) {
-  const t = useTheme();
-  const styles = useMemo(() => createStyles(t), [t]);
-  const cfg = TYPE_CONFIG[facility.type] ?? { color: "#666", bg: "#F3F4F6" };
-  const distance = userLocation
-    ? distanceMiles(
-        userLocation.lat,
-        userLocation.lng,
-        facility.lat,
-        facility.lng,
-      ).toFixed(1)
-    : null;
-  const today = todayAbbr();
-  const todayHours = facility.weeklyHours?.find((h) => h.day === today);
-  const sortedHours = facility.weeklyHours
-    ? [...facility.weeklyHours].sort(
-        (a, b) => DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day),
-      )
-    : [];
-
-  const handleCall = () => Linking.openURL(`tel:${facility.phone}`);
-  const handleDirections = () => {
-    const scheme = Platform.OS === "ios" ? "maps:" : "geo:";
-    Linking.openURL(
-      `${scheme}?q=${encodeURIComponent(facility.address)}&daddr=${facility.lat},${facility.lng}`,
-    );
-  };
-
-  const todayOpen = todayHours?.hours !== "Closed";
-  const todayLabel =
-    todayHours?.hours === "Open 24 hours"
-      ? "Open 24h"
-      : todayHours?.hours === "Closed"
-        ? "Closed today"
-        : todayHours
-          ? `Today ${todayHours.hours}`
-          : null;
-
-  return (
-    <View style={styles.sheetWrap}>
-      {/* ── Always visible at small snap ── */}
-      <View style={styles.sheetHeader}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.sheetName}>{facility.name}</Text>
-          <View style={styles.sheetBadgesRow}>
-            <View style={[styles.typeBadge, { backgroundColor: cfg.bg }]}>
-              <Text style={[styles.typeBadgeText, { color: cfg.color }]}>
-                {facility.type}
-              </Text>
-            </View>
-            {facility.scdSpecialist &&
-              facility.type !== FACILITY_TYPES.SCD_SPECIALIST && (
-                <View
-                  style={[styles.typeBadge, { backgroundColor: "#F8E9E7" }]}
-                >
-                  <Star size={10} color="#A9334D" fill="#A9334D" />
-                  <Text
-                    style={[
-                      styles.typeBadgeText,
-                      { color: "#A9334D", marginLeft: 3 },
-                    ]}
-                  >
-                    SCD
-                  </Text>
-                </View>
-              )}
-          </View>
-        </View>
-        <TouchableOpacity
-          onPress={() => onToggleFavourite(facility)}
-          hitSlop={10}
-        >
-          <Heart
-            size={22}
-            color={isFavourite ? "#A9334D" : "#C4C4C4"}
-            fill={isFavourite ? "#A9334D" : "transparent"}
-            strokeWidth={2}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.sheetMetaRow}>
-        {distance && (
-          <View style={styles.metaChip}>
-            <Navigation size={11} color="#A9334D" />
-            <Text style={styles.metaChipText}>{distance} mi away</Text>
-          </View>
-        )}
-        {facility.rating && (
-          <View style={styles.metaChip}>
-            <Star size={11} color="#F59E0B" fill="#F59E0B" />
-            <Text style={styles.metaChipText}>{facility.rating}</Text>
-          </View>
-        )}
-        {todayLabel && (
-          <View
-            style={[
-              styles.metaChip,
-              { backgroundColor: todayOpen ? "#F0FDF4" : "#FEF2F2" },
-            ]}
-          >
-            <Clock size={11} color={todayOpen ? "#059669" : "#DC2626"} />
-            <Text
-              style={[
-                styles.metaChipText,
-                { color: todayOpen ? "#059669" : "#DC2626" },
-              ]}
-            >
-              {todayLabel}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.sheetDivider} />
-
-      {/* ── Visible at mid snap ── */}
-      <TouchableOpacity style={styles.sheetRow} onPress={handleDirections}>
-        <View style={styles.sheetRowIcon}>
-          <MapPin size={16} color="#A9334D" />
-        </View>
-        <Text style={styles.sheetRowText} numberOfLines={2}>
-          {facility.address}
-        </Text>
-        <Text style={styles.sheetRowAction}>Directions</Text>
-      </TouchableOpacity>
-
-      <View style={styles.sheetRowDivider} />
-
-      <TouchableOpacity style={styles.sheetRow} onPress={handleCall}>
-        <View style={styles.sheetRowIcon}>
-          <Phone size={16} color="#A9334D" />
-        </View>
-        <Text style={styles.sheetRowText}>{facility.phone}</Text>
-        <Text style={styles.sheetRowAction}>Call</Text>
-      </TouchableOpacity>
-
-      {facility.website && (
-        <>
-          <View style={styles.sheetRowDivider} />
-          <TouchableOpacity
-            style={styles.sheetRow}
-            onPress={() => Linking.openURL(facility.website)}
-          >
-            <View style={styles.sheetRowIcon}>
-              <ExternalLink size={16} color="#A9334D" />
-            </View>
-            <Text style={styles.sheetRowText} numberOfLines={1}>
-              {facility.website.replace(/^https?:\/\//, "")}
-            </Text>
-            <Text style={styles.sheetRowAction}>Open</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      <View style={[styles.sheetDivider, { marginTop: 16 }]} />
-
-      <View style={styles.cardActions}>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnOutlined]}
-          onPress={handleDirections}
-        >
-          <Navigation size={16} color="#A9334D" />
-          <Text style={[styles.actionBtnText, { color: "#A9334D" }]}>
-            Directions
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, styles.actionBtnFilled]}
-          onPress={handleCall}
-        >
-          <Phone size={16} color="#FFFFFF" />
-          <Text style={[styles.actionBtnText, { color: "#FFFFFF" }]}>
-            Call Now
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
-
-      {/* ── Visible at full snap ── */}
-      {facility.description && (
-        <>
-          <Text style={styles.sheetSectionLabel}>About</Text>
-          <Text style={styles.sheetDescription}>{facility.description}</Text>
-          <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
-        </>
-      )}
-
-      {sortedHours.length > 0 && (
-        <>
-          <Text style={styles.sheetSectionLabel}>Opening Hours</Text>
-          <View style={styles.sheetHoursTable}>
-            {sortedHours.map((h, i) => (
-              <View key={h.day}>
-                <View
-                  style={[
-                    styles.sheetHoursRow,
-                    h.day === today && styles.sheetHoursRowToday,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.hoursDay,
-                      h.day === today && styles.hoursDayToday,
-                    ]}
-                  >
-                    {h.day}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.hoursValue,
-                      h.day === today && styles.hoursValueToday,
-                      h.hours === "Closed" && styles.hoursValueClosed,
-                    ]}
-                  >
-                    {h.hours}
-                  </Text>
-                  {h.day === today && <View style={styles.todayDot} />}
-                </View>
-                {i < sortedHours.length - 1 && (
-                  <View style={styles.sheetRowDivider} />
-                )}
-              </View>
-            ))}
-          </View>
-          <View style={[styles.sheetDivider, { marginVertical: 20 }]} />
-        </>
-      )}
-
-      <TouchableOpacity
-        style={styles.viewProfileBtn}
-        onPress={onNavigateToDetail}
-      >
-        <Text style={styles.viewProfileBtnText}>View Full Profile</Text>
-        <ChevronRight size={16} color="#A9334D" />
-      </TouchableOpacity>
-
-      <View style={{ height: 32 }} />
-    </View>
-  );
-}
-
-// ── Main screen ───────────────────────────────────────────────────────────────
-export default function FacilitiesScreen() {
-  const t = useTheme();
-  const styles = useMemo(() => createStyles(t), [t]);
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
-  const {
-    toggleSavedFacility,
-    facilitiesCache,
-    setFacilitiesCache,
-    setPlaceDetails,
-  } = useAppStore();
-  const { auth } = useAuthStore();
-  const userId = auth?.user?.id ?? null;
-  const queryClient = useQueryClient();
-  const { data: savedFacilities = [] } = useSavedFacilitiesQuery();
-
-  const [view, setView] = useState("list"); // "map" | "list"
-  const [activeFilter, setActiveFilter] = useState("All");
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationDenied, setLocationDenied] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFacility, setSelectedFacility] = useState(null);
-
-  // ── Real-data state ──────────────────────────────────────────────────────────
-  const [facilities, setFacilities] = useState([]); // current list (real or mock)
-  const [loadingFacilities, setLoadingFacilities] = useState(false);
-  const [nextPageToken, setNextPageToken] = useState(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [apiError, setApiError] = useState(null);
-
-  // Search state (driven by API when real data is available)
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const searchDebounceRef = useRef(null);
-
-  const [mapLatDelta, setMapLatDelta] = useState(0.08);
-
-  const searchRef = useRef(null);
-  const mapRef = useRef(null);
-  const bottomSheetRef = useRef(null);
-  const snapPoints = useMemo(() => ["20%", "52%", "92%"], []);
-  const hasApiKey = !!process.env.EXPO_PUBLIC_GOOGLE_PLACES_KEY;
-
-  const showMarkerLabels = mapLatDelta < 0.04;
-
-  // Close the sheet when user switches away from map view
-  useEffect(() => {
-    if (view !== "map") {
-      bottomSheetRef.current?.close();
-      setSelectedFacility(null);
-    }
-  }, [view]);
-
-  // Toggle save — optimistic update + background Supabase sync
-  const handleToggleSave = useCallback(
-    (facility) => {
-      const alreadySaved = savedFacilities.some((f) => f.placeId === facility.id);
-      toggleSavedFacility(facility);
-      if (!userId) return;
-      if (alreadySaved) {
-        unsaveFacility(userId, facility.id)
-          .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.savedFacilities(userId) }))
-          .catch(() => toggleSavedFacility(facility));
-      } else {
-        saveFacility(userId, facility)
-          .then(() => queryClient.invalidateQueries({ queryKey: queryKeys.savedFacilities(userId) }))
-          .catch(() => toggleSavedFacility(facility));
-      }
-    },
-    [userId, savedFacilities, toggleSavedFacility, queryClient]
-  );
-
-  const isSearchMode = searchQuery.trim().length > 0;
-
-  // ── Location fetch + initial data load ──────────────────────────────────────
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.getForegroundPermissionsAsync();
-        if (status !== "granted") {
-          setLocationDenied(true);
-          if (!hasApiKey) setFacilities(mockFacilities);
-          return;
-        }
-        const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setUserLocation(loc);
-        await loadNearby(loc);
-      } catch {
-        setLocationDenied(true);
-        if (!hasApiKey) setFacilities(mockFacilities);
-      }
-    })();
-  }, []);
-
-  // Load nearby facilities — checks cache first (30 min TTL)
-  const loadNearby = useCallback(
-    async (loc) => {
-      if (!hasApiKey) {
-        setFacilities(mockFacilities);
-        return;
-      }
-      const cacheKey = `${loc.lat.toFixed(2)},${loc.lng.toFixed(2)}`;
-      const cached = facilitiesCache[cacheKey];
-      if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-        setFacilities(cached.facilities);
-        setNextPageToken(cached.nextPageToken ?? null);
-        return;
-      }
-      setLoadingFacilities(true);
-      setApiError(null);
-      try {
-        const { facilities: results, nextPageToken: token } =
-          await searchNearbyFacilities(loc.lat, loc.lng);
-        setFacilities(results);
-        setNextPageToken(token);
-        setFacilitiesCache(cacheKey, {
-          facilities: results,
-          nextPageToken: token,
-        });
-        // Pre-populate individual detail cache
-        results.forEach((f) => setPlaceDetails(f.id, f));
-      } catch (err) {
-        setApiError(err.message);
-        setFacilities(mockFacilities); // graceful fallback
-      } finally {
-        setLoadingFacilities(false);
-      }
-    },
-    [facilitiesCache, setFacilitiesCache, setPlaceDetails, hasApiKey],
-  );
-
-  // Load more results (text search with nextPageToken)
-  const loadMore = useCallback(async () => {
-    if (!nextPageToken || loadingMore || !userLocation) return;
-    setLoadingMore(true);
-    try {
-      const { facilities: more, nextPageToken: token } =
-        await searchFacilitiesByText(
-          searchQuery.trim() || null,
-          userLocation.lat,
-          userLocation.lng,
-          nextPageToken,
-        );
-      setFacilities((prev) => {
-        const ids = new Set(prev.map((f) => f.id));
-        return [...prev, ...more.filter((f) => !ids.has(f.id))];
-      });
-      setNextPageToken(token);
-      more.forEach((f) => setPlaceDetails(f.id, f));
-    } catch {
-      // silently ignore load-more errors
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [nextPageToken, loadingMore, userLocation, searchQuery, setPlaceDetails]);
-
-  // ── Debounced search ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    const q = searchQuery.trim();
-    if (!q) {
-      setSearchResults([]);
-      return;
-    }
-    if (!hasApiKey || !userLocation) {
-      // Local filter fallback
-      const lower = q.toLowerCase();
-      setSearchResults(
-        facilities.filter(
-          (f) =>
-            f.name.toLowerCase().includes(lower) ||
-            f.address.toLowerCase().includes(lower) ||
-            f.type.toLowerCase().includes(lower),
-        ),
-      );
-      return;
-    }
-    searchDebounceRef.current = setTimeout(async () => {
-      setSearchLoading(true);
-      try {
-        const { facilities: results } = await searchFacilitiesByText(
-          q,
-          userLocation.lat,
-          userLocation.lng,
-        );
-        setSearchResults(results);
-        results.forEach((f) => setPlaceDetails(f.id, f));
-      } catch {
-        // Fall back to local filter on search error
-        const lower = q.toLowerCase();
-        setSearchResults(
-          facilities.filter(
-            (f) =>
-              f.name.toLowerCase().includes(lower) ||
-              f.address.toLowerCase().includes(lower) ||
-              f.type.toLowerCase().includes(lower),
-          ),
-        );
-      } finally {
-        setSearchLoading(false);
-      }
-    }, 500);
-
-    return () => {
-      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    };
-  }, [searchQuery, userLocation, hasApiKey, facilities, setPlaceDetails]);
-
-  // Nearby filtered + sorted facilities (used when not in search mode)
-  const filtered = (activeFilter === "Saved" ? savedFacilities : facilities)
-    .filter((f) => {
-      if (activeFilter === "All" || activeFilter === "Saved") return true;
-      if (activeFilter === FACILITY_TYPES.SCD_SPECIALIST)
-        return f.scdSpecialist;
-      return f.type === activeFilter;
-    })
-    .sort((a, b) => {
-      if (!userLocation) return 0;
-      return (
-        distanceMiles(userLocation.lat, userLocation.lng, a.lat, a.lng) -
-        distanceMiles(userLocation.lat, userLocation.lng, b.lat, b.lng)
-      );
-    });
-
-  const navigateToDetail = useCallback(
-    (facility) => {
-      router.push({
-        pathname: "/facility-detail",
-        params: {
-          id: facility.id,
-          ...(userLocation && {
-            userLat: String(userLocation.lat),
-            userLng: String(userLocation.lng),
-          }),
-        },
-      });
-    },
-    [router, userLocation],
-  );
-
-  const handleClearSearch = () => {
-    setSearchQuery("");
-    searchRef.current?.blur();
-  };
-
-  const mapRegion = userLocation
-    ? {
-        latitude: userLocation.lat,
-        longitude: userLocation.lng,
-        latitudeDelta: 0.08,
-        longitudeDelta: 0.08,
-      }
-    : {
-        latitude: 25.2048,
-        longitude: 55.2708,
-        latitudeDelta: 0.12,
-        longitudeDelta: 0.12,
-      };
-
-  return (
-    <View style={styles.screen}>
-      <StatusBar style={t.isDark ? "light" : "dark"} />
-
-      {/* ── Header ── */}
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-        {/* Title row */}
-        <View style={styles.headerTop}>
-          <TouchableOpacity
-            onPress={() => router.back()}
-            style={styles.backBtn}
-          >
-            <ChevronLeft size={24} color={t.text} />
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>Clinics & Hospitals</Text>
-
-          {/* Map / List toggle — hidden in search mode */}
-          {!isSearchMode && (
-            <View style={styles.viewToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.toggleBtn,
-                  view === "list" && styles.toggleBtnActive,
-                ]}
-                onPress={() => setView("list")}
-              >
-                <List
-                  size={16}
-                  color={view === "list" ? "#FFFFFF" : t.textSecondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.toggleBtn,
-                  view === "map" && styles.toggleBtnActive,
-                ]}
-                onPress={() => setView("map")}
-              >
-                <Map
-                  size={16}
-                  color={view === "map" ? "#FFFFFF" : t.textSecondary}
-                />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        {/* Search bar */}
-        <View style={styles.searchBar}>
-          <Search
-            size={17}
-            color={t.textSecondary}
-            style={{ marginRight: 8 }}
-          />
-          <TextInput
-            ref={searchRef}
-            style={styles.searchInput}
-            placeholder="Search hospitals, clinics..."
-            placeholderTextColor={t.textTertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            returnKeyType="search"
-            clearButtonMode="never"
-          />
-          {isSearchMode && (
-            <TouchableOpacity onPress={handleClearSearch} hitSlop={10}>
-              <X size={16} color={t.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Filter chips — only shown when not searching */}
-        {!isSearchMode && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            {FILTERS.map((f) => (
-              <TouchableOpacity
-                key={f}
-                onPress={() => setActiveFilter(f)}
-                style={[
-                  styles.filterChip,
-                  activeFilter === f && styles.filterChipActive,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.filterChipText,
-                    activeFilter === f && styles.filterChipTextActive,
-                  ]}
-                >
-                  {f}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-
-        {/* Location denied / API error banners */}
-        {locationDenied && !isSearchMode && (
-          <View style={styles.locationBanner}>
-            <MapPin size={14} color="#A9334D" />
-            <Text style={styles.locationBannerText}>
-              Location unavailable — showing all facilities
-            </Text>
-          </View>
-        )}
-        {apiError && !isSearchMode && (
-          <View style={[styles.locationBanner, { backgroundColor: "#FEF2F2" }]}>
-            <Text style={[styles.locationBannerText, { color: "#DC2626" }]}>
-              Couldn't load live data — showing saved results
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* ── Search results ── */}
-      {isSearchMode ? (
-        <FlatList
-          data={searchResults}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: insets.bottom + 100,
-          }}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
-            <SearchResultCard
-              facility={item}
-              userLocation={userLocation}
-              isSaved={savedFacilities.some((f) => f.placeId === item.id)}
-              onAdd={handleToggleSave}
-              onPress={() => navigateToDetail(item)}
-            />
-          )}
-          ListEmptyComponent={
-            searchLoading ? (
-              <View style={styles.emptyState}>
-                <ActivityIndicator size="large" color="#A9334D" />
-                <Text style={[styles.emptyStateSubtext, { marginTop: 12 }]}>
-                  Searching…
-                </Text>
-              </View>
-            ) : (
-              <AppEmptyState
-                Icon={Search}
-                title="No results"
-                subtitle={`No facilities match "${searchQuery}". Try a hospital name, area, or type.`}
-                // Alternates with the searchLoading spinner on every keystroke —
-                // an entrance animation here would read as input lag.
-                animate={false}
-              />
-            )
-          }
-          ListHeaderComponent={
-            searchResults.length > 0 ? (
-              <Text style={styles.searchResultsLabel}>
-                {searchResults.length} result
-                {searchResults.length !== 1 ? "s" : ""} found
-              </Text>
-            ) : null
-          }
-        />
-      ) : view === "list" ? (
-        /* ── List view ── */
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            padding: 16,
-            paddingBottom: insets.bottom + 100,
-          }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <FacilityCard
-              facility={item}
-              userLocation={userLocation}
-              isFavourite={savedFacilities.some((f) => f.placeId === item.id)}
-              onToggleFavourite={handleToggleSave}
-              onPress={() => navigateToDetail(item)}
-            />
-          )}
-          ListEmptyComponent={
-            loadingFacilities ? (
-              <View style={styles.emptyState}>
-                <ActivityIndicator size="large" color="#A9334D" />
-                <Text style={[styles.emptyStateSubtext, { marginTop: 12 }]}>
-                  Finding nearby facilities…
-                </Text>
-              </View>
-            ) : (
-              <AppEmptyState
-                Icon={MapPin}
-                title="No facilities found"
-                subtitle="No facilities match this filter."
-              />
-            )
-          }
-          ListFooterComponent={
-            nextPageToken ? (
-              <TouchableOpacity
-                style={styles.loadMoreBtn}
-                onPress={loadMore}
-                disabled={loadingMore}
-              >
-                {loadingMore ? (
-                  <ActivityIndicator size="small" color="#A9334D" />
-                ) : (
-                  <Text style={styles.loadMoreText}>Load more</Text>
-                )}
-              </TouchableOpacity>
-            ) : null
-          }
-        />
       ) : (
-        /* ── Map view ── */
-        <View style={{ flex: 1 }}>
-          <MapView
-            ref={mapRef}
-            style={{ flex: 1 }}
-            initialRegion={mapRegion}
-            showsUserLocation={!locationDenied}
-            showsMyLocationButton={false}
-            onRegionChangeComplete={(region) => setMapLatDelta(region.latitudeDelta)}
-          >
-            {filtered.map((facility) => {
-              const isSelected = selectedFacility?.id === facility.id;
-              return (
-                <Marker
-                  key={facility.id}
-                  coordinate={{ latitude: facility.lat, longitude: facility.lng }}
-                  tracksViewChanges={isSelected}
-                  onPress={() => {
-                    setSelectedFacility(facility);
-                    bottomSheetRef.current?.snapToIndex(1);
-                  }}
-                >
-                  <FacilityMarker
-                    facility={facility}
-                    isSelected={isSelected}
-                    showLabel={showMarkerLabels}
-                  />
-                </Marker>
-              );
-            })}
-          </MapView>
-
-          <BottomSheet
-            ref={bottomSheetRef}
-            index={-1}
-            snapPoints={snapPoints}
-            enablePanDownToClose
-            onClose={() => setSelectedFacility(null)}
-            backgroundStyle={styles.sheetBg}
-            handleIndicatorStyle={styles.sheetHandleBar}
-          >
-            <BottomSheetScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-            >
-              {selectedFacility && (
-                <FacilitySheetContent
-                  facility={selectedFacility}
-                  userLocation={userLocation}
-                  isFavourite={savedFacilities.some((f) => f.placeId === selectedFacility.id)}
-                  onToggleFavourite={handleToggleSave}
-                  onNavigateToDetail={() => navigateToDetail(selectedFacility)}
-                />
-              )}
-            </BottomSheetScrollView>
-          </BottomSheet>
+        <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: t.divider }}>
+          <QuietAction icon={Plus} label="Set location" onPress={onAdd} tint={{ action: tone.color, muted: t.textTertiary }} />
         </View>
       )}
     </View>
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────────────
-function createStyles(t) { return StyleSheet.create({
-  screen: { flex: 1, backgroundColor: t.background },
+export default function CareLocationsScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const posthog = usePostHog();
+  const { data: locations = [], isLoading, isError, refetch } = useSavedFacilitiesQuery();
+  const { deleteMutation } = useCareLocationMutations();
+  const preferredED = selectPreferredEmergencyDepartment(locations);
+  const regularClinic = selectRegularClinic(locations);
+  const others = locations.filter((item) => ![CARE_LOCATION_ROLES.PREFERRED_ED, CARE_LOCATION_ROLES.REGULAR_CLINIC].includes(item.role));
+  const pins = locations.filter((item) => Number.isFinite(item.lat) && Number.isFinite(item.lng));
+  const hasCapturedOpen = useRef(false);
 
-  // Header
-  header: {
-    backgroundColor: t.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: t.border,
-    paddingBottom: 12,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: t.background,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  headerTitle: {
-    flex: 1,
-    fontFamily: "Geist_700Bold",
-    fontSize: 20,
-    color: t.text,
-    letterSpacing: -0.4,
-  },
-  viewToggle: {
-    flexDirection: "row",
-    backgroundColor: t.background,
-    borderRadius: 10,
-    padding: 3,
-    gap: 2,
-  },
-  toggleBtn: {
-    width: 36,
-    height: 32,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toggleBtnActive: { backgroundColor: "#A9334D" },
+  useEffect(() => {
+    if (isLoading || hasCapturedOpen.current) return;
+    hasCapturedOpen.current = true;
+    posthog?.capture('care_locations_opened', {
+      entry_point: 'care', has_preferred_ed: !!preferredED, has_regular_clinic: !!regularClinic, saved_count: locations.length,
+    });
+  }, [isLoading, locations.length, !!preferredED, !!regularClinic]);
 
-  // Search bar
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: t.background,
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginBottom: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    borderWidth: 1,
-    borderColor: t.border,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: "Geist_400Regular",
-    fontSize: 15,
-    color: t.text,
-    padding: 0,
-  },
+  const openForm = (role, location) => {
+    posthog?.capture('care_location_add_started', { entry_point: 'care', selected_role: role });
+    router.push({ pathname: '/(tabs)/care/care-location-form', params: { role, id: location?.id || '' } });
+  };
 
-  // Filters
-  filterRow: { paddingHorizontal: 16, gap: 8 },
-  filterChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: t.background,
-    borderWidth: 1,
-    borderColor: t.border,
-  },
-  filterChipActive: { backgroundColor: "#A9334D", borderColor: "#A9334D" },
-  filterChipText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: t.textSecondary,
-  },
-  filterChipTextActive: { color: "#FFFFFF" },
+  const directions = (location) => {
+    posthog?.capture('care_location_directions_tapped', { role: location.role, source_kind: location.sourceKind, entry_point: 'care' });
+    openDirections(location);
+  };
+  const call = (location) => {
+    posthog?.capture('care_location_call_tapped', { role: location.role, source_kind: location.sourceKind, entry_point: 'care' });
+    callCareLocation(location.careTeamPhone || location.phone);
+  };
+  const confirmDelete = (location) => Alert.alert('Delete care location?', location.name, [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(location.id) },
+  ]);
 
-  // Location banner
-  locationBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 10,
-    marginHorizontal: 16,
-    backgroundColor: "#FFF5F5",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  locationBannerText: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 12,
-    color: "#A9334D",
-  },
+  return (
+    <View style={{ flex: 1, backgroundColor: t.background }}>
+      <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 18, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        <Pressable onPress={() => router.back()} accessibilityLabel="Back" style={{ width: 44, height: 44, justifyContent: 'center' }}><ChevronLeft color={t.text} /></Pressable>
+        <View style={{ flex: 1 }}>
+          <Text selectable style={{ fontFamily: fonts.semibold, fontSize: 23, color: t.text }}>Care locations</Text>
+          <Text selectable style={{ fontFamily: fonts.regular, fontSize: 13, color: t.textSecondary }}>Your hospitals, clinics and support</Text>
+        </View>
+      </View>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 18, paddingTop: 6, paddingBottom: insets.bottom + 36, gap: 22 }}>
+        {isLoading ? <ActivityIndicator color={t.accent} /> : null}
+        {isError ? (
+          <Pressable onPress={refetch} style={{ padding: 16, backgroundColor: t.surface, borderRadius: 16 }}>
+            <Text selectable style={{ color: t.text, fontFamily: fonts.semibold }}>Couldn’t load your care locations</Text>
+            <Text selectable style={{ color: t.accent, fontFamily: fonts.regular, marginTop: 4 }}>Tap to try again. No sample healthcare data will be shown.</Text>
+          </Pressable>
+        ) : null}
 
-  // Search result card
-  searchCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: t.surface,
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
-    gap: 12,
-  },
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    borderWidth: 1.5,
-    borderColor: "#A9334D",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  addBtnSaved: { borderColor: "#059669", backgroundColor: "#F0FDF4" },
-  addBtnText: { fontFamily: "Geist_600SemiBold", fontSize: 13 },
+        <View style={{ gap: 10 }}>
+          <PrimaryLocationCard t={t} title="Emergency care" emptyText="Add your preferred emergency department" location={preferredED} tone={ROLE_TONES.preferred_ed}
+            onAdd={() => openForm(CARE_LOCATION_ROLES.PREFERRED_ED)} onEdit={() => openForm(preferredED.role, preferredED)} onCall={() => call(preferredED)} onDirections={() => directions(preferredED)} />
+          <PrimaryLocationCard t={t} title="Regular care" emptyText="Add your regular SCD clinic" location={regularClinic} tone={ROLE_TONES.regular_scd_clinic}
+            onAdd={() => openForm(CARE_LOCATION_ROLES.REGULAR_CLINIC)} onEdit={() => openForm(regularClinic.role, regularClinic)} onCall={() => call(regularClinic)} onDirections={() => directions(regularClinic)} />
+        </View>
 
-  searchResultsLabel: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 13,
-    color: t.textSecondary,
-    marginBottom: 12,
-  },
+        <View style={{ gap: 10 }}>
+          <Text selectable style={{ fontFamily: fonts.semibold, color: t.text, fontSize: 17 }}>Other saved locations</Text>
+          {others.length === 0 ? <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary }}>Pharmacies, transfusion centres and other places you add will appear here.</Text> : others.map((location) => {
+            const tone = ROLE_TONES[location.role] || ROLE_TONES.other;
+            return (
+              <Pressable key={location.id} onPress={() => openForm(location.role, location)} onLongPress={() => confirmDelete(location)} accessibilityLabel={`${location.name}, ${CARE_LOCATION_ROLE_LABELS[location.role]}`} style={({ pressed }) => ({ backgroundColor: t.surface, borderRadius: 17, padding: 15, flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.75 : 1, borderWidth: 1, borderColor: t.border })}>
+                <View style={{ width: 38, height: 38, borderRadius: 12, backgroundColor: tone.background, alignItems: 'center', justifyContent: 'center' }}><MapPin size={19} color={tone.color} /></View>
+                <View style={{ flex: 1 }}><Text selectable style={{ fontFamily: fonts.semibold, color: t.text, fontSize: 15 }}>{location.name}</Text><Text selectable numberOfLines={1} style={{ fontFamily: fonts.regular, color: t.textSecondary, fontSize: 12 }}>{CARE_LOCATION_ROLE_LABELS[location.role]} · Added by you</Text></View>
+                <ChevronRight size={18} color={t.textSecondary} />
+              </Pressable>
+            );
+          })}
+        </View>
 
-  // Facility card
-  card: {
-    backgroundColor: t.surface,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 14,
-  },
-  cardName: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 17,
-    color: t.text,
-    letterSpacing: -0.3,
-    marginBottom: 6,
-  },
-  typeBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-  typeBadgeText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.2,
-  },
-  heartBtn: { marginLeft: 10, paddingTop: 2 },
-  cardDetails: { gap: 6, marginBottom: 12 },
-  detailRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  detailText: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: t.textSecondary,
-    flex: 1,
-  },
+        {pins.length > 0 ? (
+          <Pressable onPress={() => { posthog?.capture('care_locations_map_opened', { pin_count: pins.length, filter: 'saved' }); router.push('/(tabs)/care/care-locations-map'); }} accessibilityRole="button" style={{ backgroundColor: t.surface, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: t.border }}>
+            <View pointerEvents="none"><CareLocationsMap locations={pins} preview /></View>
+            <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 9 }}><Map size={19} color={t.accent} /><Text style={{ flex: 1, fontFamily: fonts.semibold, color: t.text }}>View your saved locations map</Text><ChevronRight size={19} color={t.textSecondary} /></View>
+          </Pressable>
+        ) : null}
 
-  // Meta row
-  metaRow: { flexDirection: "row", gap: 8, marginBottom: 14 },
-  metaChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: t.background,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  metaChipText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 12,
-    color: t.text,
-  },
+        <Pressable onPress={() => openForm(CARE_LOCATION_ROLES.OTHER)} accessibilityRole="button" style={({ pressed }) => ({ minHeight: 54, backgroundColor: t.accent, borderRadius: 17, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 9, opacity: pressed ? 0.8 : 1 })}><Plus size={20} color="#FFFFFF" /><Text style={{ color: '#FFFFFF', fontFamily: fonts.semibold, fontSize: 15 }}>Add a care location</Text></Pressable>
 
-  // Action buttons
-  cardActions: { flexDirection: "row", gap: 10 },
-  actionBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    borderRadius: 12,
-    paddingVertical: 12,
-  },
-  actionBtnOutlined: { borderWidth: 1.5, borderColor: "#A9334D" },
-  actionBtnFilled: { backgroundColor: "#A9334D" },
-  actionBtnText: { fontFamily: "Geist_600SemiBold", fontSize: 14 },
-
-  // Map marker (legacy — kept for reference)
-  mapMarker: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-
-  // FacilityMarker
-  markerPin: {
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  markerPinSelected: {
-    borderWidth: 2.5,
-    borderColor: "#FFFFFF",
-  },
-  markerPointer: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 5,
-    borderRightWidth: 5,
-    borderTopWidth: 7,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    marginTop: -1,
-  },
-  markerLabel: {
-    marginTop: 3,
-    backgroundColor: t.surface,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    maxWidth: 130,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  markerLabelText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 10,
-    color: t.text,
-  },
-
-  // Load more
-  loadMoreBtn: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 14,
-    marginTop: 4,
-    marginBottom: 8,
-    backgroundColor: t.surface,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "rgba(169,51,77,0.2)",
-  },
-  loadMoreText: {
-    fontFamily: "Geist_500Medium",
-    fontSize: 14,
-    color: "#A9334D",
-  },
-
-  // Empty state
-  emptyState: { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptyStateSubtext: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 13,
-    color: t.textSecondary,
-  },
-
-  // ── Bottom sheet ────────────────────────────────────────────────────────────
-  sheetBg: {
-    backgroundColor: t.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  sheetHandleBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: t.border,
-  },
-  sheetWrap: { paddingHorizontal: 20, paddingTop: 8 },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 10,
-  },
-  sheetName: {
-    fontFamily: "Geist_700Bold",
-    fontSize: 19,
-    color: t.text,
-    letterSpacing: -0.4,
-    marginBottom: 6,
-  },
-  sheetBadgesRow: { flexDirection: "row", gap: 6 },
-  sheetMetaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 16,
-  },
-  sheetDivider: { height: 1, backgroundColor: t.divider },
-  sheetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 13,
-    gap: 12,
-  },
-  sheetRowIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: "#F8E9E7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sheetRowText: {
-    flex: 1,
-    fontFamily: "Geist_400Regular",
-    fontSize: 14,
-    color: t.text,
-  },
-  sheetRowAction: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 13,
-    color: "#A9334D",
-  },
-  sheetRowDivider: { height: 1, backgroundColor: t.divider },
-  sheetSectionLabel: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 12,
-    color: t.textSecondary,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    marginBottom: 12,
-  },
-  sheetDescription: {
-    fontFamily: "Geist_400Regular",
-    fontSize: 14,
-    color: t.text,
-    lineHeight: 22,
-    marginBottom: 4,
-  },
-  sheetHoursTable: {
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: t.background,
-  },
-  sheetHoursRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-  },
-  sheetHoursRowToday: { backgroundColor: t.isDark ? "rgba(169,51,77,0.12)" : "#FFF5F5" },
-  viewProfileBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#A9334D",
-  },
-  viewProfileBtnText: {
-    fontFamily: "Geist_600SemiBold",
-    fontSize: 15,
-    color: "#A9334D",
-  },
-}); }
+        <View style={{ gap: 10 }}>
+          <Text selectable style={{ fontFamily: fonts.semibold, color: t.text, fontSize: 17 }}>Need somewhere nearby?</Text>
+          <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>These searches open your maps app. Results are external and are not verified by Hemo for SCD care.</Text>
+          {[['Emergency departments', 'emergency department'], ['Pharmacies', 'pharmacy']].map(([label, query]) => (
+            <Pressable key={query} onPress={() => { posthog?.capture('external_unverified_search_opened', { query_type: query, entry_point: 'care' }); openExternalMapSearch(query); }} accessibilityRole="link" style={{ minHeight: 50, borderRadius: 15, paddingHorizontal: 15, backgroundColor: t.surface, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 1, borderColor: t.border }}><ExternalLink size={18} color={t.accent} /><Text style={{ flex: 1, fontFamily: fonts.semibold, color: t.text }}>Search {label} in Maps</Text><ChevronRight size={18} color={t.textSecondary} /></Pressable>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}

@@ -435,6 +435,9 @@ verify_jwt = false
 [functions.beta-signup]
 verify_jwt = false
 
+[functions.resolve-care-location-link]
+verify_jwt = true
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

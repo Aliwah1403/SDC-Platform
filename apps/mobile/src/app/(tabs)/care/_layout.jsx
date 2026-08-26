@@ -11,6 +11,8 @@ export default function CareLayout() {
       <Stack.Screen name="care-team" />
       <Stack.Screen name="crisis-plan" />
       <Stack.Screen name="facilities" />
+      <Stack.Screen name="care-location-form" options={{ presentation: "modal" }} />
+      <Stack.Screen name="care-locations-map" />
     </Stack>
   );
 }

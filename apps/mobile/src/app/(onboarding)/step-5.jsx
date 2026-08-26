@@ -6,6 +6,7 @@ import { CheckCircle2, HelpCircle } from 'lucide-react-native';
 import { usePostHog } from 'posthog-react-native';
 import OnboardingStep from '@/components/OnboardingStep';
 import { useAppStore } from '@/store/appStore';
+import { useTheme } from '@/hooks/useTheme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_SIZE = (SCREEN_WIDTH - 48 - 20) / 3;
@@ -53,6 +54,8 @@ export default function Step5() {
   const posthog = usePostHog();
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const [scdType, setScdType] = useState(null);
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const selected = SCD_TYPES.find((t) => t.key === scdType) ?? null;
   const isUnsure = scdType === 'unsure';
@@ -102,8 +105,8 @@ export default function Step5() {
         onPress={() => setScdType(isUnsure ? null : 'unsure')}
       >
         {isUnsure
-          ? <CheckCircle2 size={16} color="#A9334D" strokeWidth={2} />
-          : <HelpCircle size={16} color="rgba(9,51,44,0.35)" strokeWidth={1.8} />
+          ? <CheckCircle2 size={16} color={t.accent} strokeWidth={2} />
+          : <HelpCircle size={16} color={t.textSecondary} strokeWidth={1.8} />
         }
         <Text style={[styles.unsureText, isUnsure && styles.unsureTextSelected]}>
           I'm not sure
@@ -138,7 +141,7 @@ export default function Step5() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -148,21 +151,21 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_SIZE,
     height: CARD_SIZE * 0.72,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.surface,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: 'rgba(9,51,44,0.1)',
+    borderColor: t.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cardSelected: {
-    backgroundColor: '#A9334D',
-    borderColor: '#A9334D',
+    backgroundColor: t.accent,
+    borderColor: t.accent,
   },
   cardLabel: {
     fontFamily: 'Geist_700Bold',
     fontSize: 14,
-    color: '#1A1A1A',
+    color: t.text,
     letterSpacing: -0.2,
     textAlign: 'center',
   },
@@ -180,10 +183,10 @@ const styles = StyleSheet.create({
   unsureText: {
     fontFamily: 'Geist_500Medium',
     fontSize: 14,
-    color: 'rgba(9,51,44,0.4)',
+    color: t.textSecondary,
   },
   unsureTextSelected: {
-    color: '#A9334D',
+    color: t.accent,
     fontFamily: 'Geist_600SemiBold',
   },
   descSection: {
@@ -192,25 +195,25 @@ const styles = StyleSheet.create({
   },
   descDivider: {
     height: 1,
-    backgroundColor: 'rgba(9,51,44,0.08)',
+    backgroundColor: t.divider,
     marginBottom: 10,
   },
   descType: {
     fontFamily: 'Geist_700Bold',
     fontSize: 18,
-    color: '#1A1A1A',
+    color: t.text,
     letterSpacing: -0.4,
   },
   descSubtitle: {
     fontFamily: 'Geist_500Medium',
     fontSize: 13,
-    color: 'rgba(9,51,44,0.45)',
+    color: t.textSecondary,
     marginBottom: 4,
   },
   descBody: {
     fontFamily: 'Geist_400Regular',
     fontSize: 14,
-    color: 'rgba(9,51,44,0.6)',
+    color: t.textSecondary,
     lineHeight: 21,
   },
 });

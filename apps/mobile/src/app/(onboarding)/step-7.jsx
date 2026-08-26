@@ -31,6 +31,7 @@ import {
 import OnboardingStep from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
 import { DEFAULT_PHONE_COUNTRY, countryFlagEmoji, parsePhoneForInput } from "@/utils/phoneNumbers";
+import { useTheme } from "@/hooks/useTheme";
 
 const RELATIONSHIPS = [
   "Parent",
@@ -94,7 +95,7 @@ async function normalizePickedContact(contact) {
   };
 }
 
-function ContactPhoneInput({ contact, index, setFocusedField, updateContact }) {
+function ContactPhoneInput({ contact, index, setFocusedField, updateContact, styles, textSecondary }) {
   const phoneInputRef = useRef(null);
   const phoneCountryCode = contact.phoneCountryCode ?? DEFAULT_PHONE_COUNTRY;
   const phoneCallingCode = contact.phoneCallingCode ?? "44";
@@ -133,7 +134,7 @@ function ContactPhoneInput({ contact, index, setFocusedField, updateContact }) {
       codeTextStyle={styles.phoneCodeText}
       flagButtonStyle={styles.phoneFlagBtn}
       textInputProps={{
-        placeholderTextColor: "rgba(9,51,44,0.35)",
+        placeholderTextColor: textSecondary,
         keyboardType: "phone-pad",
         onFocus: () => setFocusedField(`phone-${index}`),
         onBlur: () => setFocusedField(null),
@@ -158,6 +159,8 @@ function ContactPhoneInput({ contact, index, setFocusedField, updateContact }) {
 export default function Step7() {
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const posthog = usePostHog();
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const [contacts, setContacts] = useState([]);
   const [isManual, setIsManual] = useState(false);
@@ -315,7 +318,20 @@ export default function Step7() {
         !!contact.phone?.trim() &&
         !!contact.relationship?.trim(),
     );
-  const canContinue = !showingCards || areContactsComplete;
+  const hasContactMissingRelationship = contacts.some(
+    (contact) =>
+      !!contact.name?.trim() &&
+      !!contact.phone?.trim() &&
+      !contact.relationship?.trim(),
+  );
+  const ctaDisabled = showingCards && !areContactsComplete;
+  const ctaLabel = !showingCards
+    ? "Skip for now"
+    : areContactsComplete
+      ? "Save & Next"
+      : hasContactMissingRelationship
+        ? "Choose a relationship"
+        : "Complete contact details";
 
   const handleContinue = () => {
     const valid = contacts
@@ -345,8 +361,8 @@ export default function Step7() {
       illustrationColor="#781D11"
       onBack={() => router.back()}
       onCta={handleContinue}
-      ctaDisabled={!canContinue}
-      ctaLabel={showingCards ? "Save & Next" : "Skip for now"}
+      ctaDisabled={ctaDisabled}
+      ctaLabel={ctaLabel}
     >
       {/* ── Gate ─────────────────────────────────────────────── */}
       {!showingCards && (
@@ -357,7 +373,7 @@ export default function Step7() {
           style={styles.gateCard}
         >
           <View style={styles.gateIconWrap}>
-            <BookUser size={32} color="#A9334D" strokeWidth={1.6} />
+            <BookUser size={32} color={t.accent} strokeWidth={1.6} />
           </View>
           <Text style={styles.gateTitle}>Import from Contacts</Text>
           <Text style={styles.gateBody}>
@@ -366,7 +382,7 @@ export default function Step7() {
           </Text>
 
           {isLoading ? (
-            <ActivityIndicator color="#A9334D" style={{ marginTop: 8 }} />
+            <ActivityIndicator color={t.accent} style={{ marginTop: 8 }} />
           ) : (
             <Pressable
               style={({ pressed }) => [
@@ -435,7 +451,7 @@ export default function Step7() {
                 ]}
                 onPress={() => handlePickContact(index)}
               >
-                <PenLine size={14} color="#A9334D" strokeWidth={2} />
+                <PenLine size={14} color={t.accent} strokeWidth={2} />
                 <Text style={styles.changeBtnText}>Change</Text>
               </Pressable>
             </View>
@@ -451,7 +467,7 @@ export default function Step7() {
                 <TextInput
                   style={styles.input}
                   placeholder="Full name"
-                  placeholderTextColor="rgba(9,51,44,0.35)"
+                  placeholderTextColor={t.textSecondary}
                   value={contact.name}
                   onChangeText={(v) => updateContact(index, "name", v)}
                   autoCapitalize="words"
@@ -466,6 +482,8 @@ export default function Step7() {
                 index={index}
                 setFocusedField={setFocusedField}
                 updateContact={updateContact}
+                styles={styles}
+                textSecondary={t.textSecondary}
               />
             </>
           )}
@@ -506,7 +524,7 @@ export default function Step7() {
           style={({ pressed }) => [styles.addBtn, pressed && { opacity: 0.7 }]}
           onPress={handleAddAnother}
         >
-          <Plus size={16} color="#1A1A1A" strokeWidth={2} />
+          <Plus size={16} color={t.text} strokeWidth={2} />
           <Text style={styles.addBtnText}>Add another contact</Text>
         </Pressable>
       )}
@@ -526,17 +544,17 @@ export default function Step7() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Select a contact</Text>
               <Pressable onPress={() => setShowContactModal(false)} hitSlop={8}>
-                <X size={22} color="#1A1A1A" strokeWidth={2} />
+                <X size={22} color={t.text} strokeWidth={2} />
               </Pressable>
             </View>
 
             <View style={styles.searchWrapper}>
-              <Search size={17} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
+              <Search size={17} color={t.textSecondary} strokeWidth={1.8} />
               <TextInput
                 ref={contactSearchRef}
                 style={styles.searchInput}
                 placeholder="Search contacts"
-                placeholderTextColor="rgba(9,51,44,0.35)"
+                placeholderTextColor={t.textSecondary}
                 value={contactSearch}
                 onChangeText={setContactSearch}
                 autoCorrect={false}
@@ -587,7 +605,7 @@ export default function Step7() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   gateCard: {
     borderRadius: 18,
     borderStyle: "dashed",
@@ -595,7 +613,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
+    borderColor: t.border,
   },
   gateIconWrap: {
     width: 64,
@@ -609,13 +627,13 @@ const styles = StyleSheet.create({
   gateTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#1A1A1A",
+    color: t.text,
     textAlign: "center",
   },
   gateBody: {
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "rgba(9,51,44,0.6)",
+    color: t.textSecondary,
     textAlign: "center",
     lineHeight: 20,
     paddingHorizontal: 8,
@@ -624,7 +642,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     borderRadius: 12,
     paddingVertical: 13,
     paddingHorizontal: 24,
@@ -638,17 +656,17 @@ const styles = StyleSheet.create({
   manualLink: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     textDecorationLine: "underline",
     marginTop: 2,
   },
   contactCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
+    borderColor: t.border,
     gap: 12,
   },
   cardHeader: {
@@ -659,14 +677,14 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 13,
-    color: "#1A1A1A",
+    color: t.text,
     letterSpacing: 0.2,
   },
   pickedRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 12,
     padding: 12,
   },
@@ -674,7 +692,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -686,12 +704,12 @@ const styles = StyleSheet.create({
   pickedName: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 15,
-    color: "#1A1A1A",
+    color: t.text,
   },
   pickedPhone: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     marginTop: 1,
   },
   changeBtn: {
@@ -706,55 +724,55 @@ const styles = StyleSheet.create({
   changeBtnText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "#A9334D",
+    color: t.accent,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
+    borderColor: t.border,
     paddingHorizontal: 12,
     paddingVertical: 12,
     gap: 10,
   },
   inputFocused: {
-    borderColor: "#A9334D",
+    borderColor: t.accent,
     backgroundColor: "rgba(169,51,77,0.04)",
   },
   input: {
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#1A1A1A",
+    color: t.text,
     padding: 0,
     margin: 0,
   },
   // PhoneInput library styling
   phoneContainer: {
     width: "100%",
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.08)",
+    borderColor: t.border,
     height: 50,
   },
   phoneTextContainer: {
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 10,
     paddingVertical: 0,
   },
   phoneTextInput: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#1A1A1A",
+    color: t.text,
     height: 50,
   },
   phoneCodeText: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 14,
-    color: "#1A1A1A",
+    color: t.text,
   },
   phoneFlagBtn: {
     backgroundColor: "transparent",
@@ -766,7 +784,7 @@ const styles = StyleSheet.create({
   relLabel: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     marginBottom: -4,
   },
   relChips: {
@@ -775,21 +793,21 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   relChip: {
-    backgroundColor: "#F8F4F0",
+    backgroundColor: t.background,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.1)",
+    borderColor: t.border,
   },
   relChipSelected: {
-    backgroundColor: "#A9334D",
-    borderColor: "#A9334D",
+    backgroundColor: t.accent,
+    borderColor: t.accent,
   },
   relChipText: {
     fontFamily: "Geist_500Medium",
     fontSize: 13,
-    color: "#1A1A1A",
+    color: t.text,
   },
   relChipTextSelected: {
     color: "#FFFFFF",
@@ -800,10 +818,10 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    backgroundColor: "rgba(9,51,44,0.05)",
+    backgroundColor: t.isDark ? "rgba(248,233,231,0.08)" : "rgba(9,51,44,0.05)",
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.1)",
+    borderColor: t.border,
     borderStyle: "dashed",
     justifyContent: "center",
     marginTop: 4,
@@ -811,11 +829,11 @@ const styles = StyleSheet.create({
   addBtnText: {
     fontFamily: "Geist_500Medium",
     fontSize: 14,
-    color: "#1A1A1A",
+    color: t.text,
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: t.background,
   },
   modalHeader: {
     flexDirection: "row",
@@ -824,18 +842,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(9,51,44,0.07)",
+    borderBottomColor: t.divider,
   },
   modalTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 17,
-    color: "#1A1A1A",
+    color: t.text,
   },
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    backgroundColor: "#F0EBE5",
+    backgroundColor: t.surfaceElevated,
     marginHorizontal: 16,
     marginVertical: 12,
     borderRadius: 12,
@@ -846,7 +864,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "#1A1A1A",
+    color: t.text,
     padding: 0,
     margin: 0,
   },
@@ -856,7 +874,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    backgroundColor: "rgba(9,51,44,0.06)",
+    backgroundColor: t.divider,
     marginLeft: 62,
   },
   contactRow: {
@@ -871,7 +889,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -883,12 +901,12 @@ const styles = StyleSheet.create({
   rowName: {
     fontFamily: "Geist_500Medium",
     fontSize: 15,
-    color: "#1A1A1A",
+    color: t.text,
   },
   rowPhone: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.5)",
+    color: t.textSecondary,
     marginTop: 1,
   },
   emptyState: {
@@ -898,7 +916,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "rgba(9,51,44,0.45)",
+    color: t.textSecondary,
     textAlign: "center",
   },
 });

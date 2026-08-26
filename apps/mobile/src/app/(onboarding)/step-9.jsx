@@ -1,14 +1,15 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MotiView } from "moti";
-import { ArrowLeft, MapPin, Cross } from "lucide-react-native";
+import { ArrowLeft, MapPin } from "lucide-react-native";
 import * as Location from "expo-location";
 import { usePostHog } from "posthog-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TOTAL_STEPS } from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
+import { useTheme } from "@/hooks/useTheme";
 
-function MapIllustration() {
+function MapIllustration({ styles }) {
   return (
     <MotiView
       from={{ opacity: 0, scale: 0.9, translateY: 12 }}
@@ -38,16 +39,10 @@ function MapIllustration() {
         <View style={styles.roadV} />
         <View style={[styles.roadV, { left: "68%" }]} />
 
-        {/* Hospital markers */}
-        <View style={[styles.hospitalMarker, { top: "22%", left: "18%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
-        <View style={[styles.hospitalMarker, { top: "55%", left: "70%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
-        <View style={[styles.hospitalMarker, { top: "75%", left: "28%" }]}>
-          <Cross size={9} color="#FFFFFF" strokeWidth={2.5} />
-        </View>
+        {/* Subtle map reference points — the central pin is the user's country. */}
+        <View style={[styles.locationMarker, { top: "22%", left: "18%" }]} />
+        <View style={[styles.locationMarker, { top: "55%", left: "70%" }]} />
+        <View style={[styles.locationMarker, { top: "75%", left: "28%" }]} />
 
         {/* User location pin (centre) */}
         <View style={styles.pinWrapper}>
@@ -65,6 +60,8 @@ export default function Step9() {
   const posthog = usePostHog();
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const goNext = () => { setOnboardingStep(9); router.push("/(onboarding)/step-10"); };
 
@@ -106,7 +103,7 @@ export default function Step9() {
           ]}
           onPress={() => router.back()}
         >
-          <ArrowLeft size={20} color="#1A1A1A" strokeWidth={2} />
+          <ArrowLeft size={20} color={t.text} strokeWidth={2} />
         </Pressable>
         <View style={styles.dotsRow}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
@@ -128,9 +125,9 @@ export default function Step9() {
         </Pressable>
       </View>
 
-      {/* Middle: map illustration + heading */}
+      {/* Middle: location illustration + heading */}
       <View style={styles.middle}>
-        <MapIllustration />
+        <MapIllustration styles={styles} />
 
         <MotiView
           from={{ opacity: 0, translateY: 16 }}
@@ -138,10 +135,11 @@ export default function Step9() {
           transition={{ type: "spring", damping: 16, stiffness: 80, delay: 320 }}
           style={styles.headingBlock}
         >
-          <Text style={styles.title}>Find care near you</Text>
+          <Text style={styles.title}>Emergency help, wherever you are</Text>
           <Text style={styles.subtitle}>
-            We use your location to surface nearby hospitals and specialist
-            centres when you need them.
+            If you need urgent help, Hemo can show the right emergency number
+            for the country you’re in. You can always choose a different
+            country in your Crisis Plan.
           </Text>
         </MotiView>
       </View>
@@ -157,7 +155,7 @@ export default function Step9() {
           style={({ pressed }) => [styles.ctaBtn, pressed && { opacity: 0.85 }]}
           onPress={handleRequestLocation}
         >
-          <Text style={styles.ctaBtnText}>Enable Location</Text>
+          <Text style={styles.ctaBtnText}>Use my location</Text>
         </Pressable>
         <Pressable onPress={handleSkip} hitSlop={12}>
           <Text style={styles.notNowText}>Not right now</Text>
@@ -167,8 +165,8 @@ export default function Step9() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F8F4F0" },
+const getStyles = (t) => StyleSheet.create({
+  screen: { flex: 1, backgroundColor: t.background },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -181,7 +179,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(9,51,44,0.08)",
+    backgroundColor: t.isDark ? "rgba(248,233,231,0.10)" : "rgba(9,51,44,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -193,17 +191,17 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   dot: { height: 6, borderRadius: 3 },
-  dotCurrent: { width: 22, backgroundColor: "#A9334D" },
-  dotPast: { width: 6, backgroundColor: "#A9334D", opacity: 0.4 },
-  dotFuture: { width: 6, backgroundColor: "rgba(9,51,44,0.14)" },
+  dotCurrent: { width: 22, backgroundColor: t.accent },
+  dotPast: { width: 6, backgroundColor: t.accent, opacity: 0.4 },
+  dotFuture: { width: 6, backgroundColor: t.isDark ? "rgba(248,233,231,0.18)" : "rgba(9,51,44,0.14)" },
   skipBtn: { width: 44, alignItems: "flex-end" },
-  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: "rgba(9,51,44,0.4)" },
+  skipText: { fontFamily: "Geist_500Medium", fontSize: 14, color: t.textSecondary },
   middle: { flex: 1, paddingHorizontal: 24, justifyContent: "center", gap: 36 },
   headingBlock: { gap: 10, alignItems: "center" },
   title: {
     fontFamily: "Geist_700Bold",
     fontSize: 30,
-    color: "#1A1A1A",
+    color: t.text,
     letterSpacing: -0.9,
     lineHeight: 36,
     textAlign: "center",
@@ -211,30 +209,30 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "Geist_400Regular",
     fontSize: 15,
-    color: "rgba(9,51,44,0.55)",
+    color: t.textSecondary,
     lineHeight: 22,
     textAlign: "center",
   },
   bottomArea: { paddingHorizontal: 24, paddingTop: 12, gap: 14, alignItems: "center" },
   ctaBtn: {
     width: "100%",
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     borderRadius: 16,
     paddingVertical: 18,
     alignItems: "center",
   },
   ctaBtnText: { fontFamily: "Geist_700Bold", fontSize: 17, color: "#FFFFFF", letterSpacing: 0.2 },
-  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: "rgba(9,51,44,0.4)" },
+  notNowText: { fontFamily: "Geist_500Medium", fontSize: 15, color: t.textSecondary },
 
   // Map illustration
   mapContainer: {
     alignSelf: "center",
     width: "100%",
     height: 220,
-    backgroundColor: "rgba(9,51,44,0.035)",
+    backgroundColor: t.isDark ? "rgba(248,233,231,0.06)" : "rgba(9,51,44,0.035)",
     borderRadius: 26,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.07)",
+    borderColor: t.border,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -249,7 +247,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 6,
-    backgroundColor: "rgba(9,51,44,0.06)",
+    backgroundColor: t.divider,
   },
   roadV: {
     position: "absolute",
@@ -257,17 +255,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: "42%",
     width: 6,
-    backgroundColor: "rgba(9,51,44,0.06)",
+    backgroundColor: t.divider,
   },
-  hospitalMarker: {
+  locationMarker: {
     position: "absolute",
     width: 22,
     height: 22,
-    borderRadius: 6,
-    backgroundColor: "#1A1A1A",
-    alignItems: "center",
-    justifyContent: "center",
-    opacity: 0.55,
+    borderRadius: 11,
+    backgroundColor: t.textSecondary,
+    opacity: 0.4,
   },
   pulseRing: {
     position: "absolute",
@@ -279,7 +275,7 @@ const styles = StyleSheet.create({
     marginLeft: -30,
     borderRadius: 30,
     borderWidth: 2,
-    borderColor: "#A9334D",
+    borderColor: t.accent,
     zIndex: 1,
   },
   pinWrapper: {
@@ -295,10 +291,10 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#A9334D",
+    backgroundColor: t.accent,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#A9334D",
+    shadowColor: t.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -312,7 +308,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 10,
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
-    borderTopColor: "#A9334D",
+    borderTopColor: t.accent,
     marginTop: -2,
   },
 });

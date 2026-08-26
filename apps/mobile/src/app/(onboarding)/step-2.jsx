@@ -6,6 +6,7 @@ import { CalendarDays, Lock } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import OnboardingStep from "@/components/OnboardingStep";
 import { useAppStore } from "@/store/appStore";
+import { useTheme } from "@/hooks/useTheme";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 100 }, (_, i) => CURRENT_YEAR - i);
@@ -53,6 +54,8 @@ function calcAge(day, month, year) {
 export default function Step2() {
   const { setOnboardingField, setOnboardingStep } = useAppStore();
   const insets = useSafeAreaInsets();
+  const t = useTheme();
+  const styles = getStyles(t);
 
   const [day, setDay] = useState(1);
   const [month, setMonth] = useState(0);
@@ -120,12 +123,12 @@ export default function Step2() {
               <Text style={styles.datePlaceholder}>Select your birthday</Text>
             )}
           </View>
-          <CalendarDays size={20} color="rgba(9,51,44,0.3)" strokeWidth={1.8} />
+          <CalendarDays size={20} color={t.textSecondary} strokeWidth={1.8} />
         </Pressable>
 
         {/* Privacy note */}
         <View style={styles.privacyRow}>
-          <Lock size={13} color="rgba(9,51,44,0.4)" strokeWidth={1.8} />
+          <Lock size={13} color={t.textSecondary} strokeWidth={1.8} />
           <Text style={styles.privacyText}>
             Your data is private and secure
           </Text>
@@ -196,14 +199,14 @@ export default function Step2() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (t) => StyleSheet.create({
   dateButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surface,
     borderRadius: 16,
     borderWidth: 1.5,
-    borderColor: "rgba(9,51,44,0.1)",
+    borderColor: t.border,
     padding: 20,
     marginBottom: 16,
     gap: 12,
@@ -211,19 +214,19 @@ const styles = StyleSheet.create({
   dateText: {
     fontFamily: "Geist_700Bold",
     fontSize: 24,
-    color: "#A9334D",
+    color: t.accent,
     letterSpacing: -0.5,
     marginBottom: 2,
   },
   ageText: {
     fontFamily: "Geist_400Regular",
     fontSize: 14,
-    color: "rgba(169,51,77,0.65)",
+    color: t.isDark ? "rgba(248,233,231,0.62)" : "rgba(169,51,77,0.65)",
   },
   datePlaceholder: {
     fontFamily: "Geist_400Regular",
     fontSize: 16,
-    color: "rgba(9,51,44,0.3)",
+    color: t.textSecondary,
   },
   privacyRow: {
     flexDirection: "row",
@@ -234,15 +237,15 @@ const styles = StyleSheet.create({
   privacyText: {
     fontFamily: "Geist_400Regular",
     fontSize: 13,
-    color: "rgba(9,51,44,0.4)",
+    color: t.textSecondary,
   },
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
+    backgroundColor: t.modalBackdrop,
   },
   sheet: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: t.surfaceElevated,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -254,22 +257,22 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(9,51,44,0.07)",
+    borderBottomColor: t.divider,
   },
   sheetTitle: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 16,
-    color: "#1A1A1A",
+    color: t.text,
   },
   cancelBtn: {
     fontFamily: "Geist_400Regular",
     fontSize: 16,
-    color: "rgba(9,51,44,0.45)",
+    color: t.textSecondary,
   },
   doneBtn: {
     fontFamily: "Geist_600SemiBold",
     fontSize: 16,
-    color: "#A9334D",
+    color: t.accent,
   },
   spinnerRow: {
     flexDirection: "row",
@@ -282,7 +285,7 @@ const styles = StyleSheet.create({
   spinnerItem: {
     fontFamily: "Geist_400Regular",
     fontSize: 18,
-    color: "#1A1A1A",
+    color: t.text,
     height: 200,
   },
 });
