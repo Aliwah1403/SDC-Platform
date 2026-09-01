@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useLocation } from "react-router";
@@ -502,7 +502,23 @@ function ConfirmDeletion({ token, search }: { token: string; search: string }) {
 
 export default function AccountDeletionPage() {
   const { search } = useLocation();
-  const token = new URLSearchParams(search).get("token");
+  // The confirmation token permanently deletes an account in a single use.
+  // Capture it once on mount, then strip it from the address bar so it can't
+  // leak through browser history, Referer headers on later resource loads, or
+  // PostHog pageviews / session replay.
+  const [token] = useState(() => new URLSearchParams(search).get("token"));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("token")) return;
+    url.searchParams.delete("token");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, []);
 
   return token ? (
     <ConfirmDeletion token={token} search={search} />
