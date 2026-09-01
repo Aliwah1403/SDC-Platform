@@ -426,6 +426,12 @@ verify_jwt = true
 [functions.delete-account]
 verify_jwt = true
 
+[functions.request-account-deletion]
+verify_jwt = false
+
+[functions.confirm-account-deletion]
+verify_jwt = false
+
 [functions.generate-ed-card]
 verify_jwt = true
 

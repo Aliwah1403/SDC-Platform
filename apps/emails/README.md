@@ -24,6 +24,7 @@ The templates currently mirror the Resend template IDs referenced by the system:
 - `admin-beta-signup-notification` (preview for the beta signup admin notification)
 - `admin-contact-notification`
 - `account-deleted`
+- `account-deletion-requested`
 - `data-export`
 
 The sent Hemo broadcast designs are also available as previews:
