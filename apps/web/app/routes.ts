@@ -24,6 +24,7 @@ export default [
     route("privacy", "routes/privacy.tsx"),
     route("terms", "routes/terms.tsx"),
     route("medical-disclaimer", "routes/medical-disclaimer.tsx"),
+    route("delete-account", "routes/delete-account.tsx"),
     route("blog", "routes/blog._index.tsx"),
     route("blog/:slug", "routes/blog.$slug.tsx"),
   ]),
