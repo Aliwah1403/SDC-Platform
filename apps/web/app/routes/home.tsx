@@ -4,7 +4,7 @@ import { HOME_FAQS } from "@/pages/Homepage/faqData";
 export { default } from "@/pages/Homepage/Homepage";
 
 // Freemium offer: free tier (logging, 7-day stats, Emergency SOS, community,
-// basic care hub) plus paid Hemo+ ($7.99/mo or $59.99/yr). AggregateOffer
+// basic care hub) plus paid Hemo+ ($7.99/mo or $49.99/yr). AggregateOffer
 // reflects that range instead of a single hardcoded price.
 const softwareApplication = {
   "@context": "https://schema.org",
@@ -18,7 +18,7 @@ const softwareApplication = {
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "0",
-    highPrice: "59.99",
+    highPrice: "49.99",
     priceCurrency: "USD",
     offerCount: "2",
   },

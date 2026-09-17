@@ -9,8 +9,11 @@
     "ios": "expo run:ios",
     "dev:ip": "node scripts/set-local-ip.mjs",
     "build:dev:ios": "eas build --profile development --platform ios",
+    "build:dev:android": "eas build --profile development --platform android",
     "build:staging:ios": "eas build --profile staging --platform ios",
     "submit:staging:ios": "eas submit --profile staging --platform ios",
+    "build:staging:android": "eas build --profile staging --platform android",
+    "submit:staging:android": "eas submit --profile staging --platform android",
     "build-and-submit:staging:ios": "eas build --profile staging --platform ios --auto-submit"
   },
   "dependencies": {
@@ -48,6 +51,7 @@
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.7",
     "expo-contacts": "~57.0.4",
+    "expo-crypto": "~57.0.2",
     "expo-dev-client": "~57.0.15",
     "expo-device": "~57.0.1",
     "expo-document-picker": "~57.0.1",
@@ -69,6 +73,7 @@
     "expo-router": "~57.0.16",
     "expo-secure-store": "~57.0.1",
     "expo-sensors": "~57.0.2",
+    "expo-sharing": "~57.0.20",
     "expo-sms": "~57.0.1",
     "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",

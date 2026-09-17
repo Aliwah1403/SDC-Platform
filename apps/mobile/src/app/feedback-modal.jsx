@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { X, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fonts } from "@/utils/fonts";
 import { FEATUREBASE_URL } from "@/constants/feedback";
 import { useTheme } from "@/hooks/useTheme";
@@ -11,6 +12,7 @@ import { useTheme } from "@/hooks/useTheme";
 export default function FeedbackModalScreen() {
   const router = useRouter();
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const [error, setError] = useState(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -20,7 +22,8 @@ export default function FeedbackModalScreen() {
 
       <View
         style={{
-          height: 56,
+          height: insets.top + 56,
+          paddingTop: insets.top,
           borderBottomWidth: 1,
           borderBottomColor: t.border,
           flexDirection: "row",

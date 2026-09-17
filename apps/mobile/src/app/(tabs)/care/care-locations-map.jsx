@@ -3,8 +3,9 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import { ChevronLeft, Navigation, Pencil, Phone, X } from 'lucide-react-native';
+import { Navigation, Pencil, Phone, X } from 'lucide-react-native';
 import CareLocationsMap from '@/components/CareLocations/CareLocationsMap';
+import CareLocationsHeader from '@/components/CareLocations/CareLocationsHeader';
 import { useSavedFacilitiesQuery } from '@/hooks/queries/useSavedFacilitiesQuery';
 import { CARE_LOCATION_ROLE_LABELS } from '@/services/supabase/facilities';
 import { callCareLocation, openDirections } from '@/utils/careLocationActions';
@@ -40,10 +41,11 @@ export default function CareLocationsMapScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
-      <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 18, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: t.surface }}>
-        <Pressable onPress={() => router.back()} accessibilityLabel="Back" style={{ width: 44, height: 44, justifyContent: 'center' }}><ChevronLeft color={t.text} /></Pressable>
-        <View style={{ flex: 1 }}><Text style={{ fontFamily: fonts.semibold, fontSize: 21, color: t.text }}>Saved locations map</Text><Text style={{ fontFamily: fonts.regular, color: t.textSecondary, fontSize: 12 }}>{pins.length} saved {pins.length === 1 ? 'pin' : 'pins'}</Text></View>
-      </View>
+      <CareLocationsHeader
+        title="Locations map"
+        subtitle={`${pins.length} saved ${pins.length === 1 ? 'pin' : 'pins'}`}
+        onBack={() => router.back()}
+      />
       {pins.length ? (
         <CareLocationsMap
           locations={pins}

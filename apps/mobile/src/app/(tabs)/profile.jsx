@@ -2077,9 +2077,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingAllergies(false)}
         />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView behavior="padding">
           <View
             style={{
               backgroundColor: t.surfaceElevated,
@@ -2548,9 +2546,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingFullName(false)}
         />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView behavior="padding">
           <View
             style={{
               backgroundColor: t.surfaceElevated,
@@ -2647,9 +2643,7 @@ export default function ProfileScreen() {
           style={{ flex: 1, backgroundColor: t.modalBackdrop }}
           onPress={() => setEditingNickname(false)}
         />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView behavior="padding">
           <View
             style={{
               backgroundColor: t.surfaceElevated,

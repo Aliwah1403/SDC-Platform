@@ -246,11 +246,13 @@ Deno.serve(async (req: Request) => {
         resendApiKey,
         {
           to: [adminEmail],
-          template: { id: "admin-waitlist-notification" },
-          variables: {
-            SIGNUP_EMAIL: email,
-            SOURCE: source,
-            SIGNED_UP_AT: signedUpAt,
+          template: {
+            id: "admin-waitlist-notification",
+            variables: {
+              SIGNUP_EMAIL: email,
+              SOURCE: source,
+              SIGNED_UP_AT: signedUpAt,
+            },
           },
         },
         "Admin waitlist notification",

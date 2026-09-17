@@ -62,6 +62,13 @@ import { StartupReadyProvider } from "@/components/ObserveInteractive";
 import { Observe, ObserveRoot } from "expo-observe";
 import AppUpdateModal from "@/components/AppUpdateModal";
 import AnimatedSplash from "@/components/AnimatedSplash";
+import AchievementPresenter from "@/components/AchievementPresenter";
+import OfflineBanner from "@/components/OfflineBanner";
+import { ToastProvider } from "@/components/Toast/ToastProvider";
+import { configureOnlineManager } from "@/utils/network/connectivity";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import { useAuthReconnect } from "@/hooks/useAuthReconnect";
+import { useHealthLogSync } from "@/hooks/useHealthLogSync";
 
 Observe.configure({
   integrations: { "expo-router": true },
@@ -69,6 +76,7 @@ Observe.configure({
 
 SplashScreen.preventAutoHideAsync();
 SplashScreen.setOptions({ duration: 280, fade: true });
+configureOnlineManager();
 
 // Required for notifications to display when the app is in the foreground
 Notifications.setNotificationHandler({
@@ -123,7 +131,12 @@ function RootLayout() {
 // "No QueryClient set" — this component is what QueryClientProvider wraps.
 function RootLayoutContent() {
   const theme = useTheme();
-  const { initiate, isReady } = useAuth();
+  const {
+    initiate,
+    isReady,
+    retry: retryAuth,
+    authBootstrapRetrying,
+  } = useAuth();
   const router = useRouter();
   const {
     healthKitConnected, healthKitPreferences, setHealthKitConnected, setHealthKitRange, mergeHealthKitDay,
@@ -131,6 +144,8 @@ function RootLayoutContent() {
     setExpoPushToken, appLockEnabled, appLockTimeout, setAppLockEnabled, setAppLockTimeout,
   } = useAppStore();
   const userId = useAuthStore((s) => s.auth?.user?.id);
+  const isOfflineBootstrap = useAuthStore((s) => s.auth?.isOfflineBootstrap === true);
+  const { isOnline } = useNetworkStatus();
   const hydrationDisplayUnit = useHydrationStore((s) => s.displayUnit);
   const { data: hydrationContainersData } = useHydrationContainersQuery();
   const [splashGone, setSplashGone] = useState(false);
@@ -145,6 +160,14 @@ function RootLayoutContent() {
   const authenticateAfterLockMount = useRef(false);
   const sessionStartRef = useRef(Date.now());
   const lastHKFetchAt = useRef(Date.now());
+
+  useAuthReconnect({
+    isOnline,
+    isOfflineBootstrap,
+    isRetrying: authBootstrapRetrying,
+    retry: retryAuth,
+  });
+  useHealthLogSync();
 
   const [fontsLoaded, fontError] = useFonts({
     Geist_400Regular,
@@ -283,8 +306,9 @@ function RootLayoutContent() {
   // This fixes the "shows not connected after reload" bug — the Zustand store is
   // in-memory only, so we ask iOS directly rather than storing a boolean ourselves.
   useEffect(() => {
-    if (Platform.OS !== "ios") return;
+    if (Platform.OS !== "ios" || !userId) return;
     checkExistingHKAuthorization().then(async (wasConnected) => {
+      posthog.setPersonProperties({ apple_health_connected: wasConnected });
       if (!wasConnected) return;
       setHealthKitConnected(true);
       const rangeData = await fetchHealthKitRange(30, healthKitPreferences);
@@ -292,12 +316,13 @@ function RootLayoutContent() {
       lastHKFetchAt.current = Date.now();
       setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics), healthKitPreferences);
     });
-  }, []);
+  }, [userId]);
 
   // Android: restore Health Connect connected state and set up foreground polling.
   useEffect(() => {
-    if (Platform.OS !== "android") return;
+    if (Platform.OS !== "android" || !userId) return;
     checkExistingHCAuthorization().then(async (wasConnected) => {
+      posthog.setPersonProperties({ health_connect_connected: wasConnected });
       if (!wasConnected) return;
       setHealthConnectConnected(true);
       const rangeData = await fetchHealthConnectRange(30, healthConnectPreferences);
@@ -308,7 +333,7 @@ function RootLayoutContent() {
         healthConnectPreferences
       );
     });
-  }, []);
+  }, [userId]);
 
   // Fetch + cache the global emergency-numbers reference table once at startup.
   // Used by useEmergencyNumber to resolve the correct ambulance number for the
@@ -494,6 +519,7 @@ function RootLayoutContent() {
         onTouchStartCapture={dismissKeyboardOnOutsideTouch}
       >
         <KeyboardProvider>
+        <ToastProvider position="top">
         <Stack screenOptions={{ headerShown: false }} initialRouteName="index">
           <Stack.Screen name="index" />
           <Stack.Screen name="(auth)" />
@@ -602,6 +628,8 @@ function RootLayoutContent() {
           />
         </Stack>
 
+        <OfflineBanner />
+
         <StatusBar style={theme.isDark ? "light" : "dark"} />
 
         {/*
@@ -678,7 +706,9 @@ function RootLayoutContent() {
           </Modal>
         )}
 
+        {splashDone && !isLocked && <AchievementPresenter />}
         <AppUpdateModal ready={splashDone && !isLocked} />
+        </ToastProvider>
         </KeyboardProvider>
       </GestureHandlerRootView>
       </StartupReadyProvider>

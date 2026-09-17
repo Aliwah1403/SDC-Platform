@@ -11,12 +11,52 @@ const appExtra = Constants.expoConfig?.extra ?? {};
 
 export const appEnvironment = appExtra.appEnv ?? (__DEV__ ? 'development' : 'production');
 
+const isLocalNetworkHost = (hostname) => {
+  if (!hostname) return false;
+  if (hostname === 'localhost' || hostname === '0.0.0.0' || hostname.startsWith('127.')) {
+    return true;
+  }
+  if (hostname.startsWith('10.') || hostname.startsWith('192.168.')) return true;
+  const match = hostname.match(/^172\.(\d+)\./);
+  return match ? Number(match[1]) >= 16 && Number(match[1]) <= 31 : false;
+};
+
+// In a development build, Expo's manifest includes the host serving the
+// current Metro bundle. That is also the Mac address a physical device can use
+// to reach the local Supabase stack. Deriving it here prevents a Wi-Fi change
+// from leaving the app pointed at yesterday's DHCP address.
+const resolveDevelopmentSupabaseUrl = (configuredUrl) => {
+  if (!configuredUrl || !__DEV__) return configuredUrl;
+
+  try {
+    const configured = new URL(configuredUrl);
+    if (configured.protocol !== 'http:' || !isLocalNetworkHost(configured.hostname)) {
+      return configuredUrl;
+    }
+
+    const hostUri = Constants.expoConfig?.hostUri;
+    if (!hostUri) return configuredUrl;
+
+    const metroUrl = new URL(
+      /^[a-z][a-z\d+.-]*:\/\//i.test(hostUri) ? hostUri : `http://${hostUri}`
+    );
+    if (!metroUrl.hostname || !isLocalNetworkHost(metroUrl.hostname)) return configuredUrl;
+
+    configured.hostname = metroUrl.hostname;
+    return configured.toString().replace(/\/$/, '');
+  } catch {
+    return configuredUrl;
+  }
+};
+
 // Development must never fall back to a hosted (staging/production)
 // project: in dev, process.env wins over the config-derived extra.* value.
 // Every other env keeps the original precedence (extra.* first).
 const supabaseUrl =
   appEnvironment === 'development'
-    ? process.env.EXPO_PUBLIC_SUPABASE_URL ?? appExtra.supabaseUrl
+    ? resolveDevelopmentSupabaseUrl(
+        process.env.EXPO_PUBLIC_SUPABASE_URL ?? appExtra.supabaseUrl
+      )
     : appExtra.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey =
   appEnvironment === 'development'

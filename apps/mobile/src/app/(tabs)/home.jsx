@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { usePostHog } from "posthog-react-native";
+import React, { useState, useEffect } from "react";
 import { View } from "react-native";
 import Animated, {
   useSharedValue,
@@ -11,11 +10,8 @@ import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import RepairStreakBottomSheet from "@/components/RepairStreakBottomSheet";
 import LostStreakModal from "@/components/LostStreakModal";
-import StreakAchievementModal from "@/components/StreakAchievementModal";
 import { useAppStore } from "@/store/appStore";
 import {
-  useStreakQuery,
-  useClaimBadgeMutation,
   useAcknowledgeStreakLossMutation,
 } from "@/hooks/queries/useStreakQuery";
 import { useMedicationsQuery } from "@/hooks/queries/useMedicationsQuery";
@@ -37,17 +33,9 @@ import { useDateNavigation } from "@/hooks/useDateNavigation";
 import { getDynamicMessage, getGradientColors } from "@/utils/homeHelpers";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { useTheme } from "@/hooks/useTheme";
-import { toLocalDateStr } from "@/utils/dateUtils";
-import {
-  getEarnedAchievements,
-  normalizeAchievementId,
-  toAchievementMilestone,
-} from "@/utils/achievements";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const posthog = usePostHog();
-
   const {
     currentUser,
     healthStreak,
@@ -66,86 +54,12 @@ export default function HomeScreen() {
     isWeatherLoading,
   } = useHomeData();
 
-  const pendingMilestone = useAppStore((s) => s.pendingMilestone);
-  const setPendingMilestone = useAppStore((s) => s.setPendingMilestone);
-  const clearPendingMilestone = useAppStore((s) => s.clearPendingMilestone);
-
-  const { data: streak, isSuccess: streakLoaded } = useStreakQuery();
   const { data: metricGoals } = useMetricGoalsQuery();
   const hydrationGoalMl = metricGoals?.hydration ?? DEFAULT_SUGGESTED_ML;
-  const claimedBadges = (streak?.claimedBadges ?? []).map((b) =>
-    normalizeAchievementId(b != null && typeof b === "object" ? b.id : b),
-  );
-  const { mutate: saveClaimedBadges } = useClaimBadgeMutation();
   const { mutateAsync: acknowledgeStreakLoss } = useAcknowledgeStreakLossMutation();
 
   const { data: medications = [], isLoading: medsLoading } = useMedicationsQuery();
   const { data: appointments = [], isLoading: apptLoading } = useAppointmentsQuery();
-
-  const totalEntries = healthData.length;
-  const symptomsLogged = useMemo(
-    () => healthData.reduce((sum, d) => sum + (d.symptoms?.length || 0), 0),
-    [healthData],
-  );
-  const hydrationDays = useMemo(
-    () => healthData.filter((d) => d.hydration >= hydrationGoalMl).length,
-    [healthData, hydrationGoalMl],
-  );
-  const completedDays = useMemo(() => {
-    const loggedDates = new Set(healthData.map((d) => d.date));
-    const today = new Date();
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (6 - i));
-      return toLocalDateStr(date);
-    }).filter((date) => loggedDates.has(date)).length;
-  }, [healthData]);
-
-  const hasLoggedToday = (() => {
-    const todayStr = toLocalDateStr(new Date());
-    const todayData = healthData.find((d) => d.date === todayStr);
-    return !!(
-      todayData &&
-      (todayData.painLevel > 0 || todayData.mood > 0 || todayData.hydration > 0)
-    );
-  })();
-
-  // Milestone detection — only runs on days the user actually logged
-  useEffect(() => {
-    if (!streakLoaded) return;
-    if (!hasLoggedToday) return;
-    if (pendingMilestone) return;
-
-    const earned = getEarnedAchievements({
-      currentStreak: healthStreak,
-      daysLogged: totalEntries,
-      symptomsLogged,
-      hydrationDays,
-      completedDays,
-      medicationsCount: medications.length,
-      careTasksCompleted: 0,
-      learningModulesCompleted: 0,
-      repairsUsed: streak?.repairsUsed ?? 0,
-    });
-
-    const newBadge = earned.find((m) => !claimedBadges.includes(m.id));
-    if (newBadge) {
-      setPendingMilestone(toAchievementMilestone(newBadge));
-    }
-  }, [
-    streakLoaded,
-    hasLoggedToday,
-    healthData,
-    healthStreak,
-    pendingMilestone,
-    claimedBadges,
-    totalEntries,
-    symptomsLogged,
-    hydrationDays,
-    completedDays,
-    medications.length,
-    streak?.repairsUsed,
-  ]);
 
   const alertState = useAppStore((s) => s.computedAlertState);
 
@@ -316,36 +230,6 @@ export default function HomeScreen() {
           onClose={() => setLostStreakVisible(false)}
         />
       </View>
-
-      <StreakAchievementModal
-        visible={!!pendingMilestone}
-        milestone={pendingMilestone}
-        healthData={healthData}
-        onClaim={() => {
-          if (pendingMilestone) {
-            posthog?.capture("milestone_claimed", {
-              milestone_id: pendingMilestone.milestoneId,
-              milestone_type: pendingMilestone.type,
-              streak_days: pendingMilestone.streakCount ?? null,
-            });
-            const existing = streak?.claimedBadges ?? [];
-            const alreadyIds = existing.map((b) =>
-              normalizeAchievementId(b != null && typeof b === "object" ? b.id : b),
-            );
-            const updated = alreadyIds.includes(pendingMilestone.milestoneId)
-              ? existing
-              : [
-                  ...existing,
-                  {
-                    id: pendingMilestone.milestoneId,
-                    unlockedAt: new Date().toISOString(),
-                  },
-                ];
-            saveClaimedBadges(updated);
-          }
-          clearPendingMilestone();
-        }}
-      />
     </View>
   );
 }

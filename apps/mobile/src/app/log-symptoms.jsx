@@ -28,11 +28,12 @@ import { useMetricGoalsQuery } from "@/hooks/queries/useMetricGoalsQuery";
 import { useProfileQuery } from "@/hooks/queries/useProfileQuery";
 import { useWeatherData } from "@/hooks/useWeatherData";
 import { useTodaySteps } from "@/hooks/useTodaySteps";
-import { glassesFromMl, formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
+import { formatHydration, hydrationNumberAndUnit, formatHydrationRemaining } from "@/utils/hydrationUnits";
 import { useHydrationStore } from "@/store/hydrationStore";
 import { useHydrationContainersQuery, FALLBACK_CONTAINERS, containerIconKey } from "@/hooks/queries/useHydrationContainersQuery";
 import { DEFAULT_SUGGESTED_ML, GLASS_ML, getHeatBumpMl, getActivityBumpMl, combineBumpMl, describeBumpReason } from "@/utils/hydrationGoal";
 import { maybeSilenceHydrationReminders } from "@/utils/hydrationReminders";
+import { toLocalDateStr } from "@/utils/dateUtils";
 import {
   Accessibility,
   Activity,
@@ -753,7 +754,7 @@ function NotesStep({ value, onChange, onSkip }) {
 }
 
 // Step 7 — Summary
-function SummaryStep({ log, onSubmit, isLoading, isDisabled, hydrationDisplayUnit, relog, showSaveSuccess }) {
+function SummaryStep({ log, onSubmit, isLoading, isDisabled, hydrationDisplayUnit, relog, showSaveSuccess, saveStatus }) {
   const t = useTheme();
   const moodIdx = MOOD_VALUES.indexOf(log.mood);
   const moodLabel = MOOD_LABELS[moodIdx] ?? "Neutral";
@@ -818,7 +819,9 @@ function SummaryStep({ log, onSubmit, isLoading, isDisabled, hydrationDisplayUni
         ) : (
           <Check color="#fff" size={20} strokeWidth={2.5} />
         )}
-        <Text style={styles.submitBtnText}>{isLoading ? "Saving..." : showSaveSuccess ? "Saved!" : "Save log"}</Text>
+        <Text style={styles.submitBtnText}>
+          {isLoading ? "Saving..." : showSaveSuccess ? (saveStatus === 'queued' ? "Saved on this device — waiting to sync" : "Saved!") : "Save log"}
+        </Text>
       </PressableScale>
     </View>
   );
@@ -843,7 +846,7 @@ export default function LogSymptomsScreen() {
   const submitLogMutation = useSubmitLogMutation();
   const openedAtRef = useRef(Date.now());
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = toLocalDateStr(new Date());
   const { data: todayLogs = [] } = useHealthLogsQuery(todayStr);
   const hasLoggedToday = todayLogs.length > 0;
 
@@ -899,6 +902,7 @@ export default function LogSymptomsScreen() {
   }, [dailySummaries]);
   const [notes, setNotes] = useState(currentSymptomLog.notes || "");
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null);
   const [saveCommitted, setSaveCommitted] = useState(false);
 
   const STEP_COUNT = 8; // steps 0-6 + summary (7)
@@ -988,40 +992,19 @@ export default function LogSymptomsScreen() {
     submitLogMutation.mutate(logData, {
       onSuccess: () => {
         setSaveCommitted(true);
+        setSaveStatus('queued');
         const logDuration = Math.round((Date.now() - openedAtRef.current) / 1000);
-        posthog?.capture('symptom_log_submitted', {
-          pain_level: painLevel,
-          hydration_level: Math.round(glassesFromMl(hydration)),
-          mood: MOOD_VALUES[moodValue - 1],
-          contributor_count: moodContributors.length,
-          symptoms_selected: symptoms,
-          location_count: bodyLocations.length,
-          symptom_count: symptoms.length,
-          has_notes: notes.trim().length > 0,
-          log_duration_seconds: logDuration,
-        });
-        posthog?.capture('pain_logged', {
-          pain_score: painLevel,
-          pain_location: bodyLocations[0] ?? null,
-          crisis_step: null,
-        });
-        posthog?.capture('hydration_logged', {
-          amount_glasses: Math.round(glassesFromMl(hydration)),
-          amount_ml: hydration,
-          goal_ml: hydrationGoalMl,
-          goal_met: hydration >= hydrationGoalMl,
-          activity_bump_ml: activityBumpMl,
-          steps_today: stepsToday,
-        });
+        // Do not send symptom/pain/hydration values to analytics. The queue
+        // status is sufficient to measure reliability without PHI.
+        posthog?.capture('symptom_log_submitted', { sync_status: 'queued', log_duration_seconds: logDuration });
+        posthog?.capture('pain_logged', { sync_status: 'queued' });
+        posthog?.capture('hydration_logged', { sync_status: 'queued' });
         // Goal-aware silencing (Step 10 decision 3) — `hydration` here is
         // today's full running total (the vessel seeds from it above), and
         // hydrationGoalMl is the user's BASE goal, never the heat-bumped one.
         maybeSilenceHydrationReminders(hydration, hydrationGoalMl);
         if (!hasLoggedToday) {
-          posthog?.capture('streak_saved', {
-            trigger_type: 'organic',
-            days_since_last_log: 1,
-          });
+          posthog?.capture('streak_saved', { sync_status: 'queued' });
         }
         resetSymptomLog();
         // Mirror to health platform on the first log of the day only — re-logs would
@@ -1034,35 +1017,14 @@ export default function LogSymptomsScreen() {
         setTimeout(() => router.back(), 350);
       },
       onError: (error) => {
-        const stage = error?.saveStage ?? 'unknown';
-        const rawLogSaved = error?.rawLogSaved === true;
-
-        console.error(
-          `[LogSymptoms] Save failed at ${stage}${rawLogSaved ? ' after raw log insert' : ''}:`,
-          error?.message ?? error,
-        );
+        const stage = error?.code ?? 'local_storage';
+        console.error('[LogSymptoms] Local save failed:', stage);
         Sentry.captureException(error);
-        posthog?.capture('symptom_log_save_failed', {
-          stage,
-          raw_log_saved: rawLogSaved,
-        });
-
-        if (rawLogSaved) {
-          // The health_logs insert is durable. Do not let a retry create a
-          // duplicate just because a follow-up summary/streak operation failed.
-          setSaveCommitted(true);
-          resetSymptomLog();
-          Alert.alert(
-            'Log saved with a warning',
-            'Your symptom log was saved, but part of the dashboard update did not finish. Your data will refresh when you return.',
-            [{ text: 'OK', onPress: () => router.back() }],
-          );
-          return;
-        }
+        posthog?.capture('symptom_log_sync_status', { status: 'failed', reason: stage });
 
         Alert.alert(
           'Couldn’t save log',
-          'Your symptom log was not saved. Please check your connection and try again.',
+          'Your symptom log was not saved on this device. Please try again.',
         );
       },
     });
@@ -1197,7 +1159,7 @@ export default function LogSymptomsScreen() {
           />
         )}
         {step === 7 && (
-          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} isDisabled={saveCommitted} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} />
+          <SummaryStep log={logSnapshot} onSubmit={handleSubmit} isLoading={submitLogMutation.isPending} isDisabled={saveCommitted} hydrationDisplayUnit={hydrationDisplayUnit} relog={hasLoggedToday} showSaveSuccess={showSaveSuccess} saveStatus={saveStatus} />
         )}
       </View>
 

@@ -66,7 +66,7 @@ const PLANS: Plan[] = [
     name: "Hemo+",
     label: "Hemo+",
     monthlyPrice: 7.99,
-    yearlyPrice: 59.99,
+    yearlyPrice: 49.99,
     period: { monthly: "per month", yearly: "per year" },
     description: {
       monthly:
@@ -138,7 +138,7 @@ const Pricing34 = ({ className, showCTA = false }: Pricing34Props) => {
             value="yearly"
             className="h-8 w-36 rounded-sm text-sm data-[state=on]:bg-background"
           >
-            Yearly · Save 37%
+            Yearly · Save 48%
           </ToggleGroupItem>
         </ToggleGroup>
       </div>

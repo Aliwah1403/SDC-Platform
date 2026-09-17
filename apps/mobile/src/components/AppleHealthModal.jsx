@@ -17,6 +17,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 import { Upload, Watch } from "lucide-react-native";
 import { fonts } from "@/utils/fonts";
 import { requestHKAuthorization, fetchHealthKitRange, setupBackgroundDelivery } from "@/services/healthKitService";
@@ -29,6 +30,7 @@ const SLIDE_SPRING = { damping: 15, stiffness: 170, mass: 0.95 };
 
 export default function AppleHealthModal({ visible, onClose, onContinue }) {
   const [connecting, setConnecting] = useState(false);
+  const posthog = usePostHog();
   const { setHealthKitConnected, setHealthKitRange, mergeHealthKitDay, healthKitPreferences } = useAppStore();
   const insets = useSafeAreaInsets();
 
@@ -111,11 +113,23 @@ export default function AppleHealthModal({ visible, onClose, onContinue }) {
                 const granted = await requestHKAuthorization();
                 if (granted) {
                   setHealthKitConnected(true);
+                  posthog?.setPersonProperties({ apple_health_connected: true });
+                  posthog?.capture("health_integration_connected", {
+                    provider: "apple_health",
+                  });
                   const rangeData = await fetchHealthKitRange(30, healthKitPreferences);
                   setHealthKitRange(rangeData);
                   await setupBackgroundDelivery((date, metrics) => mergeHealthKitDay(date, metrics), healthKitPreferences);
+                } else {
+                  posthog?.capture("health_integration_permission_denied", {
+                    provider: "apple_health",
+                  });
                 }
-              } catch {}
+              } catch {
+                posthog?.capture("health_integration_connection_failed", {
+                  provider: "apple_health",
+                });
+              }
               setConnecting(false);
               onContinue ? onContinue() : onClose();
             }}

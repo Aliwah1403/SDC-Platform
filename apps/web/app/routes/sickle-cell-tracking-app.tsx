@@ -16,7 +16,7 @@ const softwareApplication = {
   offers: {
     "@type": "AggregateOffer",
     lowPrice: "0",
-    highPrice: "59.99",
+    highPrice: "49.99",
     priceCurrency: "USD",
     offerCount: "2",
   },

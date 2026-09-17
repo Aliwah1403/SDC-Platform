@@ -15,7 +15,7 @@ const PricingSection = () => {
           <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
             Core daily tracking is free with no time limit. Hemo+ unlocks
             unlimited history, AI insights, and the full care toolkit for
-            $7.99/month — or $59.99/year.
+            $7.99/month — or $49.99/year.
           </p>
         </div>
         <Pricing34 showCTA />

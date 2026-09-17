@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import NetInfo from '@react-native-community/netinfo';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, ChevronRight, ClipboardPaste, ExternalLink, Keyboard, Link2, Trash2 } from 'lucide-react-native';
+import { ChevronRight, ClipboardPaste, ExternalLink, Keyboard, Link2, Trash2 } from 'lucide-react-native';
 import { usePostHog } from 'posthog-react-native';
+import Animated, { cubicBezier, Easing, FadeInDown, FadeOut, ReduceMotion, useReducedMotion } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/useTheme';
 import { useSavedFacilitiesQuery } from '@/hooks/queries/useSavedFacilitiesQuery';
 import { useCareLocationMutations } from '@/hooks/mutations/useCareLocationMutations';
@@ -14,10 +16,17 @@ import {
   CARE_LOCATION_ROLES,
   resolveCareLocationLink,
 } from '@/services/supabase/facilities';
+import { isCareLocationShareImport } from '@/utils/careLocationShare';
 import { fonts } from '@/utils/fonts';
+import { useToast } from '@/components/Toast/ToastProvider';
+import CareLocationsHeader from '@/components/CareLocations/CareLocationsHeader';
 
 const ROLES = Object.values(CARE_LOCATION_ROLES);
 const PROVIDER_LABELS = { google_maps: 'Google Maps', apple_maps: 'Apple Maps' };
+const EASE_OUT = Easing.bezier(0.23, 1, 0.32, 1).factory();
+const CSS_EASE_OUT = cubicBezier(0.23, 1, 0.32, 1);
+const MODE_ENTER = FadeInDown.duration(220).easing(EASE_OUT).reduceMotion(ReduceMotion.System);
+const MODE_EXIT = FadeOut.duration(120).reduceMotion(ReduceMotion.System);
 
 function careLocationSaveErrorMessage(error) {
   if (__DEV__ && error?.code === 'PGRST204') {
@@ -73,12 +82,77 @@ function MethodCard({ icon: Icon, title, subtitle, badge, onPress }) {
   );
 }
 
+function ResolveLinkButton({ isResolving, onPress, accent }) {
+  const reducedMotion = useReducedMotion();
+  const transition = {
+    transitionProperty: reducedMotion ? 'opacity' : ['transform', 'opacity'],
+    transitionDuration: reducedMotion ? 120 : 220,
+    transitionTimingFunction: CSS_EASE_OUT,
+  };
+  const face = {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backfaceVisibility: 'hidden',
+  };
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={isResolving}
+      accessibilityRole="button"
+      accessibilityLabel={isResolving ? 'Reading Maps link' : 'Continue'}
+      accessibilityState={{ disabled: isResolving, busy: isResolving }}
+      style={{ minHeight: 55, borderRadius: 17, backgroundColor: accent, overflow: 'hidden' }}
+    >
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          face,
+          transition,
+          {
+            opacity: isResolving ? 0 : 1,
+            transform: reducedMotion
+              ? []
+              : [{ perspective: 800 }, { rotateX: isResolving ? '-180deg' : '0deg' }],
+          },
+        ]}
+      >
+        <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Continue</Text>
+      </Animated.View>
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          face,
+          transition,
+          {
+            opacity: isResolving ? 1 : 0,
+            transform: reducedMotion
+              ? []
+              : [{ perspective: 800 }, { rotateX: isResolving ? '0deg' : '180deg' }],
+          },
+        ]}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+          <ActivityIndicator color="#FFFFFF" />
+          <Text accessibilityLiveRegion="polite" style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Reading Maps Link</Text>
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function CareLocationFormScreen() {
-  const { id, role: initialRole } = useLocalSearchParams();
+  const { id, role: initialRole, shareUrl } = useLocalSearchParams();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const t = useTheme();
   const posthog = usePostHog();
+  const { showToast } = useToast();
   const { data: locations = [], isLoading } = useSavedFacilitiesQuery();
   const existing = useMemo(() => locations.find((item) => item.id === id), [locations, id]);
   const { saveMutation, deleteMutation } = useCareLocationMutations();
@@ -100,6 +174,8 @@ export default function CareLocationFormScreen() {
   const [resolveError, setResolveError] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const hydratedId = useRef(existing?.id || null);
+  const importedShareRef = useRef(null);
+  const isShareImport = isCareLocationShareImport(shareUrl, id);
 
   useEffect(() => {
     if (!existing || hydratedId.current === existing.id) return;
@@ -109,6 +185,21 @@ export default function CareLocationFormScreen() {
     setLat(existing.lat); setLng(existing.lng); setSourceProvider(existing.sourceProvider);
     setSourceUrl(existing.sourceUrl); setProviderPlaceId(existing.providerPlaceId); setMode('details');
   }, [existing]);
+
+  useEffect(() => {
+    const incoming = Array.isArray(shareUrl) ? shareUrl[0] : shareUrl;
+    if (!incoming || id || importedShareRef.current === incoming) return;
+    importedShareRef.current = incoming;
+    setMapsLink(incoming);
+    setResolveError('');
+    setMode('link');
+  }, [id, shareUrl]);
+
+  useEffect(() => {
+    const incoming = Array.isArray(shareUrl) ? shareUrl[0] : shareUrl;
+    if (!incoming || id || importedShareRef.current !== incoming || isResolving || mode !== 'link') return;
+    resolveLink(incoming);
+  }, [id, shareUrl, mode]);
 
   const chooseMethod = (method) => {
     posthog?.capture('care_location_add_method_selected', { method, entry_point: 'care' });
@@ -126,18 +217,19 @@ export default function CareLocationFormScreen() {
     }
   };
 
-  const resolveLink = async () => {
-    if (!mapsLink.trim()) return setResolveError('Paste a Google Maps or Apple Maps link first.');
+  const resolveLink = async (value = mapsLink) => {
+    const link = (typeof value === 'string' ? value : mapsLink).trim();
+    if (!link) return setResolveError('Paste a Google Maps or Apple Maps link first.');
     setResolveError('');
     setIsResolving(true);
     try {
       const network = await NetInfo.fetch().catch(() => null);
       if (network?.isConnected === false) {
         setResolveError('You appear to be offline. Reconnect, then try this link again.');
-        posthog?.capture('care_location_link_resolved', { outcome: 'offline', provider: mapsProviderHint(mapsLink) });
+        posthog?.capture('care_location_link_resolved', { outcome: 'offline', provider: mapsProviderHint(link) });
         return;
       }
-      const result = await resolveCareLocationLink(mapsLink.trim());
+      const result = await resolveCareLocationLink(link);
       setCandidate(result);
       setName(result.name || ''); setAddress(result.address || ''); setLat(result.lat); setLng(result.lng);
       setSourceProvider(result.provider); setSourceUrl(result.sourceUrl || result.originalUrl); setProviderPlaceId(result.providerPlaceId);
@@ -150,7 +242,7 @@ export default function CareLocationFormScreen() {
       setMode('confirm');
     } catch {
       setResolveError('We couldn’t read that link. Check that it is a Google Maps or Apple Maps share link, then try again.');
-      posthog?.capture('care_location_link_resolved', { outcome: 'failed', provider: mapsProviderHint(mapsLink) });
+      posthog?.capture('care_location_link_resolved', { outcome: 'failed', provider: mapsProviderHint(link) });
     } finally {
       setIsResolving(false);
     }
@@ -166,18 +258,31 @@ export default function CareLocationFormScreen() {
     const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lng);
     if (!address.trim() && !hasCoordinates && !sourceUrl) return Alert.alert('Location required', 'Add an address or import a supported Maps link.');
     const replacement = locations.find((item) => item.id !== existing?.id && item.role === role);
-    const proceed = () => saveMutation.mutate({
-      ...existing, id: existing?.id, role, name, address, phone, careTeamPhone, website, notes,
-      lat, lng, sourceKind: existing?.sourceKind || 'user', sourceProvider, sourceUrl, providerPlaceId,
-    }, {
-      onSuccess: (saved) => {
-        posthog?.capture('care_location_saved', { role: saved.role, source_kind: saved.sourceKind, has_coordinates: Number.isFinite(saved.lat), add_method: sourceProvider ? 'maps_link' : 'manual' });
-        if (mode === 'confirm') posthog?.capture('care_location_link_confirmed', { provider: sourceProvider, role, was_partial: !candidate?.name || (!candidate?.address && !Number.isFinite(candidate?.lat)) });
-        if (existing && existing.role !== role) posthog?.capture('care_location_role_changed', { from_role: existing.role, to_role: role, replaced_existing: !!replacement });
-        router.back();
-      },
-      onError: (error) => Alert.alert('Couldn’t save location', careLocationSaveErrorMessage(error)),
-    });
+    const proceed = () => {
+      saveMutation.mutate({
+        ...existing, id: existing?.id, role, name, address, phone, careTeamPhone, website, notes,
+        lat, lng, sourceKind: existing?.sourceKind || 'user', sourceProvider, sourceUrl, providerPlaceId,
+      }, {
+        onSuccess: (saved) => {
+          posthog?.capture('care_location_saved', { role: saved.role, source_kind: saved.sourceKind, has_coordinates: Number.isFinite(saved.lat), add_method: sourceProvider ? 'maps_link' : 'manual' });
+          if (mode === 'confirm') posthog?.capture('care_location_link_confirmed', { provider: sourceProvider, role, was_partial: !candidate?.name || (!candidate?.address && !Number.isFinite(candidate?.lat)) });
+          if (existing && existing.role !== role) posthog?.capture('care_location_role_changed', { from_role: existing.role, to_role: role, replaced_existing: !!replacement });
+          if (isShareImport) {
+            router.replace({
+              pathname: '/(tabs)/care/facilities',
+              params: { saveNotice: String(Date.now()) },
+            });
+          } else {
+            router.back();
+            requestAnimationFrame(() => showToast({ message: 'Care location saved' }));
+          }
+        },
+        onError: (error) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
+          Alert.alert('Couldn’t save location', careLocationSaveErrorMessage(error));
+        },
+      });
+    };
     if (replacement && [CARE_LOCATION_ROLES.PREFERRED_ED, CARE_LOCATION_ROLES.REGULAR_CLINIC].includes(role)) {
       Alert.alert(`Replace ${CARE_LOCATION_ROLE_LABELS[role]}?`, `${replacement.name} will move to Other saved locations.`, [{ text: 'Cancel', style: 'cancel' }, { text: 'Replace', onPress: proceed }]);
     } else proceed();
@@ -190,8 +295,13 @@ export default function CareLocationFormScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: t.background }}>
-      <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 18, paddingBottom: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}><Pressable onPress={() => mode === 'method' || existing ? router.back() : setMode('method')} accessibilityLabel="Back" style={{ width: 44, height: 44, justifyContent: 'center' }}><ChevronLeft color={t.text} /></Pressable><Text style={{ flex: 1, fontFamily: fonts.semibold, fontSize: 21, color: t.text }}>{title}</Text></View>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 18, paddingTop: 6, paddingBottom: insets.bottom + 32, gap: 18 }}>
+      <CareLocationsHeader
+        title={title}
+        subtitle={existing ? 'Update your saved location' : mode === 'confirm' ? 'Review before saving' : 'Hospitals, clinics and support'}
+        onBack={() => mode === 'method' || existing ? router.back() : setMode('method')}
+      />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 18, paddingTop: 6, paddingBottom: insets.bottom + 32 }}>
+        <Animated.View key={mode} entering={MODE_ENTER} exiting={MODE_EXIT} style={{ gap: 18 }}>
         {mode === 'method' ? (
           <><Text selectable style={{ fontFamily: fonts.regular, fontSize: 15, lineHeight: 21, color: t.textSecondary }}>Choose the easiest way to add a hospital, clinic, pharmacy or other care location.</Text><MethodCard icon={Link2} title="Paste a Maps link" badge="RECOMMENDED" subtitle="Copy a facility link from Google Maps or Apple Maps." onPress={() => chooseMethod('maps_link')} /><MethodCard icon={Keyboard} title="Enter details manually" subtitle="Add the name, address and contact details yourself." onPress={() => chooseMethod('manual')} /></>
         ) : null}
@@ -202,7 +312,7 @@ export default function CareLocationFormScreen() {
             <TextInput value={mapsLink} onChangeText={(value) => { setMapsLink(value); setResolveError(''); }} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="https://maps.app.goo.gl/…" placeholderTextColor={t.textSecondary} accessibilityLabel="Google Maps or Apple Maps link" style={{ minHeight: 54, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: resolveError ? t.destructive : t.border, backgroundColor: t.surface, color: t.text, fontFamily: fonts.regular }} />
             <Pressable onPress={pasteLink} accessibilityRole="button" style={{ minHeight: 50, borderRadius: 15, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}><ClipboardPaste size={18} color={t.accent} /><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Paste from clipboard</Text></Pressable>
             {resolveError ? <View accessibilityRole="alert" style={{ gap: 7, padding: 14, borderRadius: 14, backgroundColor: `${t.destructive}10` }}><Text selectable style={{ fontFamily: fonts.semibold, color: t.destructive }}>Link not recognised</Text><Text selectable style={{ fontFamily: fonts.regular, color: t.text, lineHeight: 19 }}>{resolveError}</Text><Pressable onPress={() => switchToManual('resolve_failed')} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Enter details manually</Text></Pressable></View> : null}
-            <Pressable onPress={resolveLink} disabled={isResolving} accessibilityRole="button" accessibilityState={{ disabled: isResolving }} style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{isResolving ? <ActivityIndicator color="#FFFFFF" accessibilityLabel="Reading Maps link" /> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Continue</Text>}</Pressable>
+            <ResolveLinkButton isResolving={isResolving} onPress={resolveLink} accent={t.accent} />
           </>
         ) : null}
 
@@ -214,7 +324,7 @@ export default function CareLocationFormScreen() {
             {sourceUrl ? <Pressable onPress={() => Linking.openURL(sourceUrl).catch(() => Alert.alert('Couldn’t open Maps', 'Try again or enter the details manually.'))} accessibilityRole="link" style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }}><ExternalLink size={17} color={t.accent} /><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Open original Maps link</Text></Pressable> : null}
             <RolePicker role={role} onChange={setRole} />
             <Pressable onPress={() => switchToManual('add_optional_details')} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Add phone, website or notes</Text></Pressable>
-            <Pressable onPress={save} disabled={saveMutation.isPending} accessibilityRole="button" style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{saveMutation.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Confirm and save</Text>}</Pressable>
+            <Pressable onPress={save} disabled={saveMutation.isPending} accessibilityRole="button" accessibilityState={{ disabled: saveMutation.isPending, busy: saveMutation.isPending }} style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{saveMutation.isPending ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><ActivityIndicator color="#FFFFFF" /><Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Saving…</Text></View> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Confirm and save</Text>}</Pressable>
           </>
         ) : null}
 
@@ -228,10 +338,11 @@ export default function CareLocationFormScreen() {
             {role === CARE_LOCATION_ROLES.REGULAR_CLINIC ? <Field label="Care-team phone (optional)" value={careTeamPhone} onChangeText={setCareTeamPhone} placeholder="Your clinic team’s direct number" keyboardType="phone-pad" /> : null}
             <Field label="Website (optional)" value={website} onChangeText={setWebsite} placeholder="https://" keyboardType="url" />
             <Field label="Private notes (optional)" value={notes} onChangeText={setNotes} placeholder="Entrance, ward, care-team details…" multiline />
-            <Pressable onPress={save} disabled={saveMutation.isPending} accessibilityRole="button" style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{saveMutation.isPending ? <ActivityIndicator color="#FFFFFF" /> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Save care location</Text>}</Pressable>
+            <Pressable onPress={save} disabled={saveMutation.isPending} accessibilityRole="button" accessibilityState={{ disabled: saveMutation.isPending, busy: saveMutation.isPending }} style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{saveMutation.isPending ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><ActivityIndicator color="#FFFFFF" /><Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Saving…</Text></View> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Save care location</Text>}</Pressable>
             {existing ? <Pressable onPress={remove} disabled={deleteMutation.isPending} accessibilityRole="button" style={{ minHeight: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}><Trash2 size={18} color={t.destructive} /><Text style={{ fontFamily: fonts.semibold, color: t.destructive }}>Delete care location</Text></Pressable> : null}
           </>
         ) : null}
+        </Animated.View>
       </ScrollView>
     </View>
   );

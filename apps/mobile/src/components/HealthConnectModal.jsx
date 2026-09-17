@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 import { Upload, Activity } from "lucide-react-native";
 
 import {
@@ -38,6 +39,7 @@ const HC_PLAY_STORE_URL = "market://details?id=com.google.android.apps.healthdat
 
 export default function HealthConnectModal({ visible, onClose, onContinue }) {
   const [connecting, setConnecting] = useState(false);
+  const posthog = usePostHog();
   const {
     setHealthConnectConnected,
     setHealthConnectRange,
@@ -70,6 +72,10 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
       // instead of failing silently (or crashing) inside a permission request.
       const status = await getHealthConnectStatus();
       if (status !== "available") {
+        posthog?.capture("health_integration_unavailable", {
+          provider: "health_connect",
+          status,
+        });
         setConnecting(false);
         Alert.alert(
           status === "update_required" ? "Update Health Connect" : "Install Health Connect",
@@ -90,6 +96,10 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
       const granted = await requestHKAuthorization();
       if (granted) {
         setHealthConnectConnected(true);
+        posthog?.setPersonProperties({ health_connect_connected: true });
+        posthog?.capture("health_integration_connected", {
+          provider: "health_connect",
+        });
         const rangeData = await fetchHealthKitRange(30, healthConnectPreferences);
         setHealthConnectRange(rangeData);
         setupBackgroundDelivery(
@@ -97,6 +107,9 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
           healthConnectPreferences
         );
       } else {
+        posthog?.capture("health_integration_permission_denied", {
+          provider: "health_connect",
+        });
         // Health Connect permanently stops showing the permission sheet after
         // a request has been denied or dismissed too many times — it then
         // settles instantly with nothing granted. Closing silently here made
@@ -114,6 +127,9 @@ export default function HealthConnectModal({ visible, onClose, onContinue }) {
         return;
       }
     } catch (e) {
+      posthog?.capture("health_integration_connection_failed", {
+        provider: "health_connect",
+      });
       // Don't fail silently — a swallowed error here is what makes the button
       // look like it "just loads". Surface it and let the user retry.
       console.error("[HC] connect error", e);
