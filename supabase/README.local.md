@@ -74,9 +74,37 @@ Vite reads `.env.local` only when the development server starts. If the server w
 
 The local stack automatically serves functions under `http://127.0.0.1:54321/functions/v1/`.
 
+If `supabase status` lists `supabase_edge_runtime_hemo-scd-local` under stopped services, start the local function watcher from the repository root:
+
+```sh
+supabase functions serve --env-file supabase/functions/.env
+```
+
+Keep that process running while testing the mobile app. This serves local source changes immediately and does not deploy anything to a hosted Supabase project.
+
 `supabase/functions/.env` is ignored and starts in safe mode. No Resend, Novu, Anthropic, Abstract, webhook, or other third-party credential is provided. Database triggers that could call production function URLs are replaced by local no-op functions in `seed.sql`.
 
 To test one external integration later, copy the required variable from `supabase/functions/.env.example` into the ignored `.env`, use a sandbox/test credential, and enable only that integration deliberately. Do not copy a production service-role key into any client environment.
+
+### Care-location background enrichment
+
+Care-location saves do not wait for a provider. The mobile app saves first, the queue Edge Function starts the `enrich-care-location` Trigger.dev task, and verified phone or website details found later are applied automatically only when those fields are still blank.
+
+Local end-to-end testing needs both processes running:
+
+1. For the Geoapify fallback, add `GEOAPIFY_API_KEY`, `GEOAPIFY_RATE_LIMIT_SALT`, and `CARE_LOCATION_GEOAPIFY_ENABLED=true`. For Gemini Search grounding, add `GEMINI_API_KEY`, `CARE_LOCATION_GEMINI_RATE_LIMIT_SALT`, and `CARE_LOCATION_GEMINI_ENABLED=true` (optionally set `CARE_LOCATION_GEMINI_MODEL`; it defaults to `gemini-3.6-flash`). Gemini does not require Geoapify credentials and never uses the Geoapify result cache. Add the same development `TRIGGER_SECRET_KEY` used by Trigger.dev to the ignored `supabase/functions/.env` file.
+2. Keep the local Edge Function runtime running with the command above.
+3. Configure the ignored `apps/workers/.env` with the local `API_URL` and legacy `SERVICE_ROLE_KEY` JWT from `supabase status -o env`, plus the Trigger.dev development secret. Do not use `PUBLISHABLE_KEY`/`ANON_KEY`; RLS will hide the queued row and the job cannot finish.
+4. In another terminal, start the worker:
+
+```sh
+cd apps/workers
+npm run dev:local
+```
+
+`dev:local` reads the local URL and service-role JWT directly from the running Supabase stack, overriding any stale Supabase values in `apps/workers/.env`. The service-role key belongs only in the worker environment. Never put it in `apps/mobile`, an `EXPO_PUBLIC_*` variable, or source control. Without the worker, locations still save successfully but enrichment remains queued. Without the Trigger secret in the function environment, the save still succeeds and the enrichment request is marked failed so it can be retried.
+
+Gemini Search grounding is limited to facility identity (name, address, coordinates, and country) and public official/operator or government/health-authority contact evidence. The interim grounded response is held in memory only and is temporarily submitted to Gemini a second time to produce a structured result for the same user. Verified contacts are atomically applied only to blank fields, so a value entered by the user while the job runs is never overwritten. Persisted provenance contains only the grounded attribution required for display and the accepted phone/website evidence. If attribution HTML or source links are missing, the result is treated as `no_match`. The backend must not log prompts, raw Gemini responses, keys, or user/patient identifiers, and it must not crawl source links; attribution links open without click tracking. The Gemini rate-limit salt is required and provider-prefixed counters are isolated from Geoapify counters.
 
 ## Creating schema changes
 

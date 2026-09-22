@@ -30,7 +30,7 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from "react-native-reanimated";
-import { BlurView } from "expo-blur";
+import { BlurTargetView, BlurView } from "expo-blur";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { StatusBar } from "expo-status-bar";
@@ -382,6 +382,7 @@ export default function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [appleHealthModalVisible, setAppleHealthModalVisible] = useState(false);
   const [healthConnectModalVisible, setHealthConnectModalVisible] = useState(false);
+  const healthBlurTargetRef = useRef(null);
   const [linkingProvider, setLinkingProvider] = useState(null);
 
   const identities = auth?.user?.identities ?? [];
@@ -1252,7 +1253,11 @@ export default function ProfileScreen() {
 
   // ── Main Profile Screen ────────────────────────────────────────────────────
   return (
-    <View style={{ flex: 1, backgroundColor: t.background }}>
+    <BlurTargetView
+      ref={healthBlurTargetRef}
+      collapsable={false}
+      style={{ flex: 1, backgroundColor: t.background }}
+    >
       <StatusBar style={t.isDark ? "light" : "dark"} />
 
       {/* ── Sticky top bar ── */}
@@ -3156,12 +3161,12 @@ export default function ProfileScreen() {
       <AppleHealthModal
         visible={appleHealthModalVisible}
         onClose={() => setAppleHealthModalVisible(false)}
-        onContinue={() => setAppleHealthModalVisible(false)}
+        blurTarget={healthBlurTargetRef}
       />
       <HealthConnectModal
         visible={healthConnectModalVisible}
         onClose={() => setHealthConnectModalVisible(false)}
-        onContinue={() => setHealthConnectModalVisible(false)}
+        blurTarget={healthBlurTargetRef}
       />
 
       {shouldPreloadFeedback ? (
@@ -3196,7 +3201,7 @@ export default function ProfileScreen() {
           />
         </View>
       ) : null}
-    </View>
+    </BlurTargetView>
   );
 }
 

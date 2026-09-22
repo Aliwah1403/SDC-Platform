@@ -12,6 +12,7 @@ export default defineConfig({
   project: triggerProject,
   dirs: ["./src/trigger"],
   maxDuration: 300,
+  runtime: "node-24",
   retries: {
     enabledInDev: false,
     default: {

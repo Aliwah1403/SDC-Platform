@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, TextInp
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import NetInfo from '@react-native-community/netinfo';
+import { WebView } from 'react-native-webview';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight, ClipboardPaste, ExternalLink, Keyboard, Link2, Trash2 } from 'lucide-react-native';
@@ -16,6 +17,7 @@ import {
   CARE_LOCATION_ROLES,
   resolveCareLocationLink,
 } from '@/services/supabase/facilities';
+import { buildCareLocationProvenance, enrichmentSourceLabel } from '@/utils/careLocationEnrichment';
 import { isCareLocationShareImport } from '@/utils/careLocationShare';
 import { fonts } from '@/utils/fonts';
 import { useToast } from '@/components/Toast/ToastProvider';
@@ -30,7 +32,7 @@ const MODE_EXIT = FadeOut.duration(120).reduceMotion(ReduceMotion.System);
 
 function careLocationSaveErrorMessage(error) {
   if (__DEV__ && error?.code === 'PGRST204') {
-    return 'This Supabase environment is missing the Care Locations migrations. Apply migrations 20260825190000 and 20260826110000, reload the PostgREST schema, then try again.';
+    return 'This Supabase environment is missing the latest Care Locations migrations. Apply migrations through 20260920120000, reload the PostgREST schema, then try again.';
   }
   return 'Your changes were not saved. Please try again.';
 }
@@ -46,11 +48,14 @@ function mapsProviderHint(value) {
   return 'unsupported';
 }
 
-function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, required = false }) {
+function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false, required = false, source = null }) {
   const t = useTheme();
   return (
     <View style={{ gap: 7 }}>
-      <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text }}>{label}{required ? ' *' : ''}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: t.text }}>{label}{required ? ' *' : ''}</Text>
+        {source ? <Text style={{ flexShrink: 1, fontFamily: fonts.regular, fontSize: 11, color: t.textSecondary, textAlign: 'right' }}>{source}</Text> : null}
+      </View>
       <TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={t.textSecondary} keyboardType={keyboardType} multiline={multiline} accessibilityLabel={label} style={{ minHeight: multiline ? 84 : 50, padding: 14, textAlignVertical: multiline ? 'top' : 'center', borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface, color: t.text, fontFamily: fonts.regular, fontSize: 15 }} />
     </View>
   );
@@ -146,6 +151,68 @@ function ResolveLinkButton({ isResolving, onPress, accent }) {
   );
 }
 
+function BackgroundEnrichmentCard({ location, pending, onRetry }) {
+  const t = useTheme();
+  const attributionLoaded = useRef(false);
+  const background = location?.enrichmentProvenance?.backgroundEnrichment;
+  const groundedResult = background?.groundedResult;
+  const renderedContent = groundedResult?.searchEntryPoint?.renderedContent;
+  if (!location?.sourceUrl) return null;
+  const requestedAt = location.enrichmentRequestedAt ? Date.parse(location.enrichmentRequestedAt) : NaN;
+  const isStale = ['pending', 'processing'].includes(location.enrichmentStatus) &&
+    Number.isFinite(requestedAt) && Date.now() - requestedAt > 2 * 60 * 1000;
+  const status = pending ? 'pending' : isStale ? 'failed' : location.enrichmentStatus;
+  const isRunning = ['pending', 'processing'].includes(status);
+
+  if (status === 'completed') {
+    if (!renderedContent) return null;
+    return (
+      <View style={{ gap: 8, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}>
+        <Text selectable style={{ fontFamily: fonts.semibold, color: t.text }}>Contact details added automatically</Text>
+        <Text selectable style={{ fontFamily: fonts.regular, fontSize: 12, lineHeight: 17, color: t.textSecondary }}>Found with Google Search from official web sources.</Text>
+        <View style={{ overflow: 'hidden', borderRadius: 8, borderWidth: 1, borderColor: t.border }}>
+          <WebView
+            source={{ html: renderedContent }}
+            originWhitelist={['http://*', 'https://*']}
+            scrollEnabled={false}
+            nestedScrollEnabled={false}
+            automaticallyAdjustContentInsets={false}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            onLoadStart={() => { attributionLoaded.current = false; }}
+            onLoadEnd={() => { attributionLoaded.current = true; }}
+            onShouldStartLoadWithRequest={(request) => {
+              if (!attributionLoaded.current || !/^https?:\/\//i.test(request?.url || '')) return true;
+              Linking.openURL(request.url).catch(() => {});
+              return false;
+            }}
+            style={{ width: '100%', height: 88, maxHeight: 120, backgroundColor: 'transparent' }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  if (location.phone && location.website) return null;
+
+  const message = isRunning
+    ? 'Looking for missing phone and website details in the background…'
+    : status === 'no_match'
+      ? 'No additional contact details were found. Your saved information is unchanged.'
+      : status === 'failed'
+        ? `${isStale ? 'Enrichment took too long' : 'Enrichment could not be completed'}. Your saved information is unchanged.`
+        : 'Look for missing contact details after saving. Verified details are added automatically.';
+  return (
+    <View style={{ gap: 10, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: t.border, backgroundColor: t.surface }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+        {isRunning ? <ActivityIndicator size="small" color={t.accent} /> : <Link2 size={18} color={t.accent} />}
+        <Text accessibilityLiveRegion="polite" selectable style={{ flex: 1, fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>{message}</Text>
+      </View>
+      {!isRunning ? <Pressable onPress={onRetry} disabled={pending} accessibilityRole="button" accessibilityState={{ disabled: pending, busy: pending }} style={({ pressed }) => ({ minHeight: 44, borderRadius: 13, borderWidth: 1, borderColor: t.border, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.7 : 1 })}><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>{status === 'no_match' || status === 'failed' ? 'Try enrichment again' : 'Enrich location'}</Text></Pressable> : null}
+    </View>
+  );
+}
+
 export default function CareLocationFormScreen() {
   const { id, role: initialRole, shareUrl } = useLocalSearchParams();
   const router = useRouter();
@@ -155,7 +222,7 @@ export default function CareLocationFormScreen() {
   const { showToast } = useToast();
   const { data: locations = [], isLoading } = useSavedFacilitiesQuery();
   const existing = useMemo(() => locations.find((item) => item.id === id), [locations, id]);
-  const { saveMutation, deleteMutation } = useCareLocationMutations();
+  const { saveMutation, deleteMutation, enrichmentMutation } = useCareLocationMutations();
   const [mode, setMode] = useState(id ? 'details' : 'method');
   const [role, setRole] = useState(existing?.role || initialRole || CARE_LOCATION_ROLES.OTHER);
   const [name, setName] = useState(existing?.name || '');
@@ -169,22 +236,44 @@ export default function CareLocationFormScreen() {
   const [sourceProvider, setSourceProvider] = useState(existing?.sourceProvider || null);
   const [sourceUrl, setSourceUrl] = useState(existing?.sourceUrl || null);
   const [providerPlaceId, setProviderPlaceId] = useState(existing?.providerPlaceId || null);
+  const [geoapifyPlaceId, setGeoapifyPlaceId] = useState(existing?.geoapifyPlaceId || null);
   const [mapsLink, setMapsLink] = useState('');
   const [candidate, setCandidate] = useState(null);
   const [resolveError, setResolveError] = useState('');
   const [isResolving, setIsResolving] = useState(false);
   const hydratedId = useRef(existing?.id || null);
   const importedShareRef = useRef(null);
+  const phoneEditedRef = useRef(false);
+  const websiteEditedRef = useRef(false);
   const isShareImport = isCareLocationShareImport(shareUrl, id);
 
   useEffect(() => {
     if (!existing || hydratedId.current === existing.id) return;
     hydratedId.current = existing.id;
+    phoneEditedRef.current = false;
+    websiteEditedRef.current = false;
     setRole(existing.role); setName(existing.name); setAddress(existing.address); setPhone(existing.phone);
     setCareTeamPhone(existing.careTeamPhone); setWebsite(existing.website); setNotes(existing.notes);
     setLat(existing.lat); setLng(existing.lng); setSourceProvider(existing.sourceProvider);
-    setSourceUrl(existing.sourceUrl); setProviderPlaceId(existing.providerPlaceId); setMode('details');
+    setSourceUrl(existing.sourceUrl); setProviderPlaceId(existing.providerPlaceId);
+    setGeoapifyPlaceId(existing.geoapifyPlaceId); setMode('details');
   }, [existing]);
+
+  useEffect(() => {
+    if (!existing) return;
+    if (!phoneEditedRef.current) setPhone(existing.phone || '');
+    if (!websiteEditedRef.current) setWebsite(existing.website || '');
+  }, [existing?.phone, existing?.website]);
+
+  const setPhoneFromUser = (value) => {
+    phoneEditedRef.current = true;
+    setPhone(value);
+  };
+
+  const setWebsiteFromUser = (value) => {
+    websiteEditedRef.current = true;
+    setWebsite(value);
+  };
 
   useEffect(() => {
     const incoming = Array.isArray(shareUrl) ? shareUrl[0] : shareUrl;
@@ -217,9 +306,12 @@ export default function CareLocationFormScreen() {
     }
   };
 
-  const resolveLink = async (value = mapsLink) => {
+  const resolveLinkForReview = async (value) => {
     const link = (typeof value === 'string' ? value : mapsLink).trim();
-    if (!link) return setResolveError('Paste a Google Maps or Apple Maps link first.');
+    if (!link) {
+      setResolveError('Paste a Google Maps or Apple Maps link first.');
+      return;
+    }
     setResolveError('');
     setIsResolving(true);
     try {
@@ -231,21 +323,44 @@ export default function CareLocationFormScreen() {
       }
       const result = await resolveCareLocationLink(link);
       setCandidate(result);
-      setName(result.name || ''); setAddress(result.address || ''); setLat(result.lat); setLng(result.lng);
+      setName(result.name || ''); setAddress(result.address || ''); setPhone(result.phone || '');
+      setWebsite(result.website || ''); setLat(result.lat); setLng(result.lng);
       setSourceProvider(result.provider); setSourceUrl(result.sourceUrl || result.originalUrl); setProviderPlaceId(result.providerPlaceId);
+      setGeoapifyPlaceId(result.geoapifyPlaceId);
       posthog?.capture('care_location_link_resolved', {
         outcome: result.name && (result.address || Number.isFinite(result.lat)) ? 'complete' : 'partial',
         provider: result.provider,
         has_name: !!result.name, has_address: !!result.address,
         has_coordinates: Number.isFinite(result.lat) && Number.isFinite(result.lng), has_place_id: !!result.providerPlaceId,
+        geoapify_used: !!result.geoapifyPlaceId,
+        enrichment_decision: result.decision || 'parsed_only',
+        entry_point: 'add_location',
       });
       setMode('confirm');
-    } catch {
+    } catch (error) {
+      if (__DEV__) console.warn('[CareLocation] Maps link resolution failed', error?.code || 'resolve_failed');
       setResolveError('We couldn’t read that link. Check that it is a Google Maps or Apple Maps share link, then try again.');
       posthog?.capture('care_location_link_resolved', { outcome: 'failed', provider: mapsProviderHint(link) });
     } finally {
       setIsResolving(false);
     }
+  };
+
+  const resolveLink = (value = mapsLink) => resolveLinkForReview(
+    typeof value === 'string' ? value : mapsLink,
+  );
+
+  const enrichExistingLocation = () => {
+    if (!existing?.id) return;
+    enrichmentMutation.mutate(existing.id, {
+      onSuccess: (result) => {
+        const message = result?.reason === 'no_missing_fields'
+          ? 'This location already has contact details'
+          : 'Enrichment started';
+        showToast({ message });
+      },
+      onError: () => Alert.alert('Couldn’t start enrichment', 'Your saved details are unchanged. Please try again.'),
+    });
   };
 
   const switchToManual = (reason) => {
@@ -259,9 +374,13 @@ export default function CareLocationFormScreen() {
     if (!address.trim() && !hasCoordinates && !sourceUrl) return Alert.alert('Location required', 'Add an address or import a supported Maps link.');
     const replacement = locations.find((item) => item.id !== existing?.id && item.role === role);
     const proceed = () => {
+      const enrichmentProvenance = candidate
+        ? buildCareLocationProvenance(candidate, { name, address, lat, lng, phone, website })
+        : existing?.enrichmentProvenance || null;
       saveMutation.mutate({
         ...existing, id: existing?.id, role, name, address, phone, careTeamPhone, website, notes,
         lat, lng, sourceKind: existing?.sourceKind || 'user', sourceProvider, sourceUrl, providerPlaceId,
+        geoapifyPlaceId, enrichmentProvenance,
       }, {
         onSuccess: (saved) => {
           posthog?.capture('care_location_saved', { role: saved.role, source_kind: saved.sourceKind, has_coordinates: Number.isFinite(saved.lat), add_method: sourceProvider ? 'maps_link' : 'manual' });
@@ -290,6 +409,7 @@ export default function CareLocationFormScreen() {
 
   const remove = () => Alert.alert('Delete care location?', existing.name, [{ text: 'Cancel', style: 'cancel' }, { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(existing.id, { onSuccess: () => router.back(), onError: () => Alert.alert('Couldn’t delete location', 'Please try again.') }) }]);
   const title = existing ? 'Edit care location' : mode === 'method' ? 'Add care location' : mode === 'link' ? 'Paste a Maps link' : mode === 'confirm' ? 'Confirm location' : 'Enter details';
+  const usedGeoapify = !!candidate?.geoapifyPlaceId || Object.values(candidate?.fields || {}).some((field) => field?.source?.startsWith('geoapify'));
 
   if (id && isLoading && !existing) return <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: t.background }}><ActivityIndicator color={t.accent} accessibilityLabel="Loading care location" /></View>;
 
@@ -297,8 +417,12 @@ export default function CareLocationFormScreen() {
     <View style={{ flex: 1, backgroundColor: t.background }}>
       <CareLocationsHeader
         title={title}
-        subtitle={existing ? 'Update your saved location' : mode === 'confirm' ? 'Review before saving' : 'Hospitals, clinics and support'}
-        onBack={() => mode === 'method' || existing ? router.back() : setMode('method')}
+        subtitle={mode === 'confirm' ? 'Review before saving' : existing ? 'Update your saved location' : 'Hospitals, clinics and support'}
+        onBack={() => {
+          if (existing && mode === 'confirm') setMode('details');
+          else if (mode === 'method' || existing) router.back();
+          else setMode('method');
+        }}
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ padding: 18, paddingTop: 6, paddingBottom: insets.bottom + 32 }}>
         <Animated.View key={mode} entering={MODE_ENTER} exiting={MODE_EXIT} style={{ gap: 18 }}>
@@ -318,9 +442,17 @@ export default function CareLocationFormScreen() {
 
         {mode === 'confirm' ? (
           <>
-            <View style={{ gap: 7, padding: 16, borderRadius: 18, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border }}><Text selectable style={{ fontFamily: fonts.semibold, color: t.text, fontSize: 17 }}>We found this location</Text><Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary }}>Source: {PROVIDER_LABELS[sourceProvider] || 'Maps link'} · Review before saving</Text>{(!candidate?.address || !Number.isFinite(candidate?.lat)) ? <Text selectable accessibilityRole="alert" style={{ fontFamily: fonts.regular, color: t.text, lineHeight: 19, marginTop: 5 }}>Some details were not included in the link. Add what you know below; Hemo will not guess missing information.</Text> : null}</View>
-            <Field label="Name" required value={name} onChangeText={setName} placeholder="Hospital, clinic or pharmacy name" />
-            <Field label="Address (if known)" value={address} onChangeText={setAddress} placeholder="Street, city and postcode" multiline />
+            <View style={{ gap: 7, padding: 16, borderRadius: 18, backgroundColor: t.surface, borderWidth: 1, borderColor: t.border }}>
+              <Text selectable style={{ fontFamily: fonts.semibold, color: t.text, fontSize: 17 }}>{usedGeoapify ? 'Review this possible match' : 'We found this location'}</Text>
+              <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>Source: {PROVIDER_LABELS[sourceProvider] || 'Maps link'}{usedGeoapify ? ' + Geoapify' : ''} · Check before saving</Text>
+              {usedGeoapify ? <Text selectable style={{ fontFamily: fonts.regular, color: t.text, lineHeight: 19, marginTop: 5 }}>This identifies the place only. It does not verify sickle-cell, haematology, emergency or transfusion services.</Text> : null}
+              {usedGeoapify ? <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, fontSize: 11, lineHeight: 16 }}>Data: Geoapify · © OpenStreetMap contributors</Text> : null}
+              {(!candidate?.address || !Number.isFinite(candidate?.lat)) ? <Text selectable accessibilityRole="alert" style={{ fontFamily: fonts.regular, color: t.text, lineHeight: 19, marginTop: 5 }}>Some details could not be found. Add what you know; Hemo will not guess missing information.</Text> : null}
+            </View>
+            <Field label="Name" required value={name} onChangeText={setName} placeholder="Hospital, clinic or pharmacy name" source={enrichmentSourceLabel(candidate?.fields?.name, name)} />
+            <Field label="Address (if known)" value={address} onChangeText={setAddress} placeholder="Street, city and postcode" multiline source={enrichmentSourceLabel(candidate?.fields?.address, address)} />
+            {phone ? <Field label="Main phone (optional)" value={phone} onChangeText={setPhoneFromUser} placeholder="Switchboard or emergency department" keyboardType="phone-pad" source={enrichmentSourceLabel(candidate?.fields?.phone, phone)} /> : null}
+            {website ? <Field label="Website (optional)" value={website} onChangeText={setWebsiteFromUser} placeholder="https://" keyboardType="url" source={enrichmentSourceLabel(candidate?.fields?.website, website)} /> : null}
             {sourceUrl ? <Pressable onPress={() => Linking.openURL(sourceUrl).catch(() => Alert.alert('Couldn’t open Maps', 'Try again or enter the details manually.'))} accessibilityRole="link" style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8 }}><ExternalLink size={17} color={t.accent} /><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Open original Maps link</Text></Pressable> : null}
             <RolePicker role={role} onChange={setRole} />
             <Pressable onPress={() => switchToManual('add_optional_details')} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ fontFamily: fonts.semibold, color: t.accent }}>Add phone, website or notes</Text></Pressable>
@@ -333,10 +465,11 @@ export default function CareLocationFormScreen() {
             <RolePicker role={role} onChange={setRole} />
             <Field label="Name" required value={name} onChangeText={setName} placeholder="Hospital, clinic or pharmacy name" />
             <Field label="Address" value={address} onChangeText={setAddress} placeholder="Street, city and postcode" multiline />
-            {sourceUrl ? <View style={{ padding: 13, borderRadius: 14, backgroundColor: t.surface }}><Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary }}>Map pin imported from {PROVIDER_LABELS[sourceProvider] || 'Maps'}. Coordinates are stored securely and are not shown for manual editing.</Text></View> : <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>You can save an address without map coordinates. To add a pin, go back and paste a Maps link.</Text>}
-            <Field label="Main phone (optional)" value={phone} onChangeText={setPhone} placeholder="Switchboard or emergency department" keyboardType="phone-pad" />
+            {sourceUrl ? <View style={{ padding: 13, borderRadius: 14, backgroundColor: t.surface }}><Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>Map pin imported from {PROVIDER_LABELS[sourceProvider] || 'Maps'}. Coordinates are stored securely and are not shown for manual editing.</Text></View> : <Text selectable style={{ fontFamily: fonts.regular, color: t.textSecondary, lineHeight: 19 }}>You can save an address without map coordinates. To add a pin, go back and paste a Maps link.</Text>}
+            {existing ? <BackgroundEnrichmentCard location={existing} pending={enrichmentMutation.isPending} onRetry={enrichExistingLocation} /> : null}
+            <Field label="Main phone (optional)" value={phone} onChangeText={setPhoneFromUser} placeholder="Switchboard or emergency department" keyboardType="phone-pad" />
             {role === CARE_LOCATION_ROLES.REGULAR_CLINIC ? <Field label="Care-team phone (optional)" value={careTeamPhone} onChangeText={setCareTeamPhone} placeholder="Your clinic team’s direct number" keyboardType="phone-pad" /> : null}
-            <Field label="Website (optional)" value={website} onChangeText={setWebsite} placeholder="https://" keyboardType="url" />
+            <Field label="Website (optional)" value={website} onChangeText={setWebsiteFromUser} placeholder="https://" keyboardType="url" />
             <Field label="Private notes (optional)" value={notes} onChangeText={setNotes} placeholder="Entrance, ward, care-team details…" multiline />
             <Pressable onPress={save} disabled={saveMutation.isPending} accessibilityRole="button" accessibilityState={{ disabled: saveMutation.isPending, busy: saveMutation.isPending }} style={{ minHeight: 55, borderRadius: 17, backgroundColor: t.accent, alignItems: 'center', justifyContent: 'center' }}>{saveMutation.isPending ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><ActivityIndicator color="#FFFFFF" /><Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Saving…</Text></View> : <Text style={{ fontFamily: fonts.semibold, color: '#FFFFFF', fontSize: 16 }}>Save care location</Text>}</Pressable>
             {existing ? <Pressable onPress={remove} disabled={deleteMutation.isPending} accessibilityRole="button" style={{ minHeight: 50, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 }}><Trash2 size={18} color={t.destructive} /><Text style={{ fontFamily: fonts.semibold, color: t.destructive }}>Delete care location</Text></Pressable> : null}

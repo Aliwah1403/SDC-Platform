@@ -43,7 +43,9 @@ Deno.serve(async (req) => {
     }
     if (!body || typeof body.url !== "string") return json({ error: "A maps link is required", code: "url_required" }, 400);
     const data = await resolveMapsLink(body.url);
-    return json({ data });
+    // Keep deterministic Maps parsing on the save path. Provider enrichment is
+    // queued only after the user confirms and saves the location.
+    return json({ data: { ...data, enrichment: { skipped: true, reason: "background" } } });
   } catch (error) {
     const code = typeof error?.code === "string" ? error.code : "resolve_failed";
     const status = ["unsupported_url", "url_required"].includes(code) ? 400 : 422;

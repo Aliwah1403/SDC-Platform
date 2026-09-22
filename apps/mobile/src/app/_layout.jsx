@@ -487,6 +487,18 @@ function RootLayoutContent() {
         router.push(`/metric-detail?metric=${data.metric}`);
       } else if (data.type === "hydration_reminder") {
         router.push("/log-symptoms");
+      } else if (data.type === "monthly_recap") {
+        router.push(
+          typeof data.monthStart === "string"
+            ? `/recap?period=month&start=${encodeURIComponent(data.monthStart)}&from=notification`
+            : "/health-insights"
+        );
+      } else if (data.type === "weekly_recap") {
+        router.push(
+          typeof data.weekStart === "string"
+            ? `/recap?period=week&start=${encodeURIComponent(data.weekStart)}&from=notification`
+            : "/health-insights"
+        );
       }
     });
     return () => sub.remove();

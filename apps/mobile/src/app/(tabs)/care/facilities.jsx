@@ -167,6 +167,19 @@ function PrimaryLocationCard({
             {location.address}
           </Text>
         ) : null}
+        {location && ["pending", "processing"].includes(location.enrichmentStatus) ? (
+          <Text
+            selectable
+            style={{
+              color: t.textSecondary,
+              fontFamily: fonts.semibold,
+              fontSize: 11.5,
+              lineHeight: 16,
+            }}
+          >
+            Looking for contact details…
+          </Text>
+        ) : null}
       </Pressable>
 
       {location ? (

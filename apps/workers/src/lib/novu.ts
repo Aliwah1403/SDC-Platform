@@ -75,8 +75,23 @@ export async function triggerNovuBulk(events: BulkEvent[]): Promise<{ failedCoun
       );
     }
 
-    // Novu bulk returns an array; each item may have an error field for partial failures
-    const results = (await res.json()) as Array<{ error?: string; acknowledged?: boolean }>;
+    // Novu has returned both a top-level array and a `{ data: [...] }` envelope
+    // from this endpoint. Accept both shapes so a successful delivery is not
+    // reported as a failed Trigger.dev run after Novu has already queued it.
+    const body = (await res.json()) as unknown;
+    const results = Array.isArray(body)
+      ? body
+      : body &&
+          typeof body === "object" &&
+          Array.isArray((body as { data?: unknown }).data)
+        ? (body as {
+            data: Array<{ error?: unknown; acknowledged?: boolean }>;
+          }).data
+        : null;
+    if (!results) {
+      throw new Error("Novu bulk trigger returned an unexpected response shape");
+    }
+
     for (const r of results) {
       if (r.error || r.acknowledged === false) failedCount++;
     }

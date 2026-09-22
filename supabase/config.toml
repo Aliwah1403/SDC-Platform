@@ -444,6 +444,12 @@ verify_jwt = false
 [functions.resolve-care-location-link]
 verify_jwt = true
 
+[functions.queue-care-location-enrichment]
+verify_jwt = true
+
+[functions.run-care-location-enrichment]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

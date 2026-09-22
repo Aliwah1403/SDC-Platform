@@ -3,7 +3,7 @@ jest.mock('@/utils/auth/supabase', () => ({
 }));
 
 const { supabase: mockSupabase } = require('@/utils/auth/supabase');
-const { saveCareLocation } = require('@/services/supabase/facilities');
+const { dismissCareLocationEnrichment, saveCareLocation } = require('@/services/supabase/facilities');
 
 describe('care location role replacement', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -36,5 +36,30 @@ describe('care location role replacement', () => {
       p_location_id: 'location-2', p_role: 'preferred_ed',
     });
     expect(result.role).toBe('preferred_ed');
+  });
+
+  test('dismisses enrichment suggestions only for the current user-owned location', async () => {
+    const single = jest.fn().mockResolvedValue({
+      data: { id: 'location-2', user_id: 'user-1', name: 'Clinic', role: 'other', source_kind: 'user' },
+      error: null,
+    });
+    const select = jest.fn(() => ({ single }));
+    const eqUser = jest.fn(() => ({ select }));
+    const eqId = jest.fn(() => ({ eq: eqUser }));
+    const update = jest.fn(() => ({ eq: eqId }));
+    mockSupabase.from.mockReturnValue({ update });
+
+    const result = await dismissCareLocationEnrichment('user-1', 'location-2');
+
+    expect(update).toHaveBeenCalledWith(expect.objectContaining({
+      enrichment_status: 'completed',
+      enrichment_suggestions: null,
+      enrichment_completed_at: expect.any(String),
+      enrichment_error_code: null,
+    }));
+    expect(eqId).toHaveBeenCalledWith('id', 'location-2');
+    expect(eqUser).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(result.id).toBe('location-2');
+    expect(mockSupabase.from).toHaveBeenCalledWith('saved_facilities');
   });
 });

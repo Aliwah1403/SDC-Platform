@@ -3,6 +3,7 @@ import { queryKeys } from '@/hooks/queryKeys';
 import { useAuthStore } from '@/utils/auth/store';
 import {
   deleteCareLocation,
+  queueCareLocationEnrichment,
   saveCareLocation,
   setCareLocationRole,
 } from '@/services/supabase/facilities';
@@ -24,6 +25,10 @@ export function useCareLocationMutations() {
     mutationFn: (locationId) => deleteCareLocation(userId, locationId),
     onSuccess: invalidate,
   });
-
-  return { saveMutation, roleMutation, deleteMutation };
+  const enrichmentMutation = useMutation({
+    mutationFn: (locationId) => queueCareLocationEnrichment(locationId),
+    onSuccess: invalidate,
+    onSettled: invalidate,
+  });
+  return { saveMutation, roleMutation, deleteMutation, enrichmentMutation };
 }
