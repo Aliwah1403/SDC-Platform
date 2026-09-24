@@ -36,17 +36,6 @@ const WRITE_PERMISSIONS = [
   { accessType: "write", recordType: "Weight" },
 ];
 
-// Special Health Connect permissions. Requested but never required for the
-// "connected" check — the user can decline them and sync still works:
-//   ReadHealthDataHistory      — read data older than 30 days before first grant
-//   BackgroundAccessPermission — read while the app is in the background
-// Note: the request result does not echo ReadHealthDataHistory back even when
-// granted (library quirk), so these must stay out of any granted-set check.
-const SPECIAL_PERMISSIONS = [
-  { accessType: "read", recordType: "ReadHealthDataHistory" },
-  { accessType: "read", recordType: "BackgroundAccessPermission" },
-];
-
 // Sleep stage values considered "asleep" (excludes AWAKE=1, AWAKE_IN_BED=5)
 const ASLEEP_STAGES = new Set([2, 3, 4, 6]); // LIGHT, DEEP, REM, SLEEPING
 
@@ -176,7 +165,7 @@ export async function requestHKAuthorization() {
   let result;
   try {
     result = await withTimeout(
-      requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS, ...SPECIAL_PERMISSIONS]),
+      requestPermission([...READ_PERMISSIONS, ...WRITE_PERMISSIONS]),
       90000,
       "Health Connect permission request",
     );

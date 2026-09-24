@@ -158,6 +158,7 @@ export default function AppleHealthSettingsScreen() {
           style: "destructive",
           onPress: () => {
             posthog?.capture("healthkit_disconnected");
+            posthog?.setPersonProperties({ apple_health_connected: false });
             setHealthKitConnected(false);
             router.back();
           },

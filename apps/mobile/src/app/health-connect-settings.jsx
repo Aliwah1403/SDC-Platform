@@ -141,6 +141,7 @@ export default function HealthConnectSettingsScreen() {
           style: "destructive",
           onPress: () => {
             posthog?.capture("health_connect_disconnected");
+            posthog?.setPersonProperties({ health_connect_connected: false });
             setHealthConnectConnected(false);
             router.back();
           },

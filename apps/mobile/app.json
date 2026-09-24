@@ -51,6 +51,23 @@
         }
       ],
       [
+        "expo-sharing",
+        {
+          "ios": {
+            "enabled": true,
+            "activationRule": {
+              "supportsText": true,
+              "supportsWebUrlWithMaxCount": 1,
+              "supportsWebPageWithMaxCount": 1
+            }
+          },
+          "android": {
+            "enabled": true,
+            "singleShareMimeTypes": ["text/plain"]
+          }
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-mark.png",
@@ -120,9 +137,7 @@
             "android.permission.health.READ_EXERCISE",
             "android.permission.health.WRITE_HYDRATION",
             "android.permission.health.WRITE_HEIGHT",
-            "android.permission.health.WRITE_WEIGHT",
-            "android.permission.health.READ_HEALTH_DATA_HISTORY",
-            "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"
+            "android.permission.health.WRITE_WEIGHT"
           ]
         }
       ],

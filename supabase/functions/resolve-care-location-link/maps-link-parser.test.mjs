@@ -30,6 +30,14 @@ test("parses legacy and unified Apple Maps links", () => {
   assert.equal(unified.providerPlaceId, "FAKE_APPLE_ID");
 });
 
+test("parses Apple Maps place links containing address, coordinates, name, and place id", () => {
+  const result = parseMapsUrl("https://maps.apple.com/place?address=Dubai%20International%20Financial%20Centre%2C%20Dubai%2C%20United%20Arab%20Emirates&coordinate=25.2100%2C55.2800&name=Example%20Clinic&place-id=FAKE_APPLE_ID");
+  assert.equal(result.name, "Example Clinic");
+  assert.equal(result.address, "Dubai International Financial Centre, Dubai, United Arab Emirates");
+  assert.deepEqual([result.lat, result.lng], [25.21, 55.28]);
+  assert.equal(result.providerPlaceId, "FAKE_APPLE_ID");
+});
+
 test("returns a partial deterministic candidate", () => {
   const result = parseMapsUrl("https://maps.apple.com/?q=Example+Hospital");
   assert.equal(result.name, "Example Hospital");

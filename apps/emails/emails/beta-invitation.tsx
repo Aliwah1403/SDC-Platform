@@ -1,13 +1,13 @@
 import { Heading, Section, Text } from "react-email";
 import { EmailLayout, BrandButton, bodyTextStyle, colors, smallTextStyle } from "./_components/EmailLayout";
 
-export interface BetaInvitationProps { firstName: string; betaUrl: string; }
+export interface BetaInvitationProps { betaUrl: string; }
 
-export default function BetaInvitation({ firstName, betaUrl }: BetaInvitationProps) {
+export default function BetaInvitation({ betaUrl }: BetaInvitationProps) {
   return (
     <EmailLayout preview="Join the private beta and help shape sickle cell healthcare.">
       <Heading style={{ color: colors.ink, fontFamily: "Arial, Helvetica, sans-serif", fontSize: 24, fontWeight: 700, lineHeight: "32px", margin: "0 0 24px", textAlign: "center" }}>Your invitation to join the Hemo beta</Heading>
-      <Text style={bodyTextStyle}>Hi {firstName},</Text>
+      <Text style={bodyTextStyle}>Hey,</Text>
       <Text style={bodyTextStyle}>You joined the Hemo waitlist because you believed sickle cell healthcare could feel more connected, more understandable, and a little less difficult to manage.</Text>
       <Text style={bodyTextStyle}>We’re now inviting people from the waitlist to join the private beta.</Text>
       <Text style={bodyTextStyle}>Hemo is being built for people living with sickle cell disease — to help make health information easier to organise, understand, and share when it matters.</Text>
@@ -22,4 +22,4 @@ export default function BetaInvitation({ firstName, betaUrl }: BetaInvitationPro
   );
 }
 
-BetaInvitation.PreviewProps = { firstName: "Amara", betaUrl: "https://www.hemo-scd.com/beta" } satisfies BetaInvitationProps;
+BetaInvitation.PreviewProps = { betaUrl: "https://www.hemo-scd.com/beta" } satisfies BetaInvitationProps;

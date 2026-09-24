@@ -42,6 +42,7 @@ import {
 import { fonts } from "@/utils/fonts";
 import { useTheme } from "@/hooks/useTheme";
 import { SectionCard } from "@/components/SectionCard";
+import { purgeHealthLogs } from "@/services/local/healthLogRepository";
 
 // ─── brand icons ─────────────────────────────────────────────────────────────
 
@@ -183,6 +184,26 @@ export default function SecurityScreen() {
 
   const provider = getProvider(user);
   const emailUser = isEmailUser(user);
+  const linkableProviders = Platform.OS === "ios"
+    ? [
+        {
+          key: "google",
+          label: "Google",
+          Icon: () => <GoogleIcon size={18} />,
+        },
+        {
+          key: "apple",
+          label: "Apple",
+          Icon: () => <AppleIcon size={18} color={t.text} />,
+        },
+      ]
+    : [
+        {
+          key: "google",
+          label: "Google",
+          Icon: () => <GoogleIcon size={18} />,
+        },
+      ];
 
   const handleLink = async (providerName) => {
     setLinking(providerName);
@@ -314,6 +335,7 @@ export default function SecurityScreen() {
 
   const deleteAccount = async () => {
     setDeletingAccount(true);
+    const deletedUserId = user?.id;
     try {
       const { error } = await supabase.functions.invoke("delete-account", {
         method: "POST",
@@ -323,6 +345,11 @@ export default function SecurityScreen() {
       // The server invalidates all refresh sessions as part of the Auth-user
       // deletion. Clear this device's persisted session immediately as well.
       await supabase.auth.signOut({ scope: "local" });
+      try {
+        await purgeHealthLogs(deletedUserId);
+      } catch (purgeError) {
+        console.warn("[Security] Could not purge local health logs after deletion:", purgeError?.code ?? "purge_failed");
+      }
       Alert.alert(
         "Account deleted",
         "Your account and associated health data have been permanently deleted.",
@@ -449,18 +476,7 @@ export default function SecurityScreen() {
 
         {/* ── Linked Accounts ── */}
         <SectionCard title="Linked Accounts">
-          {[
-            {
-              key: "google",
-              label: "Google",
-              Icon: () => <GoogleIcon size={18} />,
-            },
-            {
-              key: "apple",
-              label: "Apple",
-              Icon: () => <AppleIcon size={18} color={t.text} />,
-            },
-          ].map(({ key, label, Icon }) => {
+          {linkableProviders.map(({ key, label, Icon }) => {
             const identity = user?.identities?.find((i) => i.provider === key);
             const isLinked = !!identity;
             const isLoading = linking === key;
@@ -583,9 +599,7 @@ export default function SecurityScreen() {
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.35)" }}
           onPress={closePasswordSheet}
         />
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
+        <KeyboardAvoidingView behavior="padding">
           <View
             style={{
               backgroundColor: t.surface,

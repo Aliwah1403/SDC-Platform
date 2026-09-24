@@ -31,7 +31,10 @@ The sent Hemo broadcast designs are also available as previews:
 
 - `beta-access`
 - `beta-invitation`
-- `beta-claim`
+- `beta-invitation-follow-up`
+- `beta-claim-ios`
+- `beta-claim-ios-personalized`
+- `beta-claim-android`
 - `waitlist-update`
 
 The shared layout is based on the sent Hemo broadcasts: white 600px canvas, Arial typography, Hemo logo and fingerprint mark, black body text, rose `#A9334D` actions and links, and the Hemo legal footer. The Supabase functions currently send Resend-hosted templates. These local React Email components are the design source and preview; their rendered HTML still needs to be copied into the matching Resend templates, or the sending path can later be migrated to render these components directly.

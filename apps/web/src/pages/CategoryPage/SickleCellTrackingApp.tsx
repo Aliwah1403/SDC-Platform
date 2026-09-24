@@ -97,7 +97,7 @@ const COMPARISON: ComparisonRow[] = [
   },
   {
     criterion: "Price",
-    hemo: "Free to start; Hemo+ $7.99/mo or $59.99/yr",
+    hemo: "Free to start; Hemo+ $7.99/mo or $49.99/yr",
     generic: "Free – $10+/mo, varies by app",
     paper: "Cost of a notebook",
     // Pricing isn't public yet — hidden from the comparison table until it is.
@@ -124,7 +124,7 @@ const FAQS = [
   {
     question: "How much does the app for sickle cell patients cost?",
     answer:
-      "Hemo is free to start — logging, 7-day stats, Emergency SOS, community, and the basic care hub don't require payment. Hemo+ unlocks unlimited history, AI insights, and PDF reports for $7.99/mo or $59.99/yr, with a 7-day free trial and a 50% hardship discount for qualifying users.",
+      "Hemo is free to start — logging, 7-day stats, Emergency SOS, community, and the basic care hub don't require payment. Hemo+ unlocks unlimited history, AI insights, and PDF reports for $7.99/mo or $49.99/yr, with a 7-day free trial and a 50% hardship discount for qualifying users.",
   },
 ];
 

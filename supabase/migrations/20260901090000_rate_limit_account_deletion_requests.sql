@@ -1,6 +1,6 @@
 -- Throttle the unauthenticated deletion-request endpoint without retaining raw
 -- email addresses or client IP addresses in the rate-limit table.
-CREATE TABLE public.account_deletion_request_rate_limits (
+CREATE TABLE IF NOT EXISTS public.account_deletion_request_rate_limits (
   scope text NOT NULL CHECK (scope IN ('email', 'ip')),
   key_hash text NOT NULL,
   window_started_at timestamptz NOT NULL DEFAULT now(),

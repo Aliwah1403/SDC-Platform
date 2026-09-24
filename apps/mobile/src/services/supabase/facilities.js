@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/auth/supabase';
+import { normalizeCareLocationResolution } from '@/utils/careLocationEnrichment';
 
 export const CARE_LOCATION_ROLES = Object.freeze({
   PREFERRED_ED: 'preferred_ed',
@@ -42,6 +43,15 @@ export function normalizeCareLocation(row) {
     sourceProvider: row.source_provider || null,
     sourceUrl: row.source_url || null,
     providerPlaceId: row.provider_place_id || null,
+    geoapifyPlaceId: row.geoapify_place_id || null,
+    enrichmentProvenance: row.enrichment_provenance || null,
+    enrichmentStatus: row.enrichment_status || 'not_requested',
+    enrichmentSuggestions: row.enrichment_suggestions || null,
+    enrichmentRequestedAt: row.enrichment_requested_at || null,
+    enrichmentStartedAt: row.enrichment_started_at || null,
+    enrichmentCompletedAt: row.enrichment_completed_at || null,
+    enrichmentAttemptCount: row.enrichment_attempt_count || 0,
+    enrichmentErrorCode: row.enrichment_error_code || null,
     verification: { state: formatVerificationState(row) },
     updatedAt: row.updated_at || row.saved_at,
   };
@@ -93,8 +103,17 @@ export async function saveCareLocation(userId, location) {
     source_provider: location.sourceProvider || null,
     source_url: location.sourceUrl?.trim() || null,
     provider_place_id: location.providerPlaceId?.trim() || null,
+    geoapify_place_id: location.geoapifyPlaceId?.trim() || null,
+    enrichment_provenance: location.enrichmentProvenance || null,
     updated_at: new Date().toISOString(),
   };
+
+  if (location.consumeEnrichmentSuggestions) {
+    payload.enrichment_status = 'completed';
+    payload.enrichment_suggestions = null;
+    payload.enrichment_completed_at = new Date().toISOString();
+    payload.enrichment_error_code = null;
+  }
 
   if (!location.id) payload.role = CARE_LOCATION_ROLES.OTHER;
 
@@ -104,10 +123,21 @@ export async function saveCareLocation(userId, location) {
     : await query.insert(payload).select().single();
   if (result.error) throw result.error;
 
+  let saved = normalizeCareLocation(result.data);
   if (!location.id || result.data.role !== requestedRole) {
-    return setCareLocationRole(result.data.id, requestedRole);
+    saved = await setCareLocationRole(result.data.id, requestedRole);
   }
-  return normalizeCareLocation(result.data);
+
+  const shouldAutoEnrich = !location.id && saved.sourceUrl && (!saved.phone || !saved.website);
+  if (shouldAutoEnrich) {
+    try {
+      const queued = await queueCareLocationEnrichment(saved.id);
+      if (queued?.queued) saved = { ...saved, enrichmentStatus: queued.status || 'pending' };
+    } catch (error) {
+      if (__DEV__) console.warn('[CareLocation] Background enrichment could not be queued', error?.message);
+    }
+  }
+  return saved;
 }
 
 export async function setCareLocationRole(locationId, role) {
@@ -128,6 +158,36 @@ export async function deleteCareLocation(userId, locationId) {
   if (error) throw error;
 }
 
+export async function queueCareLocationEnrichment(locationId) {
+  const { data, error } = await supabase.functions.invoke('queue-care-location-enrichment', {
+    body: { locationId },
+  });
+  if (error) {
+    let details = null;
+    try { details = await error.context?.json?.(); } catch {}
+    throw new Error(details?.error || error.message || 'Could not queue care location enrichment');
+  }
+  return data;
+}
+
+export async function dismissCareLocationEnrichment(userId, locationId) {
+  const completedAt = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('saved_facilities')
+    .update({
+      enrichment_status: 'completed',
+      enrichment_suggestions: null,
+      enrichment_completed_at: completedAt,
+      enrichment_error_code: null,
+    })
+    .eq('id', locationId)
+    .eq('user_id', userId)
+    .select()
+    .single();
+  if (error) throw error;
+  return normalizeCareLocation(data);
+}
+
 // Backward-compatible aliases while callers migrate to the CareLocation model.
 export const saveFacility = saveCareLocation;
 
@@ -135,9 +195,15 @@ export async function resolveCareLocationLink(url) {
   const { data, error } = await supabase.functions.invoke('resolve-care-location-link', {
     body: { url },
   });
-  if (error) throw error;
+  if (error) {
+    let details = null;
+    try { details = await error.context?.json?.(); } catch {}
+    const enrichedError = new Error(details?.error || error.message || 'Could not resolve this maps link');
+    enrichedError.code = details?.code || error.code || 'resolve_failed';
+    throw enrichedError;
+  }
   if (!data?.data) throw new Error(data?.error || 'Could not resolve this maps link');
-  return data.data;
+  return normalizeCareLocationResolution(data.data);
 }
 export async function unsaveFacility(userId, placeId) {
   const { error } = await supabase

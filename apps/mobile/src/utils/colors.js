@@ -15,6 +15,9 @@ export const colors = {
   pinkBorder: "#F0E4E1",      // Card borders, dividers
   red: "#DC2626",             // Active tab indicator, error states
 
+  // ── Metric accents ─────────────────────────────────────────────────────────
+  hydration: "#3B82F6",       // Hydration only — track, metric detail, home tile, widgets
+
   // ── UI feedback ────────────────────────────────────────────────────────────
   textPrimary: "#1A1A1A",     // Main text
   textSecondary: "#9CA3AF",   // Labels, subtitles, secondary text

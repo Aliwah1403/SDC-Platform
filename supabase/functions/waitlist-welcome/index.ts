@@ -109,11 +109,13 @@ Deno.serve(async (req: Request) => {
       sendEmail(
         {
           to: [adminEmail],
-          template: { id: "admin-waitlist-notification" },
-          variables: {
-            SIGNUP_EMAIL: email,
-            SOURCE: source || "landing-page",
-            SIGNED_UP_AT: signedUpAt,
+          template: {
+            id: "admin-waitlist-notification",
+            variables: {
+              SIGNUP_EMAIL: email,
+              SOURCE: source || "landing-page",
+              SIGNED_UP_AT: signedUpAt,
+            },
           },
         },
         "Admin waitlist notification",
